@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* StarClaim dark theme mapped to shadcn tokens */
+        --background: 222 71% 5%;
+        --foreground: 222 100% 97%;
+        --card: 220 60% 14%;
+        --card-foreground: 222 100% 97%;
+        --popover: 220 60% 10%;
+        --popover-foreground: 222 100% 97%;
+        --primary: 43 52% 54%;           /* gold */
+        --primary-foreground: 222 71% 5%;
+        --secondary: 220 40% 16%;
+        --secondary-foreground: 222 100% 97%;
+        --muted: 220 30% 18%;
+        --muted-foreground: 220 20% 65%;
+        --accent: 264 28% 51%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 74% 58%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 30% 22%;
+        --input: 220 30% 18%;
+        --ring: 43 52% 54%;
+        --radius: 0.9rem;
+    }
+}
+
+@layer base {
+    * { @apply border-border; }
+    html { scroll-behavior: smooth; }
+    body {
+        margin: 0;
+        font-family: 'DM Sans', sans-serif;
+        background: #050A1A;
+        color: #F0F4FF;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+    }
+    code { font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Cinzel', serif; letter-spacing: -0.01em; }
+    ::selection { background: #C9A84C; color: #050A1A; }
+}
+
+@layer utilities {
+    .font-display { font-family: 'Cinzel', serif; }
+    .font-accent { font-family: 'Cormorant Garamond', serif; }
+
+    .glass {
+        background: rgba(15, 31, 61, 0.55);
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-gold {
+        background: rgba(15, 31, 61, 0.55);
+        backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid rgba(201, 168, 76, 0.4);
+        box-shadow: 0 0 30px rgba(201, 168, 76, 0.15), inset 0 1px 0 rgba(201,168,76,0.2);
+    }
+    .gold-gradient-text {
+        background: linear-gradient(135deg, #E0BB6A 0%, #C9A84C 45%, #E0BB6A 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .nebula-bg {
+        background-image:
+          radial-gradient(ellipse at 15% 30%, rgba(123, 94, 167, 0.18), transparent 55%),
+          radial-gradient(ellipse at 85% 70%, rgba(77, 166, 255, 0.12), transparent 60%),
+          radial-gradient(ellipse at 50% 110%, rgba(201, 168, 76, 0.08), transparent 60%);
+    }
+    .divider-gold {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(201,168,76,0.6), transparent);
+    }
+    .btn-gold {
+        background: linear-gradient(135deg, #E0BB6A, #C9A84C);
+        color: #050A1A;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 0.75rem 1.75rem;
+        border-radius: 9999px;
+        transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+        box-shadow: 0 8px 24px -12px rgba(201,168,76,0.6);
+    }
+    .btn-gold:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 32px -10px rgba(201,168,76,0.7);
+        filter: brightness(1.05);
+    }
+    .btn-ghost {
+        background: transparent;
+        border: 1px solid rgba(136, 153, 187, 0.4);
+        color: #F0F4FF;
+        padding: 0.75rem 1.75rem;
+        border-radius: 9999px;
+        transition: all 200ms ease;
+    }
+    .btn-ghost:hover {
+        border-color: #F0F4FF;
+        background: rgba(255,255,255,0.04);
+        transform: translateY(-2px);
+    }
+
+    .tier-legendary {
+        border-color: rgba(201, 168, 76, 0.55);
+        box-shadow: 0 0 32px -8px rgba(201, 168, 76, 0.35), inset 0 0 0 1px rgba(201,168,76,0.15);
+    }
+    .tier-zodiac  { border-color: rgba(123, 94, 167, 0.55); box-shadow: 0 0 22px -8px rgba(123, 94, 167, 0.25); }
+    .tier-named   { border-color: rgba(77, 166, 255, 0.5); }
+    .tier-constellation { border-color: rgba(45, 212, 160, 0.35); }
+    .tier-standard { border-color: rgba(255, 255, 255, 0.08); }
+
+    .shooting-star {
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: white;
+        border-radius: 9999px;
+        box-shadow: 0 0 8px 2px rgba(255,255,255,0.9);
+    }
+    .shooting-star::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0;
+        width: 140px; height: 1px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.9), transparent);
+        transform: translateX(-140px) rotate(-18deg);
+        transform-origin: right center;
+    }
+
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .reveal.in-view { opacity: 1; transform: translateY(0); }
+}
+
+/* Hide scrollbar utility for ticker */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

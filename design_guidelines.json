@@ -1,0 +1,140 @@
+{
+  "theme": "dark",
+  "archetype": "5",
+  "archetype_name": "Jewel & Luxury",
+  "domain": "Premium E-commerce / Gifting",
+  "brand_name": "StarClaim",
+  "tagline": "Claim Your Place in the Stars",
+  "language": "TR (primary), EN (secondary)",
+  "colors": {
+    "backgrounds": {
+      "deep": "#050A1A",
+      "mid": "#0A1628",
+      "card": "#0F1F3D",
+      "glass": "rgba(15, 31, 61, 0.6)"
+    },
+    "accents": {
+      "gold": "#C9A84C",
+      "gold_light": "#E0BB6A",
+      "purple": "#7B5EA7",
+      "blue": "#4DA6FF",
+      "red_star": "#E24B4A",
+      "green": "#2DD4A0"
+    },
+    "text": {
+      "primary": "#F0F4FF",
+      "secondary": "#8899BB"
+    }
+  },
+  "typography": {
+    "headings": {
+      "font_family": "Cinzel, serif",
+      "description": "Used for display, H1-H4 headings, premium and luxurious feel.",
+      "tracking": "tracking-tight"
+    },
+    "body": {
+      "font_family": "DM Sans, sans-serif",
+      "description": "Clean, readable, geometric sans for all body text, UI elements, and buttons."
+    },
+    "accent": {
+      "font_family": "Cormorant Garamond, serif",
+      "description": "Used for italic quotes, personalized star stories, elegant labels.",
+      "style": "italic"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing (p-8 to p-24) to emulate a luxury boutique. High emphasis on negative space.",
+    "container": "max-w-7xl mx-auto px-6 md:px-12",
+    "grid_system": "Bento Grid Protocol. Asymmetrical for Marketing pages, structured for Dashboard and Marketplace.",
+    "card_padding": "p-8 md:p-10",
+    "section_spacing": "py-24 md:py-32"
+  },
+  "components_and_surfaces": {
+    "cards": {
+      "style": "Glassmorphism with backdrop-blur-xl, subtle borders.",
+      "base_class": "bg-[#0F1F3D]/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-lg",
+      "tiers": {
+        "legendary": "border-[#C9A84C]/50 shadow-[0_0_30px_rgba(201,168,76,0.15)]",
+        "zodiac": "border-[#7B5EA7]/50 shadow-[0_0_20px_rgba(123,94,167,0.1)]",
+        "named": "border-[#4DA6FF]/40",
+        "standard": "border-white/5"
+      }
+    },
+    "buttons": {
+      "primary": "bg-[#C9A84C] hover:bg-[#E0BB6A] text-[#050A1A] font-bold rounded-full px-8 py-3 transition-all",
+      "secondary": "bg-transparent border border-[#8899BB]/30 hover:border-[#F0F4FF] text-[#F0F4FF] rounded-full px-8 py-3 transition-all",
+      "glass": "bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 text-white rounded-full px-6 py-2"
+    },
+    "navigation": {
+      "style": "Crystal Glass sticky header. z-50. bg-[#050A1A]/80 backdrop-blur-2xl border-b border-white/5."
+    },
+    "icons": {
+      "library": "lucide-react",
+      "instructions": "Avoid emoji characters completely. Use Lucide React icons with consistent stroke widths."
+    }
+  },
+  "animations": {
+    "hero_background": "Animated 300+ star particle canvas background. Implement using tsParticles or pure HTML5 Canvas. Should include shooting star animations occasionally.",
+    "page_transitions": "Framer Motion fade-in and slight Y-axis reveal (translateY: 20px -> 0px, opacity: 0 -> 1).",
+    "hover_effects": "Cards should slightly lift (-translate-y-1) with an intensified glow on their respective tier border colors.",
+    "notifications": "Live notification popup (bottom-left, every 30-60s) sliding in from left, fading out."
+  },
+  "media": {
+    "hero_backgrounds": [
+      {
+        "url": "https://images.pexels.com/photos/20881655/pexels-photo-20881655.jpeg",
+        "description": "Dynamic scene of colorful gas clouds and stars in a cosmic nebula.",
+        "usage": "Hero section background overlay"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1720675009618-a38716724700?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwxfHxtaWxreSUyMHdheSUyMGdhbGF4eSUyMG5pZ2h0JTIwc2t5fGVufDB8fHx8MTc3NzA2ODQwNnww&ixlib=rb-4.1.0&q=85",
+        "description": "Milky way view.",
+        "usage": "Section backgrounds, storytelling pages"
+      }
+    ],
+    "textures_and_accents": [
+      {
+        "url": "https://images.pexels.com/photos/32732569/pexels-photo-32732569.png",
+        "description": "Stunning image of the Lagoon Nebula",
+        "usage": "Card backgrounds with low opacity, hover reveals"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1749544812189-193ccae5e2f4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTF8MHwxfHNlYXJjaHwyfHxsdXh1cnklMjBnb2xkJTIwZm9pbCUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3NzA2ODQxMnww&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract golden light shines against black.",
+        "usage": "Premium tier borders, gold accents, certificate foil textures"
+      }
+    ],
+    "products_mockups": [
+      {
+        "url": "https://images.unsplash.com/photo-1695634281181-b2357af34c61?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2MDV8MHwxfHNlYXJjaHwyfHxjZXJ0aWZpY2F0ZSUyMGRvY3VtZW50JTIwbW9ja3Vwc3xlbnwwfHx8fDE3NzcwNjg0MTJ8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Certificate document mockup",
+        "usage": "Certificate preview in checkout / product showcase"
+      }
+    ]
+  },
+  "specific_page_instructions": {
+    "homepage": {
+      "hero": "Hero overlay opacity max bg-black/40 so the nebula image and particles shine through. Center-aligned luxurious typography (H1).",
+      "live_ticker": "Use the Marquee strategy (The 'Editorial Ribbon') below hero. bg-[#0A1628] with #C9A84C text. Tracking-wide.",
+      "zodiac_picker": "12-item grid, bento style or circular carousel.",
+      "pricing": "5 tiers displayed in Glassmorphism cards. Highlight 'Legendary' with gold glow."
+    },
+    "marketplace": {
+      "layout": "Control Room grid. Dense, analytical but still luxurious. Focus on % increase and original vs asking price.",
+      "table": "Use Shadcn Table customized with transparent backgrounds and #0F1F3D headers."
+    },
+    "checkout": {
+      "flow": "5-step modal wizard. Steps: personalize, package, preview certificate, payment mockup, celebration. Use Framer motion to animate between steps smoothly."
+    }
+  },
+  "accessibility_and_testing": {
+    "contrast": "Ensure text over gradients/images uses text-shadow or backgrounds to meet APCA contrast ratios. --text-primary against --bg-card meets AA minimums.",
+    "testing_attributes": "All interactive elements MUST have data-testid attributes (e.g. data-testid=\"buy-star-cta\")."
+  },
+  "development_instructions": {
+    "css": "Use Tailwind classes. For custom colors, add them to tailwind.config.js under theme.extend.colors.",
+    "shadcn": "Heavily customize Shadcn components. Strip the default Vercel-look. Add backdrop-blur, change border radiuses (rounded-2xl for main cards), and replace neutral borders with white/10.",
+    "html": "DO NOT USE <select> or <input type='date'>. Use Shadcn components for forms.",
+    "fonts": "Import 'Cinzel', 'DM Sans', and 'Cormorant Garamond' from Google Fonts."
+  }
+}
