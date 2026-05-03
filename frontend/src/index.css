@@ -140,5 +140,20 @@
 }
 
 /* Hide scrollbar utility for ticker */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* Force hide branding badge */
+#emergent-badge, 
+[id*="emergent-badge"],
+a[href*="emergent.sh"] { 
+    display: none !important; 
+    visibility: hidden !important; 
+    pointer-events: none !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* Ensure CTA visibility */
+[data-testid="nav-claim-cta"] {
+    z-index: 60 !important;
+}
+

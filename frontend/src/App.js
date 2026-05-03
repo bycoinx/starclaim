@@ -38,10 +38,24 @@ function AppShell() {
       // Open with a random available featured star
       api.get("/stars", { params: { available: true, tier: "legendary", sort: "price_desc", limit: 20 } })
         .then(({ data }) => {
-          if (data.length) {
-            setActiveStar(data[Math.floor(Math.random() * Math.min(3, data.length))]);
+          if (data && data.length > 0) {
+            setActiveStar(data[Math.floor(Math.random() * Math.min(5, data.length))]);
             setCheckoutOpen(true);
+          } else {
+            // Fallback: try getting any available star
+            api.get("/stars", { params: { available: true, limit: 10 } })
+              .then((res) => {
+                if (res.data && res.data.length > 0) {
+                   setActiveStar(res.data[0]);
+                   setCheckoutOpen(true);
+                } else {
+                   toast.error("Şu an müsait yıldız bulunamadı.");
+                }
+              });
           }
+        })
+        .catch((err) => {
+          console.error("Claim fetch failed:", err);
         });
       return;
     }

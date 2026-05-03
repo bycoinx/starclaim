@@ -22,6 +22,9 @@ def _star(code, name, constellation, tier, price, ra, dec, magnitude=None, owner
     }
 
 
+# STAR_CATALOG - Publicly claimable stars.
+# Note: Solar System bodies (Sun, Mars, Jupiter, etc.) are EXCLUDED here.
+# They are reserved for the 'Family Protocol' and managed via the 3D SkySphere.
 STAR_CATALOG = [
     # LEGENDARY
     _star("sirius", "Sirius", "Canis Major", "legendary", 2999, "06h 45m", "-16° 42'", -1.46, owner="Ali K."),
