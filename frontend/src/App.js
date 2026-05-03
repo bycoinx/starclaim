@@ -34,38 +34,34 @@ function AppShell() {
   }, []);
 
   const openClaim = useCallback((star) => {
-    console.log("openClaim called with:", star);
     if (!star) {
-      console.log("No star provided, fetching random legendary...");
-      api.get("/stars", { params: { available: true, tier: "legendary", sort: "price_desc", limit: 20 } })
+      // Step 1: Try getting any legendary star (even if owned, just to open modal)
+      api.get("/stars", { params: { tier: "legendary", limit: 5 } })
         .then(({ data }) => {
-          console.log("Legendary fetch response:", data);
           if (data && data.length > 0) {
-            const picked = data[Math.floor(Math.random() * Math.min(5, data.length))];
-            console.log("Picked star:", picked);
-            setActiveStar(picked);
+            // Prefer an available one if exists
+            const available = data.find(s => !s.owner_id);
+            setActiveStar(available || data[0]);
             setCheckoutOpen(true);
           } else {
-            console.log("No available legendary stars, falling back to any available...");
-            api.get("/stars", { params: { available: true, limit: 10 } })
+            // Step 2: Ultimate fallback to any star in the database
+            api.get("/stars", { params: { limit: 1 } })
               .then((res) => {
-                console.log("Fallback fetch response:", res.data);
                 if (res.data && res.data.length > 0) {
                    setActiveStar(res.data[0]);
                    setCheckoutOpen(true);
                 } else {
-                   toast.error("Şu an müsait yıldız bulunamadı. Lütfen daha sonra tekrar deneyin.");
+                   toast.error("Yıldızlar şu an yüklenemedi.");
                 }
               });
           }
         })
         .catch((err) => {
-          console.error("Critical: openClaim fetch failed:", err);
-          toast.error("Yıldız verileri sunucudan alınamadı.");
+          console.error("Claim fetch error:", err);
+          toast.error("Bağlantı hatası.");
         });
       return;
     }
-    console.log("Setting provided star and opening modal");
     setActiveStar(star);
     setCheckoutOpen(true);
   }, []);
