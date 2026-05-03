@@ -56,7 +56,9 @@ export default function LiveNotifications() {
   return (
     <div
       data-testid="live-notification"
-      className={ixed bottom-5 left-5 z-40 max-w-xs transition-all duration-500 \}
+      className={`fixed bottom-5 left-5 z-40 max-w-xs transition-all duration-500 ${
+        visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
+      }`}
     >
       <div className="glass rounded-xl px-4 py-3 pl-4 border-l-2 border-l-sc-gold flex items-start gap-3 shadow-2xl">
         <Sparkles className="w-4 h-4 text-sc-gold mt-0.5 shrink-0" />

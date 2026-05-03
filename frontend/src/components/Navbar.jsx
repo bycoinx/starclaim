@@ -21,9 +21,9 @@ export default function Navbar({ onOpenClaim }) {
   const links = [
     { to: "/", label: t("nav_home") },
     { to: "/stars", label: t("nav_pick") },
+    { to: "/vision", label: "StarVault" },
     { to: "/marketplace", label: t("nav_market") },
     { to: "/stories", label: t("nav_stories") },
-    { to: "/vision", label: lang === "TR" ? "Vizyon" : "Vision" },
     { to: "/about", label: t("nav_about") },
   ];
 
