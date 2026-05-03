@@ -34,31 +34,38 @@ function AppShell() {
   }, []);
 
   const openClaim = useCallback((star) => {
+    console.log("openClaim called with:", star);
     if (!star) {
-      // Open with a random available featured star
+      console.log("No star provided, fetching random legendary...");
       api.get("/stars", { params: { available: true, tier: "legendary", sort: "price_desc", limit: 20 } })
         .then(({ data }) => {
+          console.log("Legendary fetch response:", data);
           if (data && data.length > 0) {
-            setActiveStar(data[Math.floor(Math.random() * Math.min(5, data.length))]);
+            const picked = data[Math.floor(Math.random() * Math.min(5, data.length))];
+            console.log("Picked star:", picked);
+            setActiveStar(picked);
             setCheckoutOpen(true);
           } else {
-            // Fallback: try getting any available star
+            console.log("No available legendary stars, falling back to any available...");
             api.get("/stars", { params: { available: true, limit: 10 } })
               .then((res) => {
+                console.log("Fallback fetch response:", res.data);
                 if (res.data && res.data.length > 0) {
                    setActiveStar(res.data[0]);
                    setCheckoutOpen(true);
                 } else {
-                   toast.error("Şu an müsait yıldız bulunamadı.");
+                   toast.error("Şu an müsait yıldız bulunamadı. Lütfen daha sonra tekrar deneyin.");
                 }
               });
           }
         })
         .catch((err) => {
-          console.error("Claim fetch failed:", err);
+          console.error("Critical: openClaim fetch failed:", err);
+          toast.error("Yıldız verileri sunucudan alınamadı.");
         });
       return;
     }
+    console.log("Setting provided star and opening modal");
     setActiveStar(star);
     setCheckoutOpen(true);
   }, []);
