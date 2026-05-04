@@ -30,7 +30,11 @@ function AppShell() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    api.get("/stats/overview").then(({ data }) => setStats(data)).catch(() => {});
+    api.get("/stats/overview")
+      .then(({ data }) => {
+        if (data && typeof data === 'object') setStats(data);
+      })
+      .catch(() => {});
   }, []);
 
   const openClaim = useCallback((star) => {

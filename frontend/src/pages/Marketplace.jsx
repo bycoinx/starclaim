@@ -18,7 +18,16 @@ export default function Marketplace() {
   const [buyingId, setBuyingId] = useState(null);
 
   useEffect(() => {
-    api.get("/marketplace/listings").then(({ data }) => setListings(data)).finally(() => setLoading(false));
+    api.get("/marketplace/listings")
+      .then(({ data }) => {
+        if (Array.isArray(data)) setListings(data);
+        else setListings([]);
+      })
+      .catch((err) => {
+        console.error("Marketplace fetch error:", err);
+        setListings([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const buyListing = async (listing) => {

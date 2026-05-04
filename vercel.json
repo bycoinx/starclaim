@@ -3,7 +3,7 @@
   "outputDirectory": "frontend/build",
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!static|.*\\..*|api).*)",
       "destination": "/index.html"
     }
   ]

@@ -51,11 +51,19 @@ export default function StarPicker({ onClaim }) {
     const query = { tier, constellation, sort, min_price: priceMin, max_price: priceMax };
     if (onlyAvailable) query.available = true;
     api.get("/stars", { params: query })
-      .then(({ data }) => setStars(data))
+      .then(({ data }) => {
+        if (Array.isArray(data)) setStars(data);
+        else setStars([]);
+      })
+      .catch((err) => {
+        console.error("Fetch stars error:", err);
+        setStars([]);
+      })
       .finally(() => setLoading(false));
   }, [tier, constellation, sort, onlyAvailable, priceMin, priceMax]);
 
   const filtered = useMemo(() => {
+    if (!Array.isArray(stars)) return [];
     if (!search.trim()) return stars;
     const needle = search.toLowerCase();
     return stars.filter((star) =>
