@@ -49,8 +49,9 @@ function StarEngine({ stars, onSelect }) {
   const starData = useMemo(() => {
     const data = [];
     const count = 10000;
+    const len = stars.length;
     for (let i = 0; i < count; i++) {
-      const s = stars[i % stars.length] || {};
+      const s = len > 0 ? stars[i % len] : {};
       const radius = 250 + Math.random() * 400;
       const [x, y, z] = getXYZ(s.ra || `${Math.random()*24}h`, s.dec || `${Math.random()*180-90}`, radius);
       const mag = s.magnitude || (Math.random() * 5 + 1);
