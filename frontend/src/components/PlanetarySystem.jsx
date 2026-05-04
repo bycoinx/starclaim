@@ -24,15 +24,19 @@ export default function PlanetarySystem({ onSelect }) {
     
     // Animate orbits (Planets are children 1 to N)
     groupRef.current.children.forEach((child, i) => {
-      if (child.userData.type === "planet") {
-        const p = PLANETS[i - 1]; // Child 0 is Sun
-        const angle = t * p.speed + (i * 0.5); // Offset initial positions
-        child.position.x = Math.cos(angle) * p.dist;
-        child.position.z = Math.sin(angle) * p.dist;
+      if (child.userData && child.userData.type === "planet") {
+        const p = child.userData;
+        const speed = p.speed ?? 0.01;
+        const dist = p.dist ?? 10;
+        const angle = t * speed + (i * 0.5); // Offset initial positions
+        child.position.x = Math.cos(angle) * dist;
+        child.position.z = Math.sin(angle) * dist;
         child.rotation.y += 0.01;
       }
     });
   });
+
+  if (!PLANETS || PLANETS.length === 0) return null;
 
   return (
     <group ref={groupRef}>

@@ -6,6 +6,7 @@ import { Crown, Gem, LocateFixed, ShoppingBag, Sparkles, Star, Lock, EyeOff, Shi
 import { useT } from "../lib/i18n";
 import SpaceTimeGrid from "./SpaceTimeGrid";
 import PlanetarySystem from "./PlanetarySystem";
+import ErrorBoundary from "./ui/ErrorBoundary";
 
 const tierMeta = {
   legendary: { color: "#E0BB6A", aura: "#C9A84C", label: "Tier 1", boost: 2.2, Icon: Crown },
@@ -125,7 +126,9 @@ export default function SkySphere({ stars, onClaim }) {
           <pointLight position={[150, 150, 150]} intensity={2} color="#E0BB6A" />
           
           <SpaceTimeGrid massCenters={selected ? [{ x: targetPos?.[0]||0, z: targetPos?.[2]||0, mass: 4, radius: 8 }] : []} />
-          <PlanetarySystem onSelect={handleSelect} />
+          <ErrorBoundary fallback={null}>
+            <PlanetarySystem onSelect={handleSelect} />
+          </ErrorBoundary>
           <StarEngine stars={stars} onSelect={handleSelect} />
           
           <Stars radius={500} depth={100} count={6000} factor={8} saturation={0} fade speed={1} />
