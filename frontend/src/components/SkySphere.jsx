@@ -122,8 +122,8 @@ export default function SkySphere({ stars, onClaim }) {
         />
         
         <Suspense fallback={null}>
-          <ambientLight intensity={0.5} />
-          <pointLight position={[150, 150, 150]} intensity={2} color="#E0BB6A" />
+          <ambientLight intensity={0.15} color="#d1d5db" />
+          <pointLight position={[150, 150, 150]} intensity={1.5} color="#fcd34d" />
           
           <SpaceTimeGrid massCenters={selected ? [{ x: targetPos?.[0]||0, z: targetPos?.[2]||0, mass: 4, radius: 8 }] : []} />
           <ErrorBoundary fallback={null}>
@@ -131,7 +131,7 @@ export default function SkySphere({ stars, onClaim }) {
           </ErrorBoundary>
           <StarEngine stars={stars} onSelect={handleSelect} />
           
-          <Stars radius={500} depth={100} count={6000} factor={8} saturation={0} fade speed={1} />
+          <Stars radius={400} depth={150} count={12000} factor={6} saturation={0.5} fade speed={0.5} />
           <CameraController target={targetPos} />
         </Suspense>
       </Canvas>
@@ -141,12 +141,12 @@ export default function SkySphere({ stars, onClaim }) {
         <div className="flex justify-between items-start">
           <div className="glass rounded-2xl p-5 border-sc-gold/30 backdrop-blur-xl">
             <div className="text-[10px] tracking-[0.5em] uppercase text-sc-gold mb-1 font-display">StarClaim Original Engine</div>
-            <div className="text-sm text-sc-text-muted">{lang === "TR" ? "Vizioner Demo v2.5 — Uzay-Zaman Atlası" : "Visionary Demo v2.5 — Space-Time Atlas"}</div>
+            <div className="text-sm text-sc-text-muted">{lang === "TR" ? "Güneş Sistemi Atlası — Kuantum Doğrulama" : "Solar System Atlas — Quantum Verification"}</div>
           </div>
           <div className="glass rounded-2xl p-5 text-right border-sc-gold/30 backdrop-blur-xl">
-            <div className="text-[10px] tracking-[0.4em] uppercase text-sc-text-muted mb-1">Resonance Status</div>
+            <div className="text-[10px] tracking-[0.4em] uppercase text-sc-text-muted mb-1">Status: Encrypted</div>
             <div className="text-sm text-sc-blue flex items-center gap-2 justify-end">
-              <Zap className="w-4 h-4 animate-pulse" /> Quantum Synchronized
+              <ShieldCheck className="w-4 h-4 animate-pulse" /> {lang === "TR" ? "Galaktik Senkronizasyon" : "Galactic Sync"}
             </div>
           </div>
         </div>
@@ -156,8 +156,8 @@ export default function SkySphere({ stars, onClaim }) {
             {selected ? (
               <div>
                 <div className="flex items-center justify-between mb-6">
-                  <div className={`text-[10px] tracking-[0.4em] uppercase px-3 py-1.5 rounded-full bg-sc-gold/10 ${selected.tier === 'protected' ? 'text-sc-gold border border-sc-gold/30' : 'text-sc-text-muted border border-white/10'}`}>
-                    {selected.tier === 'protected' ? 'PROHIBITED: Sovereign Territory' : t(`tier_${selected.tier}`)}
+                  <div className={`text-[10px] tracking-[0.3em] uppercase px-3 py-1.5 rounded-full bg-sc-gold/10 text-sc-gold border border-sc-gold/30`}>
+                    {selected.ownershipStatus || (selected.tier === 'protected' ? 'Sovereign Asset - Verified Record' : t(`tier_${selected.tier}`))}
                   </div>
                   <div className="font-mono text-xs text-sc-blue">{selected.code}</div>
                 </div>
@@ -168,63 +168,43 @@ export default function SkySphere({ stars, onClaim }) {
                     <p className="text-xs text-sc-text-muted tracking-widest uppercase">{selected.constellation || "Deep Space"}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1">Distance</div>
-                    <div className="text-lg font-display text-sc-gold">{Math.floor(Math.random() * 500 + 10)} LY</div>
+                    <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1">{lang === "TR" ? "PROTOKOL" : "PROTOCOL"}</div>
+                    <div className="text-[10px] font-display text-sc-gold">{selected.protocol || "Standard Custody"}</div>
                   </div>
                 </div>
 
-                {selected.tier === "protected" ? (
-                  <div className="space-y-6">
-                    <div className="bg-sc-gold/5 rounded-2xl p-5 border border-sc-gold/20 flex flex-col gap-3">
-                      <div className="flex items-center gap-3">
-                        <Lock className="w-6 h-6 text-sc-gold" />
-                        <div className="text-sm text-sc-gold uppercase tracking-[0.2em] font-display">Mutlak Hak Talebi</div>
+                <div className="space-y-6">
+                  <div className="bg-sc-gold/5 rounded-2xl p-5 border border-sc-gold/20 flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <Lock className="w-5 h-5 text-sc-gold" />
+                      <div className="text-xs text-sc-gold uppercase tracking-[0.2em] font-display">
+                        {lang === "TR" ? "GÜVENLİ VERİ SETİ" : "SECURE DATA SET"}
                       </div>
-                      <p className="text-sm italic font-accent text-sc-text/90 leading-relaxed">
-                        {selected.description || "Bu cisim, StarClaim Aile Protokolü kapsamında kilitlenmiştir."}
+                    </div>
+                    {selected.planetDetail && (
+                      <p className="text-xs text-sc-text mb-1 border-l border-sc-gold/30 pl-3 py-1">
+                        {selected.planetDetail}
                       </p>
-                    </div>
-                    <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-sc-gold/60 font-display pt-2 border-t border-sc-gold/10">
-                      <span>Resonance: 100% (Absolute)</span>
-                      <span>Stability: Synchronized</span>
-                    </div>
+                    )}
+                    <p className="text-sm italic font-accent text-sc-text/90 leading-relaxed">
+                      {selected.description}
+                    </p>
                   </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                      <div className="glass rounded-2xl p-4 text-center border-white/5">
-                        <div className="text-[10px] uppercase text-sc-text-muted tracking-widest mb-2">RA</div>
-                        <div className="text-sm font-mono text-sc-blue">{selected.ra}</div>
-                      </div>
-                      <div className="glass rounded-2xl p-4 text-center border-white/5">
-                        <div className="text-[10px] uppercase text-sc-text-muted tracking-widest mb-2">Dec</div>
-                        <div className="text-sm font-mono text-sc-blue">{selected.dec}</div>
-                      </div>
-                      <div className="glass rounded-2xl p-4 text-center border-white/5">
-                        <div className="text-[10px] uppercase text-sc-text-muted tracking-widest mb-2">Mag</div>
-                        <div className="text-sm font-mono text-sc-gold">{selected.magnitude || "4.5"}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-8">
-                      <div className="flex justify-between items-end mb-2">
-                        <div className="text-[10px] uppercase tracking-widest text-sc-text-muted font-display">Meaning Resonance</div>
-                        <div className="text-xs text-sc-blue font-mono">87.4%</div>
-                      </div>
-                      <div className="h-1.5 w-full bg-sc-blue/10 rounded-full overflow-hidden border border-sc-blue/10">
-                         <div className="h-full bg-sc-blue animate-pulse shadow-[0_0_15px_#3b82f6]" style={{ width: '87.4%' }} />
-                      </div>
-                    </div>
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-widest text-sc-gold/60 font-display pt-2 border-t border-sc-gold/10">
+                    <span>Resonance: 100% (Absolute)</span>
+                    <span>Stability: Synchronized</span>
+                  </div>
+                </div>
 
-                    <button 
-                      onClick={() => onClaim(selected)} 
-                      className="btn-gold w-full flex items-center justify-center gap-3 py-5 text-xl group overflow-hidden relative shadow-2xl"
-                    >
-                      <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                      <ShoppingBag className="w-6 h-6 relative z-10" /> 
-                      <span className="relative z-10 font-display tracking-[0.2em]">{t("picker_claim")} · ${selected.price}</span>
-                    </button>
-                  </>
+                {selected.tier !== "protected" && (
+                   <button 
+                    onClick={() => onClaim(selected)} 
+                    className="btn-gold w-full flex items-center justify-center gap-3 py-5 text-xl group overflow-hidden relative shadow-2xl mt-6"
+                  >
+                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    <ShoppingBag className="w-6 h-6 relative z-10" /> 
+                    <span className="relative z-10 font-display tracking-[0.2em]">{t("picker_claim")} · ${selected.price}</span>
+                  </button>
                 )}
               </div>
             ) : (
