@@ -9,6 +9,7 @@ import { Switch } from "../components/ui/switch";
 import { Slider } from "../components/ui/slider";
 import { Input } from "../components/ui/input";
 import { Telescope, Loader2, Search, Orbit, LayoutGrid } from "lucide-react";
+import ErrorBoundary from "../components/ui/ErrorBoundary";
 
 const TIERS = ["all", "legendary", "zodiac", "named", "constellation", "standard"];
 const SORTS = [
@@ -26,7 +27,7 @@ export default function StarPicker({ onClaim }) {
   const [constellations, setConstellations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [viewMode, setViewMode] = useState("sky");
+  const [viewMode, setViewMode] = useState("grid");
 
   const tier = params.get("tier") || "all";
   const constellation = params.get("constellation") || "all";
@@ -43,7 +44,12 @@ export default function StarPicker({ onClaim }) {
   };
 
   useEffect(() => {
-    api.get("/stars/constellations").then(({ data }) => setConstellations(data)).catch(() => {});
+    api.get("/stars/constellations")
+      .then(({ data }) => {
+        if (Array.isArray(data)) setConstellations(data);
+        else setConstellations([]);
+      })
+      .catch(() => setConstellations([]));
   }, []);
 
   useEffect(() => {
@@ -67,9 +73,9 @@ export default function StarPicker({ onClaim }) {
     if (!search.trim()) return stars;
     const needle = search.toLowerCase();
     return stars.filter((star) =>
-      star.name.toLowerCase().includes(needle) ||
-      star.code.toLowerCase().includes(needle) ||
-      star.constellation.toLowerCase().includes(needle)
+      (star.name || "").toLowerCase().includes(needle) ||
+      (star.code || "").toLowerCase().includes(needle) ||
+      (star.constellation || "").toLowerCase().includes(needle)
     );
   }, [stars, search]);
 
@@ -176,23 +182,25 @@ export default function StarPicker({ onClaim }) {
           </div>
         </div>
 
-        {loading ? (
-          <div className="py-20 flex justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-sc-gold" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-sc-text-muted">
-            {lang === "TR" ? "Bu filtreyle yildiz bulunamadi." : "No stars match these filters."}
-          </div>
-        ) : viewMode === "sky" ? (
-          <SkySphere stars={filtered} onClaim={onClaim} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
-            {filtered.map((star) => (
-              <StarCard key={star.star_id} star={star} onClaim={onClaim} />
-            ))}
-          </div>
-        )}
+        <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">Bir yükleme hatası oluştu. Lütfen sayfayı yenileyin.</div>}>
+          {loading ? (
+            <div className="py-20 flex justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-sc-gold" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20 text-sc-text-muted">
+              {lang === "TR" ? "Bu filtreyle yildiz bulunamadi." : "No stars match these filters."}
+            </div>
+          ) : viewMode === "sky" ? (
+            <SkySphere stars={filtered} onClaim={onClaim} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
+              {filtered.map((star) => (
+                <StarCard key={star.star_id} star={star} onClaim={onClaim} />
+              ))}
+            </div>
+          )}
+        </ErrorBoundary>
       </div>
     </div>
   );
