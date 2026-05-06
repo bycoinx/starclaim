@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "@/App.css";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 
 import { AuthProvider } from "./lib/auth";
 import { LanguageProvider } from "./lib/i18n";
