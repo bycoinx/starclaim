@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Stars, Text } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useT } from "../lib/i18n";
 import PlanetarySystem from "./PlanetarySystem";
@@ -80,7 +80,7 @@ function CatalogStars({ stars = [] }) {
   );
 }
 
-function ConstellationLabels({ stars = [] }) {
+function ConstellationTraces({ stars = [] }) {
   const featured = useMemo(() => {
     const unique = [];
     const seen = new Set();
@@ -113,46 +113,54 @@ function ConstellationLabels({ stars = [] }) {
         </bufferGeometry>
         <lineBasicMaterial color="#82d7ff" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
       </lineSegments>
-
-      {featured.map((star) => (
-        <Text
-          key={`${star.constellation}-${star.code}`}
-          position={[star.position.x, star.position.y + 4, star.position.z]}
-          fontSize={4.2}
-          color="#dbeafe"
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.04}
-          outlineColor="#0b1228"
-        >
-          {String(star.constellation).toUpperCase()}
-        </Text>
-      ))}
     </group>
   );
 }
 
-function NebulaVeil() {
+function MilkyWayDust() {
   const ref = useRef();
+  const { positions, colors } = useMemo(() => {
+    const count = 5200;
+    const positionArray = new Float32Array(count * 3);
+    const colorArray = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i += 1) {
+      const t = (Math.random() - 0.5) * Math.PI * 1.45;
+      const radius = 92 + Math.random() * 132;
+      const thickness = THREE.MathUtils.randFloatSpread(13);
+      const armWave = Math.sin(t * 3.2) * 15;
+      const x = Math.cos(t) * radius + armWave;
+      const y = thickness + Math.sin(t * 1.7) * 8;
+      const z = Math.sin(t) * radius * 0.42 - 96;
+      positionArray.set([x, y, z], i * 3);
+
+      const color = new THREE.Color().setHSL(0.58 + Math.random() * 0.08, 0.28, 0.35 + Math.random() * 0.35);
+      colorArray.set([color.r, color.g, color.b], i * 3);
+    }
+
+    return { positions: positionArray, colors: colorArray };
+  }, []);
+
   useFrame((state) => {
-    if (ref.current) ref.current.rotation.z = state.clock.elapsedTime * 0.01;
+    if (ref.current) ref.current.rotation.y = state.clock.elapsedTime * 0.004;
   });
 
   return (
-    <group ref={ref} position={[0, 0, -120]}>
-      <mesh>
-        <sphereGeometry args={[190, 48, 48]} />
-        <meshBasicMaterial color="#19325f" transparent opacity={0.08} side={THREE.BackSide} />
-      </mesh>
-      <mesh rotation={[0.3, 0.4, 0.2]}>
-        <torusGeometry args={[115, 3, 12, 180]} />
-        <meshBasicMaterial color="#67e8f9" transparent opacity={0.16} blending={THREE.AdditiveBlending} />
-      </mesh>
-      <mesh rotation={[0.45, -0.35, -0.18]}>
-        <torusGeometry args={[82, 2, 12, 180]} />
-        <meshBasicMaterial color="#fbbf24" transparent opacity={0.12} blending={THREE.AdditiveBlending} />
-      </mesh>
-    </group>
+    <points ref={ref} rotation={[0.18, -0.4, -0.12]}>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+      </bufferGeometry>
+      <pointsMaterial
+        size={1.15}
+        vertexColors
+        transparent
+        opacity={0.28}
+        sizeAttenuation
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
+    </points>
   );
 }
 
@@ -160,63 +168,62 @@ export default function SkySphere({ stars }) {
   const { lang } = useT();
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-sc-gold/20 bg-[#020617] h-[650px] lg:h-[850px] shadow-[0_35px_90px_-35px_rgba(67,178,255,0.55)]">
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black h-[650px] lg:h-[850px] shadow-[0_35px_110px_-45px_rgba(15,23,42,0.9)]">
       <Canvas
         shadows
         dpr={[1, 1.6]}
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
-        camera={{ position: [0, 52, 178], fov: 46 }}
+        camera={{ position: [0, 42, 178], fov: 42 }}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 0.72;
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+        }}
       >
-        <PerspectiveCamera makeDefault position={[0, 52, 178]} fov={46} />
+        <PerspectiveCamera makeDefault position={[0, 42, 178]} fov={42} />
         <OrbitControls
           enableDamping
           dampingFactor={0.045}
-          maxDistance={260}
-          minDistance={58}
+          maxDistance={250}
+          minDistance={72}
           autoRotate
-          autoRotateSpeed={0.32}
+          autoRotateSpeed={0.18}
           enablePan={false}
         />
 
         <Suspense fallback={null}>
-          <color attach="background" args={["#020617"]} />
-          <fog attach="fog" args={["#020617", 130, 360]} />
+          <color attach="background" args={["#00030a"]} />
+          <fog attach="fog" args={["#00030a", 150, 390]} />
 
-          <ambientLight intensity={0.42} />
-          <hemisphereLight args={["#9bdcff", "#111827", 1.05]} />
-          <directionalLight position={[60, 80, 90]} intensity={1.45} color="#e0f2fe" />
-          <pointLight position={[0, 8, 0]} intensity={5.5} color="#facc15" distance={260} />
+          <ambientLight intensity={0.08} />
+          <hemisphereLight args={["#6ea8ff", "#030712", 0.35]} />
+          <directionalLight position={[-80, 55, 120]} intensity={0.7} color="#dbeafe" />
+          <pointLight position={[0, 4, 0]} intensity={7.5} color="#ffd27a" distance={280} />
 
-          <NebulaVeil />
+          <MilkyWayDust />
           <CatalogStars stars={stars} />
-          <ConstellationLabels stars={stars} />
+          <ConstellationTraces stars={stars} />
 
           <ErrorBoundary fallback={null}>
             <PlanetarySystem />
           </ErrorBoundary>
 
-          <Stars radius={240} depth={90} count={9000} factor={5} saturation={0.25} fade speed={0.45} />
+          <Stars radius={260} depth={120} count={14000} factor={4.6} saturation={0.15} fade speed={0.18} />
         </Suspense>
       </Canvas>
 
-      <div className="absolute inset-0 pointer-events-none rounded-3xl bg-[radial-gradient(circle_at_50%_38%,transparent_0%,rgba(2,6,23,0.05)_42%,rgba(2,6,23,0.58)_100%)]" />
+      <div className="absolute inset-0 pointer-events-none rounded-3xl bg-[radial-gradient(circle_at_50%_42%,transparent_0%,rgba(0,3,10,0.22)_48%,rgba(0,0,0,0.78)_100%)]" />
 
       <div className="absolute left-6 top-6 right-6 pointer-events-none flex items-start justify-between gap-4">
-        <div className="glass rounded-xl px-4 py-3 border border-sc-gold/20 backdrop-blur-md">
-          <div className="text-[9px] tracking-[0.45em] uppercase text-sc-gold mb-1 font-display">Star Atlas</div>
-          <div className="text-[11px] text-sc-text-muted">
-            {lang === "TR" ? "Gezegenler, orbitler ve takim yildizi katmani" : "Planets, orbits and constellation layer"}
+        <div className="rounded-xl px-4 py-3 border border-white/10 bg-black/30 backdrop-blur-md">
+          <div className="text-[9px] tracking-[0.45em] uppercase text-sc-gold/80 mb-1 font-display">Deep Space View</div>
+          <div className="text-[11px] text-slate-400">
+            {lang === "TR" ? "Dusuk isik, gercekci orbit ve yildiz tozu" : "Low light, realistic orbits and stellar dust"}
           </div>
         </div>
-        <div className="hidden md:block glass rounded-xl px-4 py-3 border border-cyan-300/10 text-right">
-          <div className="text-[9px] tracking-[0.35em] uppercase text-cyan-200/80">Live Catalog</div>
-          <div className="text-[11px] text-sc-text-muted">{Array.isArray(stars) ? stars.length : 0} StarClaim assets</div>
-        </div>
-      </div>
-
-      <div className="absolute bottom-7 left-1/2 -translate-x-1/2 pointer-events-none text-center">
-        <div className="text-[10px] tracking-[0.55em] uppercase text-sc-gold/55 font-display">
-          {lang === "TR" ? "Orbitleri surukleyerek incele" : "Drag to inspect the orbits"}
+        <div className="hidden md:block rounded-xl px-4 py-3 border border-white/10 bg-black/25 text-right backdrop-blur-md">
+          <div className="text-[9px] tracking-[0.35em] uppercase text-cyan-100/60">Catalog Lock</div>
+          <div className="text-[11px] text-slate-400">{Array.isArray(stars) ? stars.length : 0} mapped stars</div>
         </div>
       </div>
     </div>
