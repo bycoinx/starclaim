@@ -1,8 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
 import * as THREE from "three";
-import { useT } from "../lib/i18n";
 
 const PLANETS = [
   { name: "Mercury", nameTr: "Merkur", dist: 13, size: 0.6, speed: 0.48, color: "#a7a29a", emissive: "#241f1c" },
@@ -15,13 +13,46 @@ const PLANETS = [
   { name: "Neptune", nameTr: "Neptune", dist: 110, size: 1.58, speed: 0.06, color: "#3855d6", emissive: "#0b1648" },
 ];
 
-function OrbitRing({ radius, color = "#5eead4", opacity = 0.16 }) {
+function OrbitRing({ radius, color = "#93c5fd", opacity = 0.055 }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[radius - 0.045, radius + 0.045, 192]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
     </mesh>
   );
+}
+
+function SunSurface() {
+  const texture = useMemo(() => {
+    const size = 192;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createRadialGradient(size * 0.42, size * 0.35, 10, size / 2, size / 2, size * 0.58);
+    gradient.addColorStop(0, "#fff7b2");
+    gradient.addColorStop(0.42, "#fbbf24");
+    gradient.addColorStop(0.72, "#f97316");
+    gradient.addColorStop(1, "#7c2d12");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    for (let i = 0; i < 900; i += 1) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      const r = Math.random() * 6 + 1;
+      ctx.fillStyle = `rgba(255,${120 + Math.random() * 95},24,${0.05 + Math.random() * 0.18})`;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    return map;
+  }, []);
+
+  return <meshStandardMaterial map={texture} color="#ffe08a" emissive="#f97316" emissiveIntensity={2.2} roughness={0.35} />;
 }
 
 function PlanetSurface({ planet }) {
@@ -37,7 +68,7 @@ function PlanetSurface({ planet }) {
 
     for (let y = 0; y < size; y += 1) {
       const wave = Math.sin(y * 0.18) * 8 + Math.sin(y * 0.07) * 16;
-      const alpha = planet.bands ? 0.26 : 0.08;
+      const alpha = planet.bands ? 0.22 : 0.055;
       ctx.fillStyle = `rgba(255,255,255,${alpha})`;
       ctx.fillRect(0, y, size, 1);
       ctx.fillStyle = `rgba(0,0,0,${alpha * 0.6})`;
@@ -71,8 +102,8 @@ function PlanetSurface({ planet }) {
       map={texture}
       color={planet.color}
       emissive={planet.emissive}
-      emissiveIntensity={0.22}
-      roughness={0.58}
+      emissiveIntensity={0.08}
+      roughness={0.72}
       metalness={0.08}
     />
   );
@@ -86,7 +117,7 @@ function AsteroidBelt() {
       const radius = 43 + Math.random() * 5;
       return {
         position: [Math.cos(angle) * radius, (Math.random() - 0.5) * 1.4, Math.sin(angle) * radius],
-        scale: 0.08 + Math.random() * 0.18,
+        scale: 0.055 + Math.random() * 0.12,
         rotation: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI],
       };
     });
@@ -101,7 +132,7 @@ function AsteroidBelt() {
       {asteroids.map((asteroid, index) => (
         <mesh key={index} position={asteroid.position} rotation={asteroid.rotation} scale={asteroid.scale}>
           <dodecahedronGeometry args={[1, 0]} />
-          <meshStandardMaterial color="#8a7b68" roughness={0.95} metalness={0.25} />
+          <meshStandardMaterial color="#5f5548" roughness={0.98} metalness={0.14} />
         </mesh>
       ))}
     </group>
@@ -126,13 +157,13 @@ function Comet({ offset = 0 }) {
       </mesh>
       <mesh position={[-4, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
         <coneGeometry args={[1.1, 10, 24, 1, true]} />
-        <meshBasicMaterial color="#67e8f9" transparent opacity={0.42} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#b7f3ff" transparent opacity={0.26} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
     </group>
   );
 }
 
-function Planet({ planet, index, lang }) {
+function Planet({ planet, index }) {
   const groupRef = useRef();
   const initial = index * 0.72;
 
@@ -152,7 +183,7 @@ function Planet({ planet, index, lang }) {
 
       <mesh scale={planet.size * 1.18}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial color="#93c5fd" transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#93c5fd" transparent opacity={planet.name === "Earth" ? 0.12 : 0.035} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
 
       {planet.rings && (
@@ -170,24 +201,11 @@ function Planet({ planet, index, lang }) {
           </mesh>
         </group>
       )}
-
-      <Text
-        position={[0, planet.size + 3.2, 0]}
-        fontSize={1.75}
-        color="#dbeafe"
-        anchorX="center"
-        anchorY="middle"
-        outlineWidth={0.035}
-        outlineColor="#020617"
-      >
-        {lang === "TR" ? planet.nameTr : planet.name}
-      </Text>
     </group>
   );
 }
 
 export default function PlanetarySystem() {
-  const { lang } = useT();
   const rootRef = useRef();
 
   useFrame((state) => {
@@ -196,23 +214,20 @@ export default function PlanetarySystem() {
   });
 
   return (
-    <group ref={rootRef} rotation={[-0.32, 0, 0]} position={[0, -4, 0]} scale={1.05}>
+    <group ref={rootRef} rotation={[-0.34, 0, 0]} position={[0, -3, 0]} scale={1.03}>
       <mesh>
         <sphereGeometry args={[5.6, 72, 72]} />
-        <meshStandardMaterial color="#fff5c2" emissive="#f59e0b" emissiveIntensity={2.8} roughness={0.22} />
+        <SunSurface />
       </mesh>
       <mesh scale={1.55}>
         <sphereGeometry args={[5.6, 48, 48]} />
-        <meshBasicMaterial color="#f97316" transparent opacity={0.18} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.11} blending={THREE.AdditiveBlending} depthWrite={false} />
       </mesh>
-      <Text position={[0, 10.5, 0]} fontSize={2.4} color="#fde68a" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#020617">
-        SOL
-      </Text>
 
       {PLANETS.map((planet, index) => (
         <React.Fragment key={planet.name}>
-          <OrbitRing radius={planet.dist} color={index > 4 ? "#8fe9ff" : "#fcd34d"} opacity={index > 4 ? 0.11 : 0.15} />
-          <Planet planet={planet} index={index} lang={lang} />
+          <OrbitRing radius={planet.dist} color={index > 4 ? "#8fe9ff" : "#fcd34d"} opacity={index > 4 ? 0.035 : 0.055} />
+          <Planet planet={planet} index={index} />
         </React.Fragment>
       ))}
 
