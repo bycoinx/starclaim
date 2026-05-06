@@ -1,208 +1,224 @@
-import React, { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { useT } from '../lib/i18n';
+import React, { useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { Text } from "@react-three/drei";
+import * as THREE from "three";
+import { useT } from "../lib/i18n";
 
 const PLANETS = [
-  { 
-    name: "Mercury", 
-    nameTr: "Merkür",
-    dist: 12, 
-    size: 0.4, 
-    speed: 0.047, 
-    color: "#9ca3af",
-    detail: "Kraterli, grimsi kahverengi, atmosferi olmayan taşlı yüzey.",
-    detailEn: "Cratered, grayish-brown, rocky surface without atmosphere."
-  },
-  { 
-    name: "Venus", 
-    nameTr: "Venüs",
-    dist: 18, 
-    size: 0.9, 
-    speed: 0.035, 
-    color: "#fbbf24",
-    detail: "Kalın, sülfürik asit bulutları nedeniyle mat sarı-turuncu tonlarında yoğun atmosfer.",
-    detailEn: "Thick yellow-orange atmosphere due to sulfuric acid clouds."
-  },
-  { 
-    name: "Earth", 
-    nameTr: "Dünya",
-    dist: 26, 
-    size: 1.0, 
-    speed: 0.029, 
-    color: "#3b82f6",
-    detail: "Mavi okyanuslar, beyaz bulutlar ve yeşil-kahverengi kıtaların seçilebildiği dinamik yüzey.",
-    detailEn: "Dynamic surface with blue oceans, white clouds, and green-brown continents.",
-    moons: [
-      { name: "Moon", nameTr: "Ay", dist: 2.2, size: 0.27, speed: 0.08, color: "#d1d5db", detail: "Dünya'nın uydusu, gümüşi gri kraterli yüzey.", detailEn: "Earth's satellite, silvery-gray cratered surface." }
-    ]
-  },
-  { 
-    name: "Mars", 
-    nameTr: "Mars",
-    dist: 34, 
-    size: 0.53, 
-    speed: 0.024, 
-    color: "#ef4444",
-    detail: "Pas kırmızısı yüzey, kutup bölgelerinde beyaz buz takkeleri.",
-    detailEn: "Rust red surface, white polar caps."
-  },
-  { 
-    name: "Jupiter", 
-    nameTr: "Jüpiter",
-    dist: 48, 
-    size: 2.2, 
-    speed: 0.013, 
-    color: "#d97706",
-    detail: "Büyük Kırmızı Leke'nin seçilebildiği gaz bantlarından oluşan dev yapı.",
-    detailEn: "Gas giant with visible bands and the Great Red Spot."
-  },
-  { 
-    name: "Saturn", 
-    nameTr: "Satürn",
-    dist: 68, 
-    size: 1.8, 
-    speed: 0.009, 
-    color: "#fcd34d",
-    hasRings: true,
-    detail: "Altın sarısı gaz kütlesi ve yüksek çözünürlüklü halka sistemi.",
-    detailEn: "Golden gas giant with a high-resolution ring system."
-  },
-  { 
-    name: "Uranus", 
-    nameTr: "Uranüs",
-    dist: 88, 
-    size: 1.1, 
-    speed: 0.006, 
-    color: "#60a5fa",
-    detail: "Soluk camgöbeği rengi, pürüzsüz gaz katmanı.",
-    detailEn: "Pale cyan color, smooth gas layer."
-  },
-  { 
-    name: "Neptune", 
-    nameTr: "Neptün",
-    dist: 105, 
-    size: 1.1, 
-    speed: 0.005, 
-    color: "#312e81",
-    detail: "Derin okyanus mavisi, metan gazı kaynaklı koyu tonlar.",
-    detailEn: "Deep ocean blue, dark tones from methane gas."
-  },
+  { name: "Mercury", nameTr: "Merkur", dist: 13, size: 0.6, speed: 0.48, color: "#a7a29a", emissive: "#241f1c" },
+  { name: "Venus", nameTr: "Venus", dist: 19, size: 1.05, speed: 0.36, color: "#d9a441", emissive: "#3b2308" },
+  { name: "Earth", nameTr: "Dunya", dist: 27, size: 1.16, speed: 0.28, color: "#2f80ed", emissive: "#08233f", moon: true },
+  { name: "Mars", nameTr: "Mars", dist: 36, size: 0.78, speed: 0.23, color: "#b85634", emissive: "#3a1308" },
+  { name: "Jupiter", nameTr: "Jupiter", dist: 52, size: 2.9, speed: 0.14, color: "#d7b07a", emissive: "#3a2512", bands: true },
+  { name: "Saturn", nameTr: "Saturn", dist: 72, size: 2.35, speed: 0.1, color: "#d8bd7b", emissive: "#37290d", rings: true },
+  { name: "Uranus", nameTr: "Uranus", dist: 92, size: 1.65, speed: 0.075, color: "#6dd6e7", emissive: "#08343c", rings: true },
+  { name: "Neptune", nameTr: "Neptune", dist: 110, size: 1.58, speed: 0.06, color: "#3855d6", emissive: "#0b1648" },
 ];
 
-export default function PlanetarySystem({ onSelect }) {
-  const { lang } = useT();
-  const groupRef = useRef();
+function OrbitRing({ radius, color = "#5eead4", opacity = 0.16 }) {
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[radius - 0.045, radius + 0.045, 192]} />
+      <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} />
+    </mesh>
+  );
+}
+
+function PlanetSurface({ planet }) {
+  const texture = useMemo(() => {
+    const size = 128;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const base = new THREE.Color(planet.color);
+    ctx.fillStyle = `rgb(${Math.floor(base.r * 255)},${Math.floor(base.g * 255)},${Math.floor(base.b * 255)})`;
+    ctx.fillRect(0, 0, size, size);
+
+    for (let y = 0; y < size; y += 1) {
+      const wave = Math.sin(y * 0.18) * 8 + Math.sin(y * 0.07) * 16;
+      const alpha = planet.bands ? 0.26 : 0.08;
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fillRect(0, y, size, 1);
+      ctx.fillStyle = `rgba(0,0,0,${alpha * 0.6})`;
+      ctx.fillRect(wave, y + 2, size, 1);
+    }
+
+    if (planet.name === "Earth") {
+      ctx.fillStyle = "rgba(34,197,94,0.85)";
+      ctx.beginPath();
+      ctx.ellipse(48, 55, 19, 9, -0.5, 0, Math.PI * 2);
+      ctx.ellipse(80, 78, 14, 7, 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.fillRect(0, 30, size, 4);
+      ctx.fillRect(28, 92, 70, 3);
+    }
+
+    if (planet.name === "Mars") {
+      ctx.fillStyle = "rgba(255,244,214,0.75)";
+      ctx.fillRect(0, 8, size, 7);
+      ctx.fillRect(0, size - 15, size, 8);
+    }
+
+    const map = new THREE.CanvasTexture(canvas);
+    map.colorSpace = THREE.SRGBColorSpace;
+    return map;
+  }, [planet]);
+
+  return (
+    <meshStandardMaterial
+      map={texture}
+      color={planet.color}
+      emissive={planet.emissive}
+      emissiveIntensity={0.22}
+      roughness={0.58}
+      metalness={0.08}
+    />
+  );
+}
+
+function AsteroidBelt() {
+  const beltRef = useRef();
+  const asteroids = useMemo(() => {
+    return Array.from({ length: 360 }, (_, index) => {
+      const angle = (index / 360) * Math.PI * 2 + Math.random() * 0.04;
+      const radius = 43 + Math.random() * 5;
+      return {
+        position: [Math.cos(angle) * radius, (Math.random() - 0.5) * 1.4, Math.sin(angle) * radius],
+        scale: 0.08 + Math.random() * 0.18,
+        rotation: [Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI],
+      };
+    });
+  }, []);
 
   useFrame((state) => {
-    const t = state.clock.getElapsedTime();
+    if (beltRef.current) beltRef.current.rotation.y = state.clock.elapsedTime * 0.018;
+  });
+
+  return (
+    <group ref={beltRef}>
+      {asteroids.map((asteroid, index) => (
+        <mesh key={index} position={asteroid.position} rotation={asteroid.rotation} scale={asteroid.scale}>
+          <dodecahedronGeometry args={[1, 0]} />
+          <meshStandardMaterial color="#8a7b68" roughness={0.95} metalness={0.25} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function Comet({ offset = 0 }) {
+  const ref = useRef();
+  useFrame((state) => {
+    const t = state.clock.elapsedTime * 0.18 + offset;
+    const radius = 122;
+    if (!ref.current) return;
+    ref.current.position.set(Math.cos(t) * radius, 22 + Math.sin(t * 0.7) * 16, Math.sin(t) * 58);
+    ref.current.rotation.z = -t;
+  });
+
+  return (
+    <group ref={ref}>
+      <mesh>
+        <sphereGeometry args={[0.8, 18, 18]} />
+        <meshBasicMaterial color="#dffaff" />
+      </mesh>
+      <mesh position={[-4, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <coneGeometry args={[1.1, 10, 24, 1, true]} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={0.42} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function Planet({ planet, index, lang }) {
+  const groupRef = useRef();
+  const initial = index * 0.72;
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime * planet.speed * 0.22 + initial;
     if (!groupRef.current) return;
-    
-    groupRef.current.children.forEach((child) => {
-      if (child.userData && child.userData.type === "planet") {
-        const p = child.userData;
-        const speed = p.speed || 0.01;
-        const dist = p.dist || 10;
-        const angle = t * speed + (p.index * 0.5);
-        child.position.x = Math.cos(angle) * dist;
-        child.position.z = Math.sin(angle) * dist;
-        child.rotation.y += 0.005;
-
-        // Animate Moons if any
-        if (child.children.length > 0) {
-          child.children.forEach(sub => {
-            if (sub.userData && sub.userData.type === "moon") {
-              const m = sub.userData;
-              const mSpeed = m.speed || 0.05;
-              const mDist = m.dist || 2;
-              const mAngle = t * mSpeed;
-              sub.position.x = Math.cos(mAngle) * mDist;
-              sub.position.z = Math.sin(mAngle) * mDist;
-            }
-          });
-        }
-      }
-    });
+    groupRef.current.position.set(Math.cos(t) * planet.dist, 0, Math.sin(t) * planet.dist);
+    groupRef.current.rotation.y += 0.007 + index * 0.001;
   });
-
-  const getCommonData = (p) => ({
-    name: lang === "TR" ? p.nameTr : p.name,
-    tier: "protected",
-    code: p.code || "SOL-SYS",
-    constellation: "Solar System",
-    ownershipStatus: "Sovereign Asset - Verified Record",
-    protocol: "Privacy Protocol: Encrypted Custody",
-    description: lang === "TR" 
-      ? "Bu kozmik koordinat ve ilişkili veri seti, StarClaim merkeziyetsiz ağı üzerinde yüksek güvenlikli şifreleme ile korunmaktadır."
-      : "This cosmic coordinate and associated data set is protected by high-security encryption on the StarClaim decentralized network."
-  });
-
-  if (!PLANETS || PLANETS.length === 0) return null;
 
   return (
     <group ref={groupRef}>
-      {/* Sun - The Source */}
-      <mesh 
-        userData={{ type: "sun" }} 
-        onClick={(e) => { 
-          e.stopPropagation(); 
-          onSelect(getCommonData({ nameTr: "Güneş", name: "Sun", code: "SOL-00" })); 
-        }}
-      >
-        <sphereGeometry args={[4.5, 64, 64]} />
-        <meshStandardMaterial 
-          color="#fff7ed" 
-          emissive="#f59e0b" 
-          emissiveIntensity={2} 
-          metalness={0}
-          roughness={0}
-        />
-        <pointLight intensity={5} distance={300} color="#fbbf24" />
+      <mesh castShadow receiveShadow>
+        <sphereGeometry args={[planet.size, 48, 48]} />
+        <PlanetSurface planet={planet} />
       </mesh>
 
-      {PLANETS.map((p, i) => (
-        <React.Fragment key={p.name}>
-          {/* Energy Path (Orbit) */}
-          <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[p.dist - 0.1, p.dist + 0.1, 128]} />
-            <meshBasicMaterial color="#1e293b" transparent opacity={0.2} />
+      <mesh scale={planet.size * 1.18}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial color="#93c5fd" transparent opacity={0.07} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+
+      {planet.rings && (
+        <mesh rotation={[Math.PI / 2.35, 0.18, 0.08]}>
+          <ringGeometry args={[planet.size * 1.55, planet.size * 2.45, 96]} />
+          <meshStandardMaterial color={planet.name === "Uranus" ? "#8fe9ff" : "#d7b56c"} transparent opacity={0.58} side={THREE.DoubleSide} roughness={0.35} />
+        </mesh>
+      )}
+
+      {planet.moon && (
+        <group rotation={[0, Date.now() * 0.00004, 0]}>
+          <mesh position={[planet.size * 2.8, 0.12, 0]}>
+            <sphereGeometry args={[0.28, 20, 20]} />
+            <meshStandardMaterial color="#d8dee9" roughness={0.86} />
           </mesh>
+        </group>
+      )}
 
-          {/* Planet Group */}
-          <group 
-            userData={{ type: "planet", index: i, ...p }}
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              onSelect({
-                ...getCommonData(p),
-                code: `SOL-0${i+1}`,
-                planetDetail: lang === "TR" ? p.detail : p.detailEn
-              }); 
-            }}
-          >
-            <mesh>
-              <sphereGeometry args={[p.size, 32, 32]} />
-              <meshStandardMaterial color={p.color} roughness={0.7} metalness={0.3} />
-            </mesh>
+      <Text
+        position={[0, planet.size + 3.2, 0]}
+        fontSize={1.75}
+        color="#dbeafe"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.035}
+        outlineColor="#020617"
+      >
+        {lang === "TR" ? planet.nameTr : planet.name}
+      </Text>
+    </group>
+  );
+}
 
-            {/* Saturn Rings */}
-            {p.hasRings && (
-              <mesh rotation={[Math.PI / 2.5, 0, 0]}>
-                <ringGeometry args={[p.size * 1.4, p.size * 2.2, 64]} />
-                <meshStandardMaterial color="#d4af37" transparent opacity={0.6} side={THREE.DoubleSide} />
-              </mesh>
-            )}
+export default function PlanetarySystem() {
+  const { lang } = useT();
+  const rootRef = useRef();
 
-            {/* Moons */}
-            {p.moons?.map((m) => (
-              <mesh key={m.name} userData={{ type: "moon", ...m }}>
-                <sphereGeometry args={[m.size, 16, 16]} />
-                <meshStandardMaterial color={m.color} />
-              </mesh>
-            ))}
-          </group>
+  useFrame((state) => {
+    if (!rootRef.current) return;
+    rootRef.current.rotation.y = state.clock.elapsedTime * 0.018;
+  });
+
+  return (
+    <group ref={rootRef} rotation={[-0.32, 0, 0]} position={[0, -4, 0]} scale={1.05}>
+      <mesh>
+        <sphereGeometry args={[5.6, 72, 72]} />
+        <meshStandardMaterial color="#fff5c2" emissive="#f59e0b" emissiveIntensity={2.8} roughness={0.22} />
+      </mesh>
+      <mesh scale={1.55}>
+        <sphereGeometry args={[5.6, 48, 48]} />
+        <meshBasicMaterial color="#f97316" transparent opacity={0.18} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </mesh>
+      <Text position={[0, 10.5, 0]} fontSize={2.4} color="#fde68a" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#020617">
+        SOL
+      </Text>
+
+      {PLANETS.map((planet, index) => (
+        <React.Fragment key={planet.name}>
+          <OrbitRing radius={planet.dist} color={index > 4 ? "#8fe9ff" : "#fcd34d"} opacity={index > 4 ? 0.11 : 0.15} />
+          <Planet planet={planet} index={index} lang={lang} />
         </React.Fragment>
       ))}
+
+      <AsteroidBelt />
+      <Comet offset={0} />
+      <Comet offset={Math.PI * 0.82} />
     </group>
   );
 }
