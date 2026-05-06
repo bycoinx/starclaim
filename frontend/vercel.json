@@ -4,6 +4,10 @@
   "installCommand": "npm install --legacy-peer-deps",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "https://starclaim.onrender.com/api/:path*"
+    },
+    {
       "source": "/((?!static|.*\\..*|api).*)",
       "destination": "/index.html"
     }
