@@ -21,22 +21,47 @@ const earthVertexShader = `
 `;
 
 const earthFragmentShader = `
+  uniform float time;
   varying vec2 vUv;
   varying vec3 vNormal;
   varying vec3 vSunDirection;
   
+  // Better noise for continents
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
+  float noise(vec2 p) {
+    vec2 i = floor(p); vec2 f = fract(p);
+    vec2 u = f*f*(3.0-2.0*f);
+    return mix(mix(hash(i + vec2(0.0,0.0)), hash(i + vec2(1.0,0.0)), u.x),
+               mix(hash(i + vec2(0.0,1.0)), hash(i + vec2(1.0,1.0)), u.x), u.y);
+  }
+
   void main() {
     float intensity = dot(vNormal, vSunDirection);
     
-    // Procedural Earth: Blue oceans, Green continents
-    vec3 dayColor = mix(vec3(0.05, 0.2, 0.6), vec3(0.1, 0.5, 0.2), step(0.5, fract(sin(vUv.x * 20.0 + vUv.y * 10.0) * 43758.5453)));
+    // Continents using layered noise
+    float land = noise(vUv * 8.0) + 0.5 * noise(vUv * 16.0);
+    bool isLand = land > 0.8;
     
-    // Night color: Deep blue with "city lights" (small gold dots)
-    float lights = pow(fract(sin(vUv.x * 100.0) * cos(vUv.y * 100.0) * 1234.5), 20.0);
-    vec3 nightColor = mix(vec3(0.0, 0.02, 0.1), vec3(1.0, 0.8, 0.3), lights * 0.5);
+    // Polar ice caps
+    float polar = smoothstep(0.15, 0.0, vUv.y) + smoothstep(0.85, 1.0, vUv.y);
     
-    // Smooth transition between day and night
-    vec3 finalColor = mix(nightColor, dayColor, smoothstep(-0.1, 0.1, intensity));
+    vec3 oceanColor = vec3(0.05, 0.15, 0.5);
+    vec3 landColor = vec3(0.1, 0.4, 0.15);
+    vec3 iceColor = vec3(0.9, 0.9, 1.0);
+    
+    vec3 dayColor = mix(oceanColor, landColor, step(0.8, land));
+    dayColor = mix(dayColor, iceColor, polar);
+    
+    // Animated clouds
+    float cloudNoise = noise(vUv * 10.0 + time * 0.05) * noise(vUv * 5.0 - time * 0.02);
+    vec3 clouds = vec3(1.0) * smoothstep(0.4, 0.8, cloudNoise);
+    dayColor = mix(dayColor, clouds, smoothstep(0.4, 0.7, cloudNoise) * 0.6);
+    
+    // Night with city lights
+    float lights = pow(fract(sin(vUv.x * 150.0) * cos(vUv.y * 150.0) * 1234.5), 30.0) * step(0.8, land);
+    vec3 nightColor = mix(vec3(0.0, 0.01, 0.05), vec3(1.0, 0.7, 0.2), lights * 2.0);
+    
+    vec3 finalColor = mix(nightColor, dayColor, smoothstep(-0.2, 0.2, intensity));
     
     gl_FragColor = vec4(finalColor, 1.0);
   }
@@ -141,8 +166,8 @@ export default function PlanetarySystem({ onSelect }) {
         child.position.z = Math.sin(angle) * p.dist;
         child.rotation.y += 0.005;
 
-        // Update Jupiter Shader Time
-        if (p.isJupiter) {
+        // Update Shaders Time
+        if (p.isJupiter || p.isEarth) {
           const mesh = child.children.find(c => c.type === 'Mesh');
           if (mesh && mesh.material.uniforms) {
             mesh.material.uniforms.time.value = t;
@@ -175,6 +200,7 @@ export default function PlanetarySystem({ onSelect }) {
             <sphereGeometry args={[p.size, 64, 64]} />
             {p.isEarth ? (
               <shaderMaterial 
+                uniforms={{ time: { value: 0 } }}
                 vertexShader={earthVertexShader}
                 fragmentShader={earthFragmentShader}
               />

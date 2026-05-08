@@ -1,230 +1,239 @@
-import React, { useMemo, useRef, Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
+import React, { useMemo, useRef, Suspense, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera, Stars, Float, Html } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { useT } from "../lib/i18n";
 import PlanetarySystem from "./PlanetarySystem";
 import ErrorBoundary from "./ui/ErrorBoundary";
 
-function parseRa(ra = "0h") {
-  const hMatch = String(ra).match(/(-?\d+(?:\.\d+)?)h/);
-  const mMatch = String(ra).match(/(\d+(?:\.\d+)?)m/);
-  const h = hMatch ? Number(hMatch[1]) : Math.random() * 24;
-  const m = mMatch ? Number(mMatch[1]) : 0;
-  return ((h + m / 60) / 24) * Math.PI * 2;
-}
+// Famous Bright Stars Dataset
+const BRIGHT_STARS = [
+  { name: "Sirius", color: "#9bb0ff", size: 0.9, ra: 6.75, dec: -16.7, class: "A1V" },
+  { name: "Canopus", color: "#f8f7ff", size: 0.8, ra: 6.4, dec: -52.7, class: "A9" },
+  { name: "Arcturus", color: "#ffd2a1", size: 0.8, ra: 14.25, dec: 19.1, class: "K1" },
+  { name: "Vega", color: "#cad7ff", size: 0.7, ra: 18.6, dec: 38.8, class: "A0" },
+  { name: "Rigel", color: "#aabfff", size: 0.9, ra: 5.24, dec: -8.2, class: "B8" },
+  { name: "Betelgeuse", color: "#ffcc6f", size: 1.3, ra: 5.9, dec: 7.4, class: "M1" },
+];
 
-function parseDec(dec = "0") {
-  const match = String(dec).match(/[-+]?\d+(?:\.\d+)?/);
-  return THREE.MathUtils.degToRad(match ? Number(match[0]) : Math.random() * 180 - 90);
-}
-
-function toSkyPosition(star, radius = 118) {
-  const ra = parseRa(star?.ra);
-  const dec = parseDec(star?.dec);
-  return new THREE.Vector3(
-    radius * Math.cos(dec) * Math.cos(ra),
-    radius * Math.sin(dec),
-    radius * Math.cos(dec) * Math.sin(ra),
-  );
-}
-
-function CatalogStars({ stars = [] }) {
-  const pointsRef = useRef();
-  const { positions, colors } = useMemo(() => {
-    const source = Array.isArray(stars) && stars.length ? stars : [];
-    const count = Math.max(700, Math.min(2200, source.length * 24 || 900));
-    const positionArray = new Float32Array(count * 3);
-    const colorArray = new Float32Array(count * 3);
-
-    for (let i = 0; i < count; i += 1) {
-      const star = source[i % Math.max(source.length, 1)];
-      const jitter = new THREE.Vector3(
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-      );
-      const pos = source.length ? toSkyPosition(star, 125 + Math.random() * 90).add(jitter) : new THREE.Vector3().randomDirection().multiplyScalar(130 + Math.random() * 110);
-      positionArray.set([pos.x, pos.y, pos.z], i * 3);
-
-      const tierHue = star?.tier === "legendary" ? 0.13 : star?.tier === "zodiac" ? 0.72 : 0.58 + Math.random() * 0.08;
-      const color = new THREE.Color().setHSL(tierHue, 0.55, 0.72 + Math.random() * 0.24);
-      colorArray.set([color.r, color.g, color.b], i * 3);
+function StarEngine() {
+  const meshRef = useRef();
+  const starData = useMemo(() => {
+    const data = [];
+    for (let i = 0; i < 12000; i++) {
+      const radius = 500 + Math.random() * 500;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const x = radius * Math.sin(phi) * Math.cos(theta);
+      const y = radius * Math.sin(phi) * Math.sin(theta);
+      const z = radius * Math.cos(phi);
+      const size = Math.random() * 0.8 + 0.2;
+      const color = new THREE.Color().setHSL(Math.random() * 0.2 + 0.55, 0.5, 0.9);
+      data.push({ x, y, z, size, color });
     }
+    return data;
+  }, []);
 
-    return { positions: positionArray, colors: colorArray };
-  }, [stars]);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
 
   useFrame((state) => {
-    if (!pointsRef.current) return;
-    pointsRef.current.rotation.y = state.clock.elapsedTime * 0.012;
-    pointsRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.08) * 0.02;
+    const t = state.clock.getElapsedTime();
+    if (meshRef.current) {
+      starData.forEach((s, i) => {
+        dummy.position.set(s.x, s.y, s.z);
+        dummy.scale.setScalar(s.size * (1 + Math.sin(t * 1.5 + i) * 0.2));
+        dummy.updateMatrix();
+        meshRef.current.setMatrixAt(i, dummy.matrix);
+        meshRef.current.setColorAt(i, s.color);
+      });
+      meshRef.current.instanceMatrix.needsUpdate = true;
+      if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+      meshRef.current.rotation.y = t * 0.0015;
+    }
   });
 
   return (
-    <points ref={pointsRef}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
-      </bufferGeometry>
-      <pointsMaterial
-        size={0.9}
-        vertexColors
-        transparent
-        opacity={0.88}
-        sizeAttenuation
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </points>
+    <instancedMesh ref={meshRef} args={[null, null, starData.length]}>
+      <sphereGeometry args={[1, 6, 6]} />
+      <meshBasicMaterial transparent opacity={0.7} vertexColors />
+    </instancedMesh>
   );
 }
 
-function ConstellationTraces({ stars = [] }) {
-  const featured = useMemo(() => {
-    const unique = [];
-    const seen = new Set();
-    for (const star of stars) {
-      if (!star?.constellation || seen.has(star.constellation)) continue;
-      seen.add(star.constellation);
-      unique.push({ ...star, position: toSkyPosition(star, 108) });
-      if (unique.length === 7) break;
-    }
-    return unique;
-  }, [stars]);
-
-  const linePositions = useMemo(() => {
-    if (featured.length < 2) return new Float32Array();
-    const coords = [];
-    featured.forEach((star, index) => {
-      const next = featured[(index + 1) % featured.length];
-      coords.push(star.position.x, star.position.y, star.position.z, next.position.x, next.position.y, next.position.z);
-    });
-    return new Float32Array(coords);
-  }, [featured]);
-
-  if (featured.length === 0) return null;
-
+function StarFlare({ color, size = 15 }) {
   return (
-    <group rotation={[0.1, -0.25, 0]}>
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[linePositions, 3]} />
-        </bufferGeometry>
-        <lineBasicMaterial color="#82d7ff" transparent opacity={0.2} blending={THREE.AdditiveBlending} />
-      </lineSegments>
+    <group>
+      <mesh scale={[size, size * 0.02, 1]}>
+        <planeGeometry />
+        <meshBasicMaterial color={color} transparent opacity={0.5} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh scale={[size * 0.02, size, 1]}>
+        <planeGeometry />
+        <meshBasicMaterial color={color} transparent opacity={0.5} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Glow */}
+      <mesh scale={[size * 0.2, size * 0.2, 1]}>
+        <circleGeometry args={[1, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} blending={THREE.AdditiveBlending} />
+      </mesh>
     </group>
   );
 }
 
-function MilkyWayDust() {
-  const ref = useRef();
-  const { positions, colors } = useMemo(() => {
-    const count = 5200;
-    const positionArray = new Float32Array(count * 3);
-    const colorArray = new Float32Array(count * 3);
+function BrightStars() {
+  return (
+    <group>
+      {BRIGHT_STARS.map((s) => {
+        const r = 450;
+        const raRad = (s.ra / 24) * Math.PI * 2;
+        const decRad = (s.dec / 180) * Math.PI;
+        const x = r * Math.cos(decRad) * Math.cos(raRad);
+        const y = r * Math.sin(decRad);
+        const z = r * Math.cos(decRad) * Math.sin(raRad);
 
-    for (let i = 0; i < count; i += 1) {
-      const t = (Math.random() - 0.5) * Math.PI * 1.45;
-      const radius = 92 + Math.random() * 132;
-      const thickness = THREE.MathUtils.randFloatSpread(13);
-      const armWave = Math.sin(t * 3.2) * 15;
-      const x = Math.cos(t) * radius + armWave;
-      const y = thickness + Math.sin(t * 1.7) * 8;
-      const z = Math.sin(t) * radius * 0.42 - 96;
-      positionArray.set([x, y, z], i * 3);
+        return (
+          <group key={s.name} position={[x, y, z]}>
+            <mesh>
+              <sphereGeometry args={[s.size * 2, 16, 16]} />
+              <meshBasicMaterial color={s.color} />
+            </mesh>
+            <StarFlare color={s.color} size={s.size * 25} />
+            <pointLight distance={150} intensity={8} color={s.color} />
+            <Html distanceFactor={100}>
+              <div className="whitespace-nowrap pointer-events-none select-none">
+                <div className="text-[14px] text-white uppercase tracking-[0.2em] font-display font-bold text-shadow-lg">{s.name}</div>
+                <div className="text-[10px] text-sc-gold/60">{s.class}</div>
+              </div>
+            </Html>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
 
-      const color = new THREE.Color().setHSL(0.58 + Math.random() * 0.08, 0.28, 0.35 + Math.random() * 0.35);
-      colorArray.set([color.r, color.g, color.b], i * 3);
-    }
-
-    return { positions: positionArray, colors: colorArray };
-  }, []);
+function CinematicCamera({ target }) {
+  const { camera } = useThree();
+  const vec = new THREE.Vector3();
 
   useFrame((state) => {
-    if (ref.current) ref.current.rotation.y = state.clock.elapsedTime * 0.004;
+    if (target) {
+      vec.set(target.x, target.y + 2, target.z + 10);
+      camera.position.lerp(vec, 0.05);
+      camera.lookAt(target.x, target.y, target.z);
+    } else {
+      // Focus on Earth
+      const t = state.clock.getElapsedTime();
+      const dist = 75; // Earth distance
+      const angle = t * 0.029 + 1.5;
+      const ex = Math.cos(angle) * dist;
+      const ez = Math.sin(angle) * dist;
+      
+      vec.set(ex + 8, 3, ez + 15);
+      camera.position.lerp(vec, 0.03);
+      camera.lookAt(ex, 0, ez);
+    }
+  });
+  return null;
+}
+
+function NebulaBackground() {
+  const size = 1024;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  
+  // Base cosmic background
+  ctx.fillStyle = '#010208';
+  ctx.fillRect(0, 0, size, size);
+
+  // Layered Nebulae (Reds, Purples, Blues)
+  const nebulaColors = [
+    { c: 'rgba(200, 30, 80, 0.08)', x: 0.3, y: 0.4, r: 400 }, // Reddish
+    { c: 'rgba(80, 40, 200, 0.08)', x: 0.7, y: 0.6, r: 500 }, // Bluish
+    { c: 'rgba(150, 50, 180, 0.06)', x: 0.5, y: 0.3, r: 450 }, // Purple
+    { c: 'rgba(30, 100, 255, 0.05)', x: 0.2, y: 0.8, r: 350 }, // Cyan
+  ];
+
+  nebulaColors.forEach(n => {
+    const grad = ctx.createRadialGradient(size*n.x, size*n.y, 0, size*n.x, size*n.y, n.r);
+    grad.addColorStop(0, n.c);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(size*n.x, size*n.y, n.r, 0, Math.PI * 2);
+    ctx.fill();
   });
 
+  // Dense Starfield
+  for (let i = 0; i < 10000; i++) {
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+    const s = Math.random() * 1.8;
+    ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.6})`;
+    ctx.fillRect(x, y, s, s);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
   return (
-    <points ref={ref} rotation={[0.18, -0.4, -0.12]}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
-        <bufferAttribute attach="attributes-color" args={[colors, 3]} />
-      </bufferGeometry>
-      <pointsMaterial
-        size={1.15}
-        vertexColors
-        transparent
-        opacity={0.28}
-        sizeAttenuation
-        blending={THREE.AdditiveBlending}
-        depthWrite={false}
-      />
-    </points>
+    <mesh>
+      <sphereGeometry args={[950, 64, 64]} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+    </mesh>
   );
 }
 
 export default function SkySphere({ stars }) {
   const { lang } = useT();
+  const [target, setTarget] = useState(null);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black h-[650px] lg:h-[850px] shadow-[0_35px_110px_-45px_rgba(15,23,42,0.9)]">
-      <Canvas
-        shadows
-        dpr={[1, 1.6]}
-        gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
-        camera={{ position: [0, 42, 178], fov: 42 }}
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 0.72;
-          gl.outputColorSpace = THREE.SRGBColorSpace;
-        }}
-      >
-        <PerspectiveCamera makeDefault position={[0, 42, 178]} fov={42} />
-        <OrbitControls
-          enableDamping
-          dampingFactor={0.045}
-          maxDistance={250}
-          minDistance={72}
-          autoRotate
-          autoRotateSpeed={0.18}
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black h-[650px] lg:h-[850px] shadow-2xl">
+      <Canvas shadows gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping }}>
+        <PerspectiveCamera makeDefault position={[0, 10, 100]} fov={45} />
+        <OrbitControls 
+          enableDamping 
+          dampingFactor={0.03} 
+          maxDistance={850} 
+          minDistance={8} 
           enablePan={false}
         />
-
+        
         <Suspense fallback={null}>
-          <color attach="background" args={["#00030a"]} />
-          <fog attach="fog" args={["#00030a", 150, 390]} />
+          <NebulaBackground />
+          <ambientLight intensity={0.6} />
+          
+          <Float speed={0.4} rotationIntensity={0.15} floatIntensity={0.15}>
+            <ErrorBoundary fallback={null}>
+              <PlanetarySystem onSelect={() => setTarget(null)} />
+            </ErrorBoundary>
+          </Float>
 
-          <ambientLight intensity={0.08} />
-          <hemisphereLight args={["#6ea8ff", "#030712", 0.35]} />
-          <directionalLight position={[-80, 55, 120]} intensity={0.7} color="#dbeafe" />
-          <pointLight position={[0, 4, 0]} intensity={7.5} color="#ffd27a" distance={280} />
+          <StarEngine />
+          <BrightStars />
+          
+          <CinematicCamera target={target} />
 
-          <MilkyWayDust />
-          <CatalogStars stars={stars} />
-          <ConstellationTraces stars={stars} />
-
-          <ErrorBoundary fallback={null}>
-            <PlanetarySystem />
-          </ErrorBoundary>
-
-          <Stars radius={260} depth={120} count={14000} factor={4.6} saturation={0.15} fade speed={0.18} />
+          <EffectComposer disableNormalPass>
+            <Bloom 
+              intensity={2.2} 
+              luminanceThreshold={0.1} 
+              luminanceSmoothing={0.9} 
+              mipmapBlur 
+            />
+          </EffectComposer>
         </Suspense>
       </Canvas>
 
-      <div className="absolute inset-0 pointer-events-none rounded-3xl bg-[radial-gradient(circle_at_50%_42%,transparent_0%,rgba(0,3,10,0.22)_48%,rgba(0,0,0,0.78)_100%)]" />
+      <div className="absolute top-6 left-6 glass rounded-xl p-4 border-white/10 backdrop-blur-md pointer-events-auto cursor-pointer" onClick={() => setTarget(null)}>
+        <div className="text-[10px] tracking-[0.4em] uppercase text-sc-gold mb-1 font-display">Earth Observation</div>
+        <div className="text-[12px] text-white/80">{lang === "TR" ? "Dünya Odaklı Görünüm" : "Earth Centered View"}</div>
+      </div>
 
-      <div className="absolute left-6 top-6 right-6 pointer-events-none flex items-start justify-between gap-4">
-        <div className="rounded-xl px-4 py-3 border border-white/10 bg-black/30 backdrop-blur-md">
-          <div className="text-[9px] tracking-[0.45em] uppercase text-sc-gold/80 mb-1 font-display">Deep Space View</div>
-          <div className="text-[11px] text-slate-400">
-            {lang === "TR" ? "Dusuk isik, gercekci orbit ve yildiz tozu" : "Low light, realistic orbits and stellar dust"}
-          </div>
-        </div>
-        <div className="hidden md:block rounded-xl px-4 py-3 border border-white/10 bg-black/25 text-right backdrop-blur-md">
-          <div className="text-[9px] tracking-[0.35em] uppercase text-cyan-100/60">Catalog Lock</div>
-          <div className="text-[11px] text-slate-400">{Array.isArray(stars) ? stars.length : 0} mapped stars</div>
-        </div>
+      <div className="absolute bottom-6 right-6 pointer-events-none opacity-50">
+         <div className="text-[9px] tracking-[1em] uppercase text-sc-gold font-display text-right">CINEMATIC ENGINE v3.2</div>
       </div>
     </div>
   );
