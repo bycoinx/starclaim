@@ -150,21 +150,28 @@ const PLANETS_CONFIG = [
   { name: "Neptune", nameTr: "Neptün", dist: 280, size: 2.1, speed: 0.005, color: "#312e81" },
 ];
 
-export default function PlanetarySystem({ onSelect }) {
+export default function PlanetarySystem({ onSelect, viewMode }) {
   const { lang } = useT();
   const groupRef = useRef();
+
+  const [earthPos, setEarthPos] = useState(new THREE.Vector3(75, 0, 0));
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     if (!groupRef.current) return;
     
+    let currentEarthPos = new THREE.Vector3();
+
     groupRef.current.children.forEach((child) => {
       if (child.userData && child.userData.type === "planet") {
         const p = child.userData;
         const angle = t * p.speed + (p.index * 1.5);
-        child.position.x = Math.cos(angle) * p.dist;
-        child.position.z = Math.sin(angle) * p.dist;
-        child.rotation.y += 0.005;
+        const x = Math.cos(angle) * p.dist;
+        const z = Math.sin(angle) * p.dist;
+        
+        if (p.isEarth) {
+          currentEarthPos.set(x, 0, z);
+        }
 
         // Update Shaders Time
         if (p.isJupiter || p.isEarth) {
@@ -175,11 +182,35 @@ export default function PlanetarySystem({ onSelect }) {
         }
       }
     });
+
+    setEarthPos(currentEarthPos);
+
+    // Apply positions
+    groupRef.current.children.forEach((child) => {
+      if (child.userData && child.userData.type === "planet") {
+        const p = child.userData;
+        const angle = t * p.speed + (p.index * 1.5);
+        const x = Math.cos(angle) * p.dist;
+        const z = Math.sin(angle) * p.dist;
+
+        if (viewMode === 'observatory') {
+          // All planets relative to Earth
+          child.position.set(x - currentEarthPos.x, 0, z - currentEarthPos.z);
+          // Hide Earth mesh when standing on it
+          child.visible = !p.isEarth;
+        } else {
+          // Standard Solar System view
+          child.position.set(x, 0, z);
+          child.visible = true;
+        }
+        child.rotation.y += 0.005;
+      }
+    });
   });
 
   return (
     <group ref={groupRef}>
-      <Sun onSelect={onSelect} />
+      <Sun onSelect={onSelect} viewMode={viewMode} earthPos={earthPos} />
 
       {PLANETS_CONFIG.map((p, i) => (
         <group 

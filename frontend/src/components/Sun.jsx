@@ -108,11 +108,18 @@ const fragmentShader = `
   }
 `;
 
-export default function Sun({ onSelect }) {
+export default function Sun({ onSelect, viewMode, earthPos }) {
   const meshRef = useRef();
   const uniforms = useMemo(() => ({
     time: { value: 0 },
   }), []);
+
+  const position = useMemo(() => {
+    if (viewMode === 'observatory' && earthPos) {
+      return [-earthPos.x, -earthPos.y, -earthPos.z];
+    }
+    return [0, 0, 0];
+  }, [viewMode, earthPos]);
 
   useFrame((state) => {
     const { clock } = state;
@@ -123,7 +130,7 @@ export default function Sun({ onSelect }) {
   });
 
   return (
-    <group>
+    <group position={position}>
       <mesh 
         ref={meshRef}
         onClick={(e) => {
@@ -142,7 +149,7 @@ export default function Sun({ onSelect }) {
       {/* Intense Core Light */}
       <pointLight intensity={10} distance={500} color="#fbbf24" decay={1.5} />
       
-      {/* Corona / Glow Effect using a larger transparent sphere */}
+      {/* Corona / Glow Effect */}
       <mesh scale={1.2}>
         <sphereGeometry args={[4.5, 32, 32]} />
         <meshStandardMaterial 
