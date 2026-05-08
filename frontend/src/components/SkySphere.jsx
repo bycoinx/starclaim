@@ -174,18 +174,24 @@ function BrightStars() {
   );
 }
 
-function CinematicCamera({ target }) {
+function CinematicCamera({ target, viewMode }) {
   const { camera } = useThree();
   const vec = new THREE.Vector3();
 
   useFrame((state) => {
-    if (target) {
+    const t = state.clock.getElapsedTime();
+    
+    if (viewMode === 'observatory') {
+      // OBSERVATORY MODE: Camera stays at center (0,0,0) and looks around like Star Walk
+      vec.set(0, 0, 0);
+      camera.position.lerp(vec, 0.05);
+    } else if (target) {
+      // TARGET MODE: Focus on a specific planet/star
       vec.set(target.x, target.y + 2, target.z + 10);
       camera.position.lerp(vec, 0.05);
       camera.lookAt(target.x, target.y, target.z);
     } else {
-      // Sync focus with Earth position
-      const t = state.clock.getElapsedTime();
+      // DEFAULT SYSTEM MODE: Orbit around Earth
       const dist = 75; // Earth distance
       const angle = t * 0.029 + 1.5;
       const ex = Math.cos(angle) * dist;
@@ -246,26 +252,31 @@ function NebulaBackground() {
 export default function SkySphere({ stars }) {
   const { lang } = useT();
   const [target, setTarget] = useState(null);
+  const [viewMode, setViewMode] = useState('system'); // 'system' or 'observatory'
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-black h-[650px] lg:h-[850px] shadow-2xl">
       <Canvas shadows gl={{ antialias: true, alpha: true, toneMapping: THREE.ACESFilmicToneMapping }}>
-        <PerspectiveCamera makeDefault position={[0, 10, 100]} fov={45} />
+        <PerspectiveCamera makeDefault position={[0, 10, 100]} fov={viewMode === 'observatory' ? 70 : 45} />
         <OrbitControls 
           enableDamping 
           dampingFactor={0.03} 
           maxDistance={850} 
-          minDistance={8} 
+          minDistance={viewMode === 'observatory' ? 0.1 : 8} 
           enablePan={false}
+          autoRotate={viewMode === 'system' && !target}
+          autoRotateSpeed={0.1}
         />
         
         <Suspense fallback={null}>
           <NebulaBackground />
-          <ambientLight intensity={0.6} />
+          <ambientLight intensity={viewMode === 'observatory' ? 0.8 : 0.6} />
           
           <Float speed={0.4} rotationIntensity={0.15} floatIntensity={0.15}>
             <ErrorBoundary fallback={null}>
-              <PlanetarySystem onSelect={() => setTarget(null)} />
+              <PlanetarySystem onSelect={(data) => {
+                setTarget(null); // Simple reset for now
+              }} />
             </ErrorBoundary>
           </Float>
 
@@ -273,7 +284,7 @@ export default function SkySphere({ stars }) {
           <BrightStars />
           <ConstellationLines />
           
-          <CinematicCamera target={target} />
+          <CinematicCamera target={target} viewMode={viewMode} />
 
           <EffectComposer disableNormalPass>
             <Bloom 
@@ -286,13 +297,33 @@ export default function SkySphere({ stars }) {
         </Suspense>
       </Canvas>
 
+      {/* VIEW MODE TOGGLE */}
+      <div className="absolute top-6 right-6 flex gap-2 pointer-events-auto">
+        <button 
+          onClick={() => setViewMode('system')}
+          className={`px-4 py-2 rounded-xl border text-[10px] uppercase tracking-widest font-display transition-all backdrop-blur-md ${viewMode === 'system' ? 'bg-sc-gold text-black border-sc-gold' : 'bg-black/40 text-white border-white/10 hover:border-sc-gold/50'}`}
+        >
+          {lang === "TR" ? "Sistem Görünümü" : "System View"}
+        </button>
+        <button 
+          onClick={() => setViewMode('observatory')}
+          className={`px-4 py-2 rounded-xl border text-[10px] uppercase tracking-widest font-display transition-all backdrop-blur-md ${viewMode === 'observatory' ? 'bg-sc-gold text-black border-sc-gold' : 'bg-black/40 text-white border-white/10 hover:border-sc-gold/50'}`}
+        >
+          {lang === "TR" ? "Gözlemevi Modu" : "Observatory View"}
+        </button>
+      </div>
+
       <div className="absolute top-6 left-6 glass rounded-xl p-4 border-white/10 backdrop-blur-md pointer-events-auto cursor-pointer" onClick={() => setTarget(null)}>
-        <div className="text-[10px] tracking-[0.4em] uppercase text-sc-gold mb-1 font-display">Earth Observation</div>
-        <div className="text-[12px] text-white/80">{lang === "TR" ? "Dünya Odaklı Görünüm" : "Earth Centered View"}</div>
+        <div className="text-[10px] tracking-[0.4em] uppercase text-sc-gold mb-1 font-display">
+          {viewMode === 'observatory' ? (lang === "TR" ? "Gökyüzü Rehberi" : "Sky Guide") : (lang === "TR" ? "Dünya Gözlemi" : "Earth Observation")}
+        </div>
+        <div className="text-[12px] text-white/80">
+          {viewMode === 'observatory' ? (lang === "TR" ? "İçeriden Dışarıya" : "Looking Outward") : (lang === "TR" ? "Dışarıdan İçeriye" : "Looking Inward")}
+        </div>
       </div>
 
       <div className="absolute bottom-6 right-6 pointer-events-none opacity-50">
-         <div className="text-[9px] tracking-[1em] uppercase text-sc-gold font-display text-right">CINEMATIC ENGINE v3.2</div>
+         <div className="text-[9px] tracking-[1em] uppercase text-sc-gold font-display text-right">HYBRID ENGINE v4.0</div>
       </div>
     </div>
   );
