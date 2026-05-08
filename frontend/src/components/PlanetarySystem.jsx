@@ -154,63 +154,56 @@ export default function PlanetarySystem({ onSelect, viewMode }) {
   const { lang } = useT();
   const groupRef = useRef();
 
-  const [earthPos, setEarthPos] = useState(new THREE.Vector3(75, 0, 0));
-
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
     if (!groupRef.current) return;
     
-    let currentEarthPos = new THREE.Vector3();
+    // 1. Calculate Earth's absolute position first
+    let ex = 0, ez = 0;
+    const earthConfig = PLANETS_CONFIG.find(p => p.isEarth);
+    if (earthConfig) {
+      const angle = t * earthConfig.speed + (PLANETS_CONFIG.indexOf(earthConfig) * 1.5);
+      ex = Math.cos(angle) * earthConfig.dist;
+      ez = Math.sin(angle) * earthConfig.dist;
+    }
 
+    // 2. Update all children (Planets + Sun)
     groupRef.current.children.forEach((child) => {
+      // Handle Planets
       if (child.userData && child.userData.type === "planet") {
         const p = child.userData;
         const angle = t * p.speed + (p.index * 1.5);
-        const x = Math.cos(angle) * p.dist;
-        const z = Math.sin(angle) * p.dist;
-        
-        if (p.isEarth) {
-          currentEarthPos.set(x, 0, z);
-        }
-
-        // Update Shaders Time
-        if (p.isJupiter || p.isEarth) {
-          const mesh = child.children.find(c => c.type === 'Mesh');
-          if (mesh && mesh.material.uniforms) {
-            mesh.material.uniforms.time.value = t;
-          }
-        }
-      }
-    });
-
-    setEarthPos(currentEarthPos);
-
-    // Apply positions
-    groupRef.current.children.forEach((child) => {
-      if (child.userData && child.userData.type === "planet") {
-        const p = child.userData;
-        const angle = t * p.speed + (p.index * 1.5);
-        const x = Math.cos(angle) * p.dist;
-        const z = Math.sin(angle) * p.dist;
+        const px = Math.cos(angle) * p.dist;
+        const pz = Math.sin(angle) * p.dist;
 
         if (viewMode === 'observatory') {
-          // All planets relative to Earth
-          child.position.set(x - currentEarthPos.x, 0, z - currentEarthPos.z);
-          // Hide Earth mesh when standing on it
+          child.position.set(px - ex, 0, pz - ez);
           child.visible = !p.isEarth;
         } else {
-          // Standard Solar System view
-          child.position.set(x, 0, z);
+          child.position.set(px, 0, pz);
           child.visible = true;
         }
         child.rotation.y += 0.005;
+
+        // Sync shader time
+        const mesh = child.children.find(c => c.type === 'Mesh');
+        if (mesh && mesh.material.uniforms) mesh.material.uniforms.time.value = t;
+      }
+
+      // Handle Sun Group
+      if (child.name === "sun-group") {
+        if (viewMode === 'observatory') {
+          child.position.set(-ex, 0, -ez);
+        } else {
+          child.position.set(0, 0, 0);
+        }
       }
     });
   });
 
   return (
     <group ref={groupRef}>
-      <Sun onSelect={onSelect} viewMode={viewMode} earthPos={earthPos} />
+      <Sun onSelect={onSelect} viewMode={viewMode} />
 
       {PLANETS_CONFIG.map((p, i) => (
         <group 
@@ -218,11 +211,20 @@ export default function PlanetarySystem({ onSelect, viewMode }) {
           userData={{ type: "planet", index: i, ...p }}
           onClick={(e) => {
             e.stopPropagation();
+            // Calculate current position for the camera to find
+            const t = state?.clock?.getElapsedTime() || 0; // Fallback
+            const angle = t * p.speed + (i * 1.5);
+            const px = Math.cos(angle) * p.dist;
+            const pz = Math.sin(angle) * p.dist;
+
             onSelect({
               name: lang === "TR" ? p.nameTr : p.name,
               code: `SOL-0${i+1}`,
               constellation: "Solar System",
-              tier: "Planetary Body"
+              tier: "Planetary Body",
+              x: viewMode === 'observatory' ? px - (Math.cos(t * 0.029 + 3.0) * 75) : px, // Rough estimate for click
+              y: 0,
+              z: viewMode === 'observatory' ? pz - (Math.sin(t * 0.029 + 3.0) * 75) : pz
             });
           }}
         >

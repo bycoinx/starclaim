@@ -108,18 +108,11 @@ const fragmentShader = `
   }
 `;
 
-export default function Sun({ onSelect, viewMode, earthPos }) {
+export default function Sun({ onSelect, viewMode }) {
   const meshRef = useRef();
   const uniforms = useMemo(() => ({
     time: { value: 0 },
   }), []);
-
-  const position = useMemo(() => {
-    if (viewMode === 'observatory' && earthPos) {
-      return [-earthPos.x, -earthPos.y, -earthPos.z];
-    }
-    return [0, 0, 0];
-  }, [viewMode, earthPos]);
 
   useFrame((state) => {
     const { clock } = state;
@@ -130,12 +123,12 @@ export default function Sun({ onSelect, viewMode, earthPos }) {
   });
 
   return (
-    <group position={position}>
+    <group name="sun-group">
       <mesh 
         ref={meshRef}
         onClick={(e) => {
           e.stopPropagation();
-          onSelect({ nameTr: "Güneş", name: "Sun", code: "SOL-00" });
+          onSelect({ nameTr: "Güneş", name: "Sun", code: "SOL-00", x: 0, y: 0, z: 0 });
         }}
       >
         <sphereGeometry args={[4.5, 64, 64]} />
