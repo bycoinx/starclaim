@@ -3,11 +3,11 @@ const path = require("path");
 
 // Check if we're in development/preview mode (not production build)
 // Craco sets NODE_ENV=development for start, NODE_ENV=production for build
-const isDevServer = process.env.NODE_ENV !== "production";
+const isDevServer = process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== undefined;
 
 // Environment variable overrides
 const config = {
-  enableHealthCheck: process.env.ENABLE_HEALTH_CHECK === "true",
+  enableHealthCheck: process.env.ENABLE_HEALTH_CHECK === "true" && !isDevServer, // Disable for prod
 };
 
 // Conditionally load health check modules only if enabled
