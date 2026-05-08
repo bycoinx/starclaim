@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, Suspense, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Stars, Float, Html } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Float, Html } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { useT } from "../lib/i18n";
@@ -16,6 +16,68 @@ const BRIGHT_STARS = [
   { name: "Rigel", color: "#aabfff", size: 0.9, ra: 5.24, dec: -8.2, class: "B8" },
   { name: "Betelgeuse", color: "#ffcc6f", size: 1.3, ra: 5.9, dec: 7.4, class: "M1" },
 ];
+
+const CONSTELLATIONS = [
+  { 
+    name: "Orion", 
+    stars: [
+      { ra: 5.9, dec: 7.4 },   // Betelgeuse
+      { ra: 5.4, dec: -0.3 },  // Alnilam
+      { ra: 5.2, dec: -8.2 },  // Rigel
+      { ra: 5.6, dec: -9.7 },  // Saiph
+      { ra: 5.4, dec: -0.3 },  // Alnilam
+      { ra: 5.5, dec: 6.3 }    // Bellatrix
+    ]
+  },
+  {
+    name: "Leo",
+    stars: [
+      { ra: 10.1, dec: 11.9 }, // Regulus
+      { ra: 10.3, dec: 19.8 }, // Algieba
+      { ra: 11.2, dec: 20.5 }, // Zosma
+      { ra: 11.8, dec: 14.5 }, // Denebola
+      { ra: 11.1, dec: 15.4 }  // Chertan
+    ]
+  },
+  {
+    name: "Ursa Major",
+    stars: [
+      { ra: 11.0, dec: 61.7 }, // Dubhe
+      { ra: 11.0, dec: 56.4 }, // Merak
+      { ra: 11.9, dec: 53.7 }, // Phecda
+      { ra: 12.2, dec: 57.0 }, // Megrez
+      { ra: 12.9, dec: 55.9 }, // Alioth
+      { ra: 13.4, dec: 49.3 }, // Mizar
+      { ra: 13.8, dec: 49.3 }  // Alkaid
+    ]
+  }
+];
+
+function ConstellationLines() {
+  return (
+    <group>
+      {CONSTELLATIONS.map((c, i) => {
+        const points = c.stars.map(s => {
+          const r = 480;
+          const raRad = (s.ra / 24) * Math.PI * 2;
+          const decRad = (s.dec / 180) * Math.PI;
+          return new THREE.Vector3(
+            r * Math.cos(decRad) * Math.cos(raRad),
+            r * Math.sin(decRad),
+            r * Math.cos(decRad) * Math.sin(raRad)
+          );
+        });
+        
+        return (
+          <line key={i}>
+            <bufferGeometry attach="geometry" setFromPoints={points} />
+            <lineBasicMaterial attach="material" color="#fcd34d" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+          </line>
+        );
+      })}
+    </group>
+  );
+}
 
 function StarEngine() {
   const meshRef = useRef();
@@ -72,7 +134,6 @@ function StarFlare({ color, size = 15 }) {
         <planeGeometry />
         <meshBasicMaterial color={color} transparent opacity={0.5} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
       </mesh>
-      {/* Glow */}
       <mesh scale={[size * 0.2, size * 0.2, 1]}>
         <circleGeometry args={[1, 16]} />
         <meshBasicMaterial color={color} transparent opacity={0.3} blending={THREE.AdditiveBlending} />
@@ -102,7 +163,7 @@ function BrightStars() {
             <pointLight distance={150} intensity={8} color={s.color} />
             <Html distanceFactor={100}>
               <div className="whitespace-nowrap pointer-events-none select-none">
-                <div className="text-[14px] text-white uppercase tracking-[0.2em] font-display font-bold text-shadow-lg">{s.name}</div>
+                <div className="text-[14px] text-white uppercase tracking-[0.2em] font-display font-bold">{s.name}</div>
                 <div className="text-[10px] text-sc-gold/60">{s.class}</div>
               </div>
             </Html>
@@ -123,7 +184,7 @@ function CinematicCamera({ target }) {
       camera.position.lerp(vec, 0.05);
       camera.lookAt(target.x, target.y, target.z);
     } else {
-      // Focus on Earth
+      // Sync focus with Earth position
       const t = state.clock.getElapsedTime();
       const dist = 75; // Earth distance
       const angle = t * 0.029 + 1.5;
@@ -145,16 +206,14 @@ function NebulaBackground() {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   
-  // Base cosmic background
   ctx.fillStyle = '#010208';
   ctx.fillRect(0, 0, size, size);
 
-  // Layered Nebulae (Reds, Purples, Blues)
   const nebulaColors = [
-    { c: 'rgba(200, 30, 80, 0.08)', x: 0.3, y: 0.4, r: 400 }, // Reddish
-    { c: 'rgba(80, 40, 200, 0.08)', x: 0.7, y: 0.6, r: 500 }, // Bluish
-    { c: 'rgba(150, 50, 180, 0.06)', x: 0.5, y: 0.3, r: 450 }, // Purple
-    { c: 'rgba(30, 100, 255, 0.05)', x: 0.2, y: 0.8, r: 350 }, // Cyan
+    { c: 'rgba(200, 30, 80, 0.08)', x: 0.3, y: 0.4, r: 400 },
+    { c: 'rgba(80, 40, 200, 0.08)', x: 0.7, y: 0.6, r: 500 },
+    { c: 'rgba(150, 50, 180, 0.06)', x: 0.5, y: 0.3, r: 450 },
+    { c: 'rgba(30, 100, 255, 0.05)', x: 0.2, y: 0.8, r: 350 },
   ];
 
   nebulaColors.forEach(n => {
@@ -167,7 +226,6 @@ function NebulaBackground() {
     ctx.fill();
   });
 
-  // Dense Starfield
   for (let i = 0; i < 10000; i++) {
     const x = Math.random() * size;
     const y = Math.random() * size;
@@ -213,6 +271,7 @@ export default function SkySphere({ stars }) {
 
           <StarEngine />
           <BrightStars />
+          <ConstellationLines />
           
           <CinematicCamera target={target} />
 
