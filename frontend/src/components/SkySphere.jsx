@@ -178,22 +178,93 @@ function LuxuryHorizon() {
   );
 }
 
+function ShootingStars() {
+  const [stars, setStars] = useState([]);
+  const lastSpawn = useRef(0);
+
+  useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+    
+    // Spawn new shooting star every 3-7 seconds
+    if (t - lastSpawn.current > 3 + Math.random() * 4) {
+      const start = new THREE.Vector3().randomDirection().multiplyScalar(400);
+      const end = start.clone().add(new THREE.Vector3().randomDirection().multiplyScalar(200));
+      setStars(prev => [...prev, { id: t, start, end, progress: 0 }]);
+      lastSpawn.current = t;
+    }
+
+    // Update progress
+    setStars(prev => prev.map(s => ({ ...s, progress: s.progress + 0.02 })).filter(s => s.progress < 1.2));
+  });
+
+  return (
+    <group>
+      {stars.map(s => (
+        <mesh key={s.id} position={[
+          THREE.MathUtils.lerp(s.start.x, s.end.x, s.progress),
+          THREE.MathUtils.lerp(s.start.y, s.end.y, s.progress),
+          THREE.MathUtils.lerp(s.start.z, s.end.z, s.progress)
+        ]}>
+          <sphereGeometry args={[0.5, 8, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={Math.max(0, 1 - s.progress)} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function EtherealConstellations() {
+  return (
+    <group>
+      {CONSTELLATIONS.map((c, i) => {
+        // Find center of stars for labels/art
+        const r = 470;
+        const avgRa = c.stars.reduce((a, b) => a + b.ra, 0) / c.stars.length;
+        const avgDec = c.stars.reduce((a, b) => a + b.dec, 0) / c.stars.length;
+        const raRad = (avgRa / 24) * Math.PI * 2;
+        const decRad = (avgDec / 180) * Math.PI;
+        const pos = [r * Math.cos(decRad) * Math.cos(raRad), r * Math.sin(decRad), r * Math.cos(decRad) * Math.sin(raRad)];
+
+        return (
+          <group key={i} position={pos}>
+            <Html center distanceFactor={100}>
+               <div className="pointer-events-none select-none opacity-20 hover:opacity-100 transition-opacity">
+                  <div className="text-[24px] text-white/10 font-display italic tracking-[1em] uppercase">{c.name}</div>
+                  {/* Future: Add SVG path/Illustration here */}
+               </div>
+            </Html>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 function NebulaBackground() {
   const size = 1024;
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#010205'; ctx.fillRect(0, 0, size, size);
-  const nebula = [{ c: 'rgba(40, 10, 100, 0.04)', x: 0.2, y: 0.3, r: 600 }, { c: 'rgba(120, 20, 40, 0.03)', x: 0.8, y: 0.7, r: 700 }];
+  
+  // High-contrast deep cosmic background
+  ctx.fillStyle = '#000002'; ctx.fillRect(0, 0, size, size);
+  
+  const nebula = [
+    { c: 'rgba(60, 20, 150, 0.06)', x: 0.2, y: 0.3, r: 500 }, // Purple
+    { c: 'rgba(180, 30, 60, 0.05)', x: 0.7, y: 0.6, r: 600 }, // Red
+    { c: 'rgba(30, 80, 200, 0.04)', x: 0.5, y: 0.4, r: 550 }, // Deep Blue
+  ];
+
   nebula.forEach(n => {
     const grad = ctx.createRadialGradient(size*n.x, size*n.y, 0, size*n.x, size*n.y, n.r);
     grad.addColorStop(0, n.c); grad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(size*n.x, size*n.y, n.r, 0, Math.PI * 2); ctx.fill();
   });
+
   const texture = new THREE.CanvasTexture(canvas);
   return (
     <mesh>
-      <sphereGeometry args={[1000, 64, 64]} />
+      <sphereGeometry args={[990, 64, 64]} />
       <meshBasicMaterial map={texture} side={THREE.BackSide} />
     </mesh>
   );
@@ -218,7 +289,7 @@ export default function SkySphere({ stars }) {
         
         <Suspense fallback={null}>
           <NebulaBackground />
-          <ambientLight intensity={0.1} />
+          <ambientLight intensity={0.15} />
           
           <Float speed={0.1} rotationIntensity={0.02}>
             <ErrorBoundary fallback={null}>
@@ -226,14 +297,17 @@ export default function SkySphere({ stars }) {
             </ErrorBoundary>
           </Float>
 
-          <StarEngine count={60000} />
+          <StarEngine count={65000} />
           <ConstellationLines />
+          <EtherealConstellations />
+          <ShootingStars />
+          
           {viewMode === 'observatory' && <LuxuryHorizon />}
           
           <CinematicCamera target={target} viewMode={viewMode} introFinished={introFinished} />
 
           <EffectComposer disableNormalPass>
-            <Bloom intensity={2.0} luminanceThreshold={0.2} mipmapBlur />
+            <Bloom intensity={2.5} luminanceThreshold={0.15} mipmapBlur />
           </EffectComposer>
         </Suspense>
       </Canvas>
