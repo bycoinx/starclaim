@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { VaultEncryption } from "../components/vault/VaultEncryption";
 import { VaultDecryption } from "../components/vault/VaultDecryption";
+import { UploadToChain } from "../components/vault/UploadToChain";
 import { ShieldCheck, Database, Link as LinkIcon, Lock, Unlock } from "lucide-react";
 import StarCanvas from "../components/StarCanvas";
 
@@ -25,6 +26,7 @@ const featureCards = [
 
 export default function Vault() {
   const [activeTab, setActiveTab] = useState("encrypt"); // encrypt | decrypt
+  const [encryptedBlob, setEncryptedBlob] = useState(null);
 
   // Simple SEO / Document Title update for React SPA
   useEffect(() => {
@@ -102,7 +104,15 @@ export default function Vault() {
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               {activeTab === "encrypt" ? (
-                <VaultEncryption onComplete={(blob) => console.log("Vault ready:", blob)} />
+                <div className="space-y-12">
+                  <VaultEncryption onComplete={(blob) => setEncryptedBlob(blob)} />
+                  {encryptedBlob && (
+                    <UploadToChain 
+                      encryptedBlob={encryptedBlob} 
+                      onSuccess={(txId) => console.log("Finalized:", txId)} 
+                    />
+                  )}
+                </div>
               ) : (
                 <VaultDecryption />
               )}
