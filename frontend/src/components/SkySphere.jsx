@@ -154,9 +154,7 @@ function NebulaBackground() {
   return (
     <mesh>
       <sphereGeometry args={[990, 64, 64]} />
-      <meshBasicMaterial side={THREE.BackSide} transparent opacity={0.6}>
-        <gradientTexture stops={[0, 0.5, 1]} colors={['#000005', '#050510', '#000005']} />
-      </meshBasicMaterial>
+      <meshBasicMaterial side={THREE.BackSide} transparent opacity={0.4} color="#050515" />
     </mesh>
   );
 }
