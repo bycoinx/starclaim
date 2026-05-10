@@ -153,6 +153,7 @@ const PLANETS_CONFIG = [
 export default function PlanetarySystem({ onSelect, viewMode }) {
   const { lang } = useT();
   const groupRef = useRef();
+  const { clock } = useThree();
 
   useFrame((state) => {
     const t = state.clock.getElapsedTime();
@@ -211,8 +212,7 @@ export default function PlanetarySystem({ onSelect, viewMode }) {
           userData={{ type: "planet", index: i, ...p }}
           onClick={(e) => {
             e.stopPropagation();
-            // Calculate current position for the camera to find
-            const t = state?.clock?.getElapsedTime() || 0; // Fallback
+            const t = clock.getElapsedTime();
             const angle = t * p.speed + (i * 1.5);
             const px = Math.cos(angle) * p.dist;
             const pz = Math.sin(angle) * p.dist;
@@ -222,7 +222,7 @@ export default function PlanetarySystem({ onSelect, viewMode }) {
               code: `SOL-0${i+1}`,
               constellation: "Solar System",
               tier: "Planetary Body",
-              x: viewMode === 'observatory' ? px - (Math.cos(t * 0.029 + 3.0) * 75) : px, // Rough estimate for click
+              x: viewMode === 'observatory' ? px - (Math.cos(t * 0.029 + 3.0) * 75) : px,
               y: 0,
               z: viewMode === 'observatory' ? pz - (Math.sin(t * 0.029 + 3.0) * 75) : pz
             });

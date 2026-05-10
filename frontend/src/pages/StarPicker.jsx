@@ -4,6 +4,7 @@ import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import StarCard from "../components/StarCard";
 import SkySphere from "../components/SkySphere";
+import CinematicWarp from "../components/CinematicWarp";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Switch } from "../components/ui/switch";
 import { Slider } from "../components/ui/slider";
@@ -28,6 +29,7 @@ export default function StarPicker({ onClaim }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
+  const [showIntro, setShowIntro] = useState(true);
 
   const tier = params.get("tier") || "all";
   const constellation = params.get("constellation") || "all";
@@ -78,6 +80,10 @@ export default function StarPicker({ onClaim }) {
       (star.constellation || "").toLowerCase().includes(needle)
     );
   }, [stars, search]);
+
+  if (showIntro) {
+    return <CinematicWarp onComplete={() => setShowIntro(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-sc-deep pt-28 pb-24 relative">
