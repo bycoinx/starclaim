@@ -18,6 +18,7 @@ import Marketplace from "./pages/Marketplace";
 import Stories from "./pages/Stories";
 import About from "./pages/About";
 import Vision from "./pages/Vision";
+import Vault from "./pages/Vault";
 import Dashboard from "./pages/Dashboard";
 import AuthCallback from "./pages/AuthCallback";
 import PaymentSuccess from "./pages/PaymentSuccess";
@@ -85,6 +86,7 @@ function AppShell() {
         <Route path="/stories" element={<Stories />} />
         <Route path="/about" element={<About />} />
         <Route path="/vision" element={<Vision />} />
+        <Route path="/vault" element={<Vault />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
