@@ -72,35 +72,45 @@ const starShader = {
 
 // --- COMPONENTS ---
 
-function RealStars({ stars, onSelect }) {
+function RealStars({ stars = [], onSelect }) {
   const meshRef = useRef();
-  const { raycaster, mouse, camera } = useThree();
 
-  const [positions, colors, sizes, ids] = useMemo(() => {
+  const [positions, colors, sizes] = useMemo(() => {
+    if (!Array.isArray(stars) || stars.length === 0) {
+       return [new Float32Array(0), new Float32Array(0), new Float32Array(0)];
+    }
     const count = stars.length;
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
     const siz = new Float32Array(count);
-    const starIds = stars.map(s => s.star_id);
     
     const color = new THREE.Color();
     stars.forEach((s, i) => {
-      const v = raDecToVector3(s.ra, s.dec, 480 + Math.random() * 20);
-      pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z;
-      
-      const tierColor = s.tier === 'legendary' ? '#fcd34d' : s.tier === 'zodiac' ? '#a78bfa' : '#ffffff';
-      color.set(tierColor);
-      col[i * 3] = color.r; col[i * 3 + 1] = color.g; col[i * 3 + 2] = color.b;
-      
-      siz[i] = s.tier === 'legendary' ? 4.5 : s.tier === 'zodiac' ? 3.5 : 2.5;
+      try {
+        const v = raDecToVector3(s.ra, s.dec, 480 + Math.random() * 20);
+        pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z;
+        
+        // Scientific star colors based on tier
+        const tierColor = s.tier === 'legendary' ? '#ffd700' : s.tier === 'zodiac' ? '#a78bfa' : '#f0f9ff';
+        color.set(tierColor);
+        col[i * 3] = color.r; col[i * 3 + 1] = color.g; col[i * 3 + 2] = color.b;
+        
+        siz[i] = s.tier === 'legendary' ? 6.0 : s.tier === 'zodiac' ? 4.5 : 3.0;
+      } catch (e) {
+        console.error("Star coordinate parse error:", e, s);
+      }
     });
-    return [pos, col, siz, starIds];
+    return [pos, col, siz];
   }, [stars]);
 
   const uniforms = useMemo(() => ({ time: { value: 0 } }), []);
   useFrame((state) => {
-    if (meshRef.current) meshRef.current.material.uniforms.time.value = state.clock.getElapsedTime();
+    if (meshRef.current && meshRef.current.material.uniforms) {
+       meshRef.current.material.uniforms.time.value = state.clock.getElapsedTime();
+    }
   });
+
+  if (positions.length === 0) return null;
 
   return (
     <points 
@@ -118,7 +128,14 @@ function RealStars({ stars, onSelect }) {
         <bufferAttribute attach="attributes-customColor" count={stars.length} array={colors} itemSize={3} />
         <bufferAttribute attach="attributes-size" count={stars.length} array={sizes} itemSize={1} />
       </bufferGeometry>
-      <shaderMaterial uniforms={uniforms} vertexShader={starShader.vertexShader} fragmentShader={starShader.fragmentShader} transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <shaderMaterial 
+        uniforms={uniforms} 
+        vertexShader={starShader.vertexShader} 
+        fragmentShader={starShader.fragmentShader} 
+        transparent 
+        blending={THREE.AdditiveBlending} 
+        depthWrite={false} 
+      />
     </points>
   );
 }
