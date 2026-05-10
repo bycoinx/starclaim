@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Points, PointMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 const warpShader = {
@@ -79,7 +78,7 @@ function ImaxWarpField({ count = 8000 }) {
   const uniforms = useMemo(() => ({
     time: { value: 0 },
     speed: { value: speed }
-  }), []);
+  }), [speed]);
 
   useFrame((state) => {
     if (meshRef.current) {

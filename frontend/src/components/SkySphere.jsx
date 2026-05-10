@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, Suspense, useState, useEffect, useCallback } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Float, Html } from "@react-three/drei";
+import { OrbitControls, PerspectiveCamera, Float } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { useT } from "../lib/i18n";
