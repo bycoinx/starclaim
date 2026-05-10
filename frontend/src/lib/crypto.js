@@ -3,7 +3,7 @@
  * Handles client-side encryption/decryption using AES-256-GCM
  */
 
-export async function encrypt(data, password) {
+export async function encryptData(data, password) {
   const enc = new TextEncoder();
   
   // Key derivation
@@ -48,7 +48,7 @@ export async function encrypt(data, password) {
   return new Blob([combined], { type: 'application/octet-stream' });
 }
 
-export async function decrypt(blob, password) {
+export async function decryptData(blob, password) {
   const buffer = await blob.arrayBuffer();
   const data = new Uint8Array(buffer);
   

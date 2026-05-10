@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { decrypt } from '../../lib/crypto';
+import { decryptData } from '../../lib/crypto';
 import { Unlock, FileKey2, ShieldAlert, CheckCircle2, Loader2, Upload } from 'lucide-react';
 
 export function VaultDecryption() {
@@ -23,7 +23,7 @@ export function VaultDecryption() {
     setIsDecrypting(true);
     setError('');
     try {
-      const plaintext = await decrypt(file, password);
+      const plaintext = await decryptData(file, password);
       setDecryptedData(plaintext);
     } catch (err) {
       console.error('Decryption failed:', err);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { encrypt, validatePassword } from '../../lib/crypto';
+import { encryptData, validatePassword } from '../../lib/crypto';
 import { Lock, Download, ShieldAlert, CheckCircle2, Loader2 } from 'lucide-react';
 
 export function VaultEncryption({ onComplete }) {
@@ -19,7 +19,7 @@ export function VaultEncryption({ onComplete }) {
 
     setIsEncrypting(true);
     try {
-      const blob = await encrypt(data, password);
+      const blob = await encryptData(data, password);
       setResult(blob);
       if (onComplete) {
         onComplete(blob, {
