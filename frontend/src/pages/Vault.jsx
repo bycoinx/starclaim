@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { VaultEncryption } from "../components/vault/VaultEncryption";
 import { VaultDecryption } from "../components/vault/VaultDecryption";
-import { UploadToChain } from "../components/vault/UploadToChain";
 import { ShieldCheck, Database, Link as LinkIcon, Lock, Unlock } from "lucide-react";
 import StarCanvas from "../components/StarCanvas";
 
@@ -26,9 +25,7 @@ const featureCards = [
 
 export default function Vault() {
   const [activeTab, setActiveTab] = useState("encrypt"); // encrypt | decrypt
-  const [encryptedBlob, setEncryptedBlob] = useState(null);
 
-  // Simple SEO / Document Title update for React SPA
   useEffect(() => {
     document.title = "StarVault - Your Encrypted Digital Legacy";
   }, []);
@@ -39,7 +36,7 @@ export default function Vault() {
       <div className="absolute inset-0 nebula-bg opacity-30 pointer-events-none" />
 
       <main className="relative max-w-7xl mx-auto px-6 md:px-10">
-        {/* Layout 1: Hero Section */}
+        {/* Hero Section */}
         <div className="text-center mb-16">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -67,7 +64,7 @@ export default function Vault() {
           </motion.p>
         </div>
 
-        {/* Layout 2: Tab Switcher */}
+        {/* Tab Switcher */}
         <div className="flex justify-center mb-12">
           <div className="bg-gray-900/60 border border-white/10 p-1.5 rounded-3xl flex gap-2 backdrop-blur-xl shadow-2xl">
             <button
@@ -93,7 +90,7 @@ export default function Vault() {
           </div>
         </div>
 
-        {/* Layout 3: Render VaultEncryption / VaultDecryption */}
+        {/* Render VaultEncryption / VaultDecryption */}
         <div className="mb-24 relative">
           <AnimatePresence mode="wait">
             <motion.div
@@ -104,15 +101,7 @@ export default function Vault() {
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               {activeTab === "encrypt" ? (
-                <div className="space-y-12">
-                  <VaultEncryption onComplete={(blob) => setEncryptedBlob(blob)} />
-                  {encryptedBlob && (
-                    <UploadToChain 
-                      encryptedBlob={encryptedBlob} 
-                      onSuccess={(txId) => console.log("Finalized:", txId)} 
-                    />
-                  )}
-                </div>
+                <VaultEncryption onComplete={(blob) => console.log("Blob ready for potential external usage:", blob)} />
               ) : (
                 <VaultDecryption />
               )}
@@ -120,7 +109,7 @@ export default function Vault() {
           </AnimatePresence>
         </div>
 
-        {/* Layout 4: Feature Cards Grid */}
+        {/* Feature Cards Grid */}
         <div className="grid md:grid-cols-3 gap-6 mb-24">
           {featureCards.map((f, i) => (
             <motion.div 
@@ -140,7 +129,7 @@ export default function Vault() {
           ))}
         </div>
 
-        {/* Final Branding / Metadata Info */}
+        {/* Footer Info */}
         <div className="max-w-3xl mx-auto text-center border-t border-white/5 pt-16">
            <div className="text-[10px] uppercase tracking-[0.5em] text-sc-gold/30 mb-2 font-display">StarClaim Protocol</div>
            <div className="text-[8px] uppercase tracking-[0.2em] text-white/10">v1.2.0 - AES-256-GCM - Arweave Permaweb Ready</div>
