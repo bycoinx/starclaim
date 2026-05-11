@@ -82,7 +82,17 @@ export default function StarPicker({ onClaim }) {
   }, [stars, search]);
 
   if (showIntro) {
-    return <CinematicWarp onComplete={() => setShowIntro(false)} />;
+    return (
+      <div className="relative">
+        <CinematicWarp onComplete={() => setShowIntro(false)} />
+        <button 
+          onClick={() => setShowIntro(false)}
+          className="fixed bottom-10 right-10 z-[110] text-sc-text-muted hover:text-white text-xs tracking-widest uppercase border border-white/10 px-4 py-2 rounded-full transition-all"
+        >
+          {lang === "TR" ? "GİRİŞİ ATLA" : "SKIP INTRO"}
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -190,8 +200,18 @@ export default function StarPicker({ onClaim }) {
 
         <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">Bir yükleme hatası oluştu. Lütfen sayfayı yenileyin.</div>}>
           {loading ? (
-            <div className="py-20 flex justify-center">
-              <Loader2 className="w-6 h-6 animate-spin text-sc-gold" />
+            <div className="py-20 flex flex-col items-center gap-4">
+              <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
+              <div className="text-center">
+                <p className="text-sc-gold text-sm animate-pulse mb-1">
+                  {lang === "TR" ? "YILDIZLAR YÜKLENİYOR..." : "LOADING STARS..."}
+                </p>
+                <p className="text-sc-text-muted text-[10px] max-w-xs uppercase tracking-widest">
+                  {lang === "TR" 
+                    ? "Sunucu uykudan uyandiriliyor, ilk yükleme 30 saniye sürebilir." 
+                    : "Waking up server, initial load may take up to 30 seconds."}
+                </p>
+              </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 text-sc-text-muted">
