@@ -1,11 +1,13 @@
 {
+  "buildCommand": "cd frontend && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "frontend/build",
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-Content-Type-Options",
@@ -17,13 +19,27 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "geolocation=(), microphone=(), camera=()"
+          "value": "camera=(self), geolocation=(), microphone=()"
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://*.solana.com https://arweave.net;"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://assets.emergent.sh https://us.i.posthog.com https://us-assets.i.posthog.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com data:; connect-src 'self' https://*.solana.com https://arweave.net https://*.onrender.com https://*.vercel.app https://us.i.posthog.com;"
         }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/vault/:path*",
+      "destination": "/api/vault/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://starclaim-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/((?!static|.*\\..*|api).*)",
+      "destination": "/index.html"
     }
   ]
 }
