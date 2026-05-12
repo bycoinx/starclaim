@@ -12,6 +12,9 @@ Bu dosya, Gemini CLI'ın (veya senin) projeye kaldığı yerden **tek saniyede**
    - Webpack 5 polyfill hataları (`assert`, `buffer`, `crypto`) `craco.config.js` ile düzeltildi.
    - Vercel "403 Forbidden" ve SPA routing (sayfa yenileme) sorunları çözüldü.
    - Restrictive CSP (Güvenlik Politikası) esnetildi ve ardından güvenli şekilde yeniden sıkılaştırıldı.
+   - **YENİ:** `react-use` bağımlılığı kaldırıldı (native hook ile değiştirildi).
+   - **YENİ:** `VaultEncryption.jsx` içindeki hatalı `encryptData` importu düzeltildi.
+   - **YENİ:** Yerel build (`npm run build`) başarıyla doğrulandı ve GitHub'a push edildi.
 3. **Branding & Temizlik:**
    - Tüm "Emergent" yazıları ve badge'leri `index.html` ve CSS'den kaldırıldı.
    - Site başlığı "StarClaim | Evrenin Sahibi Olun" olarak güncellendi.
