@@ -1,9 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ImageBackground } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ImageBackground, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
+import { useSolanaWallet } from '../hooks/useSolanaWallet';
 
 export default function Home() {
+  const { address, connecting, connect, disconnect } = useSolanaWallet();
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -25,6 +28,24 @@ export default function Home() {
               <Text style={styles.buttonText}>VAULT CORE</Text>
             </TouchableOpacity>
           </Link>
+
+          {address ? (
+            <TouchableOpacity style={[styles.button, styles.walletButton]} onPress={disconnect}>
+              <Text style={styles.walletText}>CÜZDAN: {address.slice(0, 4)}...{address.slice(-4)}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={[styles.button, styles.walletButton]} 
+              onPress={connect}
+              disabled={connecting}
+            >
+              {connecting ? (
+                <ActivityIndicator color="#00ccff" />
+              ) : (
+                <Text style={styles.walletText}>CÜZDANI BAĞLA</Text>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       </LinearGradient>
     </View>
@@ -40,23 +61,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 60,
   },
   content: {
     alignItems: 'center',
   },
   title: {
     color: '#fff',
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: '900',
-    letterSpacing: 10,
+    letterSpacing: 8,
     marginBottom: 10,
   },
   subtitle: {
     color: '#00ccff',
-    fontSize: 18,
+    fontSize: 16,
     letterSpacing: 2,
-    marginBottom: 50,
+    marginBottom: 40,
     textTransform: 'uppercase',
   },
   button: {
@@ -64,7 +85,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingVertical: 15,
     borderRadius: 30,
-    marginBottom: 20,
+    marginBottom: 15,
     width: '100%',
     alignItems: 'center',
   },
@@ -73,10 +94,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
   },
+  walletButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#00ccff',
+    marginTop: 10,
+  },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: '#000',
+    fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  walletText: {
+    color: '#00ccff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });

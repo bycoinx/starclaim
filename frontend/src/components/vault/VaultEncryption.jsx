@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { encrypt } from '@/lib/crypto';
+import { encryptData } from '../../lib/crypto';
 import { UploadToChain } from './UploadToChain';
 
 export function VaultEncryption({ onComplete }) {
@@ -18,7 +18,7 @@ export function VaultEncryption({ onComplete }) {
 
     setIsEncrypting(true);
     try {
-      const blob = await encrypt(data, password);
+      const blob = await encryptData(data, password);
       setEncryptedBlob(blob);
       setShowUpload(true); // ← YENİ: Upload section'ı göster
       

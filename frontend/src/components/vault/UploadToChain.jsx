@@ -6,7 +6,6 @@ import { Connection, clusterApiUrl } from '@solana/web3.js';
 import { Metaplex } from '@metaplex-foundation/js';
 import { toast } from 'sonner';
 import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use';
 import { 
   Database, 
   Link as LinkIcon, 
@@ -23,6 +22,27 @@ import {
 
 import { api } from '../../lib/api';
 import { linkVaultToNFT } from '../../lib/solana/updateNFT';
+
+// Simple custom hook to replace react-use
+function useWindowSize() {
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+  });
+
+  useEffect(() => {
+    function handleResize() {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return windowSize;
+}
 
 export function UploadToChain({ encryptedBlob, onSuccess }) {
   const { publicKey, wallet, connected, signTransaction } = useWallet();
