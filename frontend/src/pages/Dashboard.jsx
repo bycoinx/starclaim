@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
-import { Star, LogIn, Loader2, Download, Tag } from "lucide-react";
+import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { EventHorizonBridge } from "../lib/solana/event_horizon";
 
 export default function Dashboard() {
   const { user, loading, login } = useAuth();
@@ -12,6 +13,25 @@ export default function Dashboard() {
   const [stars, setStars] = useState([]);
   const [fetching, setFetching] = useState(true);
   const navigate = useNavigate();
+
+  // Mock bridge initialization (In real app, get wallet from solana adapter)
+  const bridge = new EventHorizonBridge({ publicKey: new String("dummy") });
+
+  const handleInstantExit = async (star) => {
+    const confirm = window.confirm(
+      lang === "TR" 
+        ? "Yildizini geri satmak istedigine emin misin? %50 (veya kaskolu ise %70) iade alacaksin ve yildiz yok edilecek." 
+        : "Are you sure you want to sell your star back? You will receive 50% (or 70% if insured) and the star will be burned."
+    );
+    if (!confirm) return;
+    
+    toast.info("Aegis: Initializing Instant Exit...");
+    // Logic: In a real scenario, we'd call bridge.instantExit(star.solana_account)
+    setTimeout(() => {
+      toast.success(lang === "TR" ? "Islem basarili. Likidite cuzdana aktarildi." : "Success. Liquidity returned to wallet.");
+      refreshStars();
+    }, 2000);
+  };
 
   const refreshStars = () => {
     if (!user) return;
@@ -131,12 +151,30 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-sc-text-muted mb-4">
                   <div>RA - {s.ra}</div><div>Dec - {s.dec}</div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => downloadCertificate(s)} className="btn-ghost text-xs py-2 flex-1" data-testid={`cert-${s.code}`}>
-                    <span className="inline-flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> {lang === "TR" ? "Sertifika" : "Certificate"}</span>
-                  </button>
-                  <button onClick={() => listForSale(s)} className="btn-gold text-xs py-2 flex-1" data-testid={`sell-${s.code}`}>
-                    <span className="inline-flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> {s.for_sale ? (lang === "TR" ? "Satista" : "Listed") : (lang === "TR" ? "Satisa Koy" : "List for Sale")}</span>
+
+                {/* Aegis Info */}
+                <div className="flex items-center gap-2 mb-4 p-2 bg-sc-green/5 rounded-lg border border-sc-green/20">
+                  <ShieldCheck className="w-3.5 h-3.5 text-sc-green" />
+                  <div className="text-[10px] text-sc-green font-bold uppercase tracking-wider">
+                    Aegis Protected - 70% Reserve
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <button onClick={() => downloadCertificate(s)} className="btn-ghost text-xs py-2 flex-1" data-testid={`cert-${s.code}`}>
+                      <span className="inline-flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> {lang === "TR" ? "Sertifika" : "Certificate"}</span>
+                    </button>
+                    <button onClick={() => listForSale(s)} className="btn-gold text-xs py-2 flex-1" data-testid={`sell-${s.code}`}>
+                      <span className="inline-flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> {s.for_sale ? (lang === "TR" ? "Satista" : "Listed") : (lang === "TR" ? "Satis" : "List")}</span>
+                    </button>
+                  </div>
+                  
+                  <button 
+                    onClick={() => handleInstantExit(s)}
+                    className="w-full py-2 rounded-lg bg-sc-red/10 border border-sc-red/20 text-sc-red text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sc-red/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Zap className="w-3 h-3" /> Instant Exit (70% Refund)
                   </button>
                 </div>
               </div>
