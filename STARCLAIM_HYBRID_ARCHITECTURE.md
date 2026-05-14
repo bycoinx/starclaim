@@ -24,9 +24,11 @@ Bu döküman, StarClaim ekosisteminin teknik mimarisini, siber güvenlik protoko
 
 ## 2. 💎 Ekonomik Model (The Event Horizon)
 
-### 2.1. Liquidity Guarantee (%50 Rezerv)
-*   Her satışın %50'si akıllı sözleşmede kilitlenir.
-*   **Instant Exit:** Kullanıcı dilediği an NFT'sini sisteme geri satarak havuzdaki %50'lik payını (örneğin 3.000$'lık alışta 1.500$) anında nakite çevirebilir.
+### 2.1. Liquidity Guarantee & Aegis Yield (V2.0)
+*   **Standard Reserve (%50):** Her satışın %50'si akıllı sözleşmede kilitlenir.
+*   **Aegis Assurance (%70):** Kullanıcı opsiyonel %10 kasko ücreti ödeyerek garantisini %70'e çıkarabilir.
+*   **Yield Generation (DeFi Flow):** Kilitli rezervlerin %80'i otomatik olarak düşük riskli DeFi protokollerine (Aave, JitoSOL vb.) yönlendirilerek nemalandırılır. Üretilen faizin %60'ı kasko havuzunu (Insurance Buffer) besler.
+*   **Institutional Readiness:** Sistem, modüler "Vault Connector" yapısı sayesinde gelecekte on-chain fonları lisanslı banka hesaplarına (Option A) aktarabilecek altyapıya sahiptir.
 
 ### 2.2. Quantum Retrieval (24 Saatlik Geri Alım Hakkı)
 *   **Pişmanlık Penceresi:** Bir kullanıcı satış yaptığında, NFT anında yok edilmez; 24 saat boyunca "Stasis" (Bekleme) moduna alınır.
