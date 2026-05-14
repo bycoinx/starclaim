@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
-import { TrendingUp, Clock, Loader2, ArrowUpRight, ShoppingCart, BarChart3, Activity } from "lucide-react";
+import { TrendingUp, Clock, Loader2, ArrowUpRight, ShoppingCart, BarChart3, Activity, RefreshCw, Telescope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
@@ -19,9 +20,12 @@ export default function Marketplace() {
   const { user, login } = useAuth();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [buyingId, setBuyingId] = useState(null);
 
-  useEffect(() => {
+  const loadListings = () => {
+    setLoading(true);
+    setError("");
     api.get("/marketplace/listings")
       .then(({ data }) => {
         if (Array.isArray(data)) setListings(data);
@@ -30,9 +34,15 @@ export default function Marketplace() {
       .catch((err) => {
         console.error("Marketplace fetch error:", err);
         setListings([]);
+        setError(lang === "TR" ? "Marketplace verileri şu anda yüklenemedi." : "Marketplace data could not be loaded.");
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => {
+    loadListings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
 
   const buyListing = async (listing) => {
     if (!user) {
@@ -103,6 +113,33 @@ export default function Marketplace() {
 
         {loading ? (
           <div className="py-20 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-sc-gold" /></div>
+        ) : error ? (
+          <div className="glass-dark border border-sc-red/30 rounded-3xl p-10 text-center max-w-2xl mx-auto">
+            <Activity className="w-10 h-10 text-sc-red mx-auto mb-5" />
+            <h2 className="font-display text-3xl mb-3">{lang === "TR" ? "Trading Desk bağlantısı kurulamadı" : "Trading Desk connection failed"}</h2>
+            <p className="text-sc-text-muted mb-7">{error}</p>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <button type="button" onClick={loadListings} className="btn-gold justify-center">
+                <span className="inline-flex items-center gap-2"><RefreshCw className="w-4 h-4" /> {lang === "TR" ? "Tekrar Dene" : "Retry"}</span>
+              </button>
+              <Link to="/stars" className="btn-ghost justify-center">
+                <span className="inline-flex items-center gap-2"><Telescope className="w-4 h-4" /> {lang === "TR" ? "Yıldız Kataloğuna Git" : "Open Star Catalog"}</span>
+              </Link>
+            </div>
+          </div>
+        ) : listings.length === 0 ? (
+          <div className="glass-dark border border-white/10 rounded-3xl p-10 text-center max-w-2xl mx-auto">
+            <BarChart3 className="w-10 h-10 text-sc-gold/70 mx-auto mb-5" />
+            <h2 className="font-display text-3xl mb-3">{lang === "TR" ? "Henüz aktif liste yok" : "No active listings yet"}</h2>
+            <p className="text-sc-text-muted mb-7">
+              {lang === "TR"
+                ? "Marketplace açık. İlk yıldızını katalogdan sahiplenip daha sonra satışa çıkarabilirsin."
+                : "Marketplace is online. Claim a star from the catalog first, then list it for resale."}
+            </p>
+            <Link to="/stars" className="btn-gold justify-center">
+              <span className="inline-flex items-center gap-2"><Telescope className="w-4 h-4" /> {lang === "TR" ? "Yıldızını Seç" : "Pick Your Star"}</span>
+            </Link>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="market-grid">
             <AnimatePresence>
@@ -185,4 +222,3 @@ export default function Marketplace() {
     </div>
   );
 }
-
