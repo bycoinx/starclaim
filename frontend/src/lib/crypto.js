@@ -1,3 +1,19 @@
+export async function generateConstellationHash(points, sector, zoom) {
+  const enc = new TextEncoder();
+  // Normalize and stringify the input data to ensure consistency
+  const data = JSON.stringify({
+    p: points.map(p => (typeof p === 'object' ? `${p.x.toFixed(4)},${p.y.toFixed(4)},${p.z.toFixed(4)}` : p)),
+    s: sector,
+    z: zoom.toFixed(2)
+  });
+  
+  const hashBuffer = await window.crypto.subtle.digest('SHA-256', enc.encode(data));
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  return hashHex;
+}
+
 /**
  * Web Crypto API utility for StarVault
  * Handles client-side encryption/decryption using AES-256-GCM
