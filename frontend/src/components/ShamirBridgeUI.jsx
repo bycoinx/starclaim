@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Smartphone, FileText, Users, Lock, Landmark, CheckCircle2, Download } from "lucide-react";
-import { splitKey, distributeShares } from "../../lib/shamir";
+import { splitKey, distributeShares } from "../lib/shamir";
 
 export default function ShamirBridgeUI({ masterKey, mode, onComplete }) {
   const [step, setStep] = useState(0); // 0: Ready, 1: Splitting, 2: Distributed

@@ -5,8 +5,11 @@ import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 import { useT } from "../lib/i18n";
 import PlanetarySystem from "./PlanetarySystem";
+import NasaLandmarks from "./NasaLandmarks";
 import StarHUD from "./StarHUD";
 import ErrorBoundary from "./ui/ErrorBoundary";
+import { NASA_LANDMARKS } from "../data/nasaLandmarks";
+import { raDecToVector3 as astroRaDecToVector3 } from "../lib/astro";
 
 // --- COORDINATE HELPERS ---
 const raDecToVector3 = (raStr, decStr, radius = 500) => {
@@ -176,6 +179,47 @@ function NebulaBackground() {
   );
 }
 
+function LandmarkNavigator({ landmarks, activeCode, onSelect }) {
+  const { lang } = useT();
+
+  return (
+    <div className="absolute bottom-8 left-8 right-8 z-40 pointer-events-auto">
+      <div className="glass-dark border border-cyan-300/20 rounded-2xl p-4 backdrop-blur-xl">
+        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-[10px] uppercase tracking-[0.32em] text-cyan-200">
+            {lang === "TR" ? "NASA Landmark Sistemi" : "NASA Landmark System"}
+          </div>
+          <div className="text-[9px] uppercase tracking-[0.24em] text-sc-text-muted">
+            J2000 RA/Dec deep-space warp targets
+          </div>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {landmarks.map((landmark) => (
+            <button
+              key={landmark.code}
+              type="button"
+              onClick={() => onSelect({
+                ...landmark,
+                star_id: landmark.code,
+                tier: "nasa-landmark",
+                isLandmark: true,
+              })}
+              className={`min-w-[170px] rounded-xl border px-3 py-2 text-left transition-all ${
+                activeCode === landmark.code
+                  ? "border-cyan-200 bg-cyan-300/15 text-white shadow-[0_0_20px_rgba(56,189,248,0.2)]"
+                  : "border-white/10 bg-black/35 text-sc-text-muted hover:border-cyan-300/40 hover:text-white"
+              }`}
+            >
+              <div className="font-display text-sm">{lang === "TR" ? landmark.nameTr : landmark.name}</div>
+              <div className="mt-1 font-mono text-[9px] uppercase tracking-widest">{landmark.catalog}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SkySphere({ stars, onClaim }) {
   const { lang } = useT();
   const [selectedStar, setSelectedStar] = useState(null);
@@ -190,7 +234,9 @@ export default function SkySphere({ stars, onClaim }) {
 
   const handleSelect = useCallback((star) => {
     setSelectedStar(star);
-    const pos = raDecToVector3(star.ra, star.dec, 480);
+    const pos = star.x !== undefined
+      ? new THREE.Vector3(star.x, star.y || 0, star.z || 0)
+      : astroRaDecToVector3(star.ra, star.dec, star.isLandmark ? 430 : 480);
     setTargetPos(pos);
   }, []);
 
@@ -203,6 +249,7 @@ export default function SkySphere({ stars, onClaim }) {
         <Suspense fallback={null}>
           <ambientLight intensity={0.2} />
           <RealStars stars={stars} onSelect={handleSelect} />
+          <NasaLandmarks onSelect={handleSelect} />
           
           <Float speed={0.15} rotationIntensity={0.05}>
             <ErrorBoundary fallback={null}>
@@ -222,6 +269,12 @@ export default function SkySphere({ stars, onClaim }) {
         star={selectedStar} 
         onClaim={onClaim} 
         onClose={() => { setSelectedStar(null); setTargetPos(null); }} 
+      />
+
+      <LandmarkNavigator
+        landmarks={NASA_LANDMARKS}
+        activeCode={selectedStar?.code}
+        onSelect={handleSelect}
       />
 
       {/* VIEW CONTROLS */}
