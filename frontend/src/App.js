@@ -24,13 +24,20 @@ import AuthCallback from "./pages/AuthCallback";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 
+import AegisHUD from "./components/AegisHUD/AegisHUD";
+
 function AppShell() {
   const location = useLocation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeStar, setActiveStar] = useState(null);
   const [stats, setStats] = useState(null);
+  const [showHUD, setShowHUD] = useState(true);
 
   useEffect(() => {
+    // Check if user has already seen HUD in this session
+    const hasSeenHUD = sessionStorage.getItem("aegis_hud_seen");
+    if (hasSeenHUD) setShowHUD(false);
+
     api.get("/stats/overview")
       .then(({ data }) => {
         if (data && typeof data === 'object') setStats(data);
@@ -74,6 +81,17 @@ function AppShell() {
   // Handle OAuth callback synchronously (before normal routing)
   if (location.hash && location.hash.includes("session_id=")) {
     return <AuthCallback />;
+  }
+
+  if (showHUD) {
+    return (
+      <AegisHUD 
+        onComplete={() => {
+          setShowHUD(false);
+          sessionStorage.setItem("aegis_hud_seen", "true");
+        }} 
+      />
+    );
   }
 
   return (

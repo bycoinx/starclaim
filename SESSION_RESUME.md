@@ -2,41 +2,25 @@
 
 Bu dosya, Gemini CLI'ın (veya senin) projeye kaldığı yerden **tek saniyede** devam edebilmesi için oluşturulmuştur. 
 
-## 🗓️ Son Güncelleme: 12 Mayıs 2026
+## 🗓️ Son Güncelleme: 14 Mayıs 2026 (Stratejik Vizyon Güncellemesi)
 
-## ✅ TAMAMLANANLAR (HAFTA 5 - BUGÜN)
-1. **Modül 3.1 - Expo Mobil Uygulama:** 
-   - `mobile/` klasörü altında Expo Router tabanlı proje başlatıldı.
-   - Dark mode, cinematic splash screen ve temel navigasyon (`app/index.js`, `app/stars.js`, `app/vault.js`) kuruldu.
-2. **Web Deployment & Fixes:**
-   - Webpack 5 polyfill hataları (`assert`, `buffer`, `crypto`) `craco.config.js` ile düzeltildi.
-   - Vercel "403 Forbidden" ve SPA routing (sayfa yenileme) sorunları çözüldü.
-   - Restrictive CSP (Güvenlik Politikası) esnetildi ve ardından güvenli şekilde yeniden sıkılaştırıldı.
-   - **YENİ:** `react-use` bağımlılığı kaldırıldı (native hook ile değiştirildi).
-   - **YENİ:** `VaultEncryption.jsx` içindeki hatalı `encryptData` importu düzeltildi.
-   - **YENİ:** Yerel build (`npm run build`) başarıyla doğrulandı ve GitHub'a push edildi.
-3. **Branding & Temizlik:**
-   - Tüm "Emergent" yazıları ve badge'leri `index.html` ve CSS'den kaldırıldı.
-   - Site başlığı "StarClaim | Evrenin Sahibi Olun" olarak güncellendi.
-4. **Vault Core Gelişmiş Entegrasyon:**
-   - `VaultEncryption.jsx` ve `UploadToChain.jsx` tamamen yenilendi.
-   - Framer Motion animasyonları, Solana Cüzdan bağlantısı ve Arweave mühürleme akışı tamamlandı.
-   - StarPicker'a "Girişi Atla" ve "Sunucu Uyanıyor" uyarısı eklendi.
-5. **Mobil Uygulama İleri Seviye Özellikler:**
-   - **AR Star Viewer (3.2):** `expo-camera` ve `expo-sensors` ile gökyüzü tarama ve yıldız tespiti arayüzü eklendi.
-   - **Solana Mobile Integration (3.3):** Mobile Wallet Adapter protokolü ve polyfill'ler kuruldu, ana ekrana cüzdan bağlantısı eklendi.
-   - **Mobile Vault Decryptor (3.4):** Web ile uyumlu AES-256-GCM şifre çözme motoru (`node-forge` tabanlı) ve dosya seçici entegre edildi.
+## ✅ TAMAMLANANLAR (STRATEJİK PLANLAMA)
+1. **Sovereign Architecture (Anayasa) Oluşturuldu:**
+   - `STARCLAIM_HYBRID_ARCHITECTURE.md` dosyası ile projenin yeni kimliği tanımlandı.
+2. **Kimlik Değişimi:** 
+   - Karanlık/Gizemli tema yerine "Iron Man (Mark-85) / J.A.R.V.I.S." tarzı yüksek teknolojili HUD arayüzüne geçiş kararlaştırıldı.
+3. **Güvenlik İnovasyonları:** 
+   - 3D Constellation Password, Shamir's Secret Sharing (3/5) ve Aegis Sentinel (Code Red) protokolleri planlandı.
+4. **Ekonomik Model:** 
+   - %50 Likidite Garantisi (Event Horizon) ve 24 Saatlik Geri Alım (Quantum Retrieval) mekanizmaları kurgulandı.
 
-## 🛠️ KRİTİK AYARLAR (Güncel)
-- **Git Binary:** `C:\Users\pc\AppData\Local\GitHubDesktop\app-3.5.8\resources\app\git\cmd\git.exe`
-- **Frontend Dizini:** `C:\Users\pc\Desktop\starclaim-main\frontend`
-- **Mobile Dizini:** `C:\Users\pc\Desktop\starclaim-main\mobile`
-- **Vercel Root:** Proje `frontend` klasörüne odaklı.
-
-## 🔜 SIRADAKİ ADIMLAR (YARIN)
-- **Modül 3.5:** Mobile Star Marketplace (Mobil cüzdan ile yıldız satın alma ve listeleme).
-- **Modül 3.6:** Push Notifications (Yeni aktivite ve pazar listelemeleri için Expo Notifications).
-- **Modül 3.7:** Biometric Lock (Vault erişimi için FaceID/Fingerprint entegrasyonu).
+## 🛠️ YENİ HEDEFLER (HAFTA 6 - UYGULAMA)
+- **Modül 4.1: The Aegis HUD:** WebGL/Three.js ile Iron Man tarzı holografik giriş arayüzü.
+- **Modül 4.2: Constellation Engine:** 3D hareketleri matematiksel Hash anahtarına dönüştüren algoritma.
+- **Modül 4.3: Event Horizon Smart Contract:** Solana üzerinde %50 rezerv tutan ve 24 saatlik iptal penceresi sunan likidite kontratı.
+- **Modül 4.4: Shamir Bridge:** Şifreyi 5 parçaya bölen ve mobil/NFT/dosya arasında dağıtan sistem.
+- **Modül 4.5: NASA Landmark System:** Swan, Heart & Soul, Tarantula gibi gerçek yapıların koordinat eşleşmesi ve 3D görselleştirilmesi.
+- **Modül 4.6: The Observer Protocol:** Gözlemci etkisine dayalı dinamik veri yükleme ve "Ghost Star" gizlilik katmanı.
 
 ## 💡 Gemini'ye Not:
-"Gemini, `SESSION_RESUME.md` dosyasını oku ve Hafta 5 - Modül 3.5: Mobile Star Marketplace adımından devam et." demen yeterli.
+"Gemini, `SESSION_RESUME.md` ve `STARCLAIM_HYBRID_ARCHITECTURE.md` dosyalarını oku. Hafta 6 - Modül 4.1: The Aegis HUD adımından, RA/Dec tabanlı NASA entegreli ve Kuantum (Observer) optimizasyonlu Iron Man vizyonuyla devam et."

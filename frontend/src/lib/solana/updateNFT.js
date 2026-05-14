@@ -3,11 +3,12 @@ import { Connection, PublicKey, clusterApiUrl } from "@solana/web3.js";
 
 /**
  * Links an Arweave Vault transaction ID to a Star NFT's metadata attributes.
- * @param {string} nftAddress - The mint address of the Star NFT
+ * @param {string} nftMintAddress - The mint address of the Star NFT
  * @param {string} vaultTxId - The transaction ID from Arweave
- * @param {object} wallet - The Solana wallet adapter (Phantom/Solflare)
+ * @param {object} wallet - The Solana wallet adapter
+ * @param {number} retries - Number of retries allowed (default 2)
  */
-export async function linkVaultToNFT(nftAddress, vaultTxId, wallet) {
+export async function linkVaultToNFT(nftMintAddress, vaultTxId, wallet, retries = 2) {
   try {
     // 1. Solana Connection & Metaplex Init
     const endpoint = process.env.REACT_APP_SOLANA_RPC || clusterApiUrl("mainnet-beta");
@@ -15,7 +16,7 @@ export async function linkVaultToNFT(nftAddress, vaultTxId, wallet) {
     const metaplex = Metaplex.make(connection).use(walletAdapterIdentity(wallet));
 
     // 2. Fetch the NFT
-    const mintAddress = new PublicKey(nftAddress);
+    const mintAddress = new PublicKey(nftMintAddress);
     const nft = await metaplex.nfts().findByMint({ mintAddress });
 
     if (!nft) {
@@ -23,7 +24,6 @@ export async function linkVaultToNFT(nftAddress, vaultTxId, wallet) {
     }
 
     // 3. Prepare updated attributes
-    // We check if "Vault" attribute already exists to update it, otherwise push new.
     let attributes = nft.json?.attributes || [];
     const vaultAttrIndex = attributes.findIndex(a => a.trait_type === "Vault");
 
@@ -38,21 +38,29 @@ export async function linkVaultToNFT(nftAddress, vaultTxId, wallet) {
       attributes.push(newVaultAttr);
     }
 
-    // 4. Update NFT Metadata
+    // 4. Update NFT Metadata & Sign with Wallet
+    // The metaplex.nfts().update() call handles transaction creation, signing, and sending
     const { response } = await metaplex.nfts().update({
       nftOrSft: nft,
       attributes: attributes,
     });
 
+    // 6. Confirm transaction (Metaplex update waits for confirmation by default with 'confirmed' commitment)
     console.log("NFT Metadata updated successfully. Signature:", response.signature);
 
     return {
       success: true,
-      signature: response.signature,
-      txId: vaultTxId
+      signature: response.signature
     };
 
   } catch (error) {
+    if (retries > 0) {
+      console.warn(`NFT metadata update failed. Retrying... (${retries} retries left)`, error);
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return linkVaultToNFT(nftMintAddress, vaultTxId, wallet, retries - 1);
+    }
+    
     console.error("Link Vault to NFT error:", error);
     return {
       success: false,

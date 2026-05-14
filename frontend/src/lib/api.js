@@ -6,4 +6,44 @@ export const API = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 export const api = axios.create({
   baseURL: API,
   withCredentials: true,
+  timeout: 60000, // 60s timeout
 });
+
+/**
+ * Uploads an encrypted vault blob to Arweave via the backend.
+ * Includes retry logic (up to 3 times).
+ */
+export async function uploadToArweave(encryptedBlob, metadata, retries = 3) {
+  try {
+    // 1. Convert Blob to ArrayBuffer
+    const arrayBuffer = await encryptedBlob.arrayBuffer();
+    const encryptedData = Array.from(new Uint8Array(arrayBuffer));
+
+    // 2. Prepare payload
+    const payload = {
+      encryptedData,
+      metadata: {
+        ...metadata,
+        timestamp: Date.now()
+      }
+    };
+
+    // 3. POST /api/vault/upload
+    const response = await api.post('/vault/upload', payload);
+
+    if (!response.data || !response.data.success) {
+      throw new Error(response.data?.error || 'Arweave upload failed');
+    }
+
+    return response.data; // { success, txId, url }
+
+  } catch (error) {
+    if (retries > 0) {
+      console.warn(`Arweave upload failed. Retrying... (${retries} retries left)`);
+      // Exponential backoff or simple delay could be added here
+      return uploadToArweave(encryptedBlob, metadata, retries - 1);
+    }
+    console.error('Final Arweave upload error:', error);
+    throw error;
+  }
+}

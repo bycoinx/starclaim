@@ -20,7 +20,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-import { api } from '../../lib/api';
+import { api, uploadToArweave } from '../../lib/api';
 import { linkVaultToNFT } from '../../lib/solana/updateNFT';
 
 // Simple custom hook to replace react-use
@@ -102,12 +102,9 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
       setProgress(30);
       setStatus('uploading');
       
-      const { data: arweaveRes } = await api.post('/vault/upload', {
-        encryptedData,
-        metadata: {
-          starName: selectedNft.name || 'Star Vault',
-          owner: publicKey.toString()
-        }
+      const arweaveRes = await uploadToArweave(encryptedBlob, {
+        starName: selectedNft.name || 'Star Vault',
+        owner: publicKey.toString()
       });
 
       if (!arweaveRes.success) throw new Error('Arweave upload failed');
@@ -122,7 +119,7 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
       const solanaRes = await linkVaultToNFT(
         selectedNft.mintAddress.toString(), 
         arweaveRes.txId, 
-        window.solana // This is still a bit tricky with adapter, but linkVaultToNFT should handle it
+        wallet.adapter // Use the wallet adapter directly
       );
 
       if (!solanaRes.success) throw new Error(solanaRes.error);
