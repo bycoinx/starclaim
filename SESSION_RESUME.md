@@ -23,9 +23,15 @@ Bu dosya, Gemini CLI'ın veya Codex'in projeye kaldığı yerden hızlıca devam
    - Shamir Bridge import yolu düzeltilerek production build tekrar yeşile alındı.
 
 ## SIRADAKİ HEDEFLER
-- **Modül 4.6: The Observer Protocol:** Gözlemci etkisine dayalı dinamik veri yükleme ve "Ghost Star" gizlilik katmanı.
+6. **Modül 4.6: The Observer Protocol:**
+   - **Quantum Reality Collapse:** Kamera açısına göre frustum culling ve dinamik veri yükleme metriği eklendi.
+   - **Ghost Star:** Gözlemlenmeyen (kameranın odaklanmadığı) yıldızlar için "probabilistic cloud" shader katmanı ve bakış açısıyla maddeselleşme efekti tamamlandı.
+   - **Observer HUD:** Real-time reality coherence, frustum load ve ghost count göstergeleri içeren Aegis link arayüzü eklendi.
+
+## SIRADAKİ HEDEFLER
+- **Modül 4.7: Neural Link Bridge:** Mobil cihazın jiroskop verilerini PC'deki 3D HUD ile senkronize eden "Spatial Gaze" kontrol katmanı.
 
 ## Gemini/Codex'e Not
-"`SESSION_RESUME.md` ve `STARCLAIM_HYBRID_ARCHITECTURE.md` dosyalarını oku. Hafta 6 - Modül 4.6: The Observer Protocol adımından, gözlemci etkisine dayalı dinamik veri yükleme ve Ghost Star gizlilik katmanını kuracak şekilde devam et."
+"`SESSION_RESUME.md` ve `STARCLAIM_HYBRID_ARCHITECTURE.md` dosyalarını oku. Hafta 6 - Modül 4.7: Neural Link Bridge adımından, mobil jiroskop senkronizasyonu ve Spatial Gaze kontrol katmanını kuracak şekilde devam et."
 
 **Durum:** Kodlar GitHub `main` branch'e push edilmeye hazır; frontend production build başarılı.
