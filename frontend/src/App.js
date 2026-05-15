@@ -25,6 +25,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 
 import AegisHUD from "./components/AegisHUD/AegisHUD";
+import ErrorBoundary from "./components/ui/ErrorBoundary";
 
 function AppShell() {
   const location = useLocation();
@@ -129,7 +130,9 @@ export default function App() {
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
-            <AppShell />
+            <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
+              <AppShell />
+            </ErrorBoundary>
           </AuthProvider>
         </BrowserRouter>
       </LanguageProvider>

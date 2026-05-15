@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Activity, Zap, Cpu, Lock, Globe } from "lucide-react";
-
-export default function TelemetryOverlay() {
+export default function TelemetryOverlay({ linkStatus }) {
   const [cpuLoad, setCpuLoad] = useState(12);
   const [memUsage, setMemUsage] = useState(4.2);
   const [spaceWeather, setSpaceWeather] = useState("CALM");
   const [zkpStatus, setZkpStatus] = useState("INITIALIZING");
 
   useEffect(() => {
+    // ... rest of the code ...
+
     const interval = setInterval(() => {
       setCpuLoad(prev => Math.min(Math.max(prev + (Math.random() - 0.5) * 5, 5), 45).toFixed(1));
       setMemUsage(prev => Math.min(Math.max(prev + (Math.random() - 0.5) * 0.2, 3.8), 5.1).toFixed(2));
@@ -43,6 +44,12 @@ export default function TelemetryOverlay() {
             <span className="telemetry-label">Aegis Core OS</span>
           </div>
           <div className="telemetry-value text-sc-gold">v8.5.0-MARK85</div>
+          <div className="mt-2 pt-2 border-t border-white/5">
+             <div className="text-[8px] opacity-40 uppercase tracking-widest mb-1">NEURAL LINK</div>
+             <div className={`text-[10px] font-bold tracking-widest ${linkStatus === 'connected' ? 'text-sc-green' : 'text-sc-red'}`}>
+               {linkStatus === 'connected' ? 'SYNCHRONIZED' : linkStatus === 'waiting' ? 'WAITING...' : 'OFFLINE'}
+             </div>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-2 gap-2">

@@ -29,6 +29,12 @@ export default function Home() {
             </TouchableOpacity>
           </Link>
 
+          <Link href="/neural-link" asChild>
+            <TouchableOpacity style={[styles.button, styles.bridgeButton]}>
+              <Text style={styles.bridgeText}>NEURAL LINK BRIDGE</Text>
+            </TouchableOpacity>
+          </Link>
+
           {address ? (
             <TouchableOpacity style={[styles.button, styles.walletButton]} onPress={disconnect}>
               <Text style={styles.walletText}>CÜZDAN: {address.slice(0, 4)}...{address.slice(-4)}</Text>
@@ -93,6 +99,21 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
+  },
+  bridgeButton: {
+    backgroundColor: 'rgba(0, 204, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: '#00ccff',
+    shadowColor: '#00ccff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  bridgeText: {
+    color: '#00ccff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 2,
   },
   walletButton: {
     backgroundColor: 'transparent',

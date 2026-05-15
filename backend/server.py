@@ -2,7 +2,7 @@
 StarClaim backend — FastAPI + MongoDB + Emergent Google Auth + Claude Sonnet AI stories
 + Stripe checkout + Resend email + ReportLab PDF certificate.
 """
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -1025,6 +1025,39 @@ async def get_certificate(order_id: str, user: User = Depends(get_current_user))
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="StarClaim-{star["code"]}-Certificate.pdf"'},
     )
+
+
+# -------------------- Neural Link Bridge (WebSockets) --------------------
+# session_id -> list of active connections
+bridge_sessions = {}
+
+@app.websocket("/ws/bridge/{session_id}")
+async def websocket_bridge(websocket: WebSocket, session_id: str):
+    await websocket.accept()
+    if session_id not in bridge_sessions:
+        bridge_sessions[session_id] = []
+    
+    bridge_sessions[session_id].append(websocket)
+    logger.info(f"Neural Link: WebSocket connected to bridge {session_id}. Active peers: {len(bridge_sessions[session_id])}")
+    
+    try:
+        while True:
+            # Receive JSON data (e.g. { "type": "gyro", "alpha": 0.1, "beta": 0.2, "gamma": 0.3 })
+            data = await websocket.receive_json()
+            # Broadcast to everyone ELSE in this bridge session
+            for peer in bridge_sessions[session_id]:
+                if peer != websocket:
+                    try:
+                        await peer.send_json(data)
+                    except Exception:
+                        pass
+    except WebSocketDisconnect:
+        if websocket in bridge_sessions[session_id]:
+            bridge_sessions[session_id].remove(websocket)
+        if not bridge_sessions[session_id]:
+            if session_id in bridge_sessions:
+                del bridge_sessions[session_id]
+        logger.info(f"Neural Link: WebSocket disconnected from bridge {session_id}")
 
 
 # -------------------- Activities / Stats --------------------
