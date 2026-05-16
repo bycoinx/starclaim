@@ -32,9 +32,8 @@ export default function Dashboard() {
     const loadingToast = toast.loading("Aegis: Initializing Instant Exit Transaction...");
     
     try {
-      // Initialize bridge with real wallet
-      const bridge = new EventHorizonBridge(useWallet()); 
-      // Note: event_horizon.js expects a 'wallet' object that has publicKey and signTransaction
+      // Initialize bridge with real wallet from component scope
+      const bridge = new EventHorizonBridge(wallet); 
       
       // In a real scenario, the starAccountPubKey would be stored in the star record in DB
       // For this demo, we use a placeholder or derived key if available
@@ -169,7 +168,7 @@ export default function Dashboard() {
                 <div className="text-xs text-sc-text-muted mb-3">{s.name} - {s.constellation}</div>
                 {s.personal_message && <p className="font-accent italic text-sc-text/80 text-sm mb-3 leading-relaxed">"{s.personal_message}"</p>}
                 <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-sc-text-muted mb-4">
-                  <div>RA - {s.ra}</div><div>Dec - {s.dec}</div>
+                  <div>RA - {s.ra || "N/A"}</div><div>Dec - {s.dec || "N/A"}</div>
                 </div>
 
                 {/* Aegis Info */}
