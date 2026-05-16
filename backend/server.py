@@ -18,6 +18,9 @@ import httpx
 import anthropic
 import stripe
 from openai import AsyncOpenAI
+import nacl.signing
+import nacl.encoding
+import base58
 
 from seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
 from certificate import generate_certificate
@@ -325,6 +328,91 @@ async def auth_logout(request: Request, response: Response):
         await db.user_sessions.delete_one({"session_token": token})
     response.delete_cookie("session_token", path="/")
     return {"ok": True}
+
+
+# -------------------- Quantum Entanglement (QR Login) --------------------
+auth_handshake_sessions = {}
+
+
+def verify_solana_signature(public_key_str: str, signature_str: str, message_str: str) -> bool:
+    try:
+        pubkey_bytes = base58.b58decode(public_key_str)
+        sig_bytes = base58.b58decode(signature_str)
+        msg_bytes = message_str.encode("utf-8")
+        
+        verify_key = nacl.signing.VerifyKey(pubkey_bytes)
+        verify_key.verify(msg_bytes, sig_bytes)
+        return True
+    except Exception as e:
+        logger.error(f"Signature verification error: {e}")
+        return False
+
+
+@api.post("/auth/qr-verify")
+async def auth_qr_verify(body: QRVerifyRequest, response: Response):
+    if not verify_solana_signature(body.public_key, body.signature, body.message):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    # Message should be: "StarClaim Entanglement Login: {auth_session_id}"
+    expected_msg = f"StarClaim Entanglement Login: {body.auth_session_id}"
+    if body.message != expected_msg:
+        raise HTTPException(status_code=401, detail="Invalid message payload")
+
+    # User lookup by wallet (public key)
+    email = f"{body.public_key[:8]}@solana.wallet" # Synthetic email for wallet users
+    existing = await db.users.find_one({"wallet_address": body.public_key}, {"_id": 0})
+    if existing:
+        user_id = existing["user_id"]
+        name = existing["name"]
+    else:
+        user_id = f"user_{uuid.uuid4().hex[:12]}"
+        name = f"Explorer {body.public_key[:4]}"
+        await db.users.insert_one({
+            "user_id": user_id,
+            "email": email,
+            "wallet_address": body.public_key,
+            "name": name,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    session_token = uuid.uuid4().hex
+    expires = datetime.now(timezone.utc) + timedelta(days=7)
+    await db.user_sessions.insert_one({
+        "session_token": session_token,
+        "user_id": user_id,
+        "expires_at": expires.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    # Push to PC via WebSocket if connected
+    if body.auth_session_id in auth_handshake_sessions:
+        ws = auth_handshake_sessions[body.auth_session_id]
+        try:
+            await ws.send_json({
+                "type": "auth_success",
+                "session_token": session_token,
+                "user": {"user_id": user_id, "email": email, "name": name}
+            })
+        except Exception:
+            logger.error(f"Failed to send auth_success to {body.auth_session_id}")
+
+    return {"ok": True}
+
+
+@app.websocket("/ws/auth/{auth_session_id}")
+async def websocket_auth(websocket: WebSocket, auth_session_id: str):
+    await websocket.accept()
+    auth_handshake_sessions[auth_session_id] = websocket
+    logger.info(f"Auth Handshake: PC connected {auth_session_id}")
+    
+    try:
+        while True:
+            # Just keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        if auth_handshake_sessions.get(auth_session_id) == websocket:
+            del auth_handshake_sessions[auth_session_id]
+        logger.info(f"Auth Handshake: PC disconnected {auth_session_id}")
 
 
 # -------------------- Stars --------------------

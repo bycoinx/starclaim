@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Star, Globe, LogOut, User, Menu, X } from "lucide-react";
+import { Star, Globe, LogOut, User, Menu, X, QrCode } from "lucide-react";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
+import QRLoginModal from "./QRLoginModal";
 
 export default function Navbar({ onOpenClaim }) {
   const { t, lang, toggle } = useT();
   const { user, login, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,8 +69,6 @@ export default function Navbar({ onOpenClaim }) {
             className="hidden md:flex items-center gap-1.5 text-xs text-sc-text-muted hover:text-sc-gold transition-colors"
           >
             <Globe className="w-4 h-4" /> {lang}
-          </button>
-
           {user ? (
             <div className="hidden md:flex items-center gap-3">
               <button
@@ -93,17 +93,30 @@ export default function Navbar({ onOpenClaim }) {
               </button>
             </div>
           ) : (
-            <button
-              onClick={login}
-              data-testid="nav-login"
-              className="hidden md:block text-sm text-sc-text/80 hover:text-sc-gold transition-colors"
-            >
-              {t("nav_login")}
-            </button>
+            <div className="hidden md:flex items-center gap-4">
+              <button
+                onClick={() => setShowQRModal(true)}
+                className="p-2 text-sc-text/60 hover:text-sc-gold transition-colors"
+                title="Quantum Login"
+              >
+                <QrCode size={18} />
+              </button>
+              <button
+                onClick={login}
+                data-testid="nav-login"
+                className="text-sm text-sc-text/80 hover:text-sc-gold transition-colors"
+              >
+                {t("nav_login")}
+              </button>
+            </div>
           )}
+          ...
+          {open && (
+          ...
+          )}
+          <QRLoginModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} />
+          </header>
 
-          <button
-            onClick={onOpenClaim}
             data-testid="nav-claim-cta"
             className="btn-gold text-sm"
           >

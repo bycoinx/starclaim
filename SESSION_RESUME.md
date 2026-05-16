@@ -2,7 +2,7 @@
 
 Bu dosya, Gemini CLI'ın veya Codex'in projeye kaldığı yerden hızlıca devam edebilmesi için güncellenmiştir.
 
-## Son Güncelleme: 15 Mayıs 2026 (Modül 4.7 Tamamlandı)
+## Son Güncelleme: 16 Mayıs 2026 (Modül 4.8 Tamamlandı)
 
 ## TAMAMLANANLAR (HAFTA 6 - UYGULAMA)
 6. **Modül 4.6: The Observer Protocol:**
@@ -16,10 +16,15 @@ Bu dosya, Gemini CLI'ın veya Codex'in projeye kaldığı yerden hızlıca devam
    - **Bridge Screen:** Expo tabanlı mobil uygulamaya `neural-link.js` ekranı ve bağlantı arayüzü eklendi.
    - **Backend Bridge:** FastAPI sunucusuna asenkron WebSocket session yönetimi (`/ws/bridge/`) entegre edildi.
    - **Production Stabilization:** Vercel üzerindeki runtime hataları için robust polyfill (Buffer/process) ve ErrorBoundary katmanları eklendi.
+8. **Modül 4.8: Quantum Entanglement Login:**
+   - **Handshake Protocol:** PC ve Mobil arasında WebSocket tabanlı güvenli el sıkışma mekanizması kuruldu (`/ws/auth/`).
+   - **Signature Verification:** Solana cüzdan imzalarını backend tarafında Ed25519 (PyNaCl) ile doğrulayan sistem entegre edildi.
+   - **QR Interface:** Frontend'e "Iron Man" HUD stili QR Login modalı ve mobil uygulamaya QR tarayıcı eklendi.
+   - **Wallet Identity:** Kullanıcıların sadece cüzdan imzasıyla şifresiz oturum açması sağlandı.
 
 ## SIRADAKİ HEDEFLER
-- **Modül 4.8: Quantum Entanglement Login:** QR kod tabanlı şifresiz giriş sistemi.
 - **Modül 4.9: Star Stories AI v2:** Claude 4.5 Sonnet ile daha derin ve kişiselleştirilmiş yıldız hikayeleri.
+- **Modül 5.0: Interstellar Treasury:** Solana üzerinde akıllı sözleşme tabanlı likidite havuzu entegrasyonu.
 
 ## Gemini/Codex'e Not
-"Modül 4.7 tamamlandı. Neural Link Bridge aktif. Bir sonraki aşamada Modül 4.8 QR Login sistemine başlanabilir."
+"Modül 4.8 tamamlandı. Quantum Entanglement Login sistemi aktif. Bir sonraki aşamada Modül 4.9 AI Story iyileştirmelerine geçilebilir."

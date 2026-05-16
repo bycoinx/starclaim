@@ -35,6 +35,12 @@ export default function Home() {
             </TouchableOpacity>
           </Link>
 
+          <Link href="/qr-login" asChild>
+            <TouchableOpacity style={[styles.button, styles.quantumButton]}>
+              <Text style={styles.quantumText}>QUANTUM LOGIN</Text>
+            </TouchableOpacity>
+          </Link>
+
           {address ? (
             <TouchableOpacity style={[styles.button, styles.walletButton]} onPress={disconnect}>
               <Text style={styles.walletText}>CÜZDAN: {address.slice(0, 4)}...{address.slice(-4)}</Text>
@@ -114,6 +120,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  quantumButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    marginTop: 5,
+  },
+  quantumText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 2,
+    opacity: 0.8,
   },
   walletButton: {
     backgroundColor: 'transparent',
