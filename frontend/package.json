@@ -84,7 +84,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 craco build",
+    "build": "cross-env CI=false NODE_OPTIONS=--max-old-space-size=4096 craco build",
     "test": "craco test"
   },
   "browserslist": {
