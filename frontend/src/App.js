@@ -34,6 +34,9 @@ import PaymentCancel from "./pages/PaymentCancel";
 import AegisHUD from "./components/AegisHUD/AegisHUD";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 
+// Define wallets outside to prevent re-instantiation
+const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
+
 function AppShell() {
   const location = useLocation();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -42,6 +45,7 @@ function AppShell() {
   const [showHUD, setShowHUD] = useState(true);
 
   useEffect(() => {
+    // Check if user has already seen HUD in this session
     const hasSeenHUD = sessionStorage.getItem("aegis_hud_seen");
     if (hasSeenHUD) setShowHUD(false);
 
@@ -88,12 +92,25 @@ function AppShell() {
 
   if (showHUD) {
     return (
-      <AegisHUD 
-        onComplete={() => {
-          setShowHUD(false);
-          sessionStorage.setItem("aegis_hud_seen", "true");
-        }} 
-      />
+      <ErrorBoundary fallback={
+        <div className="flex flex-col items-center justify-center h-screen bg-sc-deep text-center p-6">
+          <h2 className="text-sc-gold font-display text-2xl mb-4">Neural Link Calibration Failed</h2>
+          <p className="text-sc-text-muted mb-8 max-w-md">The holographic HUD encountered a rendering error. You can still access the platform directly.</p>
+          <button 
+            onClick={() => setShowHUD(false)} 
+            className="btn-gold"
+          >
+            Enter StarClaim Directly
+          </button>
+        </div>
+      }>
+        <AegisHUD 
+          onComplete={() => {
+            setShowHUD(false);
+            sessionStorage.setItem("aegis_hud_seen", "true");
+          }} 
+        />
+      </ErrorBoundary>
     );
   }
 
@@ -129,7 +146,6 @@ function AppShell() {
 export default function App() {
   const network = 'devnet';
   const endpoint = clusterApiUrl(network);
-  const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
 
   return (
     <div className="App bg-sc-deep min-h-screen">
