@@ -124,6 +124,10 @@ class StoryRequest(BaseModel):
     star_name: str
     constellation: str
     custom_name: str
+    ra: Optional[str] = None
+    dec: Optional[str] = None
+    magnitude: Optional[float] = None
+    tier: Optional[str] = "standard"
     personal_message: Optional[str] = ""
     occasion: str = "general"
     language: str = "TR"
@@ -720,70 +724,90 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
     return {"url": session.url, "session_id": session.id}
 
 
-# -------------------- AI Story --------------------
+# -------------------- AI Story v2 (Quantum Narrative) --------------------
 @api.post("/ai/story")
 async def ai_story(body: StoryRequest):
     if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
-        raise HTTPException(status_code=500, detail="No AI key configured (ANTHROPIC_API_KEY or EMERGENT_LLM_KEY)")
+        raise HTTPException(status_code=500, detail="No AI key configured")
 
     lang = body.language.upper()
+    
+    # Enhanced context for v2
+    star_context = (
+        f"Star: {body.star_name} in {body.constellation}\n"
+        f"Coordinates: RA {body.ra or 'Unknown'}, Dec {body.dec or 'Unknown'}\n"
+        f"Magnitude: {body.magnitude or 'N/A'}\n"
+        f"Tier: {body.tier}\n"
+    )
+
     if lang == "TR":
         system = (
-            "Sen StarClaim adlı premium yıldız isimlendirme platformunun duygusal ve şiirsel hikaye yazarısın. "
-            "Kullanıcının seçtiği yıldıza, özel anlamına ve anısına dair 130-170 kelimelik, büyüleyici bir Türkçe hikaye yaz. "
-            "Üslubun şiirsel, sıcak, kozmik imgelerle dolu olsun. Klişelerden kaçın. Hikayeyi kişisel hissettir. "
-            "Hikayeyi 3-4 kısa paragrafa böl. Başlık yazma, sadece hikaye metnini döndür."
+            "Sen StarClaim'in 'Astrometric Storyteller' AI ünitesisin. "
+            "Görevin: Kullanıcının seçtiği yıldızı, bilimsel veriler ve derin kozmik şiirsellikle harmanlayarak eşsiz bir hikayeye dönüştürmek. "
+            "Üslup: Iron Man (J.A.R.V.I.S.) sofistikeliği + Carl Sagan ilhamı + Şiirsel derinlik. "
+            "İçerik kuralları:\n"
+            "1. Yıldızın koordinatlarına veya parlaklığına (magnitude) bilimsel ama masalsı bir atıf yap.\n"
+            "2. Takımyıldızının mitolojik geçmişinden bir parça ekle.\n"
+            "3. Kullanıcının özel ismini ve vesilesini (occasion) hikayenin kalbine yerleştir.\n"
+            "4. Asla 'Bir zamanlar' gibi klişelerle başlama. Doğrudan uzay-zamanın derinliğinden konuş.\n"
+            "5. 150-200 kelime arası, 4 kısa paragraf. Başlık yok, sadece metin."
         )
         user_text = (
-            f"Yıldız: {body.star_name} ({body.constellation} takımyıldızı)\n"
-            f"Kullanıcının verdiği özel isim: {body.custom_name}\n"
-            f"Özel vesile: {body.occasion}\n"
-            f"Kişisel mesaj: {body.personal_message or '—'}\n\n"
-            f"Bu yıldıza ithaf edilen kişisel, duygusal ve unutulmaz bir hikaye yaz."
+            f"{star_context}\n"
+            f"Özel İsim: {body.custom_name}\n"
+            f"Vesile: {body.occasion}\n"
+            f"Mesaj: {body.personal_message or 'Sonsuz bir bağ.'}\n\n"
+            "Bu verileri kullanarak büyüleyici, bilimsel temelli ve derin duygusal bir Türkçe kuantum hikayesi yaz."
         )
     else:
         system = (
-            "You are the emotional, poetic storyteller for StarClaim, a premium star-naming platform. "
-            "Write a 130-170 word English story tying the user's chosen star to its deeper meaning. "
-            "Style: poetic, warm, cosmic imagery, avoid cliches. 3-4 short paragraphs. No title — return story text only."
+            "You are StarClaim's 'Astrometric Storyteller' AI unit. "
+            "Task: Transform the user's star into a unique narrative by blending scientific data with deep cosmic poetry. "
+            "Style: J.A.R.V.I.S. sophistication + Carl Sagan inspiration + Poetic depth. "
+            "Guidelines:\n"
+            "1. Make a scientific yet magical reference to the star's coordinates or magnitude.\n"
+            "2. Weave in a fragment of the constellation's mythological history.\n"
+            "3. Place the custom name and occasion at the heart of the story.\n"
+            "4. Avoid clichés like 'Once upon a time'. Speak from the depths of spacetime.\n"
+            "5. 150-200 words, 4 short paragraphs. No title, just text."
         )
         user_text = (
-            f"Star: {body.star_name} ({body.constellation} constellation)\n"
-            f"User's custom name: {body.custom_name}\n"
+            f"{star_context}\n"
+            f"Custom Name: {body.custom_name}\n"
             f"Occasion: {body.occasion}\n"
-            f"Personal message: {body.personal_message or '—'}\n\n"
-            f"Write a personal, emotional, unforgettable dedication story for this star."
+            f"Message: {body.personal_message or 'An eternal bond.'}\n\n"
+            "Create a captivating, scientifically-grounded, and emotionally resonant English quantum story."
         )
 
     try:
         if ANTHROPIC_API_KEY:
-            # Production: direct Anthropic API
             client_anthropic = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
             msg = await client_anthropic.messages.create(
                 model="claude-sonnet-4-5-20250929",
-                max_tokens=600,
+                max_tokens=800,
                 system=system,
                 messages=[{"role": "user", "content": user_text}],
+                temperature=0.8,
             )
             story_text = "".join(
                 block.text for block in msg.content if getattr(block, "type", None) == "text"
             )
         else:
-            # Dev / Emergent: LiteLLM proxy (OpenAI-compatible) — works for any model the proxy supports
             oai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url=EMERGENT_PROXY_URL)
             resp = await oai.chat.completions.create(
                 model="claude-sonnet-4-5-20250929",
-                max_tokens=600,
+                max_tokens=800,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": user_text},
                 ],
+                temperature=0.8,
             )
             story_text = resp.choices[0].message.content or ""
         return {"story": story_text.strip()}
     except Exception as e:
-        logger.exception("AI story failed")
-        raise HTTPException(status_code=500, detail=f"AI story generation failed: {e}")
+        logger.exception("AI story v2 failed")
+        raise HTTPException(status_code=500, detail=f"Quantum narrative generation failed: {e}")
 
 
 # -------------------- Stripe Checkout + Post-Payment --------------------
