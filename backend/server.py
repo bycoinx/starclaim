@@ -518,20 +518,50 @@ async def claim_star(body: ClaimStarRequest, user: User = Depends(get_current_us
     return {"order_id": order_id, "star": updated}
 
 
-@api.get("/stars/mine/list")
-async def my_stars(user: User = Depends(get_current_user)):
-    cur = db.stars.find({"owner_id": user.user_id}, {"_id": 0}).sort([("claimed_at", -1)])
-    stars = await cur.to_list(200)
-    order_docs = await db.orders.find(
-        {"user_id": user.user_id},
-        {"_id": 0, "order_id": 1, "star_id": 1, "created_at": 1},
-    ).sort([("created_at", -1)]).to_list(500)
-    order_by_star = {}
-    for order in order_docs:
-        order_by_star.setdefault(order["star_id"], order["order_id"])
-    for star in stars:
-        star["order_id"] = order_by_star.get(star["star_id"])
-    return stars
+@api.post("/stars/exit")
+async def release_star(body: dict, user: User = Depends(get_current_user)):
+    star_id = body.get("star_id")
+    tx_signature = body.get("tx_signature")
+    
+    if not star_id:
+        raise HTTPException(status_code=400, detail="Missing star_id")
+        
+    star = await db.stars.find_one({"star_id": star_id}, {"_id": 0})
+    if not star:
+        raise HTTPException(status_code=404, detail="Star not found")
+        
+    if star.get("owner_id") != user.user_id:
+        raise HTTPException(status_code=403, detail="Not your star to release")
+        
+    # In production, we should verify the tx_signature on Solana chain
+    # but for this sovereign architecture demo, we accept the client's confirmation
+    # once the smart contract has burned the ownership.
+    
+    await db.stars.update_one(
+        {"star_id": star_id},
+        {"$set": {
+            "owner_id": None,
+            "owner_name": None,
+            "custom_name": None,
+            "personal_message": None,
+            "occasion": None,
+            "ai_story": None,
+            "claimed_at": None,
+            "for_sale": False,
+            "asking_price": None,
+        }}
+    )
+    
+    await db.activities.insert_one({
+        "activity_id": f"act_{uuid.uuid4().hex[:10]}",
+        "type": "exit",
+        "user_name": user.name.split()[0] if user.name else "Anonymous",
+        "star_name": star["name"],
+        "constellation": star["constellation"],
+        "_ts": datetime.now(timezone.utc).isoformat(),
+    })
+    
+    return {"ok": True}
 
 
 # -------------------- Marketplace --------------------

@@ -4,6 +4,7 @@ import { Star, Globe, LogOut, User, Menu, X, QrCode } from "lucide-react";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import QRLoginModal from "./QRLoginModal";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function Navbar({ onOpenClaim }) {
   const { t, lang, toggle } = useT();
@@ -66,9 +67,15 @@ export default function Navbar({ onOpenClaim }) {
           <button
             onClick={toggle}
             data-testid="lang-toggle"
-            className="hidden md:flex items-center gap-1.5 text-xs text-sc-text-muted hover:text-sc-gold transition-colors"
+            className="hidden md:flex items-center gap-1.5 text-xs text-sc-text-muted hover:text-sc-gold transition-colors mr-2"
           >
             <Globe className="w-4 h-4" /> {lang}
+          </button>
+
+          <div className="hidden md:block scale-75 origin-right">
+            <WalletMultiButton />
+          </div>
+
           {user ? (
             <div className="hidden md:flex items-center gap-3">
               <button
@@ -110,15 +117,11 @@ export default function Navbar({ onOpenClaim }) {
               </button>
             </div>
           )}
-          ...
-          {open && (
-          ...
-          )}
-          <QRLoginModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} />
-          </header>
 
+          <button
+            onClick={onOpenClaim}
             data-testid="nav-claim-cta"
-            className="btn-gold text-sm"
+            className="btn-gold text-sm ml-2"
           >
             <span className="inline-flex items-center gap-1.5">
               {t("nav_claim")} <Star className="w-3.5 h-3.5 fill-current" strokeWidth={1.5} />
@@ -150,6 +153,9 @@ export default function Navbar({ onOpenClaim }) {
                 {l.label}
               </NavLink>
             ))}
+            <div className="py-2">
+               <WalletMultiButton />
+            </div>
             <button onClick={toggle} className="text-xs text-sc-text-muted text-left">
               Dil / Language: {lang}
             </button>
@@ -166,6 +172,7 @@ export default function Navbar({ onOpenClaim }) {
           </div>
         </div>
       )}
+      <QRLoginModal isOpen={showQRModal} onClose={() => setShowQRModal(false)} />
     </header>
   );
 }

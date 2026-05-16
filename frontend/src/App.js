@@ -3,6 +3,13 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
 
+// Solana Wallet Adapter
+import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
+import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
+import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
+import { clusterApiUrl } from '@solana/web3.js';
+import '@solana/wallet-adapter-react-ui/styles.css';
+
 import { AuthProvider } from "./lib/auth";
 import { LanguageProvider } from "./lib/i18n";
 import { api } from "./lib/api";
@@ -35,7 +42,6 @@ function AppShell() {
   const [showHUD, setShowHUD] = useState(true);
 
   useEffect(() => {
-    // Check if user has already seen HUD in this session
     const hasSeenHUD = sessionStorage.getItem("aegis_hud_seen");
     if (hasSeenHUD) setShowHUD(false);
 
@@ -48,16 +54,13 @@ function AppShell() {
 
   const openClaim = useCallback((star) => {
     if (!star) {
-      // Step 1: Try getting any legendary star (even if owned, just to open modal)
       api.get("/stars", { params: { tier: "legendary", limit: 5 } })
         .then(({ data }) => {
           if (data && data.length > 0) {
-            // Prefer an available one if exists
             const available = data.find(s => !s.owner_id);
             setActiveStar(available || data[0]);
             setCheckoutOpen(true);
           } else {
-            // Step 2: Ultimate fallback to any star in the database
             api.get("/stars", { params: { limit: 1 } })
               .then((res) => {
                 if (res.data && res.data.length > 0) {
@@ -79,7 +82,6 @@ function AppShell() {
     setCheckoutOpen(true);
   }, []);
 
-  // Handle OAuth callback synchronously (before normal routing)
   if (location.hash && location.hash.includes("session_id=")) {
     return <AuthCallback />;
   }
@@ -125,17 +127,27 @@ function AppShell() {
 }
 
 export default function App() {
+  const network = 'devnet';
+  const endpoint = clusterApiUrl(network);
+  const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
+
   return (
     <div className="App bg-sc-deep min-h-screen">
-      <LanguageProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
-              <AppShell />
-            </ErrorBoundary>
-          </AuthProvider>
-        </BrowserRouter>
-      </LanguageProvider>
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={wallets} autoConnect>
+          <WalletModalProvider>
+            <LanguageProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
+                    <AppShell />
+                  </ErrorBoundary>
+                </AuthProvider>
+              </BrowserRouter>
+            </LanguageProvider>
+          </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
     </div>
   );
 }

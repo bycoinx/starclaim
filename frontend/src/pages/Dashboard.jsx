@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { EventHorizonBridge } from "../lib/solana/event_horizon";
@@ -10,27 +11,46 @@ import { EventHorizonBridge } from "../lib/solana/event_horizon";
 export default function Dashboard() {
   const { user, loading, login } = useAuth();
   const { t, lang } = useT();
+  const { wallet, publicKey, signTransaction } = useWallet();
   const [stars, setStars] = useState([]);
   const [fetching, setFetching] = useState(true);
   const navigate = useNavigate();
 
-  // Mock bridge initialization (In real app, get wallet from solana adapter)
-  const bridge = new EventHorizonBridge({ publicKey: new String("dummy") });
-
   const handleInstantExit = async (star) => {
+    if (!publicKey) {
+      toast.error(lang === "TR" ? "Lütfen önce Solana cüzdanınızı bağlayın." : "Please connect your Solana wallet first.");
+      return;
+    }
+
     const confirm = window.confirm(
       lang === "TR" 
-        ? "Yildizini geri satmak istedigine emin misin? %50 (veya kaskolu ise %70) iade alacaksin ve yildiz yok edilecek." 
-        : "Are you sure you want to sell your star back? You will receive 50% (or 70% if insured) and the star will be burned."
+        ? "Yıldızını geri satmak istediğine emin misin? Rezervin anında cüzdanına aktarılacak." 
+        : "Are you sure you want to sell your star back? Your reserve will be returned to your wallet instantly."
     );
     if (!confirm) return;
     
-    toast.info("Aegis: Initializing Instant Exit...");
-    // Logic: In a real scenario, we'd call bridge.instantExit(star.solana_account)
-    setTimeout(() => {
-      toast.success(lang === "TR" ? "Islem basarili. Likidite cuzdana aktarildi." : "Success. Liquidity returned to wallet.");
+    const loadingToast = toast.loading("Aegis: Initializing Instant Exit Transaction...");
+    
+    try {
+      // Initialize bridge with real wallet
+      const bridge = new EventHorizonBridge(useWallet()); 
+      // Note: event_horizon.js expects a 'wallet' object that has publicKey and signTransaction
+      
+      // In a real scenario, the starAccountPubKey would be stored in the star record in DB
+      // For this demo, we use a placeholder or derived key if available
+      const starAccountPubKey = star.solana_address || star.star_id; 
+
+      const tx = await bridge.instantExit(starAccountPubKey);
+      toast.success(lang === "TR" ? "Kuantum Çıkış Başarılı! SOL cüzdanınıza aktarıldı." : "Quantum Exit Successful! SOL returned to wallet.", { id: loadingToast });
+      
+      // Notify backend to release ownership
+      await api.post("/stars/exit", { star_id: star.star_id, tx_signature: tx });
+      
       refreshStars();
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+      toast.error(lang === "TR" ? "İşlem başarısız oldu." : "Transaction failed.", { id: loadingToast });
+    }
   };
 
   const refreshStars = () => {
