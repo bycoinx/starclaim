@@ -1,17 +1,7 @@
-// craco.config.mjs
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { createRequire } from 'module';
-import webpack from 'webpack';
+const path = require('path');
+const webpack = require('webpack');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url);
-
-// Check if we're in development/preview mode
-const isDevServer = process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== undefined;
-
-export default {
+module.exports = {
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
@@ -25,7 +15,7 @@ export default {
         crypto: require.resolve("crypto-browserify"),
         stream: require.resolve("stream-browserify"),
         path: require.resolve("path-browserify"),
-        process: require.resolve("process/browser"),
+        process: require.resolve("process/browser.js"),
         vm: require.resolve("vm-browserify"),
       };
 
@@ -33,7 +23,7 @@ export default {
       webpackConfig.plugins.push(
         new webpack.ProvidePlugin({
           Buffer: ["buffer", "Buffer"],
-          process: "process/browser",
+          process: require.resolve("process/browser.js"),
         })
       );
 

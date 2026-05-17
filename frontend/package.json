@@ -87,7 +87,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "cross-env CI=false NODE_OPTIONS=--max-old-space-size=4096 craco --config craco.config.mjs build",
+    "build": "cross-env CI=false NODE_OPTIONS=--max-old-space-size=4096 craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
