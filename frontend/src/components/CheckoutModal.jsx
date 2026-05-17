@@ -13,6 +13,22 @@ import { useAuth } from "../lib/auth";
 
 const STEPS = ["personalize", "package", "preview", "payment", "done"];
 
+const Typewriter = ({ text, speed = 10 }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  useEffect(() => {
+    let i = 0;
+    setDisplayedText("");
+    if (!text) return;
+    const interval = setInterval(() => {
+      setDisplayedText(text.slice(0, i + 1));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+  return <>{displayedText}</>;
+};
+
 export default function CheckoutModal({ open, onOpenChange, star }) {
   const { t, lang } = useT();
   const { user, login } = useAuth();
@@ -244,12 +260,18 @@ export default function CheckoutModal({ open, onOpenChange, star }) {
                   <div className="font-accent italic text-sc-text-muted">({star.name} · {star.constellation})</div>
                   <div className="divider-gold my-5" />
                   {loadingStory ? (
-                    <div className="text-sc-text-muted flex items-center justify-center gap-2 py-6">
-                      <Loader2 className="w-4 h-4 animate-spin" /> {t("checkout_generating")}
+                    <div className="text-sc-text-muted flex flex-col items-center justify-center gap-3 py-10">
+                      <div className="relative">
+                        <Loader2 className="w-8 h-8 animate-spin text-sc-gold/60" />
+                        <Sparkles className="w-4 h-4 absolute -top-1 -right-1 text-sc-gold animate-pulse" />
+                      </div>
+                      <div className="text-[10px] tracking-[0.2em] uppercase animate-pulse">
+                        {lang === "TR" ? "Kuantum Anlatı Çözümleniyor..." : "Decrypting Quantum Narrative..."}
+                      </div>
                     </div>
                   ) : story ? (
-                    <p className="font-accent italic text-sc-text/90 text-base leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto">
-                      {story}
+                    <p className="font-accent italic text-sc-text/90 text-sm md:text-base leading-relaxed whitespace-pre-line max-h-60 overflow-y-auto custom-scrollbar pr-2">
+                      <Typewriter text={story} />
                     </p>
                   ) : (
                     <p className="text-sc-text-muted italic">{message || (lang === "TR" ? "Yıldızının hikayesi burada görünecek." : "Your star's story appears here.")}</p>
