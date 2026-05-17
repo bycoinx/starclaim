@@ -1,11 +1,12 @@
 .aegis-hud-container {
   position: fixed;
   inset: 0;
-  z-index: 100;
-  background: radial-gradient(circle at center, #0a1a33 0%, #050b1a 100%);
+  z-index: 9999;
+  background-color: #050A1A;
+  background-image: radial-gradient(circle at center, #0a1a33 0%, #050b1a 100%);
   overflow: hidden;
   color: #00f2ff;
-  font-family: 'Orbitron', sans-serif; /* Proje genelinde benzer bir font varsa değiştirilebilir */
+  font-family: 'Orbitron', 'DM Sans', sans-serif;
 }
 
 .hud-overlay {

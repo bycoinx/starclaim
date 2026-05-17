@@ -5,8 +5,7 @@ import "@/index.css";
 import App from "@/App";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
+console.log("StarClaim Core: Initializing React 19 Application...");
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />
 );
