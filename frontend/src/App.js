@@ -42,13 +42,17 @@ function AppShell() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeStar, setActiveStar] = useState(null);
   const [stats, setStats] = useState(null);
-  const [showHUD, setShowHUD] = useState(true);
+  const [showHUD, setShowHUD] = useState(() => {
+    const hasSeenHUD = sessionStorage.getItem("aegis_hud_seen");
+    const forceHUD = new URLSearchParams(window.location.search).get("hud");
+    if (forceHUD === "1") return true;
+    if (hasSeenHUD) return false;
+    // Temporarily disabled HUD by default to fix black screen issue
+    return false; 
+  });
 
   useEffect(() => {
-    // Check if user has already seen HUD in this session
-    const hasSeenHUD = sessionStorage.getItem("aegis_hud_seen");
-    if (hasSeenHUD) setShowHUD(false);
-
+    console.log("StarClaim: AppShell Mounted");
     api.get("/stats/overview")
       .then(({ data }) => {
         if (data && typeof data === 'object') setStats(data);
