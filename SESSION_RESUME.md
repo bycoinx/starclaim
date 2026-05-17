@@ -10,7 +10,7 @@ Bu dosya, Gemini CLI'ın veya Codex'in projeye kaldığı yerden hızlıca devam
    - **Quantum Narrator (AQN-1):** AI promptları 'The Observer Protocol' ve kuantum mekaniği temalarıyla (RA/Dec, singularity, quantum field) güçlendirildi.
    - **Typewriter Effect:** Frontend'e hikayelerin kuantum sinyal çözümleniyor gibi görünmesini sağlayan asenkron yazım efekti eklendi.
    - **Holographic UI:** Hikaye yükleme ekranı 'Decrypting Quantum Narrative...' mesajı ve animasyonlarla zenginleştirildi.
-   - **Production Stabilization:** Vercel build hataları (CommonJS/ESM çakışmaları ve craco config sorunları) giderildi.
+   - **Production Stabilization:** Vercel build hataları (React 19 mismatch ve 'use' hook eksikliği) giderildi. `npm overrides` ile React 19 tam olarak stabilize edildi.
 
 ## SIRADAKİ HEDEFLER
 - **Modül 5.0: Interstellar Treasury:** Solana üzerinde akıllı sözleşme tabanlı likidite havuzu entegrasyonu.

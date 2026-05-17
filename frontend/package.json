@@ -66,9 +66,9 @@
     "path-browserify": "^1.0.1",
     "process": "^0.11.10",
     "qrcode.react": "^3.1.0",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "react-confetti": "^6.4.0",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.2",
     "react-resizable-panels": "^3.0.1",
     "react-router-dom": "^6.28.0",
@@ -90,6 +90,10 @@
     "build": "cross-env CI=false NODE_OPTIONS=--max-old-space-size=4096 craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
+  },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
   },
   "eslintConfig": {
     "extends": [
