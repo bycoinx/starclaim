@@ -65,8 +65,6 @@ export function VaultEncryption({ onComplete }) {
   };
 
   const handleUploadSuccess = (txId) => {
-    console.log('Vault uploaded to Arweave:', txId);
-    // Optional: show success toast
     alert(`Vault successfully linked! TX: ${txId.slice(0, 8)}...`);
   };
 

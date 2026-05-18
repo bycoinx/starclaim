@@ -1,7 +1,10 @@
 """Seed data for StarClaim: clean star catalog and neutral activity feed."""
 
+import os
+from datetime import datetime, timezone
+
 def _star(code, name, constellation, tier, price, ra, dec, magnitude=None, owner=None):
-    return {
+    star = {
         "code": code,
         "name": name,
         "constellation": constellation,
@@ -20,6 +23,10 @@ def _star(code, name, constellation, tier, price, ra, dec, magnitude=None, owner
         "for_sale": False,
         "asking_price": None,
     }
+    if owner:
+        star["owner_name"] = owner
+        star["claimed_at"] = datetime.now(timezone.utc).isoformat()
+    return star
 
 
 # STAR_CATALOG - Publicly claimable stars.
@@ -115,16 +122,17 @@ SAMPLE_ACTIVITIES = [
 ]
 
 # Production starts with a clean sky: no demo owners, marketplace listings, or fake live feed.
-SAMPLE_LISTINGS = []
-SAMPLE_ACTIVITIES = [
-    {"activity_id": "act_1", "type": "claim", "user_name": "Liam S.", "star_name": "Sirius", "constellation": "Canis Major"},
-    {"activity_id": "act_2", "type": "claim", "user_name": "Yuki T.", "star_name": "Arcturus", "constellation": "Bootes"},
-    {"activity_id": "act_3", "type": "gift", "user_name": "Elena & Marc", "star_name": "Neighbor stars", "constellation": "Orion"},
-    {"activity_id": "act_4", "type": "claim", "user_name": "Selin M.", "star_name": "Regulus", "constellation": "Leo"},
-    {"activity_id": "act_5", "type": "listing", "user_name": "Kaan B.", "star_name": "Vega", "constellation": "Lyra"},
-    {"activity_id": "act_6", "type": "claim", "user_name": "Sofia V.", "star_name": "SC-018", "constellation": "Pisces"},
-    {"activity_id": "act_7", "type": "claim", "user_name": "Ahmed Z.", "star_name": "Deneb", "constellation": "Cygnus"},
-    {"activity_id": "act_8", "type": "gift", "user_name": "James W.", "star_name": "Polaris", "constellation": "Ursa Minor"},
-    {"activity_id": "act_9", "type": "claim", "user_name": "Someone from New York", "star_name": "Betelgeuse", "constellation": "Orion"},
-    {"activity_id": "act_10", "type": "claim", "user_name": "Someone from London", "star_name": "Altair", "constellation": "Aquila"}
-]
+if os.environ.get("BACKEND_ENV", "development") == "production":
+    SAMPLE_LISTINGS = []
+    SAMPLE_ACTIVITIES = [
+        {"activity_id": "act_1", "type": "claim", "user_name": "Liam S.", "star_name": "Sirius", "constellation": "Canis Major"},
+        {"activity_id": "act_2", "type": "claim", "user_name": "Yuki T.", "star_name": "Arcturus", "constellation": "Bootes"},
+        {"activity_id": "act_3", "type": "gift", "user_name": "Elena & Marc", "star_name": "Neighbor stars", "constellation": "Orion"},
+        {"activity_id": "act_4", "type": "claim", "user_name": "Selin M.", "star_name": "Regulus", "constellation": "Leo"},
+        {"activity_id": "act_5", "type": "listing", "user_name": "Kaan B.", "star_name": "Vega", "constellation": "Lyra"},
+        {"activity_id": "act_6", "type": "claim", "user_name": "Sofia V.", "star_name": "SC-018", "constellation": "Pisces"},
+        {"activity_id": "act_7", "type": "claim", "user_name": "Ahmed Z.", "star_name": "Deneb", "constellation": "Cygnus"},
+        {"activity_id": "act_8", "type": "gift", "user_name": "James W.", "star_name": "Polaris", "constellation": "Ursa Minor"},
+        {"activity_id": "act_9", "type": "claim", "user_name": "Someone from New York", "star_name": "Betelgeuse", "constellation": "Orion"},
+        {"activity_id": "act_10", "type": "claim", "user_name": "Someone from London", "star_name": "Altair", "constellation": "Aquila"}
+    ]

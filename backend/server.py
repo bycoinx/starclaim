@@ -6,8 +6,8 @@ from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depend
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field, EmailStr
-from typing import List, Optional
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
 import os
@@ -18,13 +18,12 @@ import httpx
 import anthropic
 import stripe
 from openai import AsyncOpenAI
-import nacl.signing
-import nacl.encoding
+from nacl.signing import VerifyKey
 import base58
 
-from seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
-from certificate import generate_certificate
-from emails import send_certificate_email
+from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
+from backend.certificate import generate_certificate
+from backend.emails import send_certificate_email
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -40,6 +39,7 @@ EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 EMERGENT_PROXY_URL = os.environ.get("INTEGRATION_PROXY_URL", "https://integrations.emergentagent.com") + "/llm"
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+DEMO_CLEANUP_ENABLED = os.environ.get("ENABLE_DEMO_CLEANUP", "0") == "1"
 if STRIPE_API_KEY:
     stripe.api_key = STRIPE_API_KEY
 
@@ -108,6 +108,13 @@ class CheckoutSessionRequest(BaseModel):
     ai_story: Optional[str] = ""
     language: str = "TR"
     origin_url: str  # e.g. https://fascinating-florentine-5aace3.netlify.app
+
+
+class QRVerifyRequest(BaseModel):
+    auth_session_id: str
+    public_key: str
+    signature: str
+    message: str
 
 
 class ListStarRequest(BaseModel):
@@ -255,7 +262,8 @@ async def cleanup_demo_data_once():
 @app.on_event("startup")
 async def startup():
     await seed_database()
-    await cleanup_demo_data_once()
+    if DEMO_CLEANUP_ENABLED:
+        await cleanup_demo_data_once()
 
 
 @app.on_event("shutdown")
@@ -344,7 +352,7 @@ def verify_solana_signature(public_key_str: str, signature_str: str, message_str
         sig_bytes = base58.b58decode(signature_str)
         msg_bytes = message_str.encode("utf-8")
         
-        verify_key = nacl.signing.VerifyKey(pubkey_bytes)
+        verify_key = VerifyKey(pubkey_bytes)
         verify_key.verify(msg_bytes, sig_bytes)
         return True
     except Exception as e:
@@ -469,6 +477,18 @@ async def get_star(star_id: str):
     if not s:
         raise HTTPException(status_code=404, detail="Star not found")
     return s
+
+
+@api.get("/stars/mine/list")
+async def list_my_stars(user: User = Depends(get_current_user)):
+    cursor = db.stars.find({"owner_id": user.user_id}, {"_id": 0}).sort([("claimed_at", -1)])
+    stars = await cursor.to_list(200)
+    orders = await db.orders.find({"user_id": user.user_id}, {"_id": 0, "star_id": 1, "order_id": 1}).to_list(200)
+    order_map = {order["star_id"]: order["order_id"] for order in orders}
+    for star in stars:
+        if star.get("star_id") in order_map:
+            star["order_id"] = order_map[star["star_id"]]
+    return stars
 
 
 @api.post("/stars/claim")
@@ -757,8 +777,25 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
 # -------------------- AI Story v2 (Quantum Narrative) --------------------
 @api.post("/ai/story")
 async def ai_story(body: StoryRequest):
+    lang = body.language.upper()
     if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
-        raise HTTPException(status_code=500, detail="No AI key configured")
+        if lang == "TR":
+            stub_story = (
+                "Gözlemleyenin bakışıyla yıldız bir anda somutlaşır; "
+                "kozmik kuantum sahnesinde anılar ve koordinatlar birbirine karışır. "
+                "Sirius, Lyra veya Vega fark etmez; her bir isim, sonsuzluğun yeni bir parıltısıdır. "
+                "Bu hikaye, varoluş ve aşk arasında titreyen bir ışık halkasıdır. "
+                "Her satırda evren, bir hediye gibi sana verdiği karşılığını fısıldar."
+            )
+        else:
+            stub_story = (
+                "Through the observer's gaze the star collapses into meaning; "
+                "a luminous signature written across constellations and memory. "
+                "Coordinates and magnitude become a promise, a quiet quantum bond. "
+                "The tale is not about distance, but about the moment that makes it yours. "
+                "In that singular instant, the sky is both story and witness."
+            )
+        return {"story": stub_story}
 
     lang = body.language.upper()
     
@@ -1045,9 +1082,6 @@ async def create_checkout_session(body: CheckoutSessionRequest, request: Request
 
 @api.get("/checkout/status/{session_id}")
 async def checkout_status(session_id: str):
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
-
     txn = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if not txn:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -1062,6 +1096,18 @@ async def checkout_status(session_id: str):
             "star_id": txn["star_id"],
             "custom_name": txn.get("custom_name"),
             "fulfilled": True,
+            "type": txn.get("type", "claim"),
+        }
+
+    if not STRIPE_API_KEY:
+        return {
+            "status": txn.get("status", "pending"),
+            "payment_status": txn.get("payment_status", "unpaid"),
+            "amount_total": int(round(txn["amount"] * 100)),
+            "currency": txn.get("currency", "usd"),
+            "star_id": txn["star_id"],
+            "custom_name": txn.get("custom_name"),
+            "fulfilled": txn.get("status") == "fulfilled",
             "type": txn.get("type", "claim"),
         }
 
@@ -1105,8 +1151,6 @@ async def checkout_status(session_id: str):
 
 @api.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature", "")
 

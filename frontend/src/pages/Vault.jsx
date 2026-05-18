@@ -101,7 +101,7 @@ export default function Vault() {
               transition={{ duration: 0.4, ease: "easeOut" }}
             >
               {activeTab === "encrypt" ? (
-                <VaultEncryption onComplete={(blob) => console.log("Blob ready for potential external usage:", blob)} />
+                <VaultEncryption onComplete={() => {}} />
               ) : (
                 <VaultDecryption />
               )}

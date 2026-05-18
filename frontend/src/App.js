@@ -52,7 +52,6 @@ function AppShell() {
   });
 
   useEffect(() => {
-    console.log("StarClaim: AppShell Mounted");
     api.get("/stats/overview")
       .then(({ data }) => {
         if (data && typeof data === 'object') setStats(data);

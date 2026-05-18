@@ -39,11 +39,9 @@ export async function uploadToArweave(encryptedBlob, metadata, retries = 3) {
 
   } catch (error) {
     if (retries > 0) {
-      console.warn(`Arweave upload failed. Retrying... (${retries} retries left)`);
-      // Exponential backoff or simple delay could be added here
+      // Retry silently to avoid noisy logs in production
       return uploadToArweave(encryptedBlob, metadata, retries - 1);
     }
-    console.error('Final Arweave upload error:', error);
     throw error;
   }
 }

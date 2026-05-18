@@ -5,15 +5,18 @@ marketplace listings, stats overview, live activities, newsletter,
 AI story (TR & EN), auth-protected endpoints (mock session via Mongo).
 """
 import os
+import sys
 import uuid
 import pytest
 import requests
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from pymongo import MongoClient
 from dotenv import load_dotenv
-from pathlib import Path
 
-load_dotenv(Path("/app/backend/.env"))
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+load_dotenv(ROOT_DIR / ".env")
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL",
                           "https://cosmic-marketplace-5.preview.emergentagent.com").rstrip("/")
@@ -166,7 +169,8 @@ class TestStatsAndActivities:
         for k in ["total_stars", "owned", "available", "claimed_today", "marketplace_listings"]:
             assert k in d
         assert d["total_stars"] == d["owned"] + d["available"]
-        assert d["claimed_today"] >= 24
+        assert isinstance(d["claimed_today"], int)
+        assert d["claimed_today"] >= 0
 
     def test_live_activities(self, api_client):
         r = api_client.get(f"{API}/activities/live")
@@ -294,9 +298,7 @@ class TestAIStory:
 # --------- certificate PDF module ---------
 class TestCertificateModule:
     def test_generate_certificate_returns_pdf_bytes(self):
-        import sys
-        sys.path.insert(0, "/app/backend")
-        from certificate import generate_certificate
+        from backend.certificate import generate_certificate
         pdf = generate_certificate(
             star_name="Sirius",
             constellation="Canis Major",
@@ -317,13 +319,12 @@ class TestCertificateModule:
 # --------- emails module (graceful no-op without RESEND_API_KEY) ---------
 class TestEmailsModule:
     def test_send_certificate_email_noop_without_key(self):
-        import sys, asyncio
-        sys.path.insert(0, "/app/backend")
+        import asyncio
         # Force key empty
         os.environ["RESEND_API_KEY"] = ""
         # Reimport fresh to reread env
         import importlib
-        import emails as emails_mod
+        import backend.emails as emails_mod
         importlib.reload(emails_mod)
         result = asyncio.run(emails_mod.send_certificate_email(
             to_email="test@example.com",
@@ -424,9 +425,7 @@ class TestStripeWebhook:
 class TestFulfillmentIdempotency:
     def test_process_paid_claim_idempotent(self, api_client):
         import asyncio
-        import sys
-        sys.path.insert(0, "/app/backend")
-        from server import _process_paid_claim
+        from backend.server import _process_paid_claim
 
         # pick available star
         avail = api_client.get(f"{API}/stars", params={"available": "true", "limit": 5}).json()

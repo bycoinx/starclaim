@@ -45,9 +45,6 @@ export async function linkVaultToNFT(nftMintAddress, vaultTxId, wallet, retries 
       attributes: attributes,
     });
 
-    // 6. Confirm transaction (Metaplex update waits for confirmation by default with 'confirmed' commitment)
-    console.log("NFT Metadata updated successfully. Signature:", response.signature);
-
     return {
       success: true,
       signature: response.signature
@@ -55,8 +52,7 @@ export async function linkVaultToNFT(nftMintAddress, vaultTxId, wallet, retries 
 
   } catch (error) {
     if (retries > 0) {
-      console.warn(`NFT metadata update failed. Retrying... (${retries} retries left)`, error);
-      // Wait a bit before retrying
+      // Retry silently to reduce noisy output
       await new Promise(resolve => setTimeout(resolve, 2000));
       return linkVaultToNFT(nftMintAddress, vaultTxId, wallet, retries - 1);
     }

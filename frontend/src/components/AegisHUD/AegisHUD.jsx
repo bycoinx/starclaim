@@ -28,14 +28,12 @@ export default function AegisHUD({ onComplete }) {
   const [canvasError, setCanvasError] = useState(null);
 
   useEffect(() => {
-    console.log("AegisHUD: Initializing system...");
     const wsUrl = `wss://starclaim-api.onrender.com/ws/bridge/${sessionID}`;
     let ws;
 
     try {
       ws = new WebSocket(wsUrl);
       ws.onopen = () => {
-        console.log("AegisHUD: Neural Link socket open.");
         setLinkStatus("waiting");
       };
       ws.onmessage = (event) => {
@@ -45,11 +43,11 @@ export default function AegisHUD({ onComplete }) {
             setMotionData(data);
             setLinkStatus("connected");
           }
-        } catch (e) {
-          console.error("AegisHUD: WS Parse error:", e);
+        } catch {
+          setLinkStatus("disconnected");
         }
       };
-      ws.onerror = (e) => console.error("AegisHUD: WS Connection error.");
+      ws.onerror = () => setLinkStatus("disconnected");
       ws.onclose = () => setLinkStatus("disconnected");
     } catch (err) {
       console.error("AegisHUD: WebSocket setup failed.", err);
@@ -93,7 +91,6 @@ export default function AegisHUD({ onComplete }) {
           shadows 
           camera={{ position: [0, 0, 8], fov: 50 }}
           onCreated={({ gl }) => {
-            console.log("AegisHUD: Canvas created.");
             gl.setClearColor("#050A1A");
           }}
           onError={(e) => {
