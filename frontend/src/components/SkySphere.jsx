@@ -60,24 +60,23 @@ const starShader = {
     void main() {
       vColor = customColor;
       
-      // Calculate dot product between camera direction and star direction from camera
       vec3 worldPos = position;
       vec3 toStar = normalize(worldPos - cameraPos);
       float alignment = dot(cameraDir, toStar);
       
-      // Coherence increases when looking directly at the star
-      // alignment is 1.0 when perfectly looking at it
       vObserverCoherence = smoothstep(0.85, 0.98, alignment);
       
-      float twinkleScale = mix(1.0, 0.2, isGhost);
-      float twinkle = sin(time * 3.0 + position.x * 10.0) * 0.5 + 0.5;
-      vTwinkle = twinkle * twinkleScale;
+      // Organic "breathing" effect instead of simple sin wave
+      float twinkleScale = mix(1.0, 0.3, isGhost);
+      float noise = sin(time * 0.8 + position.x) * cos(time * 0.5 + position.y);
+      float breathe = sin(time * 1.2 + position.z * 2.0) * 0.5 + 0.5;
+      vTwinkle = mix(breathe, noise * 0.5 + 0.5, 0.4) * twinkleScale;
       
       vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
       
-      // Ghost stars are smaller until observed
       float ghostFactor = isGhost > 0.5 ? mix(0.1, 1.0, vObserverCoherence) : 1.0;
-      gl_PointSize = size * ghostFactor * (600.0 / -mvPosition.z) * (0.8 + vTwinkle * 0.4);
+      // Adjusted size for better perspective and organic feel
+      gl_PointSize = size * ghostFactor * (800.0 / -mvPosition.z) * (0.85 + vTwinkle * 0.45);
       gl_Position = projectionMatrix * mvPosition;
     }
   `,
@@ -88,13 +87,17 @@ const starShader = {
     void main() {
       float r = distance(gl_PointCoord, vec2(0.5));
       if (r > 0.5) discard;
-      float strength = pow(1.0 - r * 2.0, 1.5);
       
-      // Observer Effect: Reality is more "solid" when observed
-      float alpha = strength * (0.6 + vTwinkle * 0.4);
-      float finalAlpha = mix(alpha * 0.3, alpha, vObserverCoherence);
+      // Smoother Gaussian-like falloff for a more realistic star glow
+      float strength = exp(-r * 4.5);
       
-      gl_FragColor = vec4(vColor, finalAlpha);
+      float alpha = strength * (0.7 + vTwinkle * 0.3);
+      float finalAlpha = mix(alpha * 0.25, alpha, vObserverCoherence);
+      
+      // Add a slight core brightness
+      vec3 finalColor = vColor + (strength * 0.4);
+      
+      gl_FragColor = vec4(finalColor, finalAlpha);
     }
   `
 };
