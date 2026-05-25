@@ -46,6 +46,28 @@ const DICT = {
     social_family_t: "Aile",
     social_family_d: "Her aile üyesine bir yıldız. Gökyüzünde aile ağacınız.",
 
+    vision_mission_title: "Misyonumuz",
+    vision_mission_p1: "Bir çiçek solar. Bir kutu küçülür. Ama bir yıldız — o orada kalır. Milyonlarca yıl boyunca, her gece. StarClaim'i sevdiklerimize verebileceğimiz en kalıcı hediyeyi mümkün kılmak için kurduk.",
+    vision_mission_p2: "Hikayeler, anılar ve mesajlar — hepsi gökyüzüne yazılır. Yapay zeka ile kişiselleştirilir, altın kenarlıklı bir sertifikayla sunulur, Marketplace'te el değiştirir. Her yıldız bir anı taşır.",
+    
+    vision_pillars_1_t: "Gizlilik Katmanı",
+    vision_pillars_1_d: "Monero ve Zcash mantığından ilham alan ZK-proof mimarisiyle mesaj, görsel ve ses gibi kişisel veriler sunucuda açık metin olarak tutulmaz.",
+    vision_pillars_2_t: "n8n Otomasyonu",
+    vision_pillars_2_d: "Satın alma, AI hikaye üretimi, PDF sertifika, e-posta ve fiziksel baskı siparişi sıfır manuel operasyon prensibiyle birbirine bağlanır.",
+    vision_pillars_3_t: "NFT Mülkiyeti",
+    vision_pillars_3_d: "Yıldızlar ERC-721 uyumlu benzersiz varlıklara dönüştürülür; sahiplik, transfer ve miras senaryoları zincir üstünde kanıtlanabilir hale gelir.",
+
+    about_title: "Gökyüzü, Hepimizin",
+    about_sub: "StarClaim, anıları sonsuza taşımak için doğdu.",
+    about_contact_title: "İletişim",
+    about_contact_sub: "Bir yıldız için özel bir ricamız mı var? Hemen yazın.",
+
+    stories_title: "Gökyüzünde İz Bırakanlar",
+    stories_sub: "Gerçek insanlar, gerçek anılar — yıldızlara yazılmış.",
+    stories_featured_title: "Betelgeuse'u Babama Adadım",
+    stories_featured_p: "Babam hayatını kaybettiğinde gökyüzünde ona bir yer istedim. Orion'un omzundaki bu kırmızı dev, onun bana bıraktığı bütün hikayelerin evi oldu. Bir yıldız verdim — ama o bana bir galaksi kadar sessiz, bir o kadar derin bir anı bıraktı…",
+    stories_guide_title: "Astronomi Rehberi",
+
     market_preview_title: "Yıldız Al-Sat Marketplace",
     market_preview_sub: "Yıldızlar el değiştirir, değer kazanır. Sen de yatırım yap.",
     market_cta: "Marketplace'e Git",
@@ -167,6 +189,28 @@ const DICT = {
     social_friends_d: "Share the same constellation. Always together on the group map.",
     social_family_t: "Family",
     social_family_d: "A star for every member. Your family tree in the sky.",
+
+    vision_mission_title: "Our Mission",
+    vision_mission_p1: "Flowers fade. Boxes shrink. But a star stays — for millions of years, every single night. We founded StarClaim to make the most permanent gift we can give those we love.",
+    vision_mission_p2: "Stories, memories, messages — all written into the sky. Personalized with AI, delivered as a gold-bordered certificate, passed on through the Marketplace. Every star carries a memory.",
+
+    vision_pillars_1_t: "Privacy Layer",
+    vision_pillars_1_d: "Inspired by Monero and Zcash, our ZK-proof architecture ensures personal data like messages, images, and audio are never stored as plain text on the server.",
+    vision_pillars_2_t: "n8n Automation",
+    vision_pillars_2_d: "Purchasing, AI story generation, PDF certificates, emails, and physical print orders are all connected through a zero-manual-operation principle.",
+    vision_pillars_3_t: "NFT Ownership",
+    vision_pillars_3_d: "Stars are transformed into ERC-721 compatible unique assets; ownership, transfer, and legacy scenarios become provable on-chain.",
+
+    about_title: "The Sky is Ours",
+    about_sub: "StarClaim was born to carry memories into eternity.",
+    about_contact_title: "Contact",
+    about_contact_sub: "Special request for a star? Drop us a line.",
+
+    stories_title: "Those Who Left Their Mark",
+    stories_sub: "Real people, real memories — written in the stars.",
+    stories_featured_title: "I Dedicated Betelgeuse to My Father",
+    stories_featured_p: "When my father passed away, I wanted a place for him in the sky. This red giant on Orion's shoulder became the home of all the stories he left me. I gave a star — but he left me a memory as silent and as deep as a galaxy…",
+    stories_guide_title: "Astronomy Guide",
 
     market_preview_title: "Star Marketplace",
     market_preview_sub: "Stars change hands and gain value. Invest too.",

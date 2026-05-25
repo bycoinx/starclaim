@@ -143,13 +143,11 @@ export default function Home({ onOpenClaim, stats }) {
           </div>
           
           <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl leading-[1.1] tracking-tight mb-10 animate-fade-up">
-            <span className="gold-gradient-text uppercase">{lang === "TR" ? "Gökyüzünde\nSonsuz Bir İz Bırak" : "Leave an Eternal\nMark in the Sky"}</span>
+            <span className="gold-gradient-text uppercase">{t("hero_title")}</span>
           </h1>
           
           <p className="text-sc-text/70 text-lg md:text-xl max-w-2xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
-            {lang === "TR" 
-              ? "Maddiyatın bittiği noktada, sevdiklerinizin sesini ve anılarını kuantum zırhıyla yıldızlara mühürleyin." 
-              : "Where matter ends, seal your loved ones' voices and memories into the stars with quantum armor."}
+            {t("hero_sub")}
           </p>
           
           <div className="flex flex-wrap items-center justify-center gap-8 animate-fade-up" style={{ animationDelay: "400ms" }}>
@@ -293,8 +291,8 @@ export default function Home({ onOpenClaim, stats }) {
           <Reveal>
             <div className="text-center mb-16">
               <div className="text-[11px] tracking-[0.4em] uppercase text-sc-gold mb-4">EVOLUTION</div>
-              <h2 className="font-display text-4xl md:text-5xl mb-3">Sahiplik Seviyeleri</h2>
-              <p className="text-sc-text-muted">Dijitalden Kozmiğe uzanan bir yolculuk.</p>
+              <h2 className="font-display text-4xl md:text-5xl mb-3">{t("pricing_title")}</h2>
+              <p className="text-sc-text-muted">{t("pricing_sub")}</p>
             </div>
           </Reveal>
           <div className="grid md:grid-cols-3 gap-8">
@@ -343,10 +341,10 @@ export default function Home({ onOpenClaim, stats }) {
             </p>
             <div className="flex flex-wrap justify-center gap-6">
               <Link to="/stars" className="btn-gold px-12 py-4 text-lg">
-                {lang === "TR" ? "Hemen Başla" : "Start Now"}
+                {t("hero_cta_pick")}
               </Link>
               <button onClick={onOpenClaim} className="btn-ghost px-12 py-4 text-lg">
-                {lang === "TR" ? "Hediye Gönder" : "Send a Gift"}
+                {t("gift_cta")}
               </button>
             </div>
           </Reveal>

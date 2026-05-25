@@ -1,5 +1,6 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
+import { useT } from "../lib/i18n";
 
 /**
  * LiveNotifications —
@@ -23,6 +24,7 @@ const MESSAGES_GLOBAL = [
 ];
 
 export default function LiveNotifications() {
+  const { lang } = useT();
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(false);
 
@@ -46,12 +48,12 @@ export default function LiveNotifications() {
 
   const m = MESSAGES_GLOBAL[idx];
   const verb = m.type === "couple"
-    ? "sahiplendi"
+    ? (lang === "TR" ? "sahiplendi" : "claimed")
     : m.type === "dedicate"
-      ? "adadı"
+      ? (lang === "TR" ? "adadı" : "dedicated")
       : m.type === "listing"
-        ? "koydu"
-        : "sahiplendi";
+        ? (lang === "TR" ? "koydu" : "listed")
+        : (lang === "TR" ? "sahiplendi" : "claimed");
 
   return (
     <div
@@ -60,11 +62,11 @@ export default function LiveNotifications() {
         visible ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
       }`}
     >
-      <div className="glass rounded-xl px-4 py-3 pl-4 border-l-2 border-l-sc-gold flex items-start gap-3 shadow-2xl">
+      <div className="glass-dark border border-white/10 rounded-xl px-4 py-3 pl-4 border-l-2 border-l-sc-gold flex items-start gap-3 shadow-2xl backdrop-blur-md">
         <Sparkles className="w-4 h-4 text-sc-gold mt-0.5 shrink-0" />
         <div className="text-sm">
-          <span className="text-sc-text font-medium">{m.name}</span>
-          <span className="text-sc-text-muted"> az önce </span>
+          <span className="text-white font-medium">{m.name}</span>
+          <span className="text-sc-text-muted"> {lang === "TR" ? "az önce" : "just now"} </span>
           <span className="gold-gradient-text font-semibold">{m.star}</span>
           <span className="text-sc-text-muted"> {verb}.</span>
         </div>
