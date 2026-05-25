@@ -3,16 +3,10 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
 
-// Solana Wallet Adapter
-import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
-import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
-import { PhantomWalletAdapter, SolflareWalletAdapter } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl } from '@solana/web3.js';
-import '@solana/wallet-adapter-react-ui/styles.css';
-
 import { AuthProvider } from "./lib/auth";
 import { LanguageProvider } from "./lib/i18n";
 import { api } from "./lib/api";
+import SolanaWalletProvider from "./lib/SolanaWalletProvider";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -33,9 +27,6 @@ import PaymentCancel from "./pages/PaymentCancel";
 
 import AegisHUD from "./components/AegisHUD/AegisHUD";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
-
-// Define wallets outside to prevent re-instantiation
-const wallets = [new PhantomWalletAdapter(), new SolflareWalletAdapter()];
 
 function AppShell() {
   const location = useLocation();
@@ -127,8 +118,8 @@ function AppShell() {
         <Route path="/stories" element={<Stories />} />
         <Route path="/about" element={<About />} />
         <Route path="/vision" element={<Vision />} />
-        <Route path="/vault" element={<Vault />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/vault" element={<SolanaWalletProvider><Vault /></SolanaWalletProvider>} />
+        <Route path="/dashboard" element={<SolanaWalletProvider><Dashboard /></SolanaWalletProvider>} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancel" element={<PaymentCancel />} />
       </Routes>
@@ -147,26 +138,17 @@ function AppShell() {
 }
 
 export default function App() {
-  const network = 'devnet';
-  const endpoint = clusterApiUrl(network);
-
   return (
     <div className="App bg-sc-deep min-h-screen">
-      <ConnectionProvider endpoint={endpoint}>
-        <WalletProvider wallets={wallets} autoConnect>
-          <WalletModalProvider>
-            <LanguageProvider>
-              <BrowserRouter>
-                <AuthProvider>
-                  <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
-                    <AppShell />
-                  </ErrorBoundary>
-                </AuthProvider>
-              </BrowserRouter>
-            </LanguageProvider>
-          </WalletModalProvider>
-        </WalletProvider>
-      </ConnectionProvider>
+      <LanguageProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
+              <AppShell />
+            </ErrorBoundary>
+          </AuthProvider>
+        </BrowserRouter>
+      </LanguageProvider>
     </div>
   );
 }

@@ -4,7 +4,6 @@ import { Star, Globe, LogOut, User, Menu, X, QrCode } from "lucide-react";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import QRLoginModal from "./QRLoginModal";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 export default function Navbar({ onOpenClaim }) {
   const { t, lang, toggle } = useT();
@@ -71,10 +70,6 @@ export default function Navbar({ onOpenClaim }) {
           >
             <Globe className="w-4 h-4" /> {lang}
           </button>
-
-          <div className="hidden md:block scale-75 origin-right">
-            <WalletMultiButton />
-          </div>
 
           {user ? (
             <div className="hidden md:flex items-center gap-3">
@@ -153,9 +148,6 @@ export default function Navbar({ onOpenClaim }) {
                 {l.label}
               </NavLink>
             ))}
-            <div className="py-2">
-               <WalletMultiButton />
-            </div>
             <button onClick={toggle} className="text-xs text-sc-text-muted text-left">
               Dil / Language: {lang}
             </button>
