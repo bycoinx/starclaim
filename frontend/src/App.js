@@ -152,20 +152,25 @@ function AppShell() {
 
   return (
     <>
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <StarCanvas density={500} />
+      </div>
       <Navbar onOpenClaim={() => openClaim()} />
       <Suspense fallback={<PageLoading />}>
-        <Routes>
-          <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
-          <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/stories" element={<Stories />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/vision" element={<Vision />} />
-          <Route path="/vault" element={<VaultWithWallet />} />
-          <Route path="/dashboard" element={<DashboardWithWallet />} />
-          <Route path="/payment/success" element={<PaymentSuccess />} />
-          <Route path="/payment/cancel" element={<PaymentCancel />} />
-        </Routes>
+        <div className="relative z-10">
+          <Routes>
+            <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
+            <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/stories" element={<Stories />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/vision" element={<Vision />} />
+            <Route path="/vault" element={<VaultWithWallet />} />
+            <Route path="/dashboard" element={<DashboardWithWallet />} />
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
+          </Routes>
+        </div>
       </Suspense>
       <Footer />
       <LiveNotifications />

@@ -32,6 +32,8 @@ export default function StarCanvas({ density = 320, className = "" }) {
         a: Math.random() * 0.8 + 0.2,
         da: (Math.random() * 0.02 + 0.004) * (Math.random() > 0.5 ? 1 : -1),
         hue: Math.random() > 0.92 ? "gold" : Math.random() > 0.85 ? "blue" : "white",
+        vx: (Math.random() - 0.5) * 0.05, // Slow drift X
+        vy: (Math.random() - 0.5) * 0.05, // Slow drift Y
       }));
     }
 
@@ -55,6 +57,17 @@ export default function StarCanvas({ density = 320, className = "" }) {
       for (const s of stars) {
         s.a += s.da;
         if (s.a <= 0.15 || s.a >= 1) s.da = -s.da;
+        
+        // Drift movement
+        s.x += s.vx;
+        s.y += s.vy;
+        
+        // Wrap around
+        if (s.x < 0) s.x = clientWidth;
+        if (s.x > clientWidth) s.x = 0;
+        if (s.y < 0) s.y = clientHeight;
+        if (s.y > clientHeight) s.y = 0;
+
         const color = s.hue === "gold"
           ? `rgba(224, 187, 106, ${s.a})`
           : s.hue === "blue"

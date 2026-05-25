@@ -115,201 +115,177 @@ export default function Home({ onOpenClaim, stats }) {
   };
 
   return (
-    <div className="bg-black">
-      {/* HERO - AEGIS HUD 5.0 */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Deep Atmosphere Layers */}
-        <div className="absolute inset-0 bg-[#020208]" />
-        <div className="absolute inset-0 nebula-bg opacity-50" />
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-screen" 
-             style={{ maskImage: "radial-gradient(circle, black 30%, transparent 80%)" }} />
+    <div className="bg-black relative">
+      {/* GLOBAL STAR STREAM */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
+        <StarCanvas density={600} />
+      </div>
+
+      {/* HERO - AEGIS REFINED */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden z-10">
+        <div className="absolute inset-0 nebula-bg opacity-30" />
         
-        {/* Dynamic Grid Overlay */}
-        <div className="absolute inset-0 opacity-[0.15] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(34,211,238,0.4) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
-        
-        <StarCanvas density={400} />
-
-        {/* HUD DECORATIONS */}
-        <div className="absolute inset-0 pointer-events-none z-20">
-          {/* Top Indicators */}
-          <div className="absolute top-28 left-10 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4 duration-1000">
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-              <div className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-[0.2em]">Sys_Status: Operational</div>
-            </div>
-            <div className="w-40 h-[1px] bg-gradient-to-r from-cyan-400/40 to-transparent" />
+        {/* SUBTLE HUD OVERLAYS */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-32 left-8 opacity-20 scale-75 origin-top-left">
+            <div className="text-[9px] font-mono text-cyan-400 uppercase tracking-[0.3em]">System.Aegis_v5.0</div>
+            <div className="w-20 h-[1px] bg-cyan-400/50 mt-1" />
           </div>
-
-          <div className="absolute top-28 right-10 flex flex-col items-end gap-4 animate-in fade-in slide-in-from-right-4 duration-1000">
-             <div className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-[0.2em]">Observer_Link: Active</div>
-             <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-1 h-3 bg-cyan-400/20 rounded-sm overflow-hidden"><div className="w-full h-1/2 bg-cyan-400 animate-shimmer" style={{animationDelay: `${i*100}ms`}}/></div>)}
-             </div>
-          </div>
-
-          {/* Side Coordinates */}
-          <div className="absolute bottom-20 left-10 text-[9px] font-mono text-cyan-400/30 vertical-text tracking-[0.4em] uppercase hidden lg:block">
-            J2000 RA: 06H 45M 08S // DEC: -16D 42M 58S
+          <div className="absolute bottom-32 right-8 opacity-20 scale-75 origin-bottom-right hidden lg:block">
+            <div className="text-[9px] font-mono text-cyan-400 uppercase tracking-[0.3em] text-right">Coord.06H 45M 08S</div>
+            <div className="w-20 h-[1px] bg-cyan-400/50 mt-1 ml-auto" />
           </div>
         </div>
 
-        <div className="relative text-center px-6 max-w-5xl mx-auto z-30 pt-20">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/20 text-[11px] tracking-[0.4em] uppercase text-cyan-400 mb-10 animate-fade-up font-bold shadow-[0_0_20px_rgba(6,182,212,0.1)]">
-            <ShieldCheck className="w-4 h-4" /> {lang === "TR" ? "Kuantum Güvenlikli Hafıza Platformu" : "Quantum-Safe Memory Platform"}
+        <div className="relative text-center px-6 max-w-5xl mx-auto pt-20">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sc-gold/20 bg-sc-gold/5 text-[10px] tracking-[0.3em] uppercase text-sc-gold/80 mb-10 animate-fade-up">
+            <ShieldCheck className="w-3 h-3" /> {lang === "TR" ? "Kuantum Güvenlikli Hafıza Platformu" : "Quantum-Safe Memory Platform"}
           </div>
           
-          <h1 className="font-display text-5xl sm:text-7xl lg:text-9xl leading-[0.9] tracking-tight mb-10 animate-fade-up whitespace-pre-line group">
-            <span className="text-white uppercase inline-block hover:scale-[1.02] transition-transform duration-700">
-               {lang === "TR" ? "Gökyüzünde\n" : "Leave an\n"}
-               <span className="gold-gradient-text italic font-accent">{lang === "TR" ? "Sonsuz" : "Eternal"}</span>
-               {lang === "TR" ? " Bir İz Bırak" : " Mark in the Sky"}
-            </span>
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl leading-[1.1] tracking-tight mb-10 animate-fade-up">
+            <span className="gold-gradient-text uppercase">{lang === "TR" ? "Gökyüzünde\nSonsuz Bir İz Bırak" : "Leave an Eternal\nMark in the Sky"}</span>
           </h1>
           
-          <div className="w-32 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-10 opacity-40" />
-
-          <p className="text-cyan-50/80 text-xl md:text-2xl max-w-3xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
+          <p className="text-sc-text/70 text-lg md:text-xl max-w-2xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
             {lang === "TR" 
               ? "Maddiyatın bittiği noktada, sevdiklerinizin sesini ve anılarını kuantum zırhıyla yıldızlara mühürleyin." 
               : "Where matter ends, seal your loved ones' voices and memories into the stars with quantum armor."}
           </p>
           
           <div className="flex flex-wrap items-center justify-center gap-8 animate-fade-up" style={{ animationDelay: "400ms" }}>
-            <Link to="/stars" className="btn-gold px-12 py-5 text-lg group relative overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(251,191,36,0.3)] hover:shadow-[0_0_60px_rgba(251,191,36,0.5)]">
-              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <span className="relative z-10 inline-flex items-center gap-3 font-bold tracking-[0.1em]">
-                <Star className="w-6 h-6 fill-current" strokeWidth={1.5} /> {t("hero_cta_pick")}
+            <Link to="/stars" className="btn-gold px-10 py-4 text-lg shadow-[0_0_30px_rgba(251,191,36,0.15)] hover:shadow-[0_0_50px_rgba(251,191,36,0.3)] transition-all">
+              <span className="inline-flex items-center gap-3">
+                <Star className="w-5 h-5 fill-current" strokeWidth={1.5} /> {t("hero_cta_pick")}
               </span>
             </Link>
-            <Link to="/vision" className="btn-ghost px-12 py-5 text-lg border-cyan-500/30 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400/50 rounded-2xl backdrop-blur-xl group transition-all">
-              <span className="inline-flex items-center gap-3 tracking-[0.1em]">
-                <Zap className="w-5 h-5 group-hover:animate-pulse" /> {lang === "TR" ? "StarVault Vizyonu" : "StarVault Vision"}
+            <Link to="/vision" className="btn-ghost px-10 py-4 text-lg border-white/10 hover:border-sc-gold/40 transition-all">
+              <span className="inline-flex items-center gap-3">
+                <Zap className="w-5 h-5" /> {lang === "TR" ? "StarVault Vizyonu" : "StarVault Vision"}
               </span>
             </Link>
           </div>
         </div>
 
-        {/* Scroll Indicator */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-cyan-400/30 text-[9px] tracking-[0.6em] font-display flex flex-col items-center gap-4 animate-bounce">
-          <div className="w-[1px] h-12 bg-gradient-to-b from-cyan-400/50 to-transparent" />
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sc-text-muted/40 text-[9px] tracking-[0.5em] font-display">
           EST. 2026 · SCROLL
         </div>
       </section>
 
-      {/* QUANTUM SECURITY SECTION */}
-      <section className="py-32 relative border-y border-sc-gold/10 bg-[#070F22]">
-        <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <Reveal>
-              <div className="relative">
-                <div className="absolute -inset-4 blur-3xl bg-sc-gold/10 rounded-full" />
-                <div className="relative glass-gold rounded-3xl p-10 overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4">
-                    <Lock className="w-12 h-12 text-sc-gold opacity-20" />
-                  </div>
-                  <div className="text-[11px] tracking-[0.4em] uppercase text-sc-gold mb-6">Quantum-Resistant (PQC)</div>
-                  <h2 className="font-display text-4xl md:text-5xl mb-8 leading-tight">
-                    {lang === "TR" ? "Geleceğin Saldırılarına Karşı Bugünden Hazır" : "Ready Today for the Attacks of Tomorrow"}
-                  </h2>
-                  <div className="space-y-6">
-                    {[
-                      { t: "Lattice-Based Encryption", d: "NIST standartlarında Kyber ve Dilithium algoritmaları ile sarsılmaz güvenlik." },
-                      { t: "Kuantum Dirençli NFT", d: "Sahiplik kayıtlarınız kuantum bilgisayarlar tarafından bile kırılamaz." },
-                      { t: "Hava Boşluklu Arşivleme", d: "En kritik verileriniz internetten izole StarVault sığınaklarında." }
-                    ].map((f, i) => (
-                      <div key={i} className="flex gap-4">
-                        <div className="w-1 h-12 bg-sc-gold/40 rounded-full" />
-                        <div>
-                          <div className="text-sm font-display text-sc-gold uppercase tracking-widest mb-1">{f.t}</div>
-                          <p className="text-xs text-sc-text-muted leading-relaxed">{f.d}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-            <Reveal delay={200}>
-              <div className="space-y-8">
-                <div className="inline-flex p-3 rounded-2xl bg-sc-gold/10 border border-sc-gold/20">
-                  <ShieldCheck className="w-8 h-8 text-sc-gold" />
-                </div>
-                <h2 className="font-display text-4xl md:text-5xl leading-tight">
-                  {lang === "TR" ? "Evrensel Hafızanızı Kuantum Zırhıyla Koruyun" : "Protect Your Universal Memory with Quantum Armor"}
-                </h2>
-                <p className="text-lg text-sc-text-muted font-accent italic leading-relaxed">
-                  {lang === "TR" 
-                    ? "Geleneksel şifreleme yöntemleri, kuantum bilgisayarların gölgesinde eriyip gidecek. StarClaim, dijital mirasınızı trilyonlarca yıllık kozmik takvime hazırlıyor." 
-                    : "Traditional encryption methods will dissolve in the shadow of quantum computers. StarClaim prepares your digital legacy for a trillion-year cosmic calendar."}
-                </p>
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="glass rounded-2xl p-6">
-                    <div className="text-3xl font-display text-sc-gold mb-1">99.9%</div>
-                    <div className="text-[10px] uppercase tracking-widest text-sc-text-muted">Kuantum Direnci</div>
-                  </div>
-                  <div className="glass rounded-2xl p-6">
-                    <div className="text-3xl font-display text-sc-gold mb-1">AES-256</div>
-                    <div className="text-[10px] uppercase tracking-widest text-sc-text-muted">Simetrik Zırh</div>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* STARVAULT / FAMILY PROTOCOL */}
-      <section className="py-32 relative overflow-hidden">
-        <div className="absolute inset-0 nebula-bg opacity-40" />
-        <div className="max-w-7xl mx-auto px-6 md:px-10">
-          <div className="text-center mb-20">
-            <Reveal>
-              <div className="inline-flex p-3 rounded-2xl bg-sc-blue/10 border border-sc-blue/20 mb-6">
-                <Database className="w-8 h-8 text-sc-blue" />
-              </div>
-              <div className="text-[11px] tracking-[0.4em] uppercase text-sc-blue mb-4">THE FAMILY PROTOCOL</div>
-              <h2 className="font-display text-4xl md:text-6xl mb-6">StarVault: Gizli Miras Katmanı</h2>
-              <p className="text-sc-text-muted max-w-2xl mx-auto font-accent italic text-xl">
-                "Herkes gökyüzüne bakar, ama sadece anahtarı olanlar içeriği görür."
-              </p>
-            </Reveal>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { 
-                ic: EyeOff, 
-                t: "Görünmez Mühür", 
-                d: "Güneş, Mars ve Jüpiter gibi ana gök cisimleri katalogda görünmez; sadece 'Aile Protokolü' sahiplerine özel sığınaklardır." 
-              },
-              { 
-                ic: Heart, 
-                t: "Sesli Biyografi", 
-                d: "Sevdiklerinizin gülüşlerini ve itiraflarını ses frekansları olarak gezegenlerin çekirdeklerine mühürleyin." 
-              },
-              { 
-                ic: Scroll, 
-                t: "Vasiyet Modu", 
-                d: "Sizden sonraki nesillere bırakılacak en değerli 'gerçek servet' — anılarınız ve hayat dersleriniz." 
-              }
-            ].map((s, i) => {
-              const Ic = s.ic;
-              return (
-                <Reveal key={i} delay={i * 150}>
-                  <div className="glass rounded-3xl p-8 border-sc-blue/20 hover:border-sc-blue/40 transition-all group">
-                    <div className="w-14 h-14 rounded-2xl bg-sc-blue/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <Ic className="w-6 h-6 text-sc-blue" />
+      {/* SECTIONS WITH TRANSPARENT BACKGROUND TO SHOW FLOWING STARS */}
+      <div className="relative z-10">
+        {/* QUANTUM SECURITY SECTION */}
+        <section className="py-32 relative border-y border-white/5 bg-black/40 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 md:px-10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <Reveal>
+                <div className="relative">
+                  <div className="absolute -inset-4 blur-3xl bg-sc-gold/5 rounded-full" />
+                  <div className="relative glass-gold rounded-3xl p-10 overflow-hidden border border-white/5">
+                    <div className="absolute top-0 right-0 p-4">
+                      <Lock className="w-12 h-12 text-sc-gold opacity-10" />
                     </div>
-                    <h3 className="font-display text-2xl mb-4 text-sc-text">{s.t}</h3>
-                    <p className="text-sm text-sc-text-muted leading-relaxed">{s.d}</p>
+                    <div className="text-[10px] tracking-[0.4em] uppercase text-sc-gold/60 mb-6">Quantum-Resistant (PQC)</div>
+                    <h2 className="font-display text-4xl md:text-5xl mb-8 leading-tight">
+                      {lang === "TR" ? "Geleceğin Saldırılarına Karşı Bugünden Hazır" : "Ready Today for the Attacks of Tomorrow"}
+                    </h2>
+                    <div className="space-y-6">
+                      {[
+                        { t: "Lattice-Based Encryption", d: "NIST standartlarında Kyber ve Dilithium algoritmaları ile sarsılmaz güvenlik." },
+                        { t: "Kuantum Dirençli NFT", d: "Sahiplik kayıtlarınız kuantum bilgisayarlar tarafından bile kırılamaz." },
+                        { t: "Hava Boşluklu Arşivleme", d: "En kritik verileriniz internetten izole StarVault sığınaklarında." }
+                      ].map((f, i) => (
+                        <div key={i} className="flex gap-4">
+                          <div className="w-1 h-12 bg-sc-gold/20 rounded-full" />
+                          <div>
+                            <div className="text-sm font-display text-sc-gold/80 uppercase tracking-widest mb-1">{f.t}</div>
+                            <p className="text-xs text-sc-text-muted/80 leading-relaxed">{f.d}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </Reveal>
-              );
-            })}
+                </div>
+              </Reveal>
+              <Reveal delay={200}>
+                <div className="space-y-8">
+                  <div className="inline-flex p-3 rounded-2xl bg-sc-gold/5 border border-sc-gold/10">
+                    <ShieldCheck className="w-8 h-8 text-sc-gold/60" />
+                  </div>
+                  <h2 className="font-display text-4xl md:text-5xl leading-tight">
+                    {lang === "TR" ? "Evrensel Hafızanızı Kuantum Zırhıyla Koruyun" : "Protect Your Universal Memory with Quantum Armor"}
+                  </h2>
+                  <p className="text-lg text-sc-text-muted/70 font-accent italic leading-relaxed">
+                    {lang === "TR" 
+                      ? "Geleneksel şifreleme yöntemleri, kuantum bilgisayarların gölgesinde eriyip gidecek. StarClaim, dijital mirasınızı trilyonlarca yıllık kozmik takvime hazırlıyor." 
+                      : "Traditional encryption methods will dissolve in the shadow of quantum computers. StarClaim prepares your digital legacy for a trillion-year cosmic calendar."}
+                  </p>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="glass-dark border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+                      <div className="text-3xl font-display text-sc-gold mb-1">99.9%</div>
+                      <div className="text-[10px] uppercase tracking-widest text-sc-text-muted">Kuantum Direnci</div>
+                    </div>
+                    <div className="glass-dark border border-white/5 rounded-2xl p-6 backdrop-blur-md">
+                      <div className="text-3xl font-display text-sc-gold mb-1">AES-256</div>
+                      <div className="text-[10px] uppercase tracking-widest text-sc-text-muted">Simetrik Zırh</div>
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* STARVAULT / FAMILY PROTOCOL */}
+        <section className="py-32 relative overflow-hidden bg-transparent">
+          <div className="max-w-7xl mx-auto px-6 md:px-10">
+            <div className="text-center mb-20">
+              <Reveal>
+                <div className="inline-flex p-3 rounded-2xl bg-sc-blue/5 border border-sc-blue/10 mb-6">
+                  <Database className="w-8 h-8 text-sc-blue/60" />
+                </div>
+                <div className="text-[11px] tracking-[0.4em] uppercase text-sc-blue/60 mb-4">THE FAMILY PROTOCOL</div>
+                <h2 className="font-display text-4xl md:text-6xl mb-6">StarVault: Gizli Miras Katmanı</h2>
+                <p className="text-sc-text-muted/70 max-w-2xl mx-auto font-accent italic text-xl">
+                  "Herkes gökyüzüne bakar, ama sadece anahtarı olanlar içeriği görür."
+                </p>
+              </Reveal>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { 
+                  ic: EyeOff, 
+                  t: "Görünmez Mühür", 
+                  d: "Güneş, Mars ve Jüpiter gibi ana gök cisimleri katalogda görünmez; sadece 'Aile Protokolü' sahiplerine özel sığınaklardır." 
+                },
+                { 
+                  ic: Heart, 
+                  t: "Sesli Biyografi", 
+                  d: "Sevdiklerinizin gülüşlerini ve itiraflarını ses frekansları olarak gezegenlerin çekirdeklerine mühürleyin." 
+                },
+                { 
+                  ic: Scroll, 
+                  t: "Vasiyet Modu", 
+                  d: "Sizden sonraki nesillere bırakılacak en değerli 'gerçek servet' — anılarınız ve hayat dersleriniz." 
+                }
+              ].map((s, i) => {
+                const Ic = s.ic;
+                return (
+                  <Reveal key={i} delay={i * 150}>
+                    <div className="glass-dark border border-white/5 hover:border-sc-blue/20 rounded-3xl p-8 backdrop-blur-md transition-all group">
+                      <div className="w-14 h-14 rounded-2xl bg-sc-blue/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                        <Ic className="w-6 h-6 text-sc-blue/60" />
+                      </div>
+                      <h3 className="font-display text-2xl mb-4 text-sc-text/90">{s.t}</h3>
+                      <p className="text-sm text-sc-text-muted/70 leading-relaxed">{s.d}</p>
+                    </div>
+                  </Reveal>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* TIERS (Updated with new vision) */}
       <section id="pricing" className="py-28">
