@@ -292,11 +292,73 @@ function CinematicCamera({ targetPos, viewMode, introFinished }) {
   return null;
 }
 
+// --- NEBULA SHADER ---
+const nebulaShader = {
+  vertexShader: `
+    varying vec2 vUv;
+    varying vec3 vWorldPosition;
+    void main() {
+      vUv = uv;
+      vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = worldPosition.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform float time;
+    varying vec2 vUv;
+    varying vec3 vWorldPosition;
+
+    // Simple noise for atmospheric clouds
+    float noise(vec3 p) {
+      return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+    }
+
+    void main() {
+      vec3 direction = normalize(vWorldPosition);
+      
+      // Create layered nebulosity
+      float layer1 = sin(direction.x * 2.0 + time * 0.1) * cos(direction.y * 2.0) * sin(direction.z * 2.0);
+      float layer2 = cos(direction.x * 4.0 - time * 0.05) * sin(direction.z * 4.0);
+      
+      vec3 color1 = vec3(0.02, 0.05, 0.15); // Deep space blue
+      vec3 color2 = vec3(0.05, 0.02, 0.1);  // Subtle violet
+      vec3 color3 = vec3(0.01, 0.08, 0.1);  // Teal dust
+      
+      vec3 finalColor = mix(color1, color2, layer1 * 0.5 + 0.5);
+      finalColor = mix(finalColor, color3, layer2 * 0.3 + 0.3);
+      
+      // Add a touch of "cosmic dust" glow
+      float glow = pow(max(0.0, layer1 + layer2), 3.0) * 0.02;
+      finalColor += glow;
+
+      gl_FragColor = vec4(finalColor, 1.0);
+    }
+  `
+};
+
 function NebulaBackground() {
+  const meshRef = useRef();
+  const uniforms = useMemo(() => ({
+    time: { value: 0 }
+  }), []);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.material.uniforms.time.value = state.clock.getElapsedTime();
+    }
+  });
+
   return (
-    <mesh>
-      <sphereGeometry args={[990, 64, 64]} />
-      <meshBasicMaterial side={THREE.BackSide} transparent opacity={0.4} color="#050515" />
+    <mesh ref={meshRef}>
+      <sphereGeometry args={[995, 64, 64]} />
+      <shaderMaterial 
+        vertexShader={nebulaShader.vertexShader}
+        fragmentShader={nebulaShader.fragmentShader}
+        uniforms={uniforms}
+        side={THREE.BackSide}
+        transparent
+      />
     </mesh>
   );
 }
