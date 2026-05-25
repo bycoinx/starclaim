@@ -115,43 +115,84 @@ export default function Home({ onOpenClaim, stats }) {
   };
 
   return (
-    <div className="bg-sc-deep">
-      {/* HERO */}
+    <div className="bg-black">
+      {/* HERO - AEGIS HUD 5.0 */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 nebula-bg" />
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: "url(https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80)",
-          backgroundSize: "cover", backgroundPosition: "center",
-          maskImage: "radial-gradient(ellipse at center, black 40%, transparent 85%)",
-          WebkitMaskImage: "radial-gradient(ellipse at center, black 40%, transparent 85%)",
-        }} />
-        <StarCanvas density={340} />
-        <div className="relative text-center px-6 max-w-5xl mx-auto z-10 pt-20">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sc-gold/30 bg-sc-gold/5 text-[11px] tracking-[0.3em] uppercase text-sc-gold mb-8 animate-fade-up">
-            <ShieldCheck className="w-3.5 h-3.5" /> {lang === "TR" ? "Kuantum Güvenlikli Hafıza Platformu" : "Quantum-Safe Memory Platform"}
+        {/* Deep Atmosphere Layers */}
+        <div className="absolute inset-0 bg-[#020208]" />
+        <div className="absolute inset-0 nebula-bg opacity-50" />
+        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1464802686167-b939a67e06a1?auto=format&fit=crop&q=80')] bg-cover bg-center mix-blend-screen" 
+             style={{ maskImage: "radial-gradient(circle, black 30%, transparent 80%)" }} />
+        
+        {/* Dynamic Grid Overlay */}
+        <div className="absolute inset-0 opacity-[0.15] pointer-events-none" 
+             style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(34,211,238,0.4) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+        
+        <StarCanvas density={400} />
+
+        {/* HUD DECORATIONS */}
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {/* Top Indicators */}
+          <div className="absolute top-28 left-10 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4 duration-1000">
+            <div className="flex items-center gap-3">
+              <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+              <div className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-[0.2em]">Sys_Status: Operational</div>
+            </div>
+            <div className="w-40 h-[1px] bg-gradient-to-r from-cyan-400/40 to-transparent" />
           </div>
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl leading-[1] tracking-tight mb-8 animate-fade-up whitespace-pre-line">
-            <span className="gold-gradient-text uppercase">{lang === "TR" ? "Gökyüzünde\nSonsuz Bir İz Bırak" : "Leave an Eternal\nMark in the Sky"}</span>
+
+          <div className="absolute top-28 right-10 flex flex-col items-end gap-4 animate-in fade-in slide-in-from-right-4 duration-1000">
+             <div className="text-[10px] font-mono text-cyan-400/60 uppercase tracking-[0.2em]">Observer_Link: Active</div>
+             <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map(i => <div key={i} className="w-1 h-3 bg-cyan-400/20 rounded-sm overflow-hidden"><div className="w-full h-1/2 bg-cyan-400 animate-shimmer" style={{animationDelay: `${i*100}ms`}}/></div>)}
+             </div>
+          </div>
+
+          {/* Side Coordinates */}
+          <div className="absolute bottom-20 left-10 text-[9px] font-mono text-cyan-400/30 vertical-text tracking-[0.4em] uppercase hidden lg:block">
+            J2000 RA: 06H 45M 08S // DEC: -16D 42M 58S
+          </div>
+        </div>
+
+        <div className="relative text-center px-6 max-w-5xl mx-auto z-30 pt-20">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/20 text-[11px] tracking-[0.4em] uppercase text-cyan-400 mb-10 animate-fade-up font-bold shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+            <ShieldCheck className="w-4 h-4" /> {lang === "TR" ? "Kuantum Güvenlikli Hafıza Platformu" : "Quantum-Safe Memory Platform"}
+          </div>
+          
+          <h1 className="font-display text-5xl sm:text-7xl lg:text-9xl leading-[0.9] tracking-tight mb-10 animate-fade-up whitespace-pre-line group">
+            <span className="text-white uppercase inline-block hover:scale-[1.02] transition-transform duration-700">
+               {lang === "TR" ? "Gökyüzünde\n" : "Leave an\n"}
+               <span className="gold-gradient-text italic font-accent">{lang === "TR" ? "Sonsuz" : "Eternal"}</span>
+               {lang === "TR" ? " Bir İz Bırak" : " Mark in the Sky"}
+            </span>
           </h1>
-          <p className="text-sc-text/80 text-xl md:text-2xl max-w-3xl mx-auto mb-12 font-accent italic animate-fade-up" style={{ animationDelay: "200ms" }}>
+          
+          <div className="w-32 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-10 opacity-40" />
+
+          <p className="text-cyan-50/80 text-xl md:text-2xl max-w-3xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
             {lang === "TR" 
               ? "Maddiyatın bittiği noktada, sevdiklerinizin sesini ve anılarını kuantum zırhıyla yıldızlara mühürleyin." 
               : "Where matter ends, seal your loved ones' voices and memories into the stars with quantum armor."}
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-6 animate-fade-up" style={{ animationDelay: "400ms" }}>
-            <Link to="/stars" className="btn-gold px-10 py-4 text-lg" data-testid="hero-cta-pick">
-              <span className="inline-flex items-center gap-3">
-                <Star className="w-5 h-5 fill-current" strokeWidth={1.5} /> {t("hero_cta_pick")}
+          
+          <div className="flex flex-wrap items-center justify-center gap-8 animate-fade-up" style={{ animationDelay: "400ms" }}>
+            <Link to="/stars" className="btn-gold px-12 py-5 text-lg group relative overflow-hidden rounded-2xl shadow-[0_0_40px_rgba(251,191,36,0.3)] hover:shadow-[0_0_60px_rgba(251,191,36,0.5)]">
+              <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              <span className="relative z-10 inline-flex items-center gap-3 font-bold tracking-[0.1em]">
+                <Star className="w-6 h-6 fill-current" strokeWidth={1.5} /> {t("hero_cta_pick")}
               </span>
             </Link>
-            <Link to="/vision" className="btn-ghost px-10 py-4 text-lg" data-testid="hero-cta-vision">
-              <span className="inline-flex items-center gap-3">
-                <Zap className="w-5 h-5" /> {lang === "TR" ? "StarVault Vizyonu" : "StarVault Vision"}
+            <Link to="/vision" className="btn-ghost px-12 py-5 text-lg border-cyan-500/30 bg-cyan-950/20 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400/50 rounded-2xl backdrop-blur-xl group transition-all">
+              <span className="inline-flex items-center gap-3 tracking-[0.1em]">
+                <Zap className="w-5 h-5 group-hover:animate-pulse" /> {lang === "TR" ? "StarVault Vizyonu" : "StarVault Vision"}
               </span>
             </Link>
           </div>
         </div>
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sc-text-muted text-[10px] tracking-[0.5em] font-display">
+
+        {/* Scroll Indicator */}
+        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-cyan-400/30 text-[9px] tracking-[0.6em] font-display flex flex-col items-center gap-4 animate-bounce">
+          <div className="w-[1px] h-12 bg-gradient-to-b from-cyan-400/50 to-transparent" />
           EST. 2026 · SCROLL
         </div>
       </section>
