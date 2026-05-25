@@ -6,7 +6,6 @@ import { useT } from "../lib/i18n";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { EventHorizonBridge } from "../lib/solana/event_horizon";
 
 export default function Dashboard() {
   const { user, loading, login } = useAuth();
@@ -32,6 +31,7 @@ export default function Dashboard() {
     const loadingToast = toast.loading("Aegis: Initializing Instant Exit Transaction...");
     
     try {
+      const { EventHorizonBridge } = await import("../lib/solana/event_horizon");
       // Initialize bridge with real wallet from component scope
       const bridge = new EventHorizonBridge(wallet); 
       

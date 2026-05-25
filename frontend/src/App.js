@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { Suspense, lazy, useEffect, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
@@ -6,27 +6,69 @@ import { Toaster, toast } from "sonner";
 import { AuthProvider } from "./lib/auth";
 import { LanguageProvider } from "./lib/i18n";
 import { api } from "./lib/api";
-import SolanaWalletProvider from "./lib/SolanaWalletProvider";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LiveNotifications from "./components/LiveNotifications";
 import CheckoutModal from "./components/CheckoutModal";
 
-import Home from "./pages/Home";
-import StarPicker from "./pages/StarPicker";
-import Marketplace from "./pages/Marketplace";
-import Stories from "./pages/Stories";
-import About from "./pages/About";
-import Vision from "./pages/Vision";
-import Vault from "./pages/Vault";
-import Dashboard from "./pages/Dashboard";
-import AuthCallback from "./pages/AuthCallback";
-import PaymentSuccess from "./pages/PaymentSuccess";
-import PaymentCancel from "./pages/PaymentCancel";
-
 import AegisHUD from "./components/AegisHUD/AegisHUD";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
+
+const Home = lazy(() => import("./pages/Home"));
+const StarPicker = lazy(() => import("./pages/StarPicker"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const Stories = lazy(() => import("./pages/Stories"));
+const About = lazy(() => import("./pages/About"));
+const Vision = lazy(() => import("./pages/Vision"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+
+const VaultWithWallet = lazy(async () => {
+  const [{ default: SolanaWalletProvider }, { default: Vault }] = await Promise.all([
+    import("./lib/SolanaWalletProvider"),
+    import("./pages/Vault"),
+  ]);
+
+  return {
+    default: function VaultRoute() {
+      return (
+        <SolanaWalletProvider>
+          <Vault />
+        </SolanaWalletProvider>
+      );
+    },
+  };
+});
+
+const DashboardWithWallet = lazy(async () => {
+  const [{ default: SolanaWalletProvider }, { default: Dashboard }] = await Promise.all([
+    import("./lib/SolanaWalletProvider"),
+    import("./pages/Dashboard"),
+  ]);
+
+  return {
+    default: function DashboardRoute() {
+      return (
+        <SolanaWalletProvider>
+          <Dashboard />
+        </SolanaWalletProvider>
+      );
+    },
+  };
+});
+
+function PageLoading() {
+  return (
+    <div className="min-h-[60vh] bg-sc-deep flex items-center justify-center">
+      <div className="text-center">
+        <div className="mx-auto mb-4 h-8 w-8 rounded-full border-2 border-sc-gold/30 border-t-sc-gold animate-spin" />
+        <p className="text-[10px] uppercase tracking-[0.3em] text-sc-gold">StarClaim Loading</p>
+      </div>
+    </div>
+  );
+}
 
 function AppShell() {
   const location = useLocation();
@@ -111,18 +153,20 @@ function AppShell() {
   return (
     <>
       <Navbar onOpenClaim={() => openClaim()} />
-      <Routes>
-        <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
-        <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
-        <Route path="/marketplace" element={<Marketplace />} />
-        <Route path="/stories" element={<Stories />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/vision" element={<Vision />} />
-        <Route path="/vault" element={<SolanaWalletProvider><Vault /></SolanaWalletProvider>} />
-        <Route path="/dashboard" element={<SolanaWalletProvider><Dashboard /></SolanaWalletProvider>} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/cancel" element={<PaymentCancel />} />
-      </Routes>
+      <Suspense fallback={<PageLoading />}>
+        <Routes>
+          <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
+          <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/stories" element={<Stories />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/vision" element={<Vision />} />
+          <Route path="/vault" element={<VaultWithWallet />} />
+          <Route path="/dashboard" element={<DashboardWithWallet />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
+        </Routes>
+      </Suspense>
       <Footer />
       <LiveNotifications />
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} star={activeStar} />
