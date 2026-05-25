@@ -3,12 +3,12 @@ import { useT } from "../lib/i18n";
 import { Heart, Gift, Users, GraduationCap, Baby, Crown, TrendingUp, BookOpen, Radio, Database, Activity } from "lucide-react";
 
 const STORIES = [
-  { ic: Heart, title: "Sevgililer için yıldız", titleEn: "Star for Lovers", excerpt: "Bir yılbaşı gecesi Orion'u işaret ettik. Altı ay sonra oradaki yıldız bize aitti.", excerptEn: "On a New Year's Eve, we pointed at Orion. Six months later, that star was ours.", img: "https://images.pexels.com/photos/32732569/pexels-photo-32732569.png", code: "ARC-01" },
-  { ic: Users, title: "Grup yıldızı", titleEn: "Group Star", excerpt: "Altı arkadaş, aynı takımyıldızında komşu altı yıldız. Grubumuzun WhatsApp fotoğrafı artık Lyra.", excerptEn: "Six friends, six neighboring stars in the same constellation. Our WhatsApp group photo is now Lyra.", img: "https://images.unsplash.com/photo-1720675009618-a38716724700", code: "ARC-02" },
-  { ic: Crown, title: "Anma yıldızı", titleEn: "Memorial Star", excerpt: "Babama Betelgeuse'u adadım. Her gece Orion'a baktığımda o bana bakıyor.", excerptEn: "I dedicated Betelgeuse to my father. Every night I look at Orion, he looks back at me.", img: "https://images.unsplash.com/photo-1749544812189-193ccae5e2f4", code: "ARC-03" },
-  { ic: GraduationCap, title: "Mezuniyet hediyesi", titleEn: "Graduation Gift", excerpt: "Kendime mezun olurken bir yıldız aldım. Hayatımın bu anı, gökyüzünde yıldız olarak duruyor.", excerptEn: "I bought myself a star when I graduated. This moment of my life stands as a star in the sky.", img: "https://images.pexels.com/photos/20881655/pexels-photo-20881655.jpeg", code: "ARC-04" },
-  { ic: Baby, title: "Bebek yıldızı", titleEn: "Newborn Star", excerpt: "Oğlumuz doğduğu gün gökyüzünde ona bir isim bıraktık. Büyüdüğünde ona anlatacağız.", excerptEn: "The day our son was born, we left a name for him in the sky. We'll tell him when he grows up.", img: "https://images.pexels.com/photos/32732569/pexels-photo-32732569.png", code: "ARC-05" },
-  { ic: TrendingUp, title: "Yatırım yıldızı", titleEn: "Investment Star", excerpt: "50 dolara aldığım SC-014 yıldızı üç ay sonra 300 dolara satıldı. Değeri zamanla büyüyor.", excerptEn: "The SC-014 star I bought for $50 sold for $300 three months later. Its value grows over time.", img: "https://images.unsplash.com/photo-1720675009618-a38716724700", code: "ARC-06" },
+  { ic: Heart, title: "Sevgililer için yıldız", titleEn: "Star for Lovers", excerpt: "Bir yılbaşı gecesi Orion'u işaret ettik. Altı ay sonra oradaki yıldız bize aitti.", excerptEn: "On a New Year's Eve, we pointed at Orion. Six months later, that star was ours.", img: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986", code: "ARC-01/LV" },
+  { ic: Users, title: "Grup yıldızı", titleEn: "Group Star", excerpt: "Altı arkadaş, aynı takımyıldızında komşu altı yıldız. Grubumuzun WhatsApp fotoğrafı artık Lyra.", excerptEn: "Six friends, six neighboring stars in the same constellation. Our WhatsApp group photo is now Lyra.", img: "https://images.unsplash.com/photo-1464802686167-b939a67e06a1", code: "ARC-02/GR" },
+  { ic: Crown, title: "Anma yıldızı", titleEn: "Memorial Star", excerpt: "Babama Betelgeuse'u adadım. Her gece Orion'a baktığımda o bana bakıyor.", excerptEn: "I dedicated Betelgeuse to my father. Every night I look at Orion, he looks back at me.", img: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78", code: "ARC-03/MM" },
+  { ic: GraduationCap, title: "Mezuniyet hediyesi", titleEn: "Graduation Gift", excerpt: "Kendime mezun olurken bir yıldız aldım. Hayatımın bu anı, gökyüzünde yıldız olarak duruyor.", excerptEn: "I bought myself a star when I graduated. This moment of my life stands as a star in the sky.", img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa", code: "ARC-04/GD" },
+  { ic: Baby, title: "Bebek yıldızı", titleEn: "Newborn Star", excerpt: "Oğlumuz doğduğu gün gökyüzünde ona bir isim bıraktık. Büyüdüğünde ona anlatacağız.", excerptEn: "The day our son was born, we left a name for him in the sky. We'll tell him when he grows up.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", code: "ARC-05/NB" },
+  { ic: TrendingUp, title: "Yatırım yıldızı", titleEn: "Investment Star", excerpt: "50 dolara aldığım SC-014 yıldızı üç ay sonra 300 dolara satıldı. Değeri zamanla büyüyor.", excerptEn: "The SC-014 star I bought for $50 sold for $300 three months later. Its value grows over time.", img: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564", code: "ARC-06/IV" },
 ];
 
 const ASTRO = [
@@ -66,22 +66,33 @@ export default function Stories() {
           {STORIES.map((s, i) => {
             const Ic = s.ic;
             return (
-              <div key={i} className="glass-dark border border-white/5 hover:border-sc-gold/20 rounded-2xl overflow-hidden transition-all duration-500 group relative backdrop-blur-sm">
-                <div className="h-44 overflow-hidden relative">
-                  <img src={s.img} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-70 group-hover:scale-105 transition-all duration-700" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-                  <div className="absolute top-4 right-4 px-2 py-0.5 bg-black/60 border border-white/10 rounded text-[7px] font-mono text-sc-gold tracking-widest opacity-60">
+              <div key={i} className="glass-dark border border-white/5 hover:border-sc-gold/40 rounded-2xl overflow-hidden transition-all duration-700 group relative backdrop-blur-sm">
+                {/* Kinetic HUD Frame */}
+                <div className="absolute inset-0 border-2 border-sc-gold/0 group-hover:border-sc-gold/20 transition-all duration-700 pointer-events-none z-20 rounded-2xl" />
+                
+                <div className="h-48 overflow-hidden relative">
+                  <img src={s.img} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-90 scale-100 group-hover:scale-110 transition-all duration-[2000ms] ease-out" />
+                  
+                  {/* Atmospheric Moving Stars Overlay */}
+                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-0 group-hover:opacity-20 transition-opacity duration-1000 pointer-events-none" />
+                  
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
+                  
+                  <div className="absolute top-4 right-4 px-2 py-0.5 bg-black/80 border border-sc-gold/30 rounded text-[7px] font-mono text-sc-gold tracking-widest z-20 group-hover:scale-110 transition-transform">
                     {s.code}
                   </div>
+                  
+                  {/* Bottom Scanline Animation on Hover */}
+                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-sc-gold/40 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none z-20" />
                 </div>
-                <div className="p-8">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Ic className="w-4 h-4 text-sc-gold/60" />
-                    <h3 className="font-display text-lg text-white tracking-wide uppercase group-hover:text-sc-gold transition-colors">
-                      {lang === "TR" ? s.title : s.titleEn}
-                    </h3>
+                <div className="p-8 relative z-20">
+                  <div className="flex items-center gap-3 mb-4 group-hover:translate-x-1 transition-transform duration-500">
+                    <div className="p-1.5 rounded-lg bg-sc-gold/5 border border-sc-gold/20 group-hover:bg-sc-gold/10 transition-colors">
+                      <Ic className="w-4 h-4 text-sc-gold/80" />
+                    </div>
+                    <h3 className="font-display text-lg text-white tracking-wide uppercase group-hover:text-sc-gold transition-colors">{lang === "TR" ? s.title : s.titleEn}</h3>
                   </div>
-                  <p className="text-sc-text-muted/60 text-xs leading-relaxed italic font-light line-clamp-2">
+                  <p className="text-sc-text-muted/60 text-xs leading-relaxed italic font-light line-clamp-3 group-hover:text-sc-text-muted transition-colors">
                     {lang === "TR" ? s.excerpt : s.excerptEn}
                   </p>
                 </div>
