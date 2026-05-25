@@ -84,9 +84,9 @@ export default function StarPicker({ onClaim }) {
   };
 
   return (
-    <div className="min-h-screen bg-sc-deep pt-28 pb-24 relative">
-      <div className="absolute inset-0 nebula-bg opacity-60 pointer-events-none" />
-      <div className="relative max-w-7xl mx-auto px-6 md:px-10">
+    <div className="min-h-screen bg-transparent pt-28 pb-24 relative">
+      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+      <div className="relative max-w-7xl mx-auto px-6 md:px-10 z-10">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sc-gold/30 text-[10px] uppercase tracking-[0.3em] text-sc-gold mb-5">
             <Telescope className="w-3 h-3" /> StarClaim Catalog

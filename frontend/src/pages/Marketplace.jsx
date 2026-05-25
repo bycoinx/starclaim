@@ -63,8 +63,8 @@ export default function Marketplace() {
   };
 
   return (
-    <div className="min-h-screen bg-sc-deep pt-28 pb-24 relative overflow-hidden">
-      <div className="absolute inset-0 nebula-bg opacity-40 pointer-events-none" />
+    <div className="min-h-screen bg-transparent pt-28 pb-24 relative overflow-hidden">
+      <div className="absolute inset-0 bg-black/40 pointer-events-none" />
       
       {/* Background Grid for "Trading Desk" feel */}
       <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5 pointer-events-none" />

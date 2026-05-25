@@ -189,7 +189,7 @@ function AppShell() {
 
 export default function App() {
   return (
-    <div className="App bg-sc-deep min-h-screen">
+    <div className="App bg-black min-h-screen">
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
