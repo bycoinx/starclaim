@@ -220,43 +220,63 @@ function ObserverHUD({ metrics }) {
   const loadPercent = Math.round((metrics.visibleCount / metrics.totalCount) * 100);
   
   return (
-    <div className="absolute top-8 right-8 z-40 pointer-events-none">
-      <div className="glass-dark border border-cyan-400/30 rounded-2xl p-4 w-56 backdrop-blur-xl relative overflow-hidden group">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+    <div className="absolute top-8 right-8 z-40 pointer-events-none animate-in fade-in slide-in-from-right-4 duration-1000">
+      <div className="glass-dark border border-cyan-500/30 rounded-2xl p-4 w-60 backdrop-blur-2xl relative overflow-hidden group shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+        {/* Futuristic Scanline Effect */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-400/5 to-transparent h-[200%] -translate-y-1/2 animate-scanline pointer-events-none" />
         
-        <div className="flex items-center justify-between mb-4">
+        {/* Top Accent Line */}
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-50" />
+        
+        <div className="flex items-center justify-between mb-4 relative z-10">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-cyan-400 font-display">Observer Link</span>
+            <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
+            <span className="text-[11px] uppercase tracking-[0.25em] text-cyan-400 font-display font-bold">Observer Link</span>
           </div>
-          <span className="text-[9px] font-mono text-cyan-400/60">v4.6_GHST</span>
+          <div className="px-2 py-0.5 rounded-md bg-cyan-950/50 border border-cyan-500/20">
+            <span className="text-[8px] font-mono text-cyan-400/80">v5.0_AEGIS</span>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-[9px] uppercase tracking-widest text-sc-text-muted mb-1.5">
-              <span>Reality Coherence</span>
-              <span className="text-cyan-200">{Math.round(metrics.coherence * 100)}%</span>
+        <div className="space-y-4 relative z-10">
+          <div className="bg-black/20 rounded-xl p-3 border border-white/5">
+            <div className="flex justify-between text-[9px] uppercase tracking-widest text-sc-text-muted mb-2">
+              <span className="flex items-center gap-1.5">
+                <div className="w-1 h-1 bg-cyan-400/50 rounded-full" />
+                Reality Coherence
+              </span>
+              <span className="text-cyan-300 font-mono">{Math.round(metrics.coherence * 100)}%</span>
             </div>
             <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-               <div className="h-full bg-cyan-400 transition-all duration-500" style={{ width: `${metrics.coherence * 100}%` }} />
+               <div className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 transition-all duration-700 ease-out" style={{ width: `${metrics.coherence * 100}%` }} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-             <div className="bg-white/5 rounded-xl p-2 border border-white/5">
-                <div className="text-[8px] uppercase tracking-tighter text-sc-text-muted mb-0.5">Frustum Load</div>
-                <div className="text-sm font-mono text-white">{loadPercent}%</div>
+             <div className="bg-cyan-950/20 rounded-xl p-2.5 border border-cyan-500/10 hover:border-cyan-500/30 transition-colors">
+                <div className="text-[8px] uppercase tracking-tighter text-cyan-400/60 mb-1">Frustum Load</div>
+                <div className="text-sm font-mono text-white flex items-baseline gap-1">
+                  {loadPercent}
+                  <span className="text-[9px] text-cyan-400/40">%</span>
+                </div>
              </div>
-             <div className="bg-white/5 rounded-xl p-2 border border-white/5">
-                <div className="text-[8px] uppercase tracking-tighter text-sc-text-muted mb-0.5">Ghost Count</div>
-                <div className="text-sm font-mono text-white">{Math.round(metrics.totalCount * 0.2)}</div>
+             <div className="bg-cyan-950/20 rounded-xl p-2.5 border border-cyan-500/10 hover:border-cyan-500/30 transition-colors">
+                <div className="text-[8px] uppercase tracking-tighter text-cyan-400/60 mb-1">Ghost Stars</div>
+                <div className="text-sm font-mono text-white">
+                  {Math.round(metrics.totalCount * 0.2)}
+                </div>
              </div>
           </div>
 
-          <div className="pt-2 flex items-center gap-2 border-t border-white/5">
-             <div className="text-[8px] uppercase tracking-widest text-sc-text-muted">
-                {lang === "TR" ? "Gözlemci Etkisi: AKTİF" : "Observer Effect: ACTIVE"}
+          <div className="pt-3 flex items-center justify-between border-t border-white/10">
+             <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-sm bg-cyan-400/80 rotate-45 animate-spin-slow" />
+                <div className="text-[8px] uppercase tracking-[0.15em] text-cyan-300/80 font-medium">
+                   {lang === "TR" ? "SİSTEM: AKTİF" : "SYSTEM: ACTIVE"}
+                </div>
+             </div>
+             <div className="w-8 h-[2px] bg-cyan-400/20 rounded-full overflow-hidden">
+                <div className="h-full bg-cyan-400 w-1/2 animate-shimmer" />
              </div>
           </div>
         </div>
@@ -367,17 +387,24 @@ function LandmarkNavigator({ landmarks, activeCode, onSelect }) {
   const { lang } = useT();
 
   return (
-    <div className="absolute bottom-8 left-8 right-8 z-40 pointer-events-auto">
-      <div className="glass-dark border border-cyan-300/20 rounded-2xl p-4 backdrop-blur-xl">
-        <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-[10px] uppercase tracking-[0.32em] text-cyan-200">
-            {lang === "TR" ? "NASA Landmark Sistemi" : "NASA Landmark System"}
+    <div className="absolute bottom-8 left-8 right-8 z-40 pointer-events-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
+      <div className="glass-dark border border-cyan-500/20 rounded-2xl p-4 backdrop-blur-2xl relative overflow-hidden shadow-[0_-10px_40px_rgba(6,182,212,0.1)]">
+        {/* Subtle Bottom Glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-30" />
+        
+        <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between relative z-10">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-3 bg-cyan-500 rounded-full animate-pulse" />
+            <div className="text-[11px] uppercase tracking-[0.35em] text-cyan-200 font-display font-bold">
+              {lang === "TR" ? "NASA LANDMARK SİSTEMİ" : "NASA LANDMARK SYSTEM"}
+            </div>
           </div>
-          <div className="text-[9px] uppercase tracking-[0.24em] text-sc-text-muted">
-            J2000 RA/Dec deep-space warp targets
+          <div className="text-[9px] uppercase tracking-[0.2em] text-cyan-400/50 font-mono">
+            J2000 RA/Dec deep-space warp protocol active
           </div>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1">
+
+        <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide relative z-10">
           {landmarks.map((landmark) => (
             <button
               key={landmark.code}
@@ -388,14 +415,30 @@ function LandmarkNavigator({ landmarks, activeCode, onSelect }) {
                 tier: "nasa-landmark",
                 isLandmark: true,
               })}
-              className={`min-w-[170px] rounded-xl border px-3 py-2 text-left transition-all ${
+              className={`min-w-[190px] rounded-xl border px-4 py-3 text-left transition-all duration-500 group relative overflow-hidden ${
                 activeCode === landmark.code
-                  ? "border-cyan-200 bg-cyan-300/15 text-white shadow-[0_0_20px_rgba(56,189,248,0.2)]"
-                  : "border-white/10 bg-black/35 text-sc-text-muted hover:border-cyan-300/40 hover:text-white"
+                  ? "border-cyan-400 bg-cyan-400/10 text-white shadow-[0_0_25px_rgba(34,211,238,0.2)] scale-[1.02]"
+                  : "border-white/5 bg-black/40 text-sc-text-muted hover:border-cyan-400/40 hover:bg-cyan-950/20 hover:text-white"
               }`}
             >
-              <div className="font-display text-sm">{lang === "TR" ? landmark.nameTr : landmark.name}</div>
-              <div className="mt-1 font-mono text-[9px] uppercase tracking-widest">{landmark.catalog}</div>
+              {/* Button Active Glow */}
+              {activeCode === landmark.code && (
+                <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 to-transparent animate-pulse" />
+              )}
+              
+              <div className="relative z-10">
+                <div className={`font-display text-[13px] tracking-wide mb-1 transition-colors ${activeCode === landmark.code ? "text-cyan-200" : "group-hover:text-cyan-100"}`}>
+                  {lang === "TR" ? landmark.nameTr : landmark.name}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-[9px] uppercase tracking-[0.15em] opacity-60">
+                    {landmark.catalog}
+                  </div>
+                  {activeCode === landmark.code && (
+                    <div className="w-1 h-1 rounded-full bg-cyan-400 animate-ping" />
+                  )}
+                </div>
+              </div>
             </button>
           ))}
         </div>
