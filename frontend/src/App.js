@@ -12,6 +12,7 @@ import Footer from "./components/Footer";
 import LiveNotifications from "./components/LiveNotifications";
 import CheckoutModal from "./components/CheckoutModal";
 
+import StarCanvas from "./components/StarCanvas";
 import AegisHUD from "./components/AegisHUD/AegisHUD";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 
