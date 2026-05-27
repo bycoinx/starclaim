@@ -86,6 +86,10 @@ function AppShell() {
   });
 
   useEffect(() => {
+    // Phase 5.3: Aegis Persistence (Wake-up Ping)
+    // Minimizes Render.com cold-start delay for visitors
+    api.get("/").catch(() => {});
+
     api.get("/stats/overview")
       .then(({ data }) => {
         if (data && typeof data === 'object') setStats(data);

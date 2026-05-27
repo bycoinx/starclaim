@@ -25,10 +25,14 @@ export default function StarPicker({ onClaim }) {
   const [stars, setStars] = useState([]);
   const [constellations, setConstellations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
   const [activeSection, setActiveSection] = useState("catalog");
   const [mapConnected, setMapConnected] = useState(false);
   const [mapLoading, setMapLoading] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 48; // 3 columns * 16 rows
 
   const tier = params.get("tier") || "all";
   const constellation = params.get("constellation") || "all";
@@ -42,6 +46,9 @@ export default function StarPicker({ onClaim }) {
     if (value === null || value === "" || value === "all") next.delete(key);
     else next.set(key, value);
     setParams(next, { replace: true });
+    // Reset pagination when filters change
+    setOffset(0);
+    setStars([]);
   };
 
   useEffect(() => {
@@ -51,17 +58,37 @@ export default function StarPicker({ onClaim }) {
   }, []);
 
   useEffect(() => {
-    setLoading(true);
-    const query = { tier, constellation, sort, min_price: priceMin, max_price: priceMax };
+    if (offset === 0) setLoading(true);
+    else setLoadingMore(true);
+
+    const query = { tier, constellation, sort, min_price: priceMin, max_price: priceMax, limit: LIMIT, offset };
     if (onlyAvailable) query.available = true;
+    
     api.get("/stars", { params: query })
-      .then(({ data }) => setStars(Array.isArray(data) ? data : []))
+      .then(({ data }) => {
+        const newStars = Array.isArray(data) ? data : [];
+        if (offset === 0) {
+          setStars(newStars);
+        } else {
+          setStars(prev => [...prev, ...newStars]);
+        }
+        setHasMore(newStars.length === LIMIT);
+      })
       .catch((err) => {
         console.error("Fetch stars error:", err);
-        setStars([]);
+        if (offset === 0) setStars([]);
       })
-      .finally(() => setLoading(false));
-  }, [tier, constellation, sort, onlyAvailable, priceMin, priceMax]);
+      .finally(() => {
+        setLoading(false);
+        setLoadingMore(false);
+      });
+  }, [tier, constellation, sort, onlyAvailable, priceMin, priceMax, offset]);
+
+  const loadMore = () => {
+    if (!loading && !loadingMore && hasMore) {
+      setOffset(prev => prev + LIMIT);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!Array.isArray(stars)) return [];
@@ -254,11 +281,36 @@ export default function StarPicker({ onClaim }) {
               </div>
             )
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
-              {filtered.map((star) => (
-                <StarCard key={star.star_id} star={star} onClaim={onClaim} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
+                {filtered.map((star) => (
+                  <StarCard key={star.star_id} star={star} onClaim={onClaim} />
+                ))}
+              </div>
+              
+              {hasMore && (
+                <div className="mt-12 flex justify-center">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="group relative px-8 py-3 rounded-full border border-sc-gold/30 bg-sc-gold/5 text-sc-gold hover:bg-sc-gold hover:text-sc-deep transition-all duration-300 disabled:opacity-50"
+                  >
+                    <span className="relative z-10 flex items-center gap-2 font-display text-sm tracking-widest uppercase">
+                      {loadingMore ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {lang === "TR" ? "YÜKLENİYOR..." : "LOADING..."}
+                        </>
+                      ) : (
+                        <>
+                          {lang === "TR" ? "DAHA FAZLA YÜKLE" : "LOAD MORE"}
+                        </>
+                      )}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </ErrorBoundary>
       </div>

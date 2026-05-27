@@ -259,8 +259,20 @@ async def cleanup_demo_data_once():
     logger.info("Demo data cleanup completed: all stars reset to available")
 
 
+async def ensure_indexes():
+    """Create MongoDB indexes for performance with high volume (10k+ stars)."""
+    await db.stars.create_index([("tier", 1)])
+    await db.stars.create_index([("constellation", 1)])
+    await db.stars.create_index([("price", 1)])
+    await db.stars.create_index([("owner_id", 1)])
+    await db.stars.create_index([("name", 1)])
+    await db.stars.create_index([("code", 1)], unique=True)
+    logger.info("Database indexes verified/created")
+
+
 @app.on_event("startup")
 async def startup():
+    await ensure_indexes()
     await seed_database()
     if DEMO_CLEANUP_ENABLED:
         await cleanup_demo_data_once()
@@ -437,6 +449,7 @@ async def list_stars(
     max_price: Optional[float] = None,
     sort: str = "price_asc",
     limit: int = 200,
+    offset: int = 0,
 ):
     q = {}
     if tier and tier != "all":
@@ -461,7 +474,7 @@ async def list_stars(
         "name": [("name", 1)],
         "tier": [("tier", 1), ("price", -1)],
     }
-    cur = db.stars.find(q, {"_id": 0}).sort(sort_map.get(sort, [("price", 1)])).limit(limit)
+    cur = db.stars.find(q, {"_id": 0}).sort(sort_map.get(sort, [("price", 1)])).skip(offset).limit(limit)
     return await cur.to_list(limit)
 
 

@@ -1,6 +1,7 @@
 """Seed data for StarClaim: clean star catalog and neutral activity feed."""
 
 import os
+import random
 from datetime import datetime, timezone
 
 def _star(code, name, constellation, tier, price, ra, dec, magnitude=None, owner=None):
@@ -28,11 +29,26 @@ def _star(code, name, constellation, tier, price, ra, dec, magnitude=None, owner
         star["claimed_at"] = datetime.now(timezone.utc).isoformat()
     return star
 
+CONSTELLATIONS = [
+    "Andromeda", "Antlia", "Apus", "Aquarius", "Aquila", "Ara", "Aries", "Auriga",
+    "Bootes", "Caelum", "Camelopardalis", "Cancer", "Canes Venatici", "Canis Major",
+    "Canis Minor", "Capricornus", "Carina", "Cassiopeia", "Centaurus", "Cepheus",
+    "Cetus", "Chamaeleon", "Circinus", "Columba", "Coma Berenices", "Corona Australis",
+    "Corona Borealis", "Corvus", "Crater", "Crux", "Cygnus", "Delphinus", "Dorado",
+    "Draco", "Equuleus", "Eridanus", "Fornax", "Gemini", "Grus", "Hercules", "Horologium",
+    "Hydra", "Hydrus", "Indus", "Lacerta", "Leo", "Leo Minor", "Lepus", "Libra", "Lupus",
+    "Lynx", "Lyra", "Mensa", "Microscopium", "Monoceros", "Musca", "Norma", "Octans",
+    "Ophiuchus", "Orion", "Pavo", "Pegasus", "Perseus", "Phoenix", "Pictor", "Pisces",
+    "Piscis Austrinus", "Puppis", "Pyxis", "Reticulum", "Sagitta", "Sagittarius",
+    "Scorpius", "Sculptor", "Scutum", "Serpens", "Sextans", "Taurus", "Telescopium",
+    "Triangulum", "Triangulum Australe", "Tucana", "Ursa Major", "Ursa Minor", "Vela",
+    "Virgo", "Volans", "Vulpecula"
+]
 
 # STAR_CATALOG - Publicly claimable stars.
 # Note: Solar System bodies (Sun, Mars, Jupiter, etc.) are EXCLUDED here.
 # They are reserved for the 'Family Protocol' and managed via the 3D SkySphere.
-STAR_CATALOG = [
+MANUAL_CATALOG = [
     # LEGENDARY
     _star("sirius", "Sirius", "Canis Major", "legendary", 2999, "06h 45m", "-16° 42'", -1.46, owner="Ali K."),
     _star("canopus", "Canopus", "Carina", "legendary", 2499, "06h 23m", "-52° 41'", -0.74),
@@ -85,17 +101,39 @@ STAR_CATALOG = [
     _star("sc-008", "SC-008", "Pegasus", "standard", 13.49, "22h 09m", "+06° 11'", 4.87),
     _star("sc-009", "SC-009", "Hercules", "standard", 16.99, "16h 41m", "+31° 36'", 3.92),
     _star("sc-010", "SC-010", "Draco", "standard", 17.99, "17h 56m", "+51° 29'", 2.74),
-    _star("sc-011", "SC-011", "Lupus", "standard", 18.99, "14h 42m", "-44° 51'", 3.41),
-    _star("sc-012", "SC-012", "Centaurus", "standard", 19.99, "14h 39m", "-60° 50'", 0.01),
-    _star("sc-013", "SC-013", "Sagittarius", "standard", 19.99, "18h 24m", "-34° 23'", 1.79),
-    _star("sc-014", "SC-014", "Virgo", "standard", 19.99, "13h 25m", "-11° 09'", 4.25, owner="Tarık Y."),
-    _star("sc-015", "SC-015", "Libra", "standard", 21.99, "14h 50m", "-16° 02'", 2.75),
-    _star("sc-016", "SC-016", "Capricornus", "standard", 22.99, "20h 17m", "-12° 32'", 3.57),
-    _star("sc-017", "SC-017", "Aquarius", "standard", 22.99, "22h 05m", "-00° 19'", 2.90),
-    _star("sc-018", "SC-018", "Pisces", "standard", 23.99, "01h 31m", "+15° 20'", 3.62),
-    _star("sc-019", "SC-019", "Eridanus", "standard", 23.99, "01h 37m", "-57° 14'", 0.45),
-    _star("sc-020", "SC-020", "Cetus", "standard", 24.99, "01h 44m", "-15° 56'", 3.47),
 ]
+
+def generate_high_volume_stars(count=10000):
+    stars = list(MANUAL_CATALOG)
+    existing_codes = {s["code"] for s in stars}
+    
+    for i in range(len(stars), count):
+        code = f"sc-{i+1:05d}"
+        if code in existing_codes:
+            continue
+            
+        # Realistic names using HIP (Hipparcos) or HD (Henry Draper) designations
+        name = f"HIP {random.randint(1, 120000)}"
+        constellation = random.choice(CONSTELLATIONS)
+        tier = "standard"
+        price = round(random.uniform(9.99, 49.99), 2)
+        
+        # Random RA (00h 00m to 23h 59m)
+        ra_h = random.randint(0, 23)
+        ra_m = random.randint(0, 59)
+        ra = f"{ra_h:02d}h {ra_m:02d}m"
+        
+        # Random Dec (-89° to +89°)
+        dec_d = random.randint(-89, 89)
+        dec_m = random.randint(0, 59)
+        dec = f"{dec_d:+03d}° {dec_m:02d}'"
+        
+        magnitude = round(random.uniform(3.0, 9.0), 2)
+        
+        stars.append(_star(code, name, constellation, tier, price, ra, dec, magnitude))
+    return stars
+
+STAR_CATALOG = generate_high_volume_stars(10000)
 
 
 SAMPLE_LISTINGS = [
