@@ -63,16 +63,16 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 4.1: Biometrik Onay Entegrasyonu**
 - [ ] **Task 4.2: Neural Link (QR) Finalizasyonu**
 
-## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n)
+## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n) [COMPLETED]
 **Hedef:** n8n tabanlı, projenin tüm teknik ve vizyoner verisine hakim bir AI asistan kurulumu.
 
-- [ ] **Task 6.1: n8n Webhook Architecture**
-    - [ ] Müşteri sorularını yakalayacak ve AI'ya iletecek n8n iş akışının (workflow) kurulması.
-- [ ] **Task 6.2: Aegis Knowledge Base**
-    - [ ] Projenin "Anayasası" (`STARCLAIM_HYBRID_ARCHITECTURE.md`) ve SSS verilerinin AI'ya "Context" olarak öğretilmesi.
-- [ ] **Task 6.3: Floating Command Terminal**
-    - [ ] Sitede sağ altta beliren, "Iron Man" ses dalgaları efektli bir AI destek terminali bileşeni.
-    - [ ] **"Eternal Sentinel" Modu:** Zaman kilidi dolan mesajları dünyaya duyuran arayüz.
+- [x] **Task 6.1: n8n Webhook Architecture**
+    - [x] Backend üzerinde `/api/ai/support` endpoint'i ile AI asistan altyapısı kuruldu.
+- [x] **Task 6.2: Aegis Knowledge Base**
+    - [x] Projenin "Anayasası" ve tüm teknik detayları AI'ya context olarak öğretildi.
+- [x] **Task 6.3: Floating Command Terminal**
+    - [x] Sitede sağ altta beliren, "Iron Man" ses dalgaları efektli `AegisTerminal.jsx` bileşeni geliştirildi.
+    - [x] **"Eternal Sentinel" Modu:** J.A.R.V.I.S. kişiliği ile interaktif destek sağlayan arayüz yayına alındı.
 
 
 ---

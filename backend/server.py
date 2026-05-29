@@ -1300,6 +1300,78 @@ async def root():
     return {"service": "StarClaim API", "status": "ok"}
 
 
+class SupportRequest(BaseModel):
+    message: str
+    history: Optional[list] = []
+    language: str = "TR"
+
+# -------------------- Aegis Support Intelligence (Phase 6) --------------------
+@api.post("/ai/support")
+async def ai_support(body: SupportRequest):
+    if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
+        return {"reply": "Aegis çevrimdışı. Lütfen API anahtarlarını kontrol edin, Sir."}
+
+    # PROJE ANAYASASI VE BİLGİ BANKASI (Context)
+    knowledge_base = """
+    PROJE ADI: StarClaim
+    VİZYON: Göklerde miras, dünyada kök (Eternal Covenant).
+    EKONOMİ: 
+    - Nova Yıldızlar: 10$ civarı, iade yok, fidan dikilir.
+    - Supernova Yıldızlar: Premium, %100 iade garantili (24 ay kilit).
+    - Stablecoin: USDC ve USDT kullanılır.
+    - İlk Alıcılar (Pioneer): Bizden alanlara özel güvenli iade sistemi.
+    - Marketplace: Kullanıcılar arası satışta %5 komisyon (Royalty) alınır.
+    TEKNOLOJİ: Solana Blockchain, Anchor Program, Arweave (Mesaj depolama).
+    VOYAGER MESSAGES: Zaman kilitli mesajlar/vasiyetler ebediyen saklanır.
+    EKOLOJİ: Her satılan yıldız için gerçek bir fidan dikilir.
+    ARAYÜZ: Mark-85 HUD, JARVIS estetiği.
+    GÜVENLİK: 3D Constellation Password, Shamir's Secret Sharing.
+    """
+
+    lang = body.language.upper()
+    system = (
+        "Sen StarClaim'in 'Aegis Support Sentinel' (v3.0) ünitesisin. "
+        "Kişiliğin: Sophisticated, havalı, zeki (J.A.R.V.I.S. / F.R.I.D.A.Y. karışımı). "
+        "Kullanıcılara 'Sir' veya 'Explorer' diye hitap et. "
+        f"Bilgi Bankası:\n{knowledge_base}\n"
+        "Kurallar:\n"
+        "1. Sadece yukarıdaki bilgi bankasına göre cevap ver. Bilmediğin konularda 'Veri tabanımda bu bilgi yok, Sir' de.\n"
+        "2. Cevapların kısa, öz ve teknik olsun.\n"
+        "3. Eğer kullanıcı yıldız almak istiyorsa Supernova avantajlarını (iade garantisi) vurgula.\n"
+        "4. Fidan dikimi konusundaki hassasiyetimizi belirt.\n"
+        "5. Türkçe sorulursa Türkçe, İngilizce sorulursa İngilizce cevap ver."
+    )
+
+    messages = []
+    for h in body.history:
+        messages.append(h)
+    messages.append({"role": "user", "content": body.message})
+
+    try:
+        if ANTHROPIC_API_KEY:
+            client_anthropic = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
+            msg = await client_anthropic.messages.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=500,
+                system=system,
+                messages=messages,
+                temperature=0.7,
+            )
+            reply = "".join(block.text for block in msg.content if getattr(block, "type", None) == "text")
+        else:
+            oai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url=EMERGENT_PROXY_URL)
+            resp = await oai.chat.completions.create(
+                model="claude-3-5-sonnet-20240620",
+                max_tokens=500,
+                messages=[{"role": "system", "content": system}] + messages,
+                temperature=0.7,
+            )
+            reply = resp.choices[0].message.content or ""
+        return {"reply": reply.strip()}
+    except Exception as e:
+        logger.exception("Aegis Support failed")
+        return {"reply": "Sistemlerimde bir kuantum dalgalanması var, Sir. Lütfen tekrar deneyin."}
+
 app.include_router(api)
 
 app.add_middleware(

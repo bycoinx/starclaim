@@ -58,3 +58,19 @@
 - IDL dosyası tüm yeni fonksiyonları (initialize, purchase, refund, update_message, sell) içerecek şekilde güncellendi.
 
 **Durum:** Blockchain altyapısı (Phase 3) ana hatlarıyla tamamlandı. Sistem artık hem güvenli bir yatırım aracı hem de yaşayan bir pazar yeri.
+
+---
+## 🗓️ Tarih: 29 Mayıs 2026 (Aegis Support Intelligence - Phase 6)
+
+### 1. Aegis AI Support Backend Entegrasyonu (Task 6.1 & 6.2)
+- `/api/ai/support` endpoint'i FastAPI üzerine eklendi.
+- **Knowledge Base (Bilgi Bankası):** Projenin anayasası, "Eternal Covenant" vizyonu, fidan dikim mantığı ve iade politikaları AI'ya context olarak öğretildi.
+- **Kişilik:** AI asistanı, J.A.R.V.I.S. (Iron Man) tarzında, "Aegis Support Sentinel v3.0" kimliği ile sofistike ve teknik bir dille konuşacak şekilde yapılandırıldı.
+
+### 2. Floating Command Terminal (Task 6.3)
+- `AegisTerminal.jsx` ve `AegisTerminal.css` bileşenleri oluşturuldu.
+- **Görsel Tasarım:** Sağ altta yüzen, neon mavi pulse efektli ve tıklandığında JARVIS tarzı bir arayüze dönüşen modern bir terminal tasarlandı.
+- **Interaktivite:** "Typing" dalga animasyonları ve konuşma geçmişini (history) hatırlayan akıllı bir sohbet akışı kuruldu.
+- **Global Erişim:** Terminal tüm sitede aktif olacak şekilde `App.js` ana katmanına entegre edildi.
+
+**Durum:** Kullanıcılar artık sitenin her yerinden projenin en derin teknik detaylarını "Aegis"e sorabiliyor. 

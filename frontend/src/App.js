@@ -11,6 +11,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LiveNotifications from "./components/LiveNotifications";
 import CheckoutModal from "./components/CheckoutModal";
+import AegisTerminal from "./components/AegisTerminal";
 
 import StarCanvas from "./components/StarCanvas";
 import AegisHUD from "./components/AegisHUD/AegisHUD";
@@ -179,6 +180,7 @@ function AppShell() {
       </Suspense>
       <Footer />
       <LiveNotifications />
+      <AegisTerminal />
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} star={activeStar} />
       <Toaster
         position="top-center"
