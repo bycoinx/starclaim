@@ -1,0 +1,115 @@
+/* Cinematic HUD & Quantum Effects for Home.jsx */
+
+.aegis-hud-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hud-ring {
+  position: absolute;
+  border: 1px solid rgba(0, 243, 255, 0.1);
+  border-radius: 50%;
+  animation: rotate 20s linear infinite;
+}
+
+.hud-ring-1 {
+  width: 600px;
+  height: 600px;
+  top: 10%;
+  left: -10%;
+  border-left-color: rgba(0, 243, 255, 0.4);
+  animation-duration: 30s;
+}
+
+.hud-ring-2 {
+  width: 400px;
+  height: 400px;
+  bottom: 5%;
+  right: -5%;
+  border-right-color: rgba(201, 168, 76, 0.3);
+  animation-duration: 25s;
+  animation-direction: reverse;
+}
+
+.hud-data-line {
+  position: absolute;
+  width: 150px;
+  height: 1px;
+  background: linear-gradient(90deg, #00f3ff, transparent);
+  opacity: 0.3;
+}
+
+.quantum-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.quantum-btn::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent, 
+    rgba(251, 191, 36, 0.3), 
+    transparent 30%
+  );
+  animation: rotate 4s linear infinite;
+}
+
+.quantum-btn-inner {
+  position: relative;
+  z-index: 1;
+  background: inherit;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 243, 255, 0.4);
+  box-shadow: 0 0 15px #00f3ff;
+  top: 0;
+  left: 0;
+  animation: scan 3s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.telemetry-item {
+  font-family: 'Orbitron', sans-serif;
+  color: #00f3ff;
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  opacity: 0.4;
+}
+
+.glitch-text:hover {
+  animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}

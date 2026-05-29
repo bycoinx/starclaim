@@ -15,9 +15,10 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 1.1: Post-Processing & Atmosphere**
 - [x] **Task 1.2: NASA Deep Space Integration**
 - [x] **Task 1.3: Aegis HUD 2.0**
-- [ ] **Task 1.4: Cinematic Landing (Home.jsx)**
-    - [ ] Hero bölümüne interaktif HUD animasyonları eklenmesi.
-    - [ ] "Yıldız Al" butonuna kuantum efekti entegrasyonu.
+- [x] **Task 1.4: Cinematic Landing (Home.jsx)**
+    - [x] Hero bölümüne interaktif HUD animasyonları ve telemetri verileri eklendi.
+    - [x] "Yıldız Al" butonuna kuantum efekti (quantum-btn) entegrasyonu yapıldı.
+    - [x] Glitch ve tarama hattı (scan-line) gibi J.A.R.V.I.S. estetiği güçlendirildi.
 
 ## 🏁 Phase 2: Cinematic Storytelling (İçerik Estetiği) [COMPLETED]
 **Hedef:** Tüm kullanıcı panellerini "Kişisel Terminal" (Console) ruhuna taşımak.

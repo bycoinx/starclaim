@@ -74,3 +74,16 @@
 - **Global Erişim:** Terminal tüm sitede aktif olacak şekilde `App.js` ana katmanına entegre edildi.
 
 **Durum:** Kullanıcılar artık sitenin her yerinden projenin en derin teknik detaylarını "Aegis"e sorabiliyor. 
+
+---
+## 🗓️ Tarih: 29 Mayıs 2026 (Cinematic Landing - Phase 1.4)
+
+### 1. Hero Section HUD & Telemetry
+- `Home.jsx` üzerine J.A.R.V.I.S. tarzı dönen HUD halkaları ve anlık akan telemetri verileri (SYSTEM.READY, OBSERVER_PROTOCOL vb.) eklendi.
+- `Home.css` oluşturularak tüm bu animasyonlar GPU hızlandırmalı hale getirildi.
+
+### 2. Quantum Interaction
+- "Yıldız Al" butonu için `quantum-btn` efekti geliştirildi. Buton üzerinde sürekli dönen bir ışık halkası ve tarama efekti (scan-line) bulunuyor.
+- Yazılara "Glitch" efekti ve interaktif hover animasyonları eklendi.
+
+**Durum:** Ana sayfa artık tam bir bilim-kurgu arayüzü kalitesinde. J.A.R.V.I.S. estetiği projenin her noktasına sızdı.
