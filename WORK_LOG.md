@@ -43,5 +43,18 @@
 1.  **Phase 3:** Solana/Anchor akıllı sözleşme kurulumu (WSL2 ortamı hazırsa).
 2.  **Phase 6:** n8n tabanlı AI Support Intelligence altyapısının kurulması.
 
-**Durum:** Evren artık 10.000 yıldızla dolu ve performans kusursuz. Blockchain entegrasyonuna hazır.
 ---
+## 🗓️ Tarih: 29 Mayıs 2026 (The Eternal Covenant Phase - Day 2.0)
+
+### 1. Marketplace Royalty & Secondary Sales (Task 3.4)
+- **`sell_star` fonksiyonu eklendi:** 
+    - Kullanıcıların kendi aralarında yıldız ticareti yapmasını sağlayan merkeziyetsiz pazar altyapısı kuruldu.
+    - **%5 Royalty (Telif):** Her satıştan otomatik olarak %5 komisyon kesilerek proje hazinesine (Treasury) aktarılması sağlandı.
+    - Mülkiyet (current_owner) güncelleme mantığı akıllı sözleşmeye işlendi.
+- **Güvenlik:** Satış işleminin sadece mevcut NFT sahibi tarafından başlatılabileceği doğrulandı.
+
+### 2. Akıllı Sözleşme Build ve Senkronizasyon
+- Yeni `sell_star` fonksiyonu ile program başarıyla derlendi.
+- IDL dosyası tüm yeni fonksiyonları (initialize, purchase, refund, update_message, sell) içerecek şekilde güncellendi.
+
+**Durum:** Blockchain altyapısı (Phase 3) ana hatlarıyla tamamlandı. Sistem artık hem güvenli bir yatırım aracı hem de yaşayan bir pazar yeri.

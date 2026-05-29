@@ -39,11 +39,23 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 5.3: Aegis Persistence (Wake-up Strategy)**
     - [x] Render.com'un ücretsiz paketindeki uyku sorununu çözmek için frontend'e "Pre-fetch/Wake-up" pingi eklenmesi.
 
-## 🏁 Phase 3: Interstellar Treasury (Solana Modülü)
-**Hedef:** Finansal altyapıyı blockchain üzerinde stabilize etmek.
+## 🏁 Phase 3: Interstellar Treasury (Solana Modülü - The Eternal Covenant)
+**Hedef:** Finansal altyapıyı "Mütalist" bir yaklaşımla, güven ve sonsuzluk üzerine inşa etmek.
 
-- [ ] **Task 3.1: Anchor Program Setup**
-- [ ] **Task 3.2: 24h Stasis Retrieval Logic**
+- [x] **Task 3.1: Anchor Program Setup & Integration**
+    - [x] WSL'deki dosyaların `contracts/solana` altına taşınması.
+    - [x] Program isminin `starclaim_program` olarak güncellenmesi.
+- [x] **Task 3.2: The Eternal Vault (Smart Contract)**
+    - [x] **Multi-Stablecoin Support:** USDC ve USDT kabul eden ödeme altyapısı.
+    - [x] **Tier System:** Nova (Standard - 10$) ve Supernova (Premium - Refundable) ayrımı.
+    - [x] **Pioneer Refund Logic:** Sadece ilk alıcılara özel, 24 ay kilitli %100 iade garantisi (USDC/USDT).
+    - [ ] **Yield Integration Strategy:** Kasa (Vault) içindeki fonların getiri protokollerine yönlendirilme yetkisi.
+- [x] **Task 3.3: Voyager Messages (Time-Locked Data)**
+    - [x] Arweave tabanlı kalıcı sesli/yazılı mesaj depolama entegrasyonu.
+    - [x] Zaman kilidi (Time-Lock) mekanizması (örn: 50 yıl sonra açılacak vasiyet).
+- [x] **Task 3.4: Marketplace Protocol**
+    - [x] %5 Royalty (Yaratıcı Payı) ile ikincil pazar altyapısı.
+    - [ ] İade hakkının NFT mülkiyetiyle değil, "Pioneer" statüsüyle korunması veya devri stratejisi.
 
 ## 🏁 Phase 4: Aegis Sentinel (Mobil Güvenlik)
 **Hedef:** Mobil uygulamayı donanım cüzdanı seviyesine çekmek.
@@ -60,7 +72,14 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [ ] Projenin "Anayasası" (`STARCLAIM_HYBRID_ARCHITECTURE.md`) ve SSS verilerinin AI'ya "Context" olarak öğretilmesi.
 - [ ] **Task 6.3: Floating Command Terminal**
     - [ ] Sitede sağ altta beliren, "Iron Man" ses dalgaları efektli bir AI destek terminali bileşeni.
+    - [ ] **"Eternal Sentinel" Modu:** Zaman kilidi dolan mesajları dünyaya duyuran arayüz.
 
 
 ---
+### 📜 Eternal Covenant (Mütalist Anayasa)
+1. **Güven:** İlk alıcıların anaparası "Escrow" kasasında korunur.
+2. **Ekoloji:** Her yıldız, dünyada büyüyen bir fidan demektir.
+3. **Sonsuzluk:** Mesajlar blockchain'de ebediyen kalır, vasiyetler zamanı gelince açılır.
+4. **Maddi Fayda:** Kullanıcılar ikincil pazarda serbestçe ticaret yapabilir, biz havuz faiziyle sistemi büyütürüz.
+
 *Not: Bu dosya her başarılı görevden sonra güncellenecektir.*
