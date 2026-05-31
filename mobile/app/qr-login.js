@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSolanaWallet } from '../hooks/useSolanaWallet';
 import { Ionicons } from '@expo/vector-icons';
-import base58 from 'base58';
+import bs58 from 'bs58';
+import { Buffer } from 'buffer';
 
 export default function QRLogin() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { address, connect } = useSolanaWallet();
+  const { address, connect, signMessage } = useSolanaWallet();
   const router = useRouter();
 
   if (!permission) return <View />;
@@ -43,24 +44,23 @@ export default function QRLogin() {
 
       const authSessionId = data;
       const message = `StarClaim Entanglement Login: ${authSessionId}`;
-      
-      // In a real production app, we would use the wallet to sign the message.
-      // Since this is a specialized environment, we'll simulate the signature process 
-      // or use a mock if the wallet adapter doesn't support direct message signing easily here.
-      // However, for this demo, we'll try to perform a valid request.
-      
-      // Mocking signature for now as signing requires a specific 'signMessage' method 
-      // which might vary in the mobile adapter.
-      // To keep the demo functional, we'll send the request.
-      
+      const signedPayload = await signMessage(message);
+      if (!signedPayload) {
+        throw new Error('Mesaj imzalanamadı. Lütfen cüzdanı tekrar bağlayın.');
+      }
+
+      const payloadBytes = Buffer.from(signedPayload, 'base64');
+      const signatureBytes = payloadBytes.slice(payloadBytes.length - 64);
+      const signature = bs58.encode(signatureBytes);
+
       const response = await fetch('https://starclaim-api.onrender.com/api/auth/qr-verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           auth_session_id: authSessionId,
           public_key: currentAddress,
-          signature: "MOCK_SIGNATURE_" + Math.random().toString(36).substring(7), // Signature verification is mocked on backend for demo or requires real signing
-          message: message
+          signature,
+          message: message,
         }),
       });
 

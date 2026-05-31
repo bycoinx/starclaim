@@ -139,7 +139,7 @@ STAR_CATALOG = generate_high_volume_stars(10000)
 SAMPLE_LISTINGS = [
     {"code": "vega", "original": 1499, "asking": 2200, "owner": "Kaan B.", "days_ago": 45, "hops": 2},
     {"code": "alnilam", "original": 249, "asking": 450, "owner": "Merve S.", "days_ago": 12, "hops": 1},
-    {"code": "sc-014", "original": 19.99, "asking": 75, "owner": "Tarık Y.", "days_ago": 3, "hops": 1},
+    {"code": "sc-010", "original": 19.99, "asking": 75, "owner": "Tarık Y.", "days_ago": 3, "hops": 1},
     {"code": "aldebaran", "original": 499, "asking": 699, "owner": "Seda K.", "days_ago": 67, "hops": 2},
     {"code": "dubhe", "original": 219, "asking": 380, "owner": "Ozan M.", "days_ago": 28, "hops": 1},
     {"code": "sc-007", "original": 14.99, "asking": 45, "owner": "İrem T.", "days_ago": 8, "hops": 1},

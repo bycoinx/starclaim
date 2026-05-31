@@ -71,6 +71,9 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 6.3: Floating Command Terminal**
     - [x] Sitede sağ altta beliren, "Iron Man" ses dalgaları efektli `AegisTerminal.jsx` bileşeni geliştirildi.
     - [x] **"Eternal Sentinel" Modu:** J.A.R.V.I.S. kişiliği ile interaktif destek sağlayan arayüz yayına alındı.
+- [x] **Task 6.4: AI Support Durability**
+    - [x] Backend `ai/support` endpoint'i proje bilgi bankasıyla genişletildi.
+    - [x] Frontend terminal yanıt ve hata yönetimi iyileştirildi.
 
 
 ---

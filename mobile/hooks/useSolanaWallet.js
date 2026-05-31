@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol';
-import { clusterApiUrl, Connection, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
+import { Buffer } from 'buffer';
 
 const APP_IDENTITY = {
   name: 'StarClaim',
@@ -11,6 +12,7 @@ const APP_IDENTITY = {
 export function useSolanaWallet() {
   const [address, setAddress] = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const addressBase64Ref = useRef(null);
 
   const connect = useCallback(async () => {
     setConnecting(true);
@@ -25,6 +27,7 @@ export function useSolanaWallet() {
       });
 
       const publicKey = new PublicKey(result.accounts[0].address);
+      addressBase64Ref.current = result.accounts[0].address;
       setAddress(publicKey.toBase58());
       return publicKey;
     } catch (e) {
@@ -35,9 +38,36 @@ export function useSolanaWallet() {
     }
   }, []);
 
+  const signMessage = useCallback(
+    async (message) => {
+      if (!addressBase64Ref.current) {
+        const connected = await connect();
+        if (!connected) return null;
+      }
+
+      try {
+        const signedPayloads = await transact(async (wallet) => {
+          const payload = Buffer.from(message, 'utf8').toString('base64');
+          const result = await wallet.signMessages({
+            addresses: [addressBase64Ref.current],
+            payloads: [payload],
+          });
+          return result.signed_payloads;
+        });
+
+        return signedPayloads?.[0] ?? null;
+      } catch (e) {
+        console.error('Message signing failed:', e);
+        return null;
+      }
+    },
+    [connect]
+  );
+
   const disconnect = useCallback(() => {
     setAddress(null);
+    addressBase64Ref.current = null;
   }, []);
 
-  return { address, connecting, connect, disconnect };
+  return { address, connecting, connect, signMessage, disconnect };
 }

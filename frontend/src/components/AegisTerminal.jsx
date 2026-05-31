@@ -37,9 +37,13 @@ const AegisTerminal = () => {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || data.error || data.reply || 'Aegis destek yanıtı alınamadı.');
+      }
+
       setHistory(prev => [...prev, { role: 'assistant', content: data.reply }]);
     } catch (error) {
-      setHistory(prev => [...prev, { role: 'assistant', content: 'Kuantum bağlantı hatası, Sir. Sistemleri kontrol ediyorum.' }]);
+      setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${error.message || 'Sistemleri kontrol ediyorum.'}` }]);
     } finally {
       setIsTyping(false);
     }

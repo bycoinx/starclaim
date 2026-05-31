@@ -53,6 +53,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("starclaim")
 
 
+def load_support_document(path: Path, max_lines: int = 80, max_chars: int = 3500) -> str:
+    try:
+        text = path.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        snippet = "\n".join(lines[:max_lines])
+        if len(snippet) > max_chars:
+            snippet = snippet[:max_chars] + "\n..."
+        return snippet
+    except Exception as exc:
+        logger.warning(f"Aegis support doc load failed for {path}: {exc}")
+        return ""
+
+
+SUPPORT_DOCS = {
+    "mission_plan": ROOT_DIR.parent / "MISSION_PLAN.md",
+    "work_log": ROOT_DIR.parent / "WORK_LOG.md",
+    "deploy_notes": ROOT_DIR.parent / "DEPLOY.md",
+    "prd": ROOT_DIR.parent / "memory" / "PRD.md",
+    "readme": ROOT_DIR.parent / "README.md",
+}
+
+PROJECT_KNOWLEDGE_BASE = "\n\n".join(
+    f"### {name.replace('_', ' ').title()}\n" + load_support_document(path)
+    for name, path in SUPPORT_DOCS.items()
+    if path.exists()
+)
+
+
 # -------------------- Models --------------------
 class User(BaseModel):
     user_id: str
@@ -1311,29 +1339,16 @@ async def ai_support(body: SupportRequest):
     if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
         return {"reply": "Aegis çevrimdışı. Lütfen API anahtarlarını kontrol edin, Sir."}
 
-    # PROJE ANAYASASI VE BİLGİ BANKASI (Context)
-    knowledge_base = """
-    PROJE ADI: StarClaim
-    VİZYON: Göklerde miras, dünyada kök (Eternal Covenant).
-    EKONOMİ: 
-    - Nova Yıldızlar: 10$ civarı, iade yok, fidan dikilir.
-    - Supernova Yıldızlar: Premium, %100 iade garantili (24 ay kilit).
-    - Stablecoin: USDC ve USDT kullanılır.
-    - İlk Alıcılar (Pioneer): Bizden alanlara özel güvenli iade sistemi.
-    - Marketplace: Kullanıcılar arası satışta %5 komisyon (Royalty) alınır.
-    TEKNOLOJİ: Solana Blockchain, Anchor Program, Arweave (Mesaj depolama).
-    VOYAGER MESSAGES: Zaman kilitli mesajlar/vasiyetler ebediyen saklanır.
-    EKOLOJİ: Her satılan yıldız için gerçek bir fidan dikilir.
-    ARAYÜZ: Mark-85 HUD, JARVIS estetiği.
-    GÜVENLİK: 3D Constellation Password, Shamir's Secret Sharing.
-    """
-
     lang = body.language.upper()
     system = (
         "Sen StarClaim'in 'Aegis Support Sentinel' (v3.0) ünitesisin. "
         "Kişiliğin: Sophisticated, havalı, zeki (J.A.R.V.I.S. / F.R.I.D.A.Y. karışımı). "
         "Kullanıcılara 'Sir' veya 'Explorer' diye hitap et. "
-        f"Bilgi Bankası:\n{knowledge_base}\n"
+        "Konuşmalarında kesinlikle teknik, güven odaklı ve vizyoner ol. "
+        "Cevaplarında sistemin vizyonunu, iade garantisini, fidan dikimini, Solana/Anchor altyapısını ve n8n destekli otomasyonu belirt. "
+        "Eğer kullanıcı doğrudan 'n8n' veya 'webhook' sorarsa, bu altyapının destek entegrasyonunu ve veri akışını vurgula. "
+        "Bilgi kaynağın aşağıdaki metin olacaktır."
+        f"\n\n{PROJECT_KNOWLEDGE_BASE}\n"
         "Kurallar:\n"
         "1. Sadece yukarıdaki bilgi bankasına göre cevap ver. Bilmediğin konularda 'Veri tabanımda bu bilgi yok, Sir' de.\n"
         "2. Cevapların kısa, öz ve teknik olsun.\n"
@@ -1344,7 +1359,10 @@ async def ai_support(body: SupportRequest):
 
     messages = []
     for h in body.history:
-        messages.append(h)
+        if isinstance(h, dict) and h.get("role") in {"user", "assistant", "system"}:
+            messages.append(h)
+        else:
+            messages.append({"role": "user", "content": str(h)})
     messages.append({"role": "user", "content": body.message})
 
     try:
@@ -1357,7 +1375,12 @@ async def ai_support(body: SupportRequest):
                 messages=messages,
                 temperature=0.7,
             )
-            reply = "".join(block.text for block in msg.content if getattr(block, "type", None) == "text")
+            if isinstance(msg.content, str):
+                reply = msg.content
+            else:
+                reply = "".join(
+                    block.text for block in msg.content if getattr(block, "type", None) == "text"
+                )
         else:
             oai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url=EMERGENT_PROXY_URL)
             resp = await oai.chat.completions.create(
@@ -1366,9 +1389,9 @@ async def ai_support(body: SupportRequest):
                 messages=[{"role": "system", "content": system}] + messages,
                 temperature=0.7,
             )
-            reply = resp.choices[0].message.content or ""
-        return {"reply": reply.strip()}
-    except Exception as e:
+            reply = getattr(resp.choices[0].message, "content", "") or resp.choices[0].message.get("content", "")
+        return {"reply": (reply or "Aegis yanıtı alınamadı, Sir.").strip()}
+    except Exception:
         logger.exception("Aegis Support failed")
         return {"reply": "Sistemlerimde bir kuantum dalgalanması var, Sir. Lütfen tekrar deneyin."}
 
