@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, Send, X, MessageSquare, Cpu } from 'lucide-react';
+import { api } from '../lib/api';
 import './AegisTerminal.css';
 
 const AegisTerminal = () => {
@@ -26,24 +27,16 @@ const AegisTerminal = () => {
     setIsTyping(true);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/ai/support`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          history: history.slice(-5), // Son 5 mesajı context olarak gönder
-          language: 'TR'
-        })
+      const response = await api.post('/ai/support', {
+        message: userMessage,
+        history: history.slice(-5), // Son 5 mesajı context olarak gönder
+        language: 'TR'
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || data.error || data.reply || 'Aegis destek yanıtı alınamadı.');
-      }
-
-      setHistory(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setHistory(prev => [...prev, { role: 'assistant', content: response.data.reply || 'Aegis destek yanıtı alınamadı.' }]);
     } catch (error) {
-      setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${error.message || 'Sistemleri kontrol ediyorum.'}` }]);
+      const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.response?.data?.reply || error?.message || 'Sistemleri kontrol ediyorum.';
+      setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${errorMessage}` }]);
     } finally {
       setIsTyping(false);
     }

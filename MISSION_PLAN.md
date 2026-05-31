@@ -60,6 +60,8 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 
 - [ ] **Task 4.1: Biometrik Onay Entegrasyonu**
 - [ ] **Task 4.2: Neural Link (QR) Finalizasyonu**
+- [ ] **Task 4.3: Wallet Session Persistence ve Recovery**
+- [ ] **Task 4.4: Mobil cüzdan doğrulama, fallback ve hatalı imza yönetimi**
 
 ## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n) [COMPLETED]
 **Hedef:** n8n tabanlı, projenin tüm teknik ve vizyoner verisine hakim bir AI asistan kurulumu.
@@ -74,6 +76,105 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 6.4: AI Support Durability**
     - [x] Backend `ai/support` endpoint'i proje bilgi bankasıyla genişletildi.
     - [x] Frontend terminal yanıt ve hata yönetimi iyileştirildi.
+- [ ] **Task 6.5: AI Support Stabilization**
+    - [ ] `api/ai/support` 404/JSON hatalarını izolasyonla çöz.
+    - [ ] `REACT_APP_API_URL` deploy ortamında kontrol edilip sabitlenmeli.
+    - [ ] Yanıt durumları için backend ve frontend tarafında `response.ok` kontrolü eklenmeli.
+- [ ] **Task 6.6: AI Knowledge & FAQ Fallback**
+    - [ ] `MISSION_PLAN.md`, `PRD.md`, `WORK_LOG.md`, `README.md` gibi kritik bilgi kaynakları backend bilgi bankasında kullanılmalı.
+    - [ ] LLM token sınırına takılmamak için kısa, seçilmiş proje özetleri ve gereken yerlerde FAQ katmanı eklenmeli.
+- [ ] **Task 6.7: AI & n8n Telemetry**
+    - [ ] AI destek sorguları loglanmalı ve n8n üzerinden geribildirim/sorun kaydı oluşturulmalı.
+    - [ ] “Not Found / API unreachable” gibi hata durumları yönetime raporlanmalı.
+
+## 📌 Phase 6.5: Star Catalog Validation & Map Readiness
+**Hedef:** kataloğun gerçek verilerle çalıştığını doğrulamak ve 3D harita deneyimini doğru kapsamda sunmak.
+
+- [ ] **Task 6.5.1: Star Catalog Health Check**
+    - [ ] `GET /api/stars` canlı veri döndürmeli.
+    - [ ] Filtre parametreleri (`tier`, `constellation`, `available`, `price`) düzgün çalışmalı.
+    - [ ] Eğer veri yoksa deploy DB `seed_data.py` ile yeniden doldurulmalı.
+- [ ] **Task 6.5.2: No Results vs. Error Ayırımı**
+    - [ ] “Filtreyle yıldız bulunamadı” ile “Sunucu hatası” farklı mesajlar gösterilmeli.
+    - [ ] Hatalar frontend’de kullanıcıya net ifade edilmeli.
+- [ ] **Task 6.5.3: 3D Map Opt-in UX**
+    - [ ] 3D harita yalnızca kullanıcı isteyince yüklenmeli.
+    - [ ] Web’de profesyonel görünmesi için “premium deneyim” olarak sunulmalı.
+    - [ ] Mobilde hafif bir özel “star map” deneyimi planlanmalı; yüksek işlem gücü gerektirmeyen bir yol izlenmeli.
+- [ ] **Task 6.5.4: Market Cap Reality Layer**
+    - [ ] Marketcap göstergesi gerçek marketplace verilerinden hesaplanmalı.
+    - [ ] Backend’te `GET /api/marketplace/metrics` gibi bir metrik endpoint önerilmeli.
+    - [ ] Frontend, `marketplace` sayfasında gerçek değerleri gösterecek şekilde güncellenmeli.
+
+## 🛒 Phase 7: Commerce & Fulfillment
+**Hedef:** Satın alma, pazar ve teslimat akışlarını uçtan uca tamamlamak.
+
+- [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
+- [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
+- [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
+- [ ] **Task 7.4: Sipariş geçmişi, faturalar ve yönetici görünümleri**
+- [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
+
+## 🤖 Phase 8: AI & Experience
+**Hedef:** AI yardımını güvenilir, ölçülebilir ve içeriğe bağlı bir destek kanalına dönüştürmek.
+
+- [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
+- [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
+- [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
+- [ ] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü**
+- [ ] **Task 8.5: 3D harita opt-in deneyimi ve performans gating**
+- [ ] **Task 8.6: Mobil star map / AR preview konsepti**
+- [ ] **Task 8.7: Marketplace health / marketcap dashboardu**
+
+## 🚀 Phase 9: Growth & Product Expansion
+**Hedef:** StarClaim deneyimini genişletmek, yeni satış kanalları ve sürdürülebilir büyüme altyapısı kurmak.
+
+- [ ] **Task 9.1: AR yıldız bulucu ve mobil keşif özellikleri**
+- [ ] **Task 9.2: NFT / dijital mülkiyet sertifikası**
+- [ ] **Task 9.3: Fiziksel sertifika / kargo opsiyonları**
+- [ ] **Task 9.4: Yönetici paneli ve içerik yayınlama**
+- [ ] **Task 9.5: Performans, güvenlik, izleme ve test kapsamı artırımı**
+
+## 🧪 Phase 10: Launch Readiness & Diagnosis
+**Hedef:** Web ve mobil için üretime hazır bir kalite ve izleme paketi oluşturmak.
+
+- [ ] **Task 10.1: Web/mobile QA, performans ve hata izleme**
+- [ ] **Task 10.2: AI fallback FAQ ve destek analitiği**
+- [ ] **Task 10.3: Kullanıcı metrikleri için n8n / analytics entegrasyonu**
+- [ ] **Task 10.4: Launch readiness kontrol listesi**
+
+## 🚧 Current Status (Hazırla)
+- AI terminal “Not Found / invalid JSON” hatası var: endpoint veya deploy URL kontrol edilmeli.
+- Yıldız katalogu şu an ya boş dönüyor ya da filtre hatası nedeniyle gösterilmiyor.
+- 3D harita zaten var ancak “optonal yükleme” doğru yaklaşım; siteyi varsayılan olarak yormamalı.
+- Marketcap göstergesi şu an statik UX odaklı; gerçek veri hesaplaması yapılmalı.
+
+---
+### 📜 Eternal Covenant (Mütalist Anayasa)
+**Hedef:** Satın alma, pazar ve teslimat akışlarını uçtan uca tamamlamak.
+
+- [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
+- [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
+- [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
+- [ ] **Task 7.4: Sipariş geçmişi, faturalar ve yönetici görünümleri**
+- [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
+
+## 🤖 Phase 8: AI & Experience
+**Hedef:** AI yardımını güvenilir, ölçülebilir ve içeriğe bağlı bir destek kanalına dönüştürmek.
+
+- [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
+- [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
+- [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
+- [ ] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü**
+
+## 🚀 Phase 9: Growth & Product Expansion
+**Hedef:** StarClaim deneyimini genişletmek, yeni satış kanalları ve sürdürülebilir büyüme altyapısı kurmak.
+
+- [ ] **Task 9.1: AR yıldız bulucu ve mobil keşif özellikleri**
+- [ ] **Task 9.2: NFT / dijital mülkiyet sertifikası**
+- [ ] **Task 9.3: Fiziksel sertifika / kargo opsiyonları**
+- [ ] **Task 9.4: Yönetici paneli ve içerik yayınlama**
+- [ ] **Task 9.5: Performans, güvenlik, izleme ve test kapsamı artırımı**
 
 
 ---

@@ -1,5 +1,5 @@
 """
-StarClaim backend — FastAPI + MongoDB + Emergent Google Auth + Claude Sonnet AI stories
+StarClaim backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
 + Stripe checkout + Resend email + ReportLab PDF certificate.
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
@@ -31,10 +31,15 @@ load_dotenv(ROOT_DIR / ".env")
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
 # AI key resolution:
-#   If ANTHROPIC_API_KEY is set → use Anthropic SDK directly (production / external deploy).
-#   Else if EMERGENT_LLM_KEY is set → use Emergent's LiteLLM proxy (OpenAI-compatible) for
-#   the dev environment. Both code paths produce text. No proprietary lib in requirements.
+#   If OPENAI_API_KEY is set → use OpenAI directly with gpt-3.5-turbo.
+#   Else if ANTHROPIC_API_KEY is set → use Anthropic SDK as a secondary provider.
+#   Emergent proxy is no longer preferred for core support/story workflows.
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
+GOOGLE_API_BASE = os.environ.get("GOOGLE_API_BASE", "https://generativelanguage.googleapis.com/v1beta2")
+GOOGLE_MODEL_SUPPORT = os.environ.get("GOOGLE_MODEL_SUPPORT", "gemini-1.5-pro")
+GOOGLE_MODEL_STORY = os.environ.get("GOOGLE_MODEL_STORY", "gemini-1.5-pro")
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 EMERGENT_PROXY_URL = os.environ.get("INTEGRATION_PROXY_URL", "https://integrations.emergentagent.com") + "/llm"
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
@@ -79,6 +84,33 @@ PROJECT_KNOWLEDGE_BASE = "\n\n".join(
     for name, path in SUPPORT_DOCS.items()
     if path.exists()
 )
+
+
+def _google_prompt_from_messages(system: str, messages: list[dict]) -> str:
+    parts = [system.strip(), ""]
+    for message in messages:
+        role = message.get("role", "user").title()
+        content = message.get("content", "")
+        parts.append(f"{role}: {content}")
+    return "\n".join(parts)
+
+
+async def _generate_with_google_gemini(prompt: str, model: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
+    url = f"{GOOGLE_API_BASE}/models/{model}:generateText?key={GOOGLE_API_KEY}"
+    payload = {
+        "prompt": {"text": prompt},
+        "temperature": temperature,
+        "maxOutputTokens": max_tokens,
+        "candidateCount": 1,
+    }
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(url, json=payload)
+    resp.raise_for_status()
+    data = resp.json()
+    candidates = data.get("candidates", [])
+    if not candidates:
+        return ""
+    return candidates[0].get("content", "")
 
 
 # -------------------- Models --------------------
@@ -819,7 +851,7 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
 @api.post("/ai/story")
 async def ai_story(body: StoryRequest):
     lang = body.language.upper()
-    if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
+    if not GOOGLE_API_KEY and not OPENAI_API_KEY and not ANTHROPIC_API_KEY:
         if lang == "TR":
             stub_story = (
                 "Gözlemleyenin bakışıyla yıldız bir anda somutlaşır; "
@@ -890,7 +922,22 @@ async def ai_story(body: StoryRequest):
         )
 
     try:
-        if ANTHROPIC_API_KEY:
+        if GOOGLE_API_KEY:
+            prompt = _google_prompt_from_messages(system, [{"role":"user","content":user_text}])
+            story_text = await _generate_with_google_gemini(prompt, GOOGLE_MODEL_STORY, max_tokens=800, temperature=0.8)
+        elif OPENAI_API_KEY:
+            oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
+            resp = await oai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                max_tokens=800,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user_text},
+                ],
+                temperature=0.8,
+            )
+            story_text = resp.choices[0].message.content or ""
+        elif ANTHROPIC_API_KEY:
             client_anthropic = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
             msg = await client_anthropic.messages.create(
                 model="claude-sonnet-4-5-20250929",
@@ -903,17 +950,7 @@ async def ai_story(body: StoryRequest):
                 block.text for block in msg.content if getattr(block, "type", None) == "text"
             )
         else:
-            oai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url=EMERGENT_PROXY_URL)
-            resp = await oai.chat.completions.create(
-                model="claude-sonnet-4-5-20250929",
-                max_tokens=800,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user_text},
-                ],
-                temperature=0.8,
-            )
-            story_text = resp.choices[0].message.content or ""
+            story_text = ""
         return {"story": story_text.strip()}
     except Exception as e:
         logger.exception("AI story v2 failed")
@@ -1336,8 +1373,22 @@ class SupportRequest(BaseModel):
 # -------------------- Aegis Support Intelligence (Phase 6) --------------------
 @api.post("/ai/support")
 async def ai_support(body: SupportRequest):
-    if not ANTHROPIC_API_KEY and not EMERGENT_LLM_KEY:
-        return {"reply": "Aegis çevrimdışı. Lütfen API anahtarlarını kontrol edin, Sir."}
+    if not GOOGLE_API_KEY and not OPENAI_API_KEY and not ANTHROPIC_API_KEY:
+        if body.language.upper() == "TR":
+            return {
+                "reply": (
+                    "Aegis destek sistemi şu anda AI anahtarlarıyla bağlı değil, Sir. "
+                    "Yine de StarClaim bilgilerini sorgulayabilir ve proje hakkında temel bir rehber sunabilirim. "
+                    "Lütfen `GOOGLE_API_KEY`, `OPENAI_API_KEY` veya `ANTHROPIC_API_KEY` değerini ayarlayın."
+                )
+            }
+        return {
+            "reply": (
+                "Aegis support system is not connected to an AI key at the moment, Sir. "
+                "I can still provide basic project guidance from the knowledge base. "
+                "Please set `GOOGLE_API_KEY`, `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`."
+            )
+        }
 
     lang = body.language.upper()
     system = (
@@ -1366,7 +1417,19 @@ async def ai_support(body: SupportRequest):
     messages.append({"role": "user", "content": body.message})
 
     try:
-        if ANTHROPIC_API_KEY:
+        if GOOGLE_API_KEY:
+            prompt = _google_prompt_from_messages(system, messages)
+            reply = await _generate_with_google_gemini(prompt, GOOGLE_MODEL_SUPPORT, max_tokens=500, temperature=0.7)
+        elif OPENAI_API_KEY:
+            oai = AsyncOpenAI(api_key=OPENAI_API_KEY)
+            resp = await oai.chat.completions.create(
+                model="gpt-3.5-turbo",
+                max_tokens=500,
+                messages=[{"role": "system", "content": system}] + messages,
+                temperature=0.7,
+            )
+            reply = getattr(resp.choices[0].message, "content", "") or resp.choices[0].message.get("content", "")
+        elif ANTHROPIC_API_KEY:
             client_anthropic = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
             msg = await client_anthropic.messages.create(
                 model="claude-3-5-sonnet-20240620",
@@ -1382,18 +1445,21 @@ async def ai_support(body: SupportRequest):
                     block.text for block in msg.content if getattr(block, "type", None) == "text"
                 )
         else:
-            oai = AsyncOpenAI(api_key=EMERGENT_LLM_KEY, base_url=EMERGENT_PROXY_URL)
-            resp = await oai.chat.completions.create(
-                model="claude-3-5-sonnet-20240620",
-                max_tokens=500,
-                messages=[{"role": "system", "content": system}] + messages,
-                temperature=0.7,
-            )
-            reply = getattr(resp.choices[0].message, "content", "") or resp.choices[0].message.get("content", "")
+            reply = ""
         return {"reply": (reply or "Aegis yanıtı alınamadı, Sir.").strip()}
     except Exception:
         logger.exception("Aegis Support failed")
-        return {"reply": "Sistemlerimde bir kuantum dalgalanması var, Sir. Lütfen tekrar deneyin."}
+        raise HTTPException(status_code=502, detail="Aegis destek servisinde hata. Lütfen tekrar deneyin.")
+
+
+@api.get("/ai/health")
+async def ai_health():
+    return {
+        "service": "Aegis Support",
+        "online": bool(GOOGLE_API_KEY or OPENAI_API_KEY or ANTHROPIC_API_KEY),
+        "provider": "google" if GOOGLE_API_KEY else ("openai" if OPENAI_API_KEY else ("anthropic" if ANTHROPIC_API_KEY else "none")),
+    }
+
 
 app.include_router(api)
 
