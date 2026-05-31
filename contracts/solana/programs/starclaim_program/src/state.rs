@@ -7,10 +7,12 @@ pub struct GlobalState {
     pub usdt_mint: Pubkey,
     pub total_stars_claimed: u64,
     pub total_funds_escrowed: u64,
+    pub total_invested: u64,
+    pub yield_vault: Pubkey,
 }
 
 impl GlobalState {
-    pub const SIZE: usize = 8 + 32 + 32 + 32 + 8 + 8;
+    pub const SIZE: usize = 8 + 32 + 32 + 32 + 8 + 8 + 8 + 32;
 }
 
 #[account]

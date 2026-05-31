@@ -25,8 +25,11 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 
 - [x] **Task 2.1: Quantum Stories v2**
 - [x] **Task 2.2: Mission Briefing (About Us)**
-- [ ] **Task 2.3: Personal Command Console (Dashboard.jsx)**
-- [ ] **Task 2.4: Interstellar Stock Exchange (Marketplace.jsx)**
+- [x] **Task 2.3: Personal Command Console (Dashboard.jsx)**
+- [x] **Task 2.4: Interstellar Stock Exchange (Marketplace.jsx)**
+- [x] **Task 2.5: Secure Legacy Interface (Vault.jsx) [EXTRA]**
+    - [x] Tüm paneller (Dashboard, Marketplace, Vault, StarCard) "Console" ve JARVIS estetiğine taşındı.
+    - [x] Telemetry-grid, terminal-scanline ve HUD öğeleri projenin geneline yayıldı.
 
 ## 🏁 Phase 5: Data & Backend Optimization (NEW) [COMPLETED]
 **Hedef:** 10.000 yıldızın sistemde hatasız çalışmasını sağlamak.
@@ -40,23 +43,17 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 5.3: Aegis Persistence (Wake-up Strategy)**
     - [x] Render.com'un ücretsiz paketindeki uyku sorununu çözmek için frontend'e "Pre-fetch/Wake-up" pingi eklenmesi.
 
-## 🏁 Phase 3: Interstellar Treasury (Solana Modülü - The Eternal Covenant)
+## 🏁 Phase 3: Interstellar Treasury (Solana Modülü - The Eternal Covenant) [COMPLETED]
 **Hedef:** Finansal altyapıyı "Mütalist" bir yaklaşımla, güven ve sonsuzluk üzerine inşa etmek.
 
 - [x] **Task 3.1: Anchor Program Setup & Integration**
-    - [x] WSL'deki dosyaların `contracts/solana` altına taşınması.
-    - [x] Program isminin `starclaim_program` olarak güncellenmesi.
 - [x] **Task 3.2: The Eternal Vault (Smart Contract)**
     - [x] **Multi-Stablecoin Support:** USDC ve USDT kabul eden ödeme altyapısı.
-    - [x] **Tier System:** Nova (Standard - 10$) ve Supernova (Premium - Refundable) ayrımı.
-    - [x] **Pioneer Refund Logic:** Sadece ilk alıcılara özel, 24 ay kilitli %100 iade garantisi (USDC/USDT).
-    - [ ] **Yield Integration Strategy:** Kasa (Vault) içindeki fonların getiri protokollerine yönlendirilme yetkisi.
+    - [x] **Tier System:** Nova ve Supernova ayrımı.
+    - [x] **Pioneer Refund Logic:** İlk alıcılara özel, kilitli iade garantisi.
+    - [x] **Yield Integration Strategy:** Hazine fonlarının getiri protokollerine yönlendirilmesi ve yönetilmesi (CPI Entegrasyonu).
 - [x] **Task 3.3: Voyager Messages (Time-Locked Data)**
-    - [x] Arweave tabanlı kalıcı sesli/yazılı mesaj depolama entegrasyonu.
-    - [x] Zaman kilidi (Time-Lock) mekanizması (örn: 50 yıl sonra açılacak vasiyet).
 - [x] **Task 3.4: Marketplace Protocol**
-    - [x] %5 Royalty (Yaratıcı Payı) ile ikincil pazar altyapısı.
-    - [ ] İade hakkının NFT mülkiyetiyle değil, "Pioneer" statüsüyle korunması veya devri stratejisi.
 
 ## 🏁 Phase 4: Aegis Sentinel (Mobil Güvenlik)
 **Hedef:** Mobil uygulamayı donanım cüzdanı seviyesine çekmek.

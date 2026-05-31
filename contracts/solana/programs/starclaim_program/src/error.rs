@@ -12,4 +12,10 @@ pub enum StarClaimError {
     NotCurrentOwner,
     #[msg("Invalid lock duration.")]
     InvalidLockDuration,
+    #[msg("Only the admin can manage yield investments.")]
+    UnauthorizedYieldManager,
+    #[msg("Insufficient liquidity in the vault.")]
+    InsufficientLiquidity,
+    #[msg("Insufficient yield to withdraw.")]
+    InsufficientYield,
 }

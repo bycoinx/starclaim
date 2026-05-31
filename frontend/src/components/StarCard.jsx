@@ -1,6 +1,7 @@
 import React from "react";
-import { Star, Sparkles, Crown, Gem } from "lucide-react";
+import { Star, Sparkles, Crown, Gem, Activity, Globe } from "lucide-react";
 import { useT } from "../lib/i18n";
+import "../pages/Console.css";
 
 const tierMap = {
   legendary: { cls: "tier-legendary", color: "text-sc-gold", Icon: Crown, rarity: "Tier 1" },
@@ -20,59 +21,75 @@ export default function StarCard({ star, onClaim }) {
   return (
     <div
       data-testid={`star-card-${star.code}`}
-      className={`group glass rounded-2xl p-6 border ${tier.cls} transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-15px_rgba(201,168,76,0.25)] relative overflow-hidden`}
+      className={`group terminal-frame p-6 border ${tier.cls} transition-all duration-500 hover:-translate-y-1 relative overflow-hidden`}
     >
-      <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20 blur-3xl bg-gradient-to-br from-sc-gold/40 to-transparent" />
+      <div className="terminal-scanline" />
+      <div className="terminal-header" />
 
-      <div className="flex items-start justify-between mb-4 relative">
-        <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${tier.color}`} strokeWidth={1.5} />
-          <span className={`text-[10px] tracking-[0.2em] uppercase ${tier.color}`}>{tierLabel}</span>
+      <div className="flex items-start justify-between mb-4 mt-2 relative">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-3.5 h-3.5 ${tier.color}`} strokeWidth={2} />
+            <span className={`text-[9px] tracking-[0.3em] uppercase font-bold ${tier.color}`}>{tierLabel}</span>
+          </div>
+          <span className="text-[8px] text-sc-text-muted font-mono mt-1">PARCEL: {star.code}</span>
         </div>
         {available ? (
-          <span className="text-[10px] tracking-[0.2em] uppercase text-sc-green flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-sc-green animate-pulse" /> {t("picker_available")}
+          <span className="text-[9px] tracking-[0.2em] uppercase text-sc-green flex items-center gap-1.5 font-bold">
+            <Activity size={10} className="animate-pulse" /> {t("picker_available")}
           </span>
         ) : (
-          <span className="text-[10px] tracking-[0.2em] uppercase text-sc-blue/80">Sahiplenildi</span>
+          <span className="text-[9px] tracking-[0.2em] uppercase text-sc-blue/80 font-bold font-mono">OWNED_BY_PILOT</span>
         )}
       </div>
 
-      <h3 className={`font-display text-2xl mb-1 ${star.tier === "legendary" ? "gold-gradient-text" : "text-sc-text"}`}>
+      <h3 className={`font-display text-2xl mb-1 tracking-tight ${star.tier === "legendary" ? "gold-gradient-text" : "text-white"}`}>
         {star.name}
       </h3>
-      <div className="text-xs text-sc-text-muted tracking-wide mb-5">{star.constellation}</div>
-
-      <div className="grid grid-cols-2 gap-2 text-[11px] text-sc-text-muted mb-5 font-mono">
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">Parcel</span>{star.code}</div>
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">Rarity</span>{tier.rarity}</div>
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">RA</span>{star.ra}</div>
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">Dec</span>{star.dec}</div>
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">Mag</span>{star.magnitude ?? "-"}</div>
-        <div className="rounded-lg bg-sc-deep/35 p-2"><span className="block text-sc-text">Asset</span>NFT Ready</div>
+      <div className="text-[10px] text-sc-text-muted font-mono tracking-wider flex items-center gap-1 mb-6">
+        <Globe size={10} /> {star.constellation.toUpperCase()}
       </div>
 
-      <div className="flex items-end justify-between">
+      <div className="telemetry-grid mb-6">
+        <div className="telemetry-item-box">
+          <div className="telemetry-label">Right Ascension</div>
+          <div className="telemetry-value text-[10px]">{star.ra}</div>
+        </div>
+        <div className="telemetry-item-box">
+          <div className="telemetry-label">Declination</div>
+          <div className="telemetry-value text-[10px]">{star.dec}</div>
+        </div>
+        <div className="telemetry-item-box">
+          <div className="telemetry-label">Magnitude</div>
+          <div className="telemetry-value text-[10px]">{star.magnitude ?? "N/A"}</div>
+        </div>
+        <div className="telemetry-item-box">
+          <div className="telemetry-label">Asset Class</div>
+          <div className="telemetry-value text-[10px]">NFT_READY</div>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between border-t border-white/5 pt-5">
         <div>
-          <div className="text-[10px] tracking-widest text-sc-text-muted uppercase">
-            {available ? (lang === "TR" ? "Fiyat" : "Price") : t("picker_owned_by")}
+          <div className="text-[8px] tracking-widest text-sc-text-muted uppercase font-bold mb-1">
+            {available ? (lang === "TR" ? "Valuation" : "Valuation") : t("picker_owned_by")}
           </div>
           <div className={`font-display text-2xl ${available ? "text-sc-gold" : "text-sc-blue"}`}>
-            {available ? `$${star.price}` : star.owner_name || "-"}
+            {available ? `$${star.price}` : star.owner_name?.toUpperCase() || "ADMIN"}
           </div>
         </div>
         {available ? (
           <button
             onClick={() => onClaim(star)}
             data-testid={`claim-${star.code}`}
-            className="btn-gold text-xs py-2 px-5"
+            className="px-6 py-2.5 rounded-lg bg-sc-gold text-sc-deep text-[10px] uppercase tracking-[0.2em] font-bold hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all"
           >
-            {lang === "TR" ? "Buy / Mint" : "Buy / Mint"}
+            BUY_MINT
           </button>
         ) : (
           <button
             disabled
-            className="btn-ghost text-xs py-2 px-4 opacity-60"
+            className="px-5 py-2.5 rounded-lg border border-white/10 text-white/30 text-[9px] uppercase tracking-widest font-bold"
             data-testid={`view-market-${star.code}`}
           >
             {t("picker_view")}

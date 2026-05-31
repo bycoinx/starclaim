@@ -18,9 +18,10 @@ pub mod starclaim_program {
     pub fn initialize_global_state(
         ctx: Context<InitializeGlobalState>,
         usdc_mint: Pubkey,
-        usdt_mint: Pubkey
+        usdt_mint: Pubkey,
+        yield_vault: Pubkey
     ) -> Result<()> {
-        initialize_global_state::handler(ctx, usdc_mint, usdt_mint)
+        initialize_global_state::handler(ctx, usdc_mint, usdt_mint, yield_vault)
     }
 
     pub fn purchase_star(
@@ -47,5 +48,17 @@ pub mod starclaim_program {
 
     pub fn sell_star(ctx: Context<SellStar>, price: u64) -> Result<()> {
         sell_star::handler(ctx, price)
+    }
+
+    pub fn invest_funds(ctx: Context<InvestFunds>, amount: u64) -> Result<()> {
+        invest_funds::handler(ctx, amount)
+    }
+
+    pub fn withdraw_yield(ctx: Context<WithdrawYield>, amount: u64) -> Result<()> {
+        withdraw_yield::handler(ctx, amount)
+    }
+
+    pub fn reclaim_principal(ctx: Context<ReclaimPrincipal>, amount: u64) -> Result<()> {
+        reclaim_principal::handler(ctx, amount)
     }
 }

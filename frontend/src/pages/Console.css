@@ -1,0 +1,130 @@
+/* Personal Command Console (Dashboard) Aesthetics */
+
+.dashboard-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-frame {
+  position: relative;
+  background: rgba(10, 15, 25, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 243, 255, 0.2);
+  border-radius: 4px; /* Industrial look */
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.terminal-frame:hover {
+  border-color: rgba(0, 243, 255, 0.5);
+  box-shadow: 0 0 25px rgba(0, 243, 255, 0.15);
+  transform: translateY(-5px) scale(1.02);
+}
+
+.terminal-header {
+  height: 4px;
+  background: linear-gradient(90deg, #00f3ff, transparent);
+  width: 100%;
+  opacity: 0.6;
+}
+
+.terminal-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 243, 255, 0.05) 50%,
+    transparent 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+  animation: scanline 10s linear infinite;
+  opacity: 0.3;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(100%); }
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px border rgba(0, 243, 255, 0.1);
+}
+
+.telemetry-item-box {
+  background: rgba(0, 243, 255, 0.03);
+  padding: 8px;
+  border-left: 2px solid rgba(0, 243, 255, 0.3);
+}
+
+.telemetry-label {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: #00f3ff;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
+
+.telemetry-value {
+  font-family: 'Mono', monospace;
+  font-size: 11px;
+  color: #fff;
+}
+
+.aegis-badge-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 255, 128, 0.05);
+  border: 1px solid rgba(0, 255, 128, 0.2);
+  color: #00ff80;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.dashboard-stats-card {
+  background: rgba(0, 243, 255, 0.05);
+  border: 1px solid rgba(0, 243, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-stats-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, transparent 50%, rgba(0, 243, 255, 0.1) 50%);
+}
+
+.corner-accent {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #00f3ff;
+  border-style: solid;
+  opacity: 0.5;
+}
+
+.corner-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+.corner-tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+.corner-bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+.corner-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }

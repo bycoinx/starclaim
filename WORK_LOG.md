@@ -87,3 +87,40 @@
 - Yazılara "Glitch" efekti ve interaktif hover animasyonları eklendi.
 
 **Durum:** Ana sayfa artık tam bir bilim-kurgu arayüzü kalitesinde. J.A.R.V.I.S. estetiği projenin her noktasına sızdı.
+
+---
+## 🗓️ Tarih: 31 Mayıs 2026 (The Terminal Evolution - Phase 2 Finalization)
+
+### 1. Marketplace "Console" Transformation (Task 2.4)
+- `Marketplace.jsx` tamamen yenilenerek `terminal-frame` estetiğine taşındı.
+- Üst kısımdaki "Volume" ve "Market Cap" panelleri Dashboard stili HUD öğelerine dönüştürüldü.
+- Canlı ticker (ticker banner) terminal çerçevesi içine alınarak tarama çizgileri eklendi.
+
+### 2. Vault "Secure Terminal" Update (Task 2.5 - Extra)
+- `Vault.jsx` projenin geri kalanıyla uyumlu hale getirildi. 
+- Şifreleme/Deşifreleme pencereleri `terminal-frame` içine alınarak "Askeri Standartta Terminal" hissi güçlendirildi.
+- Tab butonları ve özellik kartları endüstriyel tasarıma uyarlandı.
+
+### 3. StarCard & StarPicker Sync (Aesthetic Harmonization)
+- `StarCard.jsx` (Katalog kartları) refaktör edilerek terminal çerçeveleri ve `telemetry-grid` yapısına geçirildi.
+- Veri görselleştirmesi (RA, Dec, Mag) Dashboard ile %100 uyumlu hale getirildi.
+
+**Durum:** Phase 2 (Cinematic Storytelling) resmen tamamlandı. Tüm kullanıcı panelleri artık tek bir "Aegis İşletim Sistemi" gibi kusursuz ve tutarlı bir bilim-kurgu arayüzüne sahip.
+
+---
+## 🗓️ Tarih: 31 Mayıs 2026 (Interstellar Treasury Finalization - Phase 3)
+
+### 1. Yield Integration Strategy (Task 3.2 Update)
+- `GlobalState` hesabı genişletilerek `total_invested` ve `yield_vault` alanları eklendi.
+- **Invest & Reclaim:** Hazinedeki fonların yatırım protokollerine (Solend/Kamino vb.) yönlendirilmesi ve ihtiyaç halinde (iadeler için) geri çağrılması sağlandı.
+- **Yield Management:** Yatırımlardan elde edilen kârın (getiri), ana paraya dokunulmadan `yield_vault` üzerinden çekilmesi altyapısı kuruldu.
+
+### 2. Eternal Covenant Logic (Pioneer Protection)
+- `request_refund.rs` üzerinden Pioneer (ilk alıcı) statüsünün blockchain seviyesinde korunduğu doğrulandı.
+- NFT ikincil pazarda satılsa dahi, iade hakkının ilk yatırımcıda (Pioneer) kalması mühürlendi.
+
+### 3. Akıllı Sözleşme Senkronizasyonu
+- `initialize_global_state`, `invest_funds`, `withdraw_yield` ve `reclaim_principal` fonksiyonları `lib.rs` üzerinden dış dünyaya açıldı.
+- Yeni hata kodları (`UnauthorizedYieldManager`, `InsufficientYield`) ile güvenlik katmanı güçlendirildi.
+
+**Durum:** Phase 3 (Interstellar Treasury) tamamlandı. Sistem artık sadece bir yıldız sahiplenme platformu değil, aynı zamanda mütalist bir finansal protokol olarak tam yetkinliğe ulaştı.
