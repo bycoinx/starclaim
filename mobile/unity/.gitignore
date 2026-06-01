@@ -1,0 +1,40 @@
+# Unity generated files
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+UserSettings/
+MemoryCaptures/
+
+# Asset meta data should be tracked
+!/[Aa]ssets/**/*.meta
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Visual Studio files
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.user
+*.userprefs
+
+# Rider
+.idea/
+*.sln.iml
+
+# Other
+*.apk
+*.aab
+*.unitypackage
+
+# Addressables build data (optional to ignore if using remote)
+/Library/com.unity.addressables/*
+/Library/com.unity.scriptablebuildpipeline/*
+
+# Prevent large binaries in repo — use Git LFS for models and textures
+# e.g. track glb, fbx, png, tga via LFS
