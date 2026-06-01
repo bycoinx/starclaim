@@ -22,20 +22,21 @@ const AegisTerminal = () => {
     if (!input.trim()) return;
 
     const userMessage = input.trim();
+    const nextHistory = [...history, { role: 'user', content: userMessage }];
     setInput('');
-    setHistory(prev => [...prev, { role: 'user', content: userMessage }]);
+    setHistory(nextHistory);
     setIsTyping(true);
 
     try {
       const response = await api.post('/ai/support', {
         message: userMessage,
-        history: history.slice(-5), // Son 5 mesajı context olarak gönder
+        history: nextHistory.slice(-5), // Son 5 mesajı context olarak gönder
         language: 'TR'
       });
 
       setHistory(prev => [...prev, { role: 'assistant', content: response.data.reply || 'Aegis destek yanıtı alınamadı.' }]);
     } catch (error) {
-      const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.response?.data?.reply || error?.message || 'Sistemleri kontrol ediyorum.';
+      const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.response?.data?.reply || error?.response?.statusText || error?.message || 'Sistemleri kontrol ediyorum.';
       setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${errorMessage}` }]);
     } finally {
       setIsTyping(false);

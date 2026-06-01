@@ -91,13 +91,18 @@
    MONGO_URL          = mongodb+srv://starclaim_app:PASSWORD@starclaim-prod.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=starclaim-prod
    DB_NAME            = starclaim
    CORS_ORIGINS       = https://fascinating-florentine-5aace3.netlify.app
+   GOOGLE_API_KEY     = your_google_api_key_here
    ANTHROPIC_API_KEY  = sk-ant-...
    STRIPE_API_KEY     = sk_test_...
    STRIPE_WEBHOOK_SECRET = whsec_...
    RESEND_API_KEY     = re_...
    SENDER_EMAIL       = StarClaim <onboarding@resend.dev>
    ```
+   If your frontend is on Vercel, replace `CORS_ORIGINS` with your Vercel domain, for example:
+   `https://your-vercel-project.vercel.app`
    (No quotes around values in Render UI)
+
+   If you want Gemini support, make sure `GOOGLE_API_KEY` is set. If you prefer Anthropic instead, set `ANTHROPIC_API_KEY` and leave `GOOGLE_API_KEY` empty.
 
 5. **Create Web Service** — first build takes ~3-4 min
 6. Once green, copy the URL (e.g. `https://starclaim-api.onrender.com`) — you need it for the next step
@@ -106,8 +111,11 @@
 
 ---
 
-## STEP 4 — Configure Frontend on Netlify
+## STEP 4 — Configure Frontend on Netlify or Vercel
 
+If your frontend is deployed on Netlify, use the Netlify dashboard. If it is deployed on Vercel, use the Vercel project settings.
+
+### Netlify
 1. **Netlify dashboard** → your site → **Site configuration → Environment variables**
 2. Add:
    ```
@@ -117,6 +125,20 @@
 
 3. **Deploys → Trigger deploy → Clear cache and deploy site**
 4. Wait ~2 min for rebuild
+
+### Vercel
+1. **Vercel dashboard** → your project → **Settings → Environment Variables**
+2. Add:
+   ```
+   REACT_APP_BACKEND_URL = https://starclaim-api.onrender.com
+   ```
+   Environment: `Production` and `Preview` if you want preview deploys to work.
+   (No trailing slash. No quotes.)
+
+3. Deploy the frontend again after saving.
+4. Wait for the Vercel build to finish.
+
+> Important: `REACT_APP_BACKEND_URL` is the primary frontend env var used by `frontend/src/lib/api.js`. If you prefer the older alias, `REACT_APP_API_URL` is also supported. If neither is set, the frontend will attempt `/api/ai/support` on the Vercel domain and return 404.
 
 ---
 
