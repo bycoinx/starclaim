@@ -26,6 +26,21 @@ from backend.certificate import generate_certificate
 from backend.emails import send_certificate_email
 from backend.stellar import create_testnet_account, get_account_balances, send_xlm
 
+# Redis-backed rate limiter (optional for production). If REDIS_URL is set
+# in the environment we'll initialize FastAPILimiter during startup and use
+# fastapi-limiter's RateLimiter dependency on the transfer endpoint. If not
+# configured, we fall back to the in-memory limiter above.
+REDIS_URL = os.environ.get("REDIS_URL", "")
+FASTAPI_LIMITER_AVAILABLE = False
+try:
+    from fastapi_limiter import FastAPILimiter
+    from fastapi_limiter.depends import RateLimiter
+    import aioredis
+    FASTAPI_LIMITER_AVAILABLE = True
+except Exception:
+    # Not installed or not configured in the environment; we'll skip Redis init
+    FASTAPI_LIMITER_AVAILABLE = False
+
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
@@ -364,6 +379,14 @@ async def startup():
     await seed_database()
     if DEMO_CLEANUP_ENABLED:
         await cleanup_demo_data_once()
+    # Initialize Redis-backed rate limiter if configured
+    if REDIS_URL and FASTAPI_LIMITER_AVAILABLE:
+        try:
+            redis = await aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+            await FastAPILimiter.init(redis)
+            logger.info("FastAPILimiter initialized with REDIS_URL")
+        except Exception as e:
+            logger.exception(f"Failed to initialize FastAPILimiter: {e}")
 
 
 @app.on_event("shutdown")
@@ -628,13 +651,22 @@ async def stellar_get_balance(account_id: str):
         raise HTTPException(status_code=500, detail=str(exc))
 
 
+# Rate limiter dependency: if Redis limiter available, use RateLimiter, else no-op
+if REDIS_URL and FASTAPI_LIMITER_AVAILABLE:
+    RATE_LIMIT_DEP = Depends(RateLimiter(times=3, seconds=60))
+else:
+    async def _noop_rate():
+        return None
+    RATE_LIMIT_DEP = Depends(_noop_rate)
+
+
 @api.post("/stellar/testnet/transfer")
-async def stellar_transfer(body: StellarTransferRequest, user: User = Depends(get_current_user)):
+async def stellar_transfer(body: StellarTransferRequest, user: User = Depends(get_current_user), _rate: None = RATE_LIMIT_DEP):
     """Perform a Stellar testnet transfer.
 
     Requires an authenticated user. Rate-limited per-user to avoid abuse.
     """
-    # Rate-limit check (in-memory)
+    # Rate-limit check (in-memory) — acts as fallback if Redis limiter not configured
     now_ts = datetime.now(timezone.utc).timestamp()
     async with _transfer_lock:
         arr = _transfer_activity.get(user.user_id, [])
