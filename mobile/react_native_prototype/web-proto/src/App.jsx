@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import ThreeScene from './ThreeScene'
+import Leaderboard from './Leaderboard'
+import Engagement from './Engagement'
+import Referral from './Referral'
+import Transfer from './Transfer'
 
 function truncateAddress(address) {
   if (!address) return ''
@@ -27,6 +31,8 @@ export default function App() {
   const [claimMessage, setClaimMessage] = useState('')
   const [lastClaimAt, setLastClaimAt] = useState(null)
   const [timeLeft, setTimeLeft] = useState(0)
+  const [activeModal, setActiveModal] = useState(null)
+  const [showTransfer, setShowTransfer] = useState(false)
 
   useEffect(() => {
     const stored = window.localStorage.getItem(CLAIM_KEY)
@@ -147,11 +153,48 @@ export default function App() {
       </div>
 
       <div className="floating-wheel">
-        <button onClick={connectWallet}>Wallet</button>
-        <button>Market</button>
-        <button>Vault</button>
-        <button>Stories</button>
+        <button onClick={() => setActiveModal('engagement')}>⭐ Daily</button>
+        <button onClick={() => setActiveModal('referral')}>👥 Refer</button>
+        <button onClick={() => setActiveModal('leaderboard')}>🏆 Rank</button>
+        <button onClick={connectWallet}>💼 Wallet</button>
+        <button onClick={() => setShowTransfer(true)}>💸 Transfer</button>
       </div>
+
+      {activeModal === 'leaderboard' && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
+            <Leaderboard />
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'engagement' && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content engagement-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
+            <Engagement userToken={walletAddress} />
+          </div>
+        </div>
+      )}
+
+      {activeModal === 'referral' && (
+        <div className="modal-overlay" onClick={() => setActiveModal(null)}>
+          <div className="modal-content referral-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveModal(null)}>✕</button>
+            <Referral userToken={walletAddress} />
+          </div>
+        </div>
+      )}
+
+      {showTransfer && (
+        <div className="modal-overlay" onClick={() => setShowTransfer(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowTransfer(false)}>✕</button>
+            <Transfer userToken={walletAddress} onClose={() => setShowTransfer(false)} />
+          </div>
+        </div>
+      )}
 
       {walletError && <div className="error-toast">{walletError}</div>}
     </div>
