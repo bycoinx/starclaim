@@ -24,6 +24,7 @@ import base58
 from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
 from backend.certificate import generate_certificate
 from backend.emails import send_certificate_email
+from backend.stellar import create_testnet_account, get_account_balances, send_xlm
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -44,6 +45,7 @@ EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
 EMERGENT_PROXY_URL = os.environ.get("INTEGRATION_PROXY_URL", "https://integrations.emergentagent.com") + "/llm"
 STRIPE_API_KEY = os.environ.get("STRIPE_API_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+STELLAR_PLATFORM_SECRET = os.environ.get("STELLAR_PLATFORM_SECRET", "")
 DEMO_CLEANUP_ENABLED = os.environ.get("ENABLE_DEMO_CLEANUP", "0") == "1"
 if STRIPE_API_KEY:
     stripe.api_key = STRIPE_API_KEY
@@ -119,7 +121,25 @@ class User(BaseModel):
     email: str
     name: str
     picture: Optional[str] = None
+    wallet_address: Optional[str] = None
+    stellar_address: Optional[str] = None
+    referral_code: Optional[str] = None
+    referred_by: Optional[str] = None
+    daily_streak: int = 0
+    last_checkin_at: Optional[datetime] = None
+    points: int = 0
     created_at: datetime
+
+
+class StellarTransferRequest(BaseModel):
+    destination: str
+    amount: str
+    memo: Optional[str] = ""
+    source_secret: Optional[str] = None
+
+
+class ReferralRequest(BaseModel):
+    referral_code: str
 
 
 class Star(BaseModel):
@@ -366,9 +386,12 @@ async def auth_session(request: Request, response: Response):
     existing = await db.users.find_one({"email": email}, {"_id": 0})
     if existing:
         user_id = existing["user_id"]
+        update_data = {"name": name, "picture": picture}
+        if not existing.get("referral_code"):
+            update_data["referral_code"] = f"REF{uuid.uuid4().hex[:8].upper()}"
         await db.users.update_one(
             {"user_id": user_id},
-            {"$set": {"name": name, "picture": picture}},
+            {"$set": update_data},
         )
     else:
         user_id = f"user_{uuid.uuid4().hex[:12]}"
@@ -377,6 +400,9 @@ async def auth_session(request: Request, response: Response):
             "email": email,
             "name": name,
             "picture": picture,
+            "referral_code": f"REF{uuid.uuid4().hex[:8].upper()}",
+            "daily_streak": 0,
+            "points": 0,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -448,6 +474,11 @@ async def auth_qr_verify(body: QRVerifyRequest, response: Response):
     if existing:
         user_id = existing["user_id"]
         name = existing["name"]
+        if not existing.get("referral_code"):
+            await db.users.update_one(
+                {"user_id": user_id},
+                {"$set": {"referral_code": f"REF{uuid.uuid4().hex[:8].upper()}"}},
+            )
     else:
         user_id = f"user_{uuid.uuid4().hex[:12]}"
         name = f"Explorer {body.public_key[:4]}"
@@ -456,6 +487,9 @@ async def auth_qr_verify(body: QRVerifyRequest, response: Response):
             "email": email,
             "wallet_address": body.public_key,
             "name": name,
+            "referral_code": f"REF{uuid.uuid4().hex[:8].upper()}",
+            "daily_streak": 0,
+            "points": 0,
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
 
@@ -562,6 +596,128 @@ async def list_my_stars(user: User = Depends(get_current_user)):
         if star.get("star_id") in order_map:
             star["order_id"] = order_map[star["star_id"]]
     return stars
+
+
+@api.post("/stellar/testnet/create-account")
+async def stellar_create_testnet_account():
+    try:
+        account = await create_testnet_account()
+        return {"ok": True, "account": account}
+    except Exception as exc:
+        logger.exception("Failed to create Stellar testnet account")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@api.get("/stellar/testnet/balance/{account_id}")
+async def stellar_get_balance(account_id: str):
+    try:
+        balances = await get_account_balances(account_id)
+        return {"ok": True, "balances": balances}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Failed to query Stellar balance")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@api.post("/stellar/testnet/transfer")
+async def stellar_transfer(body: StellarTransferRequest):
+    secret = body.source_secret or STELLAR_PLATFORM_SECRET
+    if not secret:
+        raise HTTPException(status_code=400, detail="Missing source secret key")
+    try:
+        tx = await send_xlm(secret, body.destination, body.amount, body.memo)
+        return {"ok": True, "transaction": tx}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Stellar transfer failed")
+        raise HTTPException(status_code=502, detail=str(exc))
+
+
+@api.get("/leaderboard/top")
+async def leaderboard_top(limit: int = 100):
+    pipeline = [
+        {"$match": {"owner_id": {"$ne": None}}},
+        {"$group": {"_id": "$owner_id", "stars_owned": {"$sum": 1}}},
+        {"$sort": {"stars_owned": -1}},
+        {"$limit": limit},
+    ]
+    rows = await db.stars.aggregate(pipeline).to_list(limit)
+    leaderboard = []
+    for row in rows:
+        user = await db.users.find_one({"user_id": row["_id"]}, {"_id": 0, "name": 1, "picture": 1, "referral_code": 1, "points": 1})
+        leaderboard.append({
+            "user_id": row["_id"],
+            "name": user.get("name") if user else "Unknown",
+            "picture": user.get("picture") if user else None,
+            "referral_code": user.get("referral_code") if user else None,
+            "stars_owned": row["stars_owned"],
+            "points": user.get("points", 0) if user else 0,
+        })
+    return leaderboard
+
+
+@api.post("/engagement/daily-checkin")
+async def daily_checkin(user: User = Depends(get_current_user)):
+    now = datetime.now(timezone.utc)
+    last_checkin = getattr(user, "last_checkin_at", None)
+    if last_checkin and isinstance(last_checkin, str):
+        last_checkin = datetime.fromisoformat(last_checkin)
+
+    if last_checkin and last_checkin.date() == now.date():
+        raise HTTPException(status_code=400, detail="Daily check-in already completed")
+
+    streak = getattr(user, "daily_streak", 0) or 0
+    yesterday = now.date() - timedelta(days=1)
+    if last_checkin and last_checkin.date() == yesterday:
+        streak += 1
+    else:
+        streak = 1
+
+    reward = 10 + min(streak - 1, 6) * 5
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {"$set": {"daily_streak": streak, "last_checkin_at": now.isoformat()}, "$inc": {"points": reward}},
+    )
+    return {"ok": True, "daily_streak": streak, "reward": reward}
+
+
+@api.post("/referral/claim")
+async def claim_referral(body: ReferralRequest, user: User = Depends(get_current_user)):
+    if getattr(user, "referred_by", None):
+        raise HTTPException(status_code=400, detail="Referral already claimed")
+
+    referrer = await db.users.find_one({"referral_code": body.referral_code}, {"_id": 0})
+    if not referrer:
+        raise HTTPException(status_code=404, detail="Referral code not found")
+
+    if referrer["user_id"] == user.user_id:
+        raise HTTPException(status_code=400, detail="Cannot claim your own referral code")
+
+    await db.users.update_one(
+        {"user_id": user.user_id},
+        {"$set": {"referred_by": referrer["user_id"]}, "$inc": {"points": 20}},
+    )
+    await db.users.update_one(
+        {"user_id": referrer["user_id"]},
+        {"$inc": {"points": 30}},
+    )
+    return {"ok": True, "reward": 20}
+
+
+@api.get("/referral/{code}")
+async def get_referral(code: str):
+    user = await db.users.find_one({"referral_code": code}, {"_id": 0, "user_id": 1, "name": 1, "points": 1})
+    if not user:
+        raise HTTPException(status_code=404, detail="Referral code not found")
+    referrals = await db.users.count_documents({"referred_by": user["user_id"]})
+    return {
+        "user_id": user["user_id"],
+        "name": user["name"],
+        "points": user.get("points", 0),
+        "referrals": referrals,
+    }
 
 
 @api.post("/stars/claim")
