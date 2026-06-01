@@ -50,6 +50,14 @@ DEMO_CLEANUP_ENABLED = os.environ.get("ENABLE_DEMO_CLEANUP", "0") == "1"
 if STRIPE_API_KEY:
     stripe.api_key = STRIPE_API_KEY
 
+# Simple in-memory rate limiter for sensitive endpoints (per-user)
+# NOTE: This is suitable for local testing/demo only. For production use a centralized
+# store like Redis and a proven limiter library (e.g. `slowapi`/`fastapi-limiter`).
+TRANSFER_RATE_LIMIT_WINDOW = 60  # seconds
+TRANSFER_RATE_LIMIT_MAX = 3     # max transfers per window per user
+_transfer_activity = {}
+_transfer_lock = asyncio.Lock()
+
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
@@ -621,10 +629,27 @@ async def stellar_get_balance(account_id: str):
 
 
 @api.post("/stellar/testnet/transfer")
-async def stellar_transfer(body: StellarTransferRequest):
+async def stellar_transfer(body: StellarTransferRequest, user: User = Depends(get_current_user)):
+    """Perform a Stellar testnet transfer.
+
+    Requires an authenticated user. Rate-limited per-user to avoid abuse.
+    """
+    # Rate-limit check (in-memory)
+    now_ts = datetime.now(timezone.utc).timestamp()
+    async with _transfer_lock:
+        arr = _transfer_activity.get(user.user_id, [])
+        # keep only timestamps inside window
+        arr = [t for t in arr if now_ts - t < TRANSFER_RATE_LIMIT_WINDOW]
+        if len(arr) >= TRANSFER_RATE_LIMIT_MAX:
+            raise HTTPException(status_code=429, detail="Transfer rate limit exceeded. Try again later.")
+        arr.append(now_ts)
+        _transfer_activity[user.user_id] = arr
+
     secret = body.source_secret or STELLAR_PLATFORM_SECRET
     if not secret:
         raise HTTPException(status_code=400, detail="Missing source secret key")
+
+    # For safety, do not log secrets. Log minimal info.
     try:
         tx = await send_xlm(secret, body.destination, body.amount, body.memo)
         return {"ok": True, "transaction": tx}
