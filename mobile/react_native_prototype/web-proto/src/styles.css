@@ -1,0 +1,11 @@
+*{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%}
+.app{width:100%;height:100%;position:relative;font-family:Inter,system-ui,Arial}
+.three-canvas{position:absolute;inset:0}
+.hud{position:absolute;top:8%;width:18%;height:60%;display:flex;align-items:flex-start;justify-content:center}
+.hud.left{left:2%}
+.hud.right{right:2%}
+.floating-wheel{position:absolute;bottom:6%;left:50%;transform:translateX(-50%);display:flex;gap:12px}
+.floating-wheel button{background:linear-gradient(180deg,#00f3ff33,#00f3ff11);border:1px solid rgba(255,255,255,0.06);padding:10px 14px;border-radius:8px;color:#fff}
+.nebula-overlay{position:absolute;inset:0;background:radial-gradient(circle at 50% 40%, rgba(0,243,255,0.08), rgba(5,7,20,0.6));animation:nebula 1s ease forwards}
+@keyframes nebula{0%{opacity:0;transform:scale(0.9)}50%{opacity:1;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}
