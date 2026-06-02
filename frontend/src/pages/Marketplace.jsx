@@ -23,6 +23,7 @@ export default function Marketplace() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [buyingId, setBuyingId] = useState(null);
+  const [metrics, setMetrics] = useState({ market_cap: 2400000, volume_24h: 12450 });
 
   const loadListings = () => {
     setLoading(true);
@@ -40,8 +41,17 @@ export default function Marketplace() {
       .finally(() => setLoading(false));
   };
 
+  const loadMetrics = () => {
+    api.get("/marketplace/metrics")
+      .then(({ data }) => {
+        if (data) setMetrics(data);
+      })
+      .catch(err => console.error("Metrics fetch error:", err));
+  };
+
   useEffect(() => {
     loadListings();
+    loadMetrics();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
@@ -91,14 +101,18 @@ export default function Marketplace() {
                 <div className="corner-accent corner-tl" />
                 <div className="corner-accent corner-br" />
                 <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1 font-bold">Volume 24h</div>
-                <div className="text-2xl font-display text-white">$12,450</div>
-                <div className="text-[8px] text-sc-green mt-1 font-mono">STATUS: OPTIMAL</div>
+                <div className="text-2xl font-display text-white">${metrics.volume_24h.toLocaleString()}</div>
+                <div className={`text-[8px] mt-1 font-mono ${metrics.volume_24h > 0 ? "text-sc-green" : "text-sc-gold opacity-50"}`}>
+                   STATUS: {metrics.volume_24h > 0 ? "OPTIMAL" : "STABLE"}
+                </div>
              </div>
              <div className="dashboard-stats-card min-w-[160px]">
                 <div className="corner-accent corner-tl" />
                 <div className="corner-accent corner-br" />
                 <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1 font-bold">Market Cap</div>
-                <div className="text-2xl font-display text-sc-gold">$2.4M</div>
+                <div className="text-2xl font-display text-sc-gold">
+                  {metrics.market_cap >= 1000000 ? `$${(metrics.market_cap / 1000000).toFixed(1)}M` : `$${metrics.market_cap.toLocaleString()}`}
+                </div>
                 <div className="text-[8px] text-sc-blue mt-1 font-mono">NETWORK: STABLE</div>
              </div>
           </div>

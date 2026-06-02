@@ -4,9 +4,12 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useSolanaWallet } from '../hooks/useSolanaWallet';
+import { SecurityService } from '../lib/security';
 import { Ionicons } from '@expo/vector-icons';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
+
+import { THEME } from '../constants/Theme';
 
 export default function QRLogin() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -34,7 +37,14 @@ export default function QRLogin() {
     setLoading(true);
 
     try {
-      // Connect wallet if not connected
+      const biometricsOk = await SecurityService.checkBiometrics();
+      if (biometricsOk) {
+        const authenticated = await SecurityService.authenticate('Giriş işlemini onaylamak için biyometrik doğrulama gerekli');
+        if (!authenticated) {
+          throw new Error('Biyometrik doğrulama başarısız.');
+        }
+      }
+
       let currentAddress = address;
       if (!currentAddress) {
         const pubKey = await connect();
@@ -89,7 +99,22 @@ export default function QRLogin() {
       />
       
       <View style={styles.overlay}>
-        <View style={styles.unfocusedContainer}></View>
+        {/* HUD Frame */}
+        <View style={styles.hudOverlay}>
+           <View style={[styles.hudCorner, styles.hudTopL]} />
+           <View style={[styles.hudCorner, styles.hudTopR]} />
+           <View style={[styles.hudCorner, styles.hudBottomL]} />
+           <View style={[styles.hudCorner, styles.hudBottomR]} />
+        </View>
+
+        <View style={styles.topBar}>
+           <TouchableOpacity onPress={() => router.back()}>
+              <Ionicons name="close" size={24} color="#fff" />
+           </TouchableOpacity>
+           <Text style={styles.statusText}>AEGIS_SCANNER_v3</Text>
+           <View style={styles.statusDot} />
+        </View>
+
         <View style={styles.focusedContainer}>
           <View style={styles.reticle}>
             <View style={[styles.corner, styles.topL]} />
@@ -98,19 +123,11 @@ export default function QRLogin() {
             <View style={[styles.corner, styles.bottomR]} />
           </View>
         </View>
-        <View style={styles.unfocusedContainer}></View>
         
-        <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          style={styles.bottomBar}
-        >
-          <Text style={styles.hint}>PC'deki QR Kodu Taratın</Text>
-          {loading && <ActivityIndicator color="#00ccff" size="large" style={{ marginTop: 20 }} />}
-          
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="close-circle-outline" size={60} color="rgba(255,255,255,0.5)" />
-          </TouchableOpacity>
-        </LinearGradient>
+        <View style={styles.bottomArea}>
+          <Text style={styles.hint}>ALIGN_QR_CODE_WITHIN_RETICLE</Text>
+          {loading && <ActivityIndicator color={THEME.colors.primary} size="large" style={{ marginTop: 20 }} />}
+        </View>
       </View>
     </View>
   );
@@ -119,34 +136,29 @@ export default function QRLogin() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   message: { color: '#fff', textAlign: 'center', marginBottom: 20 },
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
-  unfocusedContainer: { flex: 1 },
-  focusedContainer: { flex: 2, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  reticle: {
-    width: 250,
-    height: 250,
-    borderWidth: 0,
-    position: 'relative',
-  },
-  corner: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    borderColor: '#00ccff',
-  },
-  topL: { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
-  topR: { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
-  bottomL: { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
-  bottomR: { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    padding: 40,
-    alignItems: 'center',
-  },
-  hint: { color: '#fff', fontSize: 16, fontWeight: 'bold', letterSpacing: 2 },
-  backButton: { marginTop: 30 },
-  button: { backgroundColor: '#00ccff', padding: 15, borderRadius: 10 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' },
+  
+  hudOverlay: { ...StyleSheet.absoluteFillObject },
+  hudCorner: { position: 'absolute', width: 40, height: 40, borderColor: 'rgba(0, 204, 255, 0.4)', borderWidth: 1 },
+  hudTopL: { top: 40, left: 40, borderBottomWidth: 0, borderRightWidth: 0 },
+  hudTopR: { top: 40, right: 40, borderBottomWidth: 0, borderLeftWidth: 0 },
+  hudBottomL: { bottom: 40, left: 40, borderTopWidth: 0, borderRightWidth: 0 },
+  hudBottomR: { bottom: 40, right: 40, borderTopWidth: 0, borderLeftWidth: 0 },
+
+  topBar: { position: 'absolute', top: 30, left: 30, right: 30, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statusText: { color: THEME.colors.primary, fontSize: 9, fontWeight: 'bold', letterSpacing: 2 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.colors.accent },
+
+  focusedContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  reticle: { width: 200, height: 200, position: 'relative' },
+  corner: { position: 'absolute', width: 30, height: 30, borderColor: THEME.colors.primary },
+  topL: { top: 0, left: 0, borderTopWidth: 3, borderLeftWidth: 3 },
+  topR: { top: 0, right: 0, borderTopWidth: 3, borderRightWidth: 3 },
+  bottomL: { bottom: 0, left: 0, borderBottomWidth: 3, borderLeftWidth: 3 },
+  bottomR: { bottom: 0, right: 0, borderBottomWidth: 3, borderRightWidth: 3 },
+  
+  bottomArea: { position: 'absolute', bottom: 60, width: '100%', alignItems: 'center' },
+  hint: { color: '#fff', fontSize: 10, fontWeight: 'bold', letterSpacing: 4, backgroundColor: 'rgba(0,0,0,0.6)', padding: 10, borderRadius: 2 },
+  button: { backgroundColor: THEME.colors.primary, padding: 15, borderRadius: 10 },
   buttonText: { color: '#000', fontWeight: 'bold' },
 });

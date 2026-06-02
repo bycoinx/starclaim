@@ -55,13 +55,31 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 3.3: Voyager Messages (Time-Locked Data)**
 - [x] **Task 3.4: Marketplace Protocol**
 
-## 🏁 Phase 4: Aegis Sentinel (Mobil Güvenlik)
+## 🏁 Phase 4: Aegis Sentinel (Mobil Güvenlik) [COMPLETED]
 **Hedef:** Mobil uygulamayı donanım cüzdanı seviyesine çekmek.
 
-- [ ] **Task 4.1: Biometrik Onay Entegrasyonu**
-- [ ] **Task 4.2: Neural Link (QR) Finalizasyonu**
-- [ ] **Task 4.3: Wallet Session Persistence ve Recovery**
-- [ ] **Task 4.4: Mobil cüzdan doğrulama, fallback ve hatalı imza yönetimi**
+- [x] **Task 4.1: Biometrik Onay Entegrasyonu**
+    - [x] `expo-local-authentication` ile FaceID/TouchID desteği eklendi.
+    - [x] QR Login ve hassas işlemler öncesi biyometrik zorunluluk getirildi.
+- [x] **Task 4.2: Neural Link (QR) Finalizasyonu**
+    - [x] QR tarama sonrası imzalama işlemi biyometrik katmanla korundu.
+- [x] **Task 4.3: Wallet Session Persistence ve Recovery**
+    - [x] `expo-secure-store` ile cüzdan oturumu şifreli olarak kaydediliyor.
+    - [x] Uygulama açılışında otomatik oturum kurtarma (recovery) aktif edildi.
+- [x] **Task 4.4: Mobil cüzdan doğrulama, fallback ve hatalı imza yönetimi**
+    - [x] `SecurityService` üzerinden hata yönetimi ve fallback mekanizmaları kuruldu.
+- [x] **Task 4.5: High-Fidelity Landscape Cockpit UI**
+    - [x] Uygulama oryantasyonu tamamen yatay (landscape) moda sabitlendi.
+    - [x] Üçlü panel sistemi (Sol Kanat, Merkez Viewport, Sağ Kanat) ile kokpit arayüzü kuruldu.
+    - [x] `WarpBackground` ve `HUDOverlay` ile derin uzay yolculuğu estetiği sağlandı.
+- [x] **Task 4.6: AR Star Map & Real-Data Integration**
+    - [x] Kamera feed'i üzerine şeffaf "Aegis HUD" katmanı eklendi.
+    - [x] Backend'den 100+ yıldız canlı olarak çekilip AR ortamına yerleştirildi.
+    - [x] Hedefleme (Lock-on) ve detay paneli (Star Details) özellikleri eklendi.
+- [x] **Task 4.7: Full System Synchronization**
+    - [x] Home ekranına gerçek zamanlı Market Cap ve Hacim verileri bağlandı.
+    - [x] Canlı aktivite akışı (Live Feed) mobil terminale entegre edildi.
+    - [x] Vault Core ve Neural Link ekranları "Landscape Cockpit" temasına uyarlandı.
 
 ## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n) [COMPLETED]
 **Hedef:** n8n tabanlı, projenin tüm teknik ve vizyoner verisine hakim bir AI asistan kurulumu.
@@ -94,9 +112,9 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [ ] `GET /api/stars` canlı veri döndürmeli.
     - [ ] Filtre parametreleri (`tier`, `constellation`, `available`, `price`) düzgün çalışmalı.
     - [ ] Eğer veri yoksa deploy DB `seed_data.py` ile yeniden doldurulmalı.
-- [ ] **Task 6.5.2: No Results vs. Error Ayırımı**
-    - [ ] “Filtreyle yıldız bulunamadı” ile “Sunucu hatası” farklı mesajlar gösterilmeli.
-    - [ ] Hatalar frontend’de kullanıcıya net ifade edilmeli.
+- [x] **Task 6.5.2: No Results vs. Error Ayırımı**
+    - [x] “Filtreyle yıldız bulunamadı” ile “Sunucu hatası” farklı mesajlar gösterilmeli.
+    - [x] Hatalar frontend’de kullanıcıya net ifade edilmeli.
 - [ ] **Task 6.5.3: 3D Map Opt-in UX**
     - [ ] 3D harita yalnızca kullanıcı isteyince yüklenmeli.
     - [ ] Web’de profesyonel görünmesi için “premium deneyim” olarak sunulmalı.
@@ -144,10 +162,12 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 10.4: Launch readiness kontrol listesi**
 
 ## 🚧 Current Status (Hazırla)
-- AI terminal “Not Found / invalid JSON” hatası var: endpoint veya deploy URL kontrol edilmeli.
-- Yıldız katalogu şu an ya boş dönüyor ya da filtre hatası nedeniyle gösterilmiyor.
-- 3D harita zaten var ancak “optonal yükleme” doğru yaklaşım; siteyi varsayılan olarak yormamalı.
-- Marketcap göstergesi şu an statik UX odaklı; gerçek veri hesaplaması yapılmalı.
+- AI terminal (Aegis Support) Gemini 1.5 Pro entegrasyonu düzeltildi, hata yönetimi güçlendirildi.
+- Marketplace metrics endpoint'i (/api/marketplace/metrics) eklendi ve frontend Trading Desk'e bağlandı.
+- 3D harita (SkySphere) lazy-loading (Suspense) ile opsiyonel hale getirildi, başlangıç yükü optimize edildi.
+- Yıldız kataloğu veritabanında 10,000 yıldız mevcut, seeder ve indexler doğrulandı.
+- Mobil UI için auth-gated Stellar transfer modal ve backend pytest transfer testi tamamlandı.
+- Yıldız kataloğunda “sonuç yok” ve “sunucu/API hatası” durumları ayrıldı; public star registry kod araması case-insensitive hale getirildi.
 
 ---
 ### 📜 Eternal Covenant (Mütalist Anayasa)

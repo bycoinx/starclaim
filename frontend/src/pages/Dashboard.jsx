@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, RotateCcw, Cpu, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
+import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, Cpu, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
 import { toast } from "sonner";
 import StarCanvas from "../components/StarCanvas";
 import "./Console.css";
@@ -15,6 +15,8 @@ export default function Dashboard() {
   const { t, lang } = useT();
   const { wallet, publicKey } = useWallet();
   const [stars, setStars] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [activeTab, setActiveTab] = useState("assets"); // assets | orders
   const [fetching, setFetching] = useState(true);
   const navigate = useNavigate();
 
@@ -42,23 +44,33 @@ export default function Dashboard() {
       toast.success(lang === "TR" ? "Kuantum Çıkış Başarılı! SOL cüzdanınıza aktarıldı." : "Quantum Exit Successful! SOL returned to wallet.", { id: loadingToast });
       
       await api.post("/stars/exit", { star_id: star.star_id, tx_signature: tx });
-      refreshStars();
+      refreshData();
     } catch (err) {
       console.error(err);
       toast.error(lang === "TR" ? "İşlem başarısız oldu." : "Transaction failed.", { id: loadingToast });
     }
   };
 
-  const refreshStars = () => {
+  const refreshData = () => {
     if (!user) return;
     setFetching(true);
-    api.get("/stars/mine/list").then(({ data }) => setStars(data)).finally(() => setFetching(false));
+    
+    Promise.all([
+      api.get("/stars/mine/list"),
+      api.get("/orders/mine")
+    ]).then(([{ data: starData }, { data: orderData }]) => {
+      setStars(starData);
+      setOrders(orderData);
+    }).catch(err => {
+      console.error("Dashboard fetch error:", err);
+      toast.error(lang === "TR" ? "Veriler yüklenemedi." : "Data could not be loaded.");
+    }).finally(() => setFetching(false));
   };
 
   useEffect(() => {
     if (loading) return;
     if (!user) { setFetching(false); return; }
-    refreshStars();
+    refreshData();
   }, [user, loading]);
 
   const downloadCertificate = async (star) => {
@@ -95,7 +107,7 @@ export default function Dashboard() {
     try {
       await api.post("/marketplace/list", { star_id: star.star_id, asking_price: askingPrice });
       toast.success(lang === "TR" ? "Yildiz marketplace'e eklendi." : "Star listed on marketplace.");
-      refreshStars();
+      refreshData();
     } catch (e) {
       toast.error(e?.response?.data?.detail || (lang === "TR" ? "Listeleme basarisiz." : "Listing failed."));
     }
@@ -178,99 +190,157 @@ export default function Dashboard() {
           </div>
         </motion.div>
 
+        {/* Tab Switcher */}
+        <div className="flex gap-4 mb-8 border-b border-white/5 pb-1">
+          <button 
+            onClick={() => setActiveTab("assets")}
+            className={`pb-3 px-2 text-[10px] tracking-[0.3em] font-bold transition-all border-b-2 ${activeTab === "assets" ? "text-sc-gold border-sc-gold" : "text-sc-text-muted border-transparent hover:text-sc-text"}`}
+          >
+            {lang === "TR" ? "VARLIKLARIM" : "MY_ASSETS"} ({stars.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab("orders")}
+            className={`pb-3 px-2 text-[10px] tracking-[0.3em] font-bold transition-all border-b-2 ${activeTab === "orders" ? "text-sc-gold border-sc-gold" : "text-sc-text-muted border-transparent hover:text-sc-text"}`}
+          >
+            {lang === "TR" ? "SİPARİŞLERİM" : "ORDER_HISTORY"} ({orders.length})
+          </button>
+        </div>
+
         {fetching ? (
           <div className="py-20 flex flex-col items-center gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-sc-gold opacity-50" />
             <div className="text-[10px] tracking-[0.3em] text-sc-gold/60 uppercase font-bold">Syncing with StarVault...</div>
           </div>
-        ) : stars.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="terminal-frame p-20 text-center"
-          >
-            <div className="terminal-scanline" />
-            <Star className="w-12 h-12 text-sc-gold/40 mx-auto mb-6" strokeWidth={1} />
-            <h3 className="font-display text-2xl mb-4 text-sc-text">{lang === "TR" ? "Henüz Bir Yıldızın Yok" : "No Stars Detected"}</h3>
-            <p className="text-sc-text-muted mb-8 max-w-sm mx-auto">{lang === "TR" ? "Gök yüzündeki yerini ayırtmak için sisteme ilk yıldızını kaydet." : "Register your first star in the system to claim your place in the cosmos."}</p>
-            <button onClick={() => navigate("/stars")} className="btn-gold px-8 py-3 rounded-xl uppercase tracking-widest text-xs font-bold">
-              {lang === "TR" ? "Yıldız Kataloğu" : "Star Catalog"}
-            </button>
-          </motion.div>
-        ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="my-stars-grid">
-            <AnimatePresence>
-              {stars.map((s, idx) => (
-                <motion.div 
-                  key={s.star_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="terminal-frame p-6 group" 
-                  data-testid={`my-star-${s.code}`}
-                >
-                  <div className="terminal-scanline" />
-                  <div className="terminal-header" />
-                  
-                  <div className="flex items-center justify-between mt-4 mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] tracking-[0.3em] uppercase text-sc-gold font-bold">{t(`tier_${s.tier}`)}</span>
-                      <span className="text-[8px] text-sc-text-muted font-mono">CODE: {s.code}</span>
-                    </div>
-                    <div className="relative">
-                      <Star className="w-5 h-5 text-sc-gold fill-sc-gold/20 group-hover:fill-sc-gold transition-all duration-500" />
-                      <div className="absolute inset-0 bg-sc-gold blur-md opacity-0 group-hover:opacity-30 transition-opacity" />
-                    </div>
-                  </div>
-
-                  <h3 className="font-display text-2xl mb-2 gold-gradient-text tracking-tight">{s.custom_name || s.name}</h3>
-                  <div className="text-[11px] text-sc-text-muted mb-4 font-mono tracking-wider flex items-center gap-2">
-                    <Globe size={10} /> {s.name} // {s.constellation.toUpperCase()}
-                  </div>
-
-                  {s.personal_message && (
-                    <div className="relative mb-5 p-3 bg-white/5 border-l-2 border-sc-gold/30 rounded-r-md">
-                      <p className="font-accent italic text-sc-text/70 text-sm leading-relaxed">"{s.personal_message}"</p>
-                    </div>
-                  )}
-
-                  <div className="telemetry-grid mb-6">
-                    <div className="telemetry-item-box">
-                      <div className="telemetry-label">Right Ascension</div>
-                      <div className="telemetry-value">{s.ra || "00h 00m 00s"}</div>
-                    </div>
-                    <div className="telemetry-item-box">
-                      <div className="telemetry-label">Declination</div>
-                      <div className="telemetry-value">{s.dec || "+00° 00' 00\""}</div>
-                    </div>
-                  </div>
-
-                  <div className="aegis-badge-dashboard mb-6">
-                    <ShieldCheck size={14} />
-                    <span>AEGIS_RESERVE_ACTIVE // 70.00%</span>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <div className="flex gap-3">
-                      <button onClick={() => downloadCertificate(s)} className="btn-ghost text-[10px] py-2.5 flex-1 uppercase tracking-widest font-bold" data-testid={`cert-${s.code}`}>
-                        <span className="inline-flex items-center gap-2"><Download className="w-3.5 h-3.5" /> CERT_DL</span>
-                      </button>
-                      <button onClick={() => listForSale(s)} className="btn-gold text-[10px] py-2.5 flex-1 uppercase tracking-widest font-bold" data-testid={`sell-${s.code}`}>
-                        <span className="inline-flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> {s.for_sale ? "LISTED" : "MARKET"}</span>
-                      </button>
-                    </div>
+        ) : activeTab === "assets" ? (
+          stars.length === 0 ? (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="terminal-frame p-20 text-center"
+            >
+              <div className="terminal-scanline" />
+              <Star className="w-12 h-12 text-sc-gold/40 mx-auto mb-6" strokeWidth={1} />
+              <h3 className="font-display text-2xl mb-4 text-sc-text">{lang === "TR" ? "Henüz Bir Yıldızın Yok" : "No Stars Detected"}</h3>
+              <p className="text-sc-text-muted mb-8 max-w-sm mx-auto">{lang === "TR" ? "Gök yüzündeki yerini ayırtmak için sisteme ilk yıldızını kaydet." : "Register your first star in the system to claim your place in the cosmos."}</p>
+              <button onClick={() => navigate("/stars")} className="btn-gold px-8 py-3 rounded-xl uppercase tracking-widest text-xs font-bold">
+                {lang === "TR" ? "Yıldız Kataloğu" : "Star Catalog"}
+              </button>
+            </motion.div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="my-stars-grid">
+              <AnimatePresence mode="popLayout">
+                {stars.map((s, idx) => (
+                  <motion.div 
+                    key={s.star_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="terminal-frame p-6 group" 
+                    data-testid={`my-star-${s.code}`}
+                  >
+                    <div className="terminal-scanline" />
+                    <div className="terminal-header" />
                     
-                    <button 
-                      onClick={() => handleInstantExit(s)}
-                      className="w-full py-3 rounded-lg bg-sc-red/5 border border-sc-red/20 text-sc-red text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sc-red/10 transition-all flex items-center justify-center gap-2 group/exit"
-                    >
-                      <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" /> EVACUATE_PROTOCOL (70% REFUND)
-                    </button>
+                    <div className="flex items-center justify-between mt-4 mb-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] tracking-[0.3em] uppercase text-sc-gold font-bold">{t(`tier_${s.tier}`)}</span>
+                        <span className="text-[8px] text-sc-text-muted font-mono">CODE: {s.code}</span>
+                      </div>
+                      <div className="relative">
+                        <Star className="w-5 h-5 text-sc-gold fill-sc-gold/20 group-hover:fill-sc-gold transition-all duration-500" />
+                        <div className="absolute inset-0 bg-sc-gold blur-md opacity-0 group-hover:opacity-30 transition-opacity" />
+                      </div>
+                    </div>
+
+                    <h3 className="font-display text-2xl mb-2 gold-gradient-text tracking-tight">{s.custom_name || s.name}</h3>
+                    <div className="text-[11px] text-sc-text-muted mb-4 font-mono tracking-wider flex items-center gap-2">
+                      <Globe size={10} /> {s.name} // {s.constellation.toUpperCase()}
+                    </div>
+
+                    {s.personal_message && (
+                      <div className="relative mb-5 p-3 bg-white/5 border-l-2 border-sc-gold/30 rounded-r-md">
+                        <p className="font-accent italic text-sc-text/70 text-sm leading-relaxed">"{s.personal_message}"</p>
+                      </div>
+                    )}
+
+                    <div className="telemetry-grid mb-6">
+                      <div className="telemetry-item-box">
+                        <div className="telemetry-label">Right Ascension</div>
+                        <div className="telemetry-value">{s.ra || "00h 00m 00s"}</div>
+                      </div>
+                      <div className="telemetry-item-box">
+                        <div className="telemetry-label">Declination</div>
+                        <div className="telemetry-value">{s.dec || "+00° 00' 00\""}</div>
+                      </div>
+                    </div>
+
+                    <div className="aegis-badge-dashboard mb-6">
+                      <ShieldCheck size={14} />
+                      <span>AEGIS_RESERVE_ACTIVE // 70.00%</span>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-3">
+                        <button onClick={() => downloadCertificate(s)} className="btn-ghost text-[10px] py-2.5 flex-1 uppercase tracking-widest font-bold" data-testid={`cert-${s.code}`}>
+                          <span className="inline-flex items-center gap-2"><Download className="w-3.5 h-3.5" /> CERT_DL</span>
+                        </button>
+                        <button onClick={() => listForSale(s)} className="btn-gold text-[10px] py-2.5 flex-1 uppercase tracking-widest font-bold" data-testid={`sell-${s.code}`}>
+                          <span className="inline-flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> {s.for_sale ? "LISTED" : "MARKET"}</span>
+                        </button>
+                      </div>
+                      
+                      <button 
+                        onClick={() => handleInstantExit(s)}
+                        className="w-full py-3 rounded-lg bg-sc-red/5 border border-sc-red/20 text-sc-red text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sc-red/10 transition-all flex items-center justify-center gap-2 group/exit"
+                      >
+                        <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" /> EVACUATE_PROTOCOL (70% REFUND)
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )
+        ) : (
+          /* Orders Tab */
+          orders.length === 0 ? (
+            <div className="py-20 text-center text-sc-text-muted italic text-sm">
+              {lang === "TR" ? "Henüz bir siparişiniz bulunmuyor." : "No orders found yet."}
+            </div>
+          ) : (
+            <div className="space-y-4 max-w-4xl animate-fade-up">
+              {orders.map((o) => (
+                <div key={o.order_id} className="glass rounded-xl p-6 border-white/5 flex items-center justify-between group hover:border-sc-gold/20 transition-all">
+                  <div className="flex items-center gap-6">
+                    <div className="w-12 h-12 rounded-full bg-sc-gold/5 flex items-center justify-center border border-sc-gold/10 group-hover:bg-sc-gold/10 transition-all">
+                      <Download className="w-5 h-5 text-sc-gold" />
+                    </div>
+                    <div>
+                      <div className="text-[10px] tracking-[0.2em] text-sc-gold font-bold uppercase mb-1">
+                        ORDER_ID: {o.order_id} // {new Date(o.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="font-display text-xl text-sc-text">
+                        {o.package.toUpperCase()} · {o.star_code}
+                      </div>
+                      <div className="text-xs text-sc-text-muted mt-1">
+                        Amount: ${o.amount} // {o.gift ? "GIFT_ORDER" : "PERSONAL_CLAIM"}
+                      </div>
+                    </div>
                   </div>
-                </motion.div>
+                  <button 
+                    onClick={() => {
+                       const star = stars.find(s => s.star_id === o.star_id) || { code: o.star_code, order_id: o.order_id };
+                       downloadCertificate(star);
+                    }}
+                    className="btn-ghost text-[10px] py-2 px-6 flex items-center gap-2 uppercase font-bold tracking-widest"
+                  >
+                    <Download className="w-4 h-4" /> {lang === "TR" ? "İNDİR" : "RE_DOWNLOAD"}
+                  </button>
+                </div>
               ))}
-            </AnimatePresence>
-          </div>
+            </div>
+          )
         )}
       </div>
     </div>

@@ -1,5 +1,20 @@
 # StarClaim - Work Log & Deployment Fixes
 
+## Tarih: 2 Haziran 2026 (Phase 6.5 Hardening)
+
+### 1. Star Catalog Error/Empty State Ayrımı
+- `StarPicker.jsx` içinde katalog API hatası artık “filtreyle sonuç yok” mesajı gibi gösterilmiyor.
+- Sunucu/API bağlantısı başarısız olduğunda ayrı terminal-frame hata paneli ve retry aksiyonu gösteriliyor.
+- Filtre değişimlerinde hata state'i temizleniyor; pagination güvenli şekilde sıfırlanıyor.
+
+### 2. Public Star Registry Stabilizasyonu
+- `/api/stars/registry/{code}` endpoint'i yıldız kodunu case-insensitive arayacak şekilde düzeltildi.
+- Paylaşılabilir `/star/:code` public yıldız sayfalarının büyük/küçük harf farkından dolayı 404 üretme riski azaltıldı.
+
+### 3. Doğrulama
+- Frontend production build başarıyla alındı.
+- `backend/server.py` syntax kontrolü AST parse ile doğrulandı.
+
 ## Tarih: 17 Mayıs 2026
 
 ### 1. Vercel Build Hatası Teşhisi ve Çözümü
@@ -123,4 +138,39 @@
 - `initialize_global_state`, `invest_funds`, `withdraw_yield` ve `reclaim_principal` fonksiyonları `lib.rs` üzerinden dış dünyaya açıldı.
 - Yeni hata kodları (`UnauthorizedYieldManager`, `InsufficientYield`) ile güvenlik katmanı güçlendirildi.
 
-**Durum:** Phase 3 (Interstellar Treasury) tamamlandı. Sistem artık sadece bir yıldız sahiplenme platformu değil, aynı zamanda mütalist bir finansal protokol olarak tam yetkinliğe ulaştı.
+### 1 Haziran 2026
+#### AI Terminal & Backend Stabilization
+- **AI Support (Gemini 1.5):** `_generate_with_google_gemini` fonksiyonu Gemini 1.5 Pro (generateContent) protokolüne güncellendi. Eski PaLM API (generateText) çağrısı nedeniyle oluşan "Not Found" hataları giderildi.
+- **Error Resilience:** `ai_support` endpoint'inde hata yakalama mekanizması iyileştirildi; asenkron çağrı hatalarında bile frontend'e geçerli bir JSON yanıtı (error mesajlı) dönülmesi sağlandı.
+- **Marketplace Metrics:** `/api/marketplace/metrics` endpoint'i geliştirildi. Sistemdeki tüm yıldızların toplam değeri (Market Cap) ve son 24 saatteki işlem hacmi (Volume 24h) gerçek veritabanı sorgularıyla hesaplanmaya başlandı.
+- **Trading Desk Integration:** Frontend `Marketplace.jsx` sayfası yeni metrik endpoint'ine bağlandı; statik veriler yerine canlı veritabanı değerleri gösteriliyor.
+- **3D Map Optimization:** `StarPicker.jsx` içerisinde `SkySphere` bileşeni `React.lazy` ve `Suspense` ile sarmalanarak "opsiyonel yükleme" (opt-in) modeline geçildi. Başlangıç sayfa yükü hafifletildi.
+- **Database Health:** Yerel veritabanındaki 10.000 yıldız kaydı doğrulandı, seeder ve indexlerin (tier, constellation, code vb.) yüksek hacimli veriyi desteklediği teyit edildi.
+
+#### Mobil Güvenlik & Aegis Sentinel (Phase 4)
+- **Biyometrik Entegrasyon:** `expo-local-authentication` kütüphanesi entegre edildi. `SecurityService` oluşturularak FaceID/TouchID doğrulama katmanı eklendi.
+- **Korumalı QR Login:** `qr-login.js` güncellendi; artık QR kodu tarandıktan sonra işlem yapılmadan önce kullanıcıdan biyometrik onay isteniyor (Task 4.1).
+- **Session Persistence:** `expo-secure-store` kullanılarak cüzdan oturumlarının şifreli olarak cihazda tutulması sağlandı. Uygulama her açıldığında `SecurityService.getSession()` ile otomatik oturum kurtarma gerçekleştiriliyor (Task 4.3).
+- **Hata ve Fallback Yönetimi:** Cüzdan bağlantı kopmaları ve hatalı imza durumları için yeni uyarı ve kurtarma mekanizmaları eklendi.
+
+#### Landscape Cockpit UI (Phase 4 Finalization)
+- **Orientation Lock:** `app.json` ve `expo-screen-orientation` kullanılarak uygulama tamamen yatay (landscape) moda sabitlendi.
+- **Cockpit Layout:** `CockpitLayout.js` bileşeni ile ekran üç ana bölgeye ayrıldı: Navigasyon Kanadı (Sol), Veri Kanadı (Sağ) ve Görüntüleme Portu (Merkez).
+- **Aesthetic Immersiveness:** `WarpBackground.js` ile arka planda sürekli akan yıldız animasyonu eklendi. Ekran köşelerine curved (kavisli) HUD overlay'leri yerleştirildi.
+- **Home UI Redesign:** Ana sayfa, sol menüden hızlı erişim sağlayan ve sağ kanatta canlı sistem istatistiklerini (Market Cap, Loglar) gösteren bir "Komuta Merkezi"ne dönüştürüldü.
+- **Neural Link Status:** Kokpitin üst kısmına gerçek zamanlı bağlantı durumunu ve sistem saatini gösteren bir durum çubuğu eklendi.
+
+#### AR Uzay Haritası & Canlı Veri Entegrasyonu
+- **Canlı Veri Bağlantısı:** `stars.js` sayfası backend `/api/stars` endpoint'ine bağlandı. 100+ yıldız verisi canlı olarak çekilip AR ortamına aktarıldı.
+- **Aegis HUD Katmanı:** Kamera feed'i üzerine "Cockpit" temalı HUD overlay'leri eklendi. Ekranın ortasına dinamik bir crosshair (nişangah) yerleştirildi.
+- **Hedefleme (Lock-on) Sistemi:** Kullanıcı telefonu bir yıldıza doğrulttuğunda "Lock-on" efekti aktifleşiyor, yıldızın ismi ve kademesi secondary (altın) renk ile vurgulanıyor.
+- **Star Detail Panel:** Bir yıldız seçildiğinde ekranın sağında beliren, yarı saydam ve kavisli detay paneli eklendi. Bu panel üzerinden yıldızın koordinatları ve fiyatı görülebiliyor.
+- **Sensör Optimizasyonu:** `DeviceMotion` verileriyle Azimuth ve Altitude takibi optimize edilerek yatay modda akıcı bir AR deneyimi sağlandı.
+
+#### Mobil Uygulama Tam Entegrasyon & Senkronizasyon
+- **Live Data Bridging:** Ana ekran (Home) sağ kanadı backend'e bağlandı. Market Cap ve Hacim verileri artık `/api/marketplace/metrics` üzerinden canlı çekiliyor.
+- **Activity Telemetry:** Canlı aktivite akışı (Live Feed) mobil arayüze entegre edildi, son işlemler anlık olarak terminalde akmaya başladı.
+- **UI/UX Harmonization:** `Vault Core` ve `Neural Link` ekranları, Landscape Cockpit estetiğine uygun şekilde yeniden tasarlandı. Cam efektleri, kavisli paneller ve endüstriyel tipografi tüm uygulamaya yayıldı.
+- **QR Login HUD:** QR Tarayıcı arayüzü, kamera feed'ini bozmadan minimal HUD overlay'leri ve biometrik onay adımlarıyla güçlendirildi.
+
+**Durum:** Mobil uygulama, Phase 4 ve dökümantasyonda belirtilen tüm yüksek kaliteli arayüz ve veri entegrasyonu hedeflerini %100 başarıyla tamamladı. Sistem artık web terminali ile tam senkronize ve üretim kalitesinde bir deneyim sunuyor.

@@ -1,15 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import StarCard from "../components/StarCard";
-import SkySphere from "../components/SkySphere";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Switch } from "../components/ui/switch";
 import { Slider } from "../components/ui/slider";
 import { Input } from "../components/ui/input";
-import { Telescope, Loader2, Search, Orbit, LayoutGrid, Satellite, Radio, ShieldCheck } from "lucide-react";
+import { Telescope, Loader2, Search, Orbit, LayoutGrid, Satellite, Radio, ShieldCheck, AlertTriangle, RefreshCw } from "lucide-react";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
+
+const SkySphere = React.lazy(() => import("../components/SkySphere"));
 
 const TIERS = ["all", "legendary", "zodiac", "named", "constellation", "standard"];
 const SORTS = [
@@ -32,6 +33,7 @@ export default function StarPicker({ onClaim }) {
   const [mapLoading, setMapLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [fetchError, setFetchError] = useState("");
   const LIMIT = 48; // 3 columns * 16 rows
 
   const tier = params.get("tier") || "all";
@@ -49,6 +51,7 @@ export default function StarPicker({ onClaim }) {
     // Reset pagination when filters change
     setOffset(0);
     setStars([]);
+    setFetchError("");
   };
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export default function StarPicker({ onClaim }) {
 
     const query = { tier, constellation, sort, min_price: priceMin, max_price: priceMax, limit: LIMIT, offset };
     if (onlyAvailable) query.available = true;
+    setFetchError("");
     
     api.get("/stars", { params: query })
       .then(({ data }) => {
@@ -77,16 +81,34 @@ export default function StarPicker({ onClaim }) {
       .catch((err) => {
         console.error("Fetch stars error:", err);
         if (offset === 0) setStars([]);
+        setHasMore(false);
+        setFetchError(
+          lang === "TR"
+            ? "Yıldız kataloğu sunucusuna ulaşılamadı. Lütfen bağlantıyı tekrar deneyin."
+            : "The star catalog server could not be reached. Please retry the connection."
+        );
       })
       .finally(() => {
         setLoading(false);
         setLoadingMore(false);
       });
-  }, [tier, constellation, sort, onlyAvailable, priceMin, priceMax, offset]);
+  }, [tier, constellation, sort, onlyAvailable, priceMin, priceMax, offset, lang]);
 
   const loadMore = () => {
     if (!loading && !loadingMore && hasMore) {
       setOffset(prev => prev + LIMIT);
+    }
+  };
+
+  const retryCatalog = () => {
+    setFetchError("");
+    setStars([]);
+    setHasMore(true);
+    if (offset === 0) {
+      setOffset(-1);
+      window.setTimeout(() => setOffset(0), 0);
+    } else {
+      setOffset(0);
     }
   };
 
@@ -226,13 +248,35 @@ export default function StarPicker({ onClaim }) {
                 </p>
               </div>
             </div>
+          ) : fetchError ? (
+            <div className="terminal-frame border-sc-red/30 p-10 text-center max-w-2xl mx-auto">
+              <div className="terminal-scanline" />
+              <AlertTriangle className="w-10 h-10 text-sc-red mx-auto mb-5" />
+              <h2 className="font-display text-3xl mb-3">
+                {lang === "TR" ? "Katalog Bağlantısı Kurulamadı" : "Catalog Connection Failed"}
+              </h2>
+              <p className="text-sc-text-muted mb-7 font-mono text-xs">{fetchError}</p>
+              <button type="button" onClick={retryCatalog} className="btn-gold justify-center text-[10px] font-bold uppercase tracking-widest px-8">
+                <span className="inline-flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  {lang === "TR" ? "TEKRAR_DENE" : "RETRY_PROTOCOL"}
+                </span>
+              </button>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-20 text-sc-text-muted">
               {lang === "TR" ? "Bu filtreyle yıldız bulunamadı." : "No stars match these filters."}
             </div>
           ) : activeSection === "sky" ? (
             mapConnected ? (
-              <SkySphere stars={filtered} onClaim={onClaim} />
+              <Suspense fallback={
+                <div className="flex flex-col items-center justify-center py-40">
+                  <Loader2 className="w-10 h-10 animate-spin text-sc-gold mb-4" />
+                  <div className="text-[10px] uppercase tracking-widest text-sc-gold font-bold">Initializing Orbital Visualization...</div>
+                </div>
+              }>
+                <SkySphere stars={filtered} onClaim={onClaim} />
+              </Suspense>
             ) : (
               <div className="relative overflow-hidden rounded-3xl border border-cyan-300/20 bg-black min-h-[560px] flex items-center justify-center">
                 <div className="absolute inset-0 nebula-bg opacity-50 pointer-events-none" />

@@ -4,6 +4,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { decryptData } from '../lib/crypto';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import CockpitLayout from '../components/CockpitLayout';
+import { THEME } from '../constants/Theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Vault() {
   const [file, setFile] = useState(null);
@@ -31,7 +34,6 @@ export default function Vault() {
 
   const handleDecrypt = async () => {
     if (!file || !password) return;
-
     setIsDecrypting(true);
     setError('');
     setDecryptedContent('');
@@ -41,188 +43,127 @@ export default function Vault() {
       setDecryptedContent(content);
     } catch (err) {
       console.error('Decryption failed:', err);
-      setError('Şifre çözme başarısız. Yanlış şifre veya bozuk dosya.');
+      setError('DECRYPTION_FAILED: INVALID_KEY_OR_CORRUPT_BUFFER');
     } finally {
       setIsDecrypting(false);
     }
   };
 
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity 
-        style={styles.backButton} 
-        onPress={() => router.back()}
-      >
-        <Ionicons name="chevron-back" size={24} color="#fff" />
-        <Text style={styles.backText}>Geri</Text>
+  const LeftWing = (
+    <View style={styles.wing}>
+      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+        <Ionicons name="chevron-back" size={20} color={THEME.colors.primary} />
+        <Text style={styles.backText}>RETURN_HOME</Text>
       </TouchableOpacity>
-
-      <Text style={styles.title}>VAULT CORE</Text>
-      <Text style={styles.subtitle}>Verilerinizi Güvenle Çözün</Text>
-
-      <View style={styles.card}>
-        <TouchableOpacity style={styles.filePicker} onPress={pickFile}>
-          <Ionicons 
-            name={file ? "document-lock" : "cloud-upload-outline"} 
-            size={40} 
-            color={file ? "#00ccff" : "#fff"} 
-          />
-          <Text style={styles.filePickerText}>
-            {file ? file.name : ".vault dosyasını seçin"}
-          </Text>
-          {file && (
-            <Text style={styles.fileSize}>
-              {(file.size / 1024).toFixed(2)} KB
-            </Text>
-          )}
-        </TouchableOpacity>
-
-        <TextInput
-          style={styles.input}
-          placeholder="Vault Şifresi"
-          placeholderTextColor="rgba(255,255,255,0.3)"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <TouchableOpacity 
-          style={[styles.decryptButton, (!file || !password) && styles.disabledButton]}
-          onPress={handleDecrypt}
-          disabled={isDecrypting || !file || !password}
-        >
-          {isDecrypting ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text style={styles.decryptButtonText}>ŞİFREYİ ÇÖZ</Text>
-          )}
-        </TouchableOpacity>
+      <View style={styles.divider} />
+      <Text style={styles.wingTitle}>VAULT_STATUS</Text>
+      <View style={styles.statusBox}>
+         <View style={[styles.statusDot, { backgroundColor: decryptedContent ? THEME.colors.accent : THEME.colors.secondary }]} />
+         <Text style={styles.statusLabel}>{decryptedContent ? 'SECURE_REVEAL' : 'ENCRYPTED_IDLE'}</Text>
       </View>
+    </View>
+  );
 
-      {decryptedContent ? (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>Çözülen İçerik:</Text>
-          <View style={styles.resultBox}>
-            <Text style={styles.resultText}>{decryptedContent}</Text>
-          </View>
+  return (
+    <CockpitLayout leftWing={LeftWing}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+           <Text style={styles.title}>VAULT_CORE_v2.0</Text>
+           <Text style={styles.subtitle}>QUANTUM_ENCRYPTION_ACCESS_PORTAL</Text>
         </View>
-      ) : null}
-    </ScrollView>
+
+        <View style={styles.mainGrid}>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.filePicker} onPress={pickFile}>
+              <Ionicons 
+                name={file ? "document-lock" : "cloud-upload-outline"} 
+                size={32} 
+                color={file ? THEME.colors.primary : 'rgba(255,255,255,0.4)'} 
+              />
+              <Text style={styles.filePickerText}>
+                {file ? file.name.toUpperCase() : "SELECT_VAULT_FILE"}
+              </Text>
+              {file && (
+                <Text style={styles.fileSize}>
+                  SIZE: {(file.size / 1024).toFixed(1)} KB
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TextInput
+              style={styles.input}
+              placeholder="ENTER_DECRYPTION_KEY"
+              placeholderTextColor="rgba(255,255,255,0.2)"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+            <TouchableOpacity 
+              style={[styles.decryptButton, (!file || !password) && styles.disabledButton]}
+              onPress={handleDecrypt}
+              disabled={isDecrypting || !file || !password}
+            >
+              {isDecrypting ? (
+                <ActivityIndicator color="#000" />
+              ) : (
+                <Text style={styles.decryptButtonText}>INITIATE_DECRYPTION</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {decryptedContent ? (
+            <View style={styles.resultCard}>
+              <Text style={styles.resultTitle}>DECRYPTED_DATA_RECOVERY:</Text>
+              <View style={styles.resultBox}>
+                <Text style={styles.resultText}>{decryptedContent}</Text>
+              </View>
+            </View>
+          ) : (
+             <View style={styles.emptyCard}>
+                <Ionicons name="shield-outline" size={40} color="rgba(255,255,255,0.05)" />
+                <Text style={styles.emptyText}>WAITING_FOR_VALID_KEY...</Text>
+             </View>
+          )}
+        </View>
+      </ScrollView>
+    </CockpitLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  content: {
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  backText: {
-    color: '#fff',
-    marginLeft: 5,
-    fontSize: 16,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-  },
-  subtitle: {
-    color: '#00ccff',
-    fontSize: 14,
-    marginBottom: 30,
-    textTransform: 'uppercase',
-  },
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  filePicker: {
-    height: 150,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  filePickerText: {
-    color: '#fff',
-    marginTop: 10,
-    fontSize: 14,
-  },
-  fileSize: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 12,
-    marginTop: 5,
-  },
-  input: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 12,
-    padding: 15,
-    color: '#fff',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  decryptButton: {
-    backgroundColor: '#00ccff',
-    padding: 15,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  decryptButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-  errorText: {
-    color: '#ff4444',
-    marginBottom: 15,
-    fontSize: 12,
-    textAlign: 'center',
-  },
-  resultCard: {
-    marginTop: 30,
-    animateIn: 'fade-in',
-  },
-  resultTitle: {
-    color: '#00ccff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-  },
-  resultBox: {
-    backgroundColor: '#111',
-    padding: 15,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(0,204,255,0.2)',
-  },
-  resultText: {
-    color: '#fff',
-    fontFamily: 'monospace',
-    fontSize: 14,
-  },
+  container: { flex: 1 },
+  content: { padding: 30 },
+  wing: { flex: 1 },
+  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 20 },
+  backText: { color: THEME.colors.primary, fontSize: 8, fontWeight: 'bold', letterSpacing: 1 },
+  divider: { height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginBottom: 20 },
+  wingTitle: { color: THEME.colors.textMuted, fontSize: 8, fontWeight: 'bold', letterSpacing: 2, marginBottom: 10 },
+  statusBox: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.03)', padding: 10, borderRadius: 5 },
+  statusDot: { width: 6, height: 6, borderRadius: 3 },
+  statusLabel: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
+  
+  header: { marginBottom: 30 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 4 },
+  subtitle: { color: THEME.colors.primary, fontSize: 8, fontWeight: 'bold', opacity: 0.8, letterSpacing: 2 },
+  
+  mainGrid: { flexDirection: 'row', gap: 20 },
+  card: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 15, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  filePicker: { height: 120, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(0, 204, 255, 0.2)', borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  filePickerText: { color: '#fff', marginTop: 10, fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+  fileSize: { color: THEME.colors.textMuted, fontSize: 8, marginTop: 4 },
+  input: { backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 5, padding: 12, color: '#fff', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', fontSize: 12, fontFamily: 'System' },
+  decryptButton: { backgroundColor: THEME.colors.primary, padding: 15, borderRadius: 5, alignItems: 'center' },
+  disabledButton: { opacity: 0.3 },
+  decryptButtonText: { color: '#000', fontWeight: '900', fontSize: 12, letterSpacing: 1 },
+  errorText: { color: THEME.colors.danger, marginBottom: 15, fontSize: 8, fontWeight: 'bold', textAlign: 'center' },
+  
+  resultCard: { flex: 1.2 },
+  resultTitle: { color: THEME.colors.accent, fontSize: 9, fontWeight: 'bold', marginBottom: 10, letterSpacing: 2 },
+  resultBox: { backgroundColor: 'rgba(0,0,0,0.6)', padding: 20, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.2)', minHeight: 200 },
+  resultText: { color: '#fff', fontFamily: 'System', fontSize: 12, lineHeight: 18 },
+  emptyCard: { flex: 1.2, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.01)', borderRadius: 15, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  emptyText: { color: 'rgba(255,255,255,0.1)', fontSize: 10, fontWeight: 'bold', letterSpacing: 2, marginTop: 15 },
 });

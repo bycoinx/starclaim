@@ -26,6 +26,7 @@ const Vision = lazy(() => import("./pages/Vision"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
+const PublicStar = lazy(() => import("./pages/PublicStar"));
 
 const VaultWithWallet = lazy(async () => {
   const [{ default: SolanaWalletProvider }, { default: Vault }] = await Promise.all([
@@ -175,6 +176,7 @@ function AppShell() {
             <Route path="/dashboard" element={<DashboardWithWallet />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="/star/:code" element={<PublicStar />} />
           </Routes>
         </div>
       </Suspense>

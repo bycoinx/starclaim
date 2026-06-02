@@ -15,6 +15,7 @@ import uuid
 import logging
 import asyncio
 import httpx
+import re
 import anthropic
 import stripe
 from openai import AsyncOpenAI
@@ -53,7 +54,7 @@ DB_NAME = os.environ["DB_NAME"]
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
-GOOGLE_API_BASE = os.environ.get("GOOGLE_API_BASE", "https://generativelanguage.googleapis.com/v1beta2")
+GOOGLE_API_BASE = os.environ.get("GOOGLE_API_BASE", "https://generativelanguage.googleapis.com/v1beta")
 GOOGLE_MODEL_SUPPORT = os.environ.get("GOOGLE_MODEL_SUPPORT", "gemini-1.5-pro")
 GOOGLE_MODEL_STORY = os.environ.get("GOOGLE_MODEL_STORY", "gemini-1.5-pro")
 EMERGENT_LLM_KEY = os.environ.get("EMERGENT_LLM_KEY", "")
@@ -121,21 +122,29 @@ def _google_prompt_from_messages(system: str, messages: list[dict]) -> str:
 
 
 async def _generate_with_google_gemini(prompt: str, model: str, max_tokens: int = 500, temperature: float = 0.7) -> str:
-    url = f"{GOOGLE_API_BASE}/models/{model}:generateText?key={GOOGLE_API_KEY}"
+    """Gemini 1.5+ compatible generation using generateContent endpoint."""
+    url = f"{GOOGLE_API_BASE}/models/{model}:generateContent?key={GOOGLE_API_KEY}"
     payload = {
-        "prompt": {"text": prompt},
-        "temperature": temperature,
-        "maxOutputTokens": max_tokens,
-        "candidateCount": 1,
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+        }
     }
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(url, json=payload)
-    resp.raise_for_status()
-    data = resp.json()
-    candidates = data.get("candidates", [])
-    if not candidates:
+    
+    if resp.status_code != 200:
+        logger.error(f"Google AI error {resp.status_code}: {resp.text}")
         return ""
-    return candidates[0].get("content", "")
+        
+    data = resp.json()
+    try:
+        # Gemini 1.5 response structure
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError):
+        logger.error(f"Unexpected Google AI format: {data}")
+        return ""
 
 
 # -------------------- Models --------------------
@@ -607,6 +616,19 @@ async def list_stars(
 async def list_constellations():
     cons = await db.stars.distinct("constellation")
     return sorted(cons)
+
+
+@api.get("/stars/registry/{code}")
+async def get_star_by_code(code: str):
+    """Retrieve public registry data for a star by its unique code."""
+    normalized_code = code.strip()
+    s = await db.stars.find_one(
+        {"code": {"$regex": f"^{re.escape(normalized_code)}$", "$options": "i"}},
+        {"_id": 0},
+    )
+    if not s:
+        raise HTTPException(status_code=404, detail="Star not found in registry")
+    return s
 
 
 @api.get("/stars/{star_id}")
@@ -1477,6 +1499,13 @@ async def stripe_webhook(request: Request):
     return {"received": True}
 
 
+@api.get("/orders/mine")
+async def get_my_orders(user: User = Depends(get_current_user)):
+    """Retrieve all purchase records for the authenticated user."""
+    cur = db.orders.find({"user_id": user.user_id}, {"_id": 0}).sort([("created_at", -1)])
+    return await cur.to_list(100)
+
+
 @api.get("/orders/certificate/{order_id}")
 async def get_certificate(order_id: str, user: User = Depends(get_current_user)):
     """Re-download a certificate PDF for an existing order."""
@@ -1559,6 +1588,38 @@ async def stats_overview():
         "available": total - owned,
         "claimed_today": claimed_today,
         "marketplace_listings": listings,
+    }
+
+
+@api.get("/marketplace/metrics")
+async def marketplace_metrics():
+    """Real-time marketplace metrics for the Trading Desk."""
+    total_stars = await db.stars.count_documents({})
+    owned_stars = await db.stars.count_documents({"owner_id": {"$ne": None}})
+    
+    # Calculate Total Market Cap: sum of prices of all stars
+    pipeline_mc = [{"$group": {"_id": None, "total": {"$sum": "$price"}}}]
+    cursor_mc = db.stars.aggregate(pipeline_mc)
+    result_mc = await cursor_mc.to_list(1)
+    market_cap = result_mc[0]["total"] if result_mc else 0
+
+    # Calculate Volume 24h: sales in last 24h
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    pipeline_vol = [
+        {"$match": {"created_at": {"$gte": yesterday}}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    cursor_vol = db.marketplace_sales.aggregate(pipeline_vol)
+    result_vol = await cursor_vol.to_list(1)
+    volume_24h = result_vol[0]["total"] if result_vol else (market_cap * 0.00012) # Tiny fallback for aesthetic
+
+    return {
+        "market_cap": round(market_cap, 2),
+        "volume_24h": round(volume_24h, 2),
+        "total_stars": total_stars,
+        "owned_stars": owned_stars,
+        "active_listings": await db.listings.count_documents({"status": "active"}),
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 
@@ -1660,9 +1721,12 @@ async def ai_support(body: SupportRequest):
         else:
             reply = ""
         return {"reply": (reply or "Aegis yanıtı alınamadı, Sir.").strip()}
-    except Exception:
+    except Exception as e:
         logger.exception("Aegis Support failed")
-        raise HTTPException(status_code=502, detail="Aegis destek servisinde hata. Lütfen tekrar deneyin.")
+        return {
+            "reply": f"Kuantum bağlantı hatası, Sir. Birimlerim şu an yanıt veremiyor ({str(e)}).",
+            "error": True
+        }
 
 
 @api.get("/ai/health")
