@@ -97,7 +97,23 @@
 - `Home.jsx` üzerine J.A.R.V.I.S. tarzı dönen HUD halkaları ve anlık akan telemetri verileri (SYSTEM.READY, OBSERVER_PROTOCOL vb.) eklendi.
 - `Home.css` oluşturularak tüm bu animasyonlar GPU hızlandırmalı hale getirildi.
 
-### 2. Quantum Interaction
+---
+## 🗓️ Tarih: 3 Haziran 2026 (Admin Dash & Mobile Stabilization)
+
+### 1. Admin Dashboard (Task 7.4 & 8.4)
+- `AdminDashboard.jsx` geliştirildi, `/admin` rotası eklendi ve `is_admin` yetkilendirmesi sağlandı.
+- Sipariş takibi, sistem metrikleri ve brüt gelir izleme paneli kuruldu.
+
+### 2. Mobile Stabilization (Expo Go Support)
+- Mobil uygulamada Expo Go çökmesine sebep olan "GO_BACK" hatası `canGoBack()` ve global `BackHandler` ile giderildi.
+- Native modül (Solana Wallet) kısıtlaması nedeniyle oluşan çökme, hibrit/mock bir katmanla (`useSolanaWallet.js`) aşıldı.
+- Yerel ağ üzerinden backend bağlantısı için `CONFIG.js` altyapısı kuruldu (Local IP: 192.168.1.37).
+
+### Yarının Hedefleri (4 Haziran):
+1.  **Phase 11:** Expo Go'dan Android Studio'ya geçiş.
+2.  **Native Build:** `npx expo run:android` ile gerçek cihaz/emülatör testi.
+3.  **Solana Wallet:** Mock katmanını kaldırıp gerçek cüzdan entegrasyonunu doğrulamak.
+
 - "Yıldız Al" butonu için `quantum-btn` efekti geliştirildi. Buton üzerinde sürekli dönen bir ışık halkası ve tarama efekti (scan-line) bulunuyor.
 - Yazılara "Glitch" efekti ve interaktif hover animasyonları eklendi.
 

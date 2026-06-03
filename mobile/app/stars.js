@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { THEME } from '../constants/Theme';
+import { CONFIG } from '../constants/Config';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,8 +20,11 @@ export default function Stars() {
 
   // Task 6.5.1: Fetch real stars from backend
   useEffect(() => {
-    fetch('https://starclaim-api.onrender.com/api/stars?limit=100&sort=price_desc')
-      .then(res => res.json())
+    fetch(`${CONFIG.API_URL}/api/stars?limit=100&sort=price_desc`)
+      .then(async res => {
+        if (!res.ok) throw new Error(`HTTP_${res.status}`);
+        return res.json();
+      })
       .then(data => {
         // Map backend RA/Dec to simple Az/Alt for AR demo
         // In a real app, this requires complex astronomical calculations
@@ -33,7 +37,7 @@ export default function Stars() {
       })
       .catch(err => {
         console.error("Star fetch failed", err);
-        Alert.alert("HATA", "Yıldız verileri yüklenemedi.");
+        Alert.alert("HATA", "Yıldız verileri yüklenemedi. (Sunucu bağlantısı kurulamadı)");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -136,7 +140,10 @@ export default function Stars() {
           
           {/* TOP CONTROLS */}
           <View style={styles.topBar}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()}>
+            <TouchableOpacity 
+              style={styles.iconBtn} 
+              onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+            >
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <View style={styles.telemetryGroup}>

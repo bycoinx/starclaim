@@ -51,7 +51,10 @@ export default function Vault() {
 
   const LeftWing = (
     <View style={styles.wing}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+      <TouchableOpacity 
+        style={styles.backBtn} 
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+      >
         <Ionicons name="chevron-back" size={20} color={THEME.colors.primary} />
         <Text style={styles.backText}>RETURN_HOME</Text>
       </TouchableOpacity>

@@ -8,6 +8,7 @@ import { SecurityService } from '../lib/security';
 import { Ionicons } from '@expo/vector-icons';
 import bs58 from 'bs58';
 import { Buffer } from 'buffer';
+import { CONFIG } from '../constants/Config';
 
 import { THEME } from '../constants/Theme';
 
@@ -63,7 +64,7 @@ export default function QRLogin() {
       const signatureBytes = payloadBytes.slice(payloadBytes.length - 64);
       const signature = bs58.encode(signatureBytes);
 
-      const response = await fetch('https://starclaim-api.onrender.com/api/auth/qr-verify', {
+      const response = await fetch(`${CONFIG.API_URL}/api/auth/qr-verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +77,11 @@ export default function QRLogin() {
 
       if (response.ok) {
         Alert.alert("BAŞARILI", "Kuantum Dolanıklık Tamamlandı. PC'de oturumunuz açıldı.");
-        router.back();
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/');
+        }
       } else {
         throw new Error("Doğrulama başarısız.");
       }
@@ -108,7 +113,7 @@ export default function QRLogin() {
         </View>
 
         <View style={styles.topBar}>
-           <TouchableOpacity onPress={() => router.back()}>
+           <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
               <Ionicons name="close" size={24} color="#fff" />
            </TouchableOpacity>
            <Text style={styles.statusText}>AEGIS_SCANNER_v3</Text>

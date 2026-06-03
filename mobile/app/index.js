@@ -1,47 +1,57 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Link, useRouter } from 'expo-router';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSolanaWallet } from '../hooks/useSolanaWallet';
 import { SecurityService } from '../lib/security';
 import CockpitLayout from '../components/CockpitLayout';
 import { THEME } from '../constants/Theme';
-import { Ionicons } from '@expo/vector-icons';
+import { CONFIG } from '../constants/Config';
 
 export default function Home() {
-  const { address, connecting, connect, disconnect, setAddress } = useSolanaWallet();
-  const [restoring, setRestoring] = useState(true);
-  const [metrics, setMetrics] = useState({ market_cap: 2400000, volume_24h: 12450 });
-  const [activities, setActivities] = useState([]);
+  const { address, connect, disconnect, setAddress } = useSolanaWallet();
+  const [metrics, setMetrics] = useState({ sol: 182.40, star: 0.12 });
   const router = useRouter();
 
   useEffect(() => {
-    // Session Restoration
-    const restoreSession = async () => {
+    const initializeApp = async () => {
+      // Restore session
       try {
         const session = await SecurityService.getSession();
         if (session && session.user && session.user.wallet_address) {
           setAddress(session.user.wallet_address);
         }
       } catch (e) {
-        console.error("Session restoration failed", e);
-      } finally {
-        setRestoring(false);
+        console.error('Session restoration failed', e);
+      }
+
+      // Fetch metrics - try production API
+      const apiUrls = [
+        CONFIG.PRODUCTION_URL,
+        CONFIG.API_URL, // fallback to local
+      ];
+
+      for (const url of apiUrls) {
+        try {
+          const response = await Promise.race([
+            fetch(`${url}/api/marketplace/metrics`),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Timeout')), 5000)
+            ),
+          ]);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const data = await response.json();
+          if (data?.sol_price && data?.star_price) {
+            setMetrics({ sol: data.sol_price, star: data.star_price });
+            console.log('Metrics fetched from:', url);
+          }
+          break;
+        } catch (err) {
+          console.warn(`API ${url} failed:`, err.message);
+        }
       }
     };
-    restoreSession();
 
-    // Fetch Metrics
-    fetch('https://starclaim-api.onrender.com/api/marketplace/metrics')
-      .then(res => res.json())
-      .then(data => setMetrics(data))
-      .catch(err => console.error("Metrics fetch failed", err));
-
-    // Fetch Live Activities
-    fetch('https://starclaim-api.onrender.com/api/activities/live?limit=10')
-      .then(res => res.json())
-      .then(data => setActivities(data))
-      .catch(err => console.error("Activities fetch failed", err));
+    initializeApp();
   }, []);
 
   const handleConnect = async () => {
@@ -49,10 +59,10 @@ export default function Home() {
       const pubKey = await connect();
       if (pubKey) {
         const walletAddress = pubKey.toBase58();
-        await SecurityService.saveSession('dummy_token_for_mobile', { wallet_address: walletAddress });
+        await SecurityService.saveSession('mobile_token', { wallet_address: walletAddress });
       }
     } catch (err) {
-      Alert.alert("HATA", "Cüzdan bağlantısı başarısız.");
+      Alert.alert('HATA', 'Cüzdan bağlantısı başarısız.');
     }
   };
 
@@ -61,233 +71,360 @@ export default function Home() {
     await SecurityService.clearSession();
   };
 
-  const LeftWing = (
-    <View style={styles.wingContainer}>
-      <Text style={styles.logoText}>AEGIS</Text>
-      <View style={styles.divider} />
-      
-      <View style={styles.navLinks}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/stars')}>
-          <Ionicons name="telescope-outline" size={20} color={THEME.colors.primary} />
-          <Text style={styles.navLabel}>STARS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/vault')}>
-          <Ionicons name="shield-checkmark-outline" size={20} color={THEME.colors.primary} />
-          <Text style={styles.navLabel}>VAULT</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/qr-login')}>
-          <Ionicons name="qr-code-outline" size={20} color={THEME.colors.secondary} />
-          <Text style={styles.navLabel}>LOGIN</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ flex: 1 }} />
-      
-      {address ? (
-        <TouchableOpacity style={styles.walletStatus} onPress={handleDisconnect}>
-          <Text style={styles.walletCode}>{address.slice(0, 4)}...{address.slice(-4)}</Text>
-          <Text style={styles.walletSub}>DISCONNECT</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity style={styles.walletStatus} onPress={handleConnect}>
-          <Text style={styles.walletCode}>GUEST_MODE</Text>
-          <Text style={styles.walletSub}>CONNECT WALLET</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  const RightWing = (
-    <View style={styles.wingContainer}>
-      <Text style={styles.sectionTitle}>SYSTEM_STATS</Text>
-      <View style={styles.divider} />
-      
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>MARKET_CAP</Text>
-          <Text style={styles.statValue}>
-            {metrics.market_cap >= 1000000 ? `$${(metrics.market_cap / 1000000).toFixed(1)}M` : `$${metrics.market_cap.toLocaleString()}`}
-          </Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statLabel}>VOLUME_24H</Text>
-          <Text style={styles.statValue}>${metrics.volume_24h.toLocaleString()}</Text>
-        </View>
-        
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>LIVE_FEED</Text>
-        {activities.length > 0 ? activities.map((act, i) => (
-          <View key={act.activity_id || i} style={styles.logItem}>
-            <Text style={styles.logText}>
-              {act.user_name || 'System'}: {act.type === 'claim' ? 'claimed' : 'listed'} {act.star_name}
-            </Text>
-          </View>
-        )) : (
-          <View style={styles.logItem}>
-            <Text style={styles.logText}>Waiting for telemetry...</Text>
-          </View>
-        )}
-      </ScrollView>
-    </View>
-  );
-
   return (
-    <CockpitLayout leftWing={LeftWing} rightWing={RightWing}>
-      <View style={styles.viewport}>
-        <LinearGradient
-          colors={['rgba(0, 204, 255, 0.05)', 'transparent']}
-          style={StyleSheet.absoluteFillObject}
-        />
-        
-        <View style={styles.mainContent}>
-          <Text style={styles.heroTitle}>STARCLAIM</Text>
-          <Text style={styles.heroSub}>INTERSTELLAR_REGISTRY_v5.0</Text>
-          
-          <TouchableOpacity 
-            style={styles.actionBtn} 
-            onPress={() => router.push('/stars')}
-          >
-            <Text style={styles.actionBtnText}>ENTER_STAR_MAP</Text>
+    <CockpitLayout showHUD={false}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>★ STARCLAIM</Text>
+          <Text style={styles.subtitle}>AEGIS MOBILE</Text>
+        </View>
+
+        {/* Navigation Tabs */}
+        <View style={styles.navTabs}>
+          <TouchableOpacity style={styles.navTabActive}>
+            <Text style={styles.navTabTextActive}>Ana Sayfa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/stars')}>
+            <Text style={styles.navTabText}>Yıldızını Seç</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/vault')}>
+            <Text style={styles.navTabText}>StarVault</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.navTab}>
+            <Text style={styles.navTabText}>Marketplace</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Floating Telemetry (Bottom) */}
-        <View style={styles.telemetryOverlay}>
-           <Text style={styles.telemetryText}>RA: 06H 45M 08S // DEC: -16° 42' 58" // MAG: -1.46</Text>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>GÖKYÜZÜNDE</Text>
+          <Text style={styles.heroTitle}>SONSUZ BİR ÖZ BIRAK</Text>
+          <Text style={styles.heroDescription}>
+            Kendi yıldızını sahiplen. İşim ver. Hikayeni yaz. Sevdiklerinle konuş.
+          </Text>
+
+          {/* Action Buttons */}
+          <View style={styles.heroButtons}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/stars')}>
+              <Text style={styles.primaryBtnText}>YILDIZ AL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/stars')}>
+              <Text style={styles.secondaryBtnText}>KEŞFET</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Price Metrics */}
+          <View style={styles.metricsRow}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>SOL</Text>
+              <Text style={styles.metricValue}>${metrics.sol.toFixed(2)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>STAR</Text>
+              <Text style={styles.metricValue}>${metrics.star.toFixed(2)}</Text>
+            </View>
+          </View>
         </View>
-      </View>
+
+        {/* Features Section */}
+        <Text style={styles.sectionTitle}>BAŞLAYALIM</Text>
+        <View style={styles.featuresGrid}>
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/stars')}>
+            <View style={styles.featureIcon}>
+              <Text style={styles.featureEmoji}>🔍</Text>
+            </View>
+            <Text style={styles.featureCardTitle}>Keşfet</Text>
+            <Text style={styles.featureCardSub}>Katalog / AR</Text>
+            <Text style={styles.featureCardDesc}>Yıldız kataloğu, AR düğmesi, arama + filtre.</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/vault')}>
+            <View style={styles.featureIcon}>
+              <Text style={styles.featureEmoji}>⭐</Text>
+            </View>
+            <Text style={styles.featureCardTitle}>Yıldızlarım</Text>
+            <Text style={styles.featureCardSub}>Sahip olduğun yıldızlar</Text>
+            <Text style={styles.featureCardDesc}>Mesaj bırak, satışa çıkar veya miras planla.</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/vault')}>
+            <View style={styles.featureIcon}>
+              <Text style={styles.featureEmoji}>🔐</Text>
+            </View>
+            <Text style={styles.featureCardTitle}>Vault</Text>
+            <Text style={styles.featureCardSub}>Zaman kapsülü</Text>
+            <Text style={styles.featureCardDesc}>Mesajları kilitle, vasiyet oluştur ve sakla.</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Info Section */}
+        <View style={styles.infoSection}>
+          <Text style={styles.infoTitle}>Mobil Deneyim</Text>
+          <Text style={styles.infoText}>
+            StarClaim mobil uygulaması sana özel tasarlandı. Yıldız al, sakla, paylaş ve yönet.
+          </Text>
+          <Text style={styles.infoText}>
+            Her yıldız bir hikaye. Her hikaye bir miras.
+          </Text>
+        </View>
+
+        {/* Wallet Section */}
+        <View style={styles.walletSection}>
+          <Text style={styles.walletLabel}>CÜZDAN BAĞLAN</Text>
+          <Text style={styles.walletAddress}>
+            {address ? `${address.slice(0, 10)}...${address.slice(-10)}` : 'Bağlı değil'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.walletButton, address && styles.walletButtonDisconnect]}
+            onPress={address ? handleDisconnect : handleConnect}
+          >
+            <Text style={styles.walletButtonText}>
+              {address ? '❌ ÇIKIS YAP' : '✓ CÜZDAN BAĞLA'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </CockpitLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  wingContainer: {
-    flex: 1,
+  container: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
   },
-  logoText: {
-    color: THEME.colors.primary,
-    fontSize: 24,
-    fontWeight: '900',
-    letterSpacing: 4,
-    marginBottom: THEME.spacing.sm,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: THEME.spacing.md,
-  },
-  navLinks: {
-    gap: THEME.spacing.md,
-  },
-  navItem: {
-    flexDirection: 'row',
+  header: {
+    marginBottom: 24,
     alignItems: 'center',
-    gap: THEME.spacing.sm,
   },
-  navLabel: {
+  logo: {
+    fontSize: 28,
+    fontWeight: '900',
     color: '#fff',
+    letterSpacing: 2,
+    marginBottom: 4,
+  },
+  subtitle: {
     fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-  },
-  walletStatus: {
-    backgroundColor: 'rgba(0, 204, 255, 0.05)',
-    padding: THEME.spacing.sm,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 204, 255, 0.2)',
-  },
-  walletCode: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  walletSub: {
     color: THEME.colors.primary,
-    fontSize: 8,
-    fontWeight: 'bold',
-    marginTop: 2,
+    fontWeight: '700',
+    letterSpacing: 2.5,
   },
-  sectionTitle: {
-    color: THEME.colors.textMuted,
-    fontSize: 9,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    marginBottom: THEME.spacing.xs,
+  navTabs: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 28,
   },
-  statBox: {
-    marginBottom: THEME.spacing.sm,
-  },
-  statLabel: {
-    color: THEME.colors.secondary,
-    fontSize: 8,
-    fontWeight: 'bold',
-  },
-  statValue: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  logItem: {
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  logText: {
-    color: THEME.colors.textMuted,
-    fontSize: 8,
-    fontFamily: 'System',
-  },
-  viewport: {
+  navTab: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
   },
-  mainContent: {
+  navTabActive: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 204, 255, 0.15)',
+    borderWidth: 1.5,
+    borderColor: THEME.colors.primary,
     alignItems: 'center',
+  },
+  navTabText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: THEME.colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  navTabTextActive: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  heroSection: {
+    marginBottom: 32,
   },
   heroTitle: {
-    color: '#fff',
-    fontSize: 48,
+    fontSize: 38,
     fontWeight: '900',
-    letterSpacing: 12,
+    color: '#fff',
+    lineHeight: 44,
+    letterSpacing: 0.5,
   },
-  heroSub: {
-    color: THEME.colors.primary,
-    fontSize: 10,
-    fontWeight: 'bold',
-    letterSpacing: 4,
-    marginTop: -5,
-    marginBottom: 30,
+  heroDescription: {
+    fontSize: 14,
+    color: THEME.colors.textMuted,
+    marginTop: 12,
+    lineHeight: 21,
+    marginBottom: 20,
   },
-  actionBtn: {
+  heroButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  primaryBtn: {
+    flex: 1,
     backgroundColor: THEME.colors.primary,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
   },
-  actionBtnText: {
+  primaryBtnText: {
     color: '#000',
     fontSize: 12,
     fontWeight: '900',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
-  telemetryOverlay: {
-    position: 'absolute',
-    bottom: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 4,
+  secondaryBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255,255,255,0.12)',
   },
-  telemetryText: {
+  secondaryBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  metricCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  metricLabel: {
+    fontSize: 9,
     color: THEME.colors.textMuted,
-    fontSize: 8,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 6,
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: THEME.colors.primary,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '900',
+    color: THEME.colors.secondary,
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 16,
+  },
+  featuresGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 28,
+  },
+  featureCard: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  featureIcon: {
+    fontSize: 32,
+    marginBottom: 12,
+  },
+  featureEmoji: {
+    fontSize: 32,
+  },
+  featureCardTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  featureCardSub: {
+    fontSize: 10,
+    color: THEME.colors.secondary,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  featureCardDesc: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
+    lineHeight: 16,
+  },
+  infoSection: {
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    marginBottom: 24,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  infoText: {
+    fontSize: 13,
+    color: THEME.colors.textMuted,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  walletSection: {
+    backgroundColor: 'rgba(0, 204, 255, 0.08)',
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: THEME.colors.primary,
+  },
+  walletLabel: {
+    fontSize: 9,
+    color: THEME.colors.primary,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  walletAddress: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: '700',
+    marginBottom: 14,
+    fontFamily: 'monospace',
+  },
+  walletButton: {
+    backgroundColor: THEME.colors.primary,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  walletButtonDisconnect: {
+    backgroundColor: THEME.colors.danger,
+  },
+  walletButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '900',
     letterSpacing: 1,
   },
 });

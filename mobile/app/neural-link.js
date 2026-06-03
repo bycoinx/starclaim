@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import CockpitLayout from '../components/CockpitLayout';
 import { THEME } from '../constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
+import { CONFIG } from '../constants/Config';
 
 export default function NeuralLink() {
   const [session, setSession] = useState('');
@@ -42,7 +43,8 @@ export default function NeuralLink() {
 
   const connectBridge = () => {
     if (!session) return;
-    const wsUrl = `wss://starclaim-api.onrender.com/ws/bridge/${session}`;
+    const wsBase = CONFIG.API_URL.replace('http', 'ws');
+    const wsUrl = `${wsBase}/ws/bridge/${session}`;
     const newWs = new WebSocket(wsUrl);
 
     newWs.onopen = () => {
@@ -71,7 +73,10 @@ export default function NeuralLink() {
 
   const LeftWing = (
     <View style={styles.wing}>
-      <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+      <TouchableOpacity 
+        style={styles.backBtn} 
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/')}
+      >
         <Ionicons name="chevron-back" size={20} color={THEME.colors.primary} />
         <Text style={styles.backText}>CLOSE_BRIDGE</Text>
       </TouchableOpacity>

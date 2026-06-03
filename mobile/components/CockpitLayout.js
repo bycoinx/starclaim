@@ -1,13 +1,14 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView, ImageBackground, Text } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Text } from 'react-native';
 import { THEME } from '../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import WarpBackground from './WarpBackground';
 
 export default function CockpitLayout({ children, leftWing, rightWing, showHUD = true }) {
+  const hasWings = !!leftWing || !!rightWing;
+
   return (
     <View style={styles.container}>
-      {/* Background Layer (Stars/Warp) */}
       <View style={styles.background}>
          <WarpBackground />
          <LinearGradient
@@ -16,24 +17,20 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
          />
-         {/* HUD Decorative Lines could be added here as absolute overlays */}
       </View>
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Top Status Bar (Neural Link) */}
         <View style={styles.topStatus}>
-           <View style={styles.statusGroup}>
-              <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />
-              <Text style={styles.statusLabel}>NEURAL_LINK: ACTIVE</Text>
-           </View>
-           <View style={styles.statusGroup}>
-              <Text style={styles.statusLabel}>{new Date().toLocaleTimeString()}</Text>
-           </View>
+          <View style={styles.statusGroup}>
+            <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />
+            <Text style={styles.statusLabel}>AEGIS MOBILE</Text>
+          </View>
+          <View style={styles.statusGroup}>
+            <Text style={styles.statusLabel}>{new Date().toLocaleTimeString()}</Text>
+          </View>
         </View>
 
-        <View style={styles.contentWrapper}>
-          
-          {/* LEFT WING: Navigation & Profile */}
+        <View style={[styles.contentWrapper, !hasWings && styles.contentColumn]}>
           {leftWing && (
             <View style={styles.leftWing}>
               <View style={styles.glassPanel}>
@@ -43,12 +40,10 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
             </View>
           )}
 
-          {/* CENTER VIEWPORT: Main Content / 3D */}
-          <View style={styles.centerViewport}>
+          <View style={[styles.centerViewport, !hasWings && styles.fullViewport]}>
             {children}
           </View>
 
-          {/* RIGHT WING: Stats & Live Activity */}
           {rightWing && (
             <View style={styles.rightWing}>
               <View style={styles.glassPanel}>
@@ -57,17 +52,15 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
               </View>
             </View>
           )}
-
         </View>
       </SafeAreaView>
-      
-      {/* HUD Global Overlay (Curved edges, vignette) */}
+
       {showHUD && (
         <View style={styles.hudOverlay} pointerEvents="none">
-           <View style={[styles.hudCorner, styles.hudTopL]} />
-           <View style={[styles.hudCorner, styles.hudTopR]} />
-           <View style={[styles.hudCorner, styles.hudBottomL]} />
-           <View style={[styles.hudCorner, styles.hudBottomR]} />
+          <View style={[styles.hudCorner, styles.hudTopL]} />
+          <View style={[styles.hudCorner, styles.hudTopR]} />
+          <View style={[styles.hudCorner, styles.hudBottomL]} />
+          <View style={[styles.hudCorner, styles.hudBottomR]} />
         </View>
       )}
     </View>
@@ -90,9 +83,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.25)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderBottomColor: 'rgba(255,255,255,0.08)',
   },
   statusGroup: {
     flexDirection: 'row',
@@ -106,23 +99,30 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     color: THEME.colors.textMuted,
-    fontSize: 8,
-    fontWeight: 'bold',
-    letterSpacing: 2,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   contentWrapper: {
     flex: 1,
     flexDirection: 'row',
     padding: THEME.spacing.sm,
   },
+  contentColumn: {
+    flexDirection: 'column',
+    paddingVertical: THEME.spacing.lg,
+  },
   leftWing: {
-    width: '18%',
+    width: '20%',
     marginRight: THEME.spacing.sm,
   },
   centerViewport: {
     flex: 1,
-    borderRadius: 20,
+    borderRadius: 22,
     overflow: 'hidden',
+  },
+  fullViewport: {
+    width: '100%',
   },
   rightWing: {
     width: '22%',
@@ -131,11 +131,11 @@ const styles = StyleSheet.create({
   glassPanel: {
     flex: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 15,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     overflow: 'hidden',
-    padding: THEME.spacing.sm,
+    padding: THEME.spacing.md,
   },
   scanline: {
     position: 'absolute',
@@ -148,7 +148,6 @@ const styles = StyleSheet.create({
   },
   hudOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderWidth: 0,
   },
   hudCorner: {
     position: 'absolute',
@@ -156,8 +155,8 @@ const styles = StyleSheet.create({
     height: 60,
     borderColor: 'rgba(0, 204, 255, 0.3)',
   },
-  hudTopL: { top: 20, left: 20, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 30 },
-  hudTopR: { top: 20, right: 20, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 30 },
-  hudBottomL: { bottom: 20, left: 20, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 30 },
-  hudBottomR: { bottom: 20, right: 20, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 30 },
+  hudTopL: { top: 12, left: 12, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 28 },
+  hudTopR: { top: 12, right: 12, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 28 },
+  hudBottomL: { bottom: 12, left: 12, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 28 },
+  hudBottomR: { bottom: 12, right: 12, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 28 },
 });

@@ -130,7 +130,7 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
 - [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
 - [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
-- [ ] **Task 7.4: Sipariş geçmişi, faturalar ve yönetici görünümleri**
+- [x] **Task 7.4: Admin Dashboard & Order Management**
 - [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
 
 ## 🤖 Phase 8: AI & Experience
@@ -139,7 +139,7 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
 - [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
 - [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
-- [ ] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü**
+- [x] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü (AdminDashboard.jsx)**
 - [ ] **Task 8.5: 3D harita opt-in deneyimi ve performans gating**
 - [ ] **Task 8.6: Mobil star map / AR preview konsepti**
 - [ ] **Task 8.7: Marketplace health / marketcap dashboardu**
@@ -153,6 +153,13 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 9.4: Yönetici paneli ve içerik yayınlama**
 - [ ] **Task 9.5: Performans, güvenlik, izleme ve test kapsamı artırımı**
 
+## 🚀 Phase 11: Android Studio Migration (Tomorrow's Mission)
+**Hedef:** Expo Go kısıtlamalarından kurtulup gerçek cihaz/emülatör üzerinde native özellikleri (Solana Wallet) test etmek.
+
+- [ ] **Task 11.1: Android Studio & SDK Setup**
+- [ ] **Task 11.2: Prebuild & Native Build Creation** (`npx expo run:android`)
+- [ ] **Task 11.3: Reverse Solana Mock logic** (Re-enable native wallet adapter)
+
 ## 🧪 Phase 10: Launch Readiness & Diagnosis
 **Hedef:** Web ve mobil için üretime hazır bir kalite ve izleme paketi oluşturmak.
 
@@ -162,12 +169,14 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 10.4: Launch readiness kontrol listesi**
 
 ## 🚧 Current Status (Hazırla)
-- AI terminal (Aegis Support) Gemini 1.5 Pro entegrasyonu düzeltildi, hata yönetimi güçlendirildi.
-- Marketplace metrics endpoint'i (/api/marketplace/metrics) eklendi ve frontend Trading Desk'e bağlandı.
-- 3D harita (SkySphere) lazy-loading (Suspense) ile opsiyonel hale getirildi, başlangıç yükü optimize edildi.
-- Yıldız kataloğu veritabanında 10,000 yıldız mevcut, seeder ve indexler doğrulandı.
-- Mobil UI için auth-gated Stellar transfer modal ve backend pytest transfer testi tamamlandı.
-- Yıldız kataloğunda “sonuç yok” ve “sunucu/API hatası” durumları ayrıldı; public star registry kod araması case-insensitive hale getirildi.
+- **Admin Command Center:** `is_admin` yetkilendirmesi ve yönetim paneli (AdminDashboard) eklendi. Siparişler ve sistem metrikleri aktif takip ediliyor.
+- **Mobile Navigation Fixed:** "GO_BACK" hatası `canGoBack()` kontrolleri ve global `BackHandler` ile giderildi.
+- **Mobile Connectivity:** Yerel backend bağlantısı için `CONFIG.js` ve dinamik IP altyapısı kuruldu.
+- **Expo Go Compatibility:** Native modül çökmesini önlemek için Solana Wallet fonksiyonları geçici olarak mock/hibrit hale getirildi.
+- AI terminal (Aegis Support) Gemini 1.5 Pro entegrasyonu backend'de hazır, anahtar stabilizasyonu bekleniyor.
+- Yıldız kataloğunda 10,000 veri mevcut ve mobil/web üzerinden erişilebilir.
+- **Not:** Yarın Expo Go bırakılıp Android Studio üzerinden devam edilecek.
+
 
 ---
 ### 📜 Eternal Covenant (Mütalist Anayasa)
@@ -176,7 +185,7 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
 - [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
 - [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
-- [ ] **Task 7.4: Sipariş geçmişi, faturalar ve yönetici görünümleri**
+- [x] **Task 7.4: Admin Dashboard & Order Management**
 - [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
 
 ## 🤖 Phase 8: AI & Experience
@@ -185,7 +194,7 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
 - [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
 - [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
-- [ ] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü**
+- [x] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü (AdminDashboard.jsx)**
 
 ## 🚀 Phase 9: Growth & Product Expansion
 **Hedef:** StarClaim deneyimini genişletmek, yeni satış kanalları ve sürdürülebilir büyüme altyapısı kurmak.

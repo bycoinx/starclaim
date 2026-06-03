@@ -160,6 +160,7 @@ class User(BaseModel):
     daily_streak: int = 0
     last_checkin_at: Optional[datetime] = None
     points: int = 0
+    is_admin: bool = False
     created_at: datetime
 
 
@@ -292,6 +293,50 @@ async def optional_user(request: Request) -> Optional[User]:
         return await get_current_user(request)
     except HTTPException:
         return None
+
+
+async def require_admin(user: User = Depends(get_current_user)) -> User:
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="Administrative access required")
+    return user
+
+
+# -------------------- Admin Management (Phase 7/8) --------------------
+@api.get("/admin/stats")
+async def admin_stats(_: User = Depends(require_admin)):
+    """Comprehensive system stats for admin dashboard."""
+    total_users = await db.users.count_documents({})
+    total_orders = await db.orders.count_documents({})
+    total_revenue = await db.orders.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]).to_list(1)
+    
+    return {
+        "users": total_users,
+        "orders": total_orders,
+        "revenue": total_revenue[0]["total"] if total_revenue else 0,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@api.get("/admin/orders")
+async def admin_list_orders(limit: int = 50, offset: int = 0, _: User = Depends(require_admin)):
+    cur = db.orders.find({}, {"_id": 0}).sort([("created_at", -1)]).skip(offset).limit(limit)
+    return await cur.to_list(limit)
+
+
+@api.put("/admin/stars/{star_id}")
+async def admin_update_star(star_id: str, updates: dict, _: User = Depends(require_admin)):
+    # Restrict what can be updated manually
+    allowed_keys = {"price", "tier", "name", "for_sale"}
+    filtered = {k: v for k, v in updates.items() if k in allowed_keys}
+    if not filtered:
+        raise HTTPException(status_code=400, detail="No valid update fields")
+        
+    res = await db.stars.update_one({"star_id": star_id}, {"$set": filtered})
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Star not found")
+    return {"ok": True}
 
 
 # -------------------- Seed --------------------
