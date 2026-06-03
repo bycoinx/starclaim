@@ -448,6 +448,29 @@ async def shutdown():
     client.close()
 
 
+# -------------------- Health Check --------------------
+@app.get("/health")
+async def health_check():
+    """Mobile endpoint for backend connectivity check."""
+    try:
+        # Quick DB ping
+        await db.command("ping")
+        return {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "database": "connected",
+            "version": "1.0"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": str(e),
+            "version": "1.0"
+        }, 503
+
+
 # -------------------- Auth endpoints --------------------
 @api.post("/auth/session")
 async def auth_session(request: Request, response: Response):
