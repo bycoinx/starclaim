@@ -268,62 +268,52 @@ export default function StarPicker({ onClaim }) {
               {lang === "TR" ? "Bu filtreyle yıldız bulunamadı." : "No stars match these filters."}
             </div>
           ) : activeSection === "sky" ? (
-            mapConnected ? (
-              <Suspense fallback={
-                <div className="flex flex-col items-center justify-center py-40">
-                  <Loader2 className="w-10 h-10 animate-spin text-sc-gold mb-4" />
-                  <div className="text-[10px] uppercase tracking-widest text-sc-gold font-bold">Initializing Orbital Visualization...</div>
-                </div>
-              }>
-                <SkySphere stars={filtered} onClaim={onClaim} />
-              </Suspense>
-            ) : (
-              <div className="relative overflow-hidden rounded-3xl border border-cyan-300/20 bg-black min-h-[560px] flex items-center justify-center">
-                <div className="absolute inset-0 nebula-bg opacity-50 pointer-events-none" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(56,189,248,0.12),transparent_55%)]" />
-                <div className="relative max-w-2xl text-center px-6">
-                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-cyan-300/30 bg-cyan-300/10 shadow-[0_0_50px_rgba(56,189,248,0.18)]">
-                    {mapLoading ? <Loader2 className="h-8 w-8 animate-spin text-cyan-200" /> : <Satellite className="h-8 w-8 text-cyan-200" />}
-                  </div>
-                  <div className="mb-3 text-[10px] uppercase tracking-[0.42em] text-cyan-200">
-                    {mapLoading ? "Aegis Link Initializing" : "NASA Deep Space HUD"}
-                  </div>
-                  <h2 className="font-display text-4xl md:text-5xl mb-4">
-                    {lang === "TR" ? "Canlı uzay haritasına bağlan" : "Connect to the live star map"}
+            // Replace the live Three.js canvas with a static promo card.
+            <div className="w-full">
+              <div style={{ background: "#0A0A0F", border: "1px solid #C9A84C", borderRadius: 12, padding: 40 }} className="w-full flex items-center justify-between gap-8">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{ color: "#FFFFFF", fontSize: 32, fontWeight: 700, marginBottom: 12 }}>
+                    {lang === "TR" ? "Mobil Uygulamada Yıldız Haritanı Keşfet" : "Discover Your Star Map on Mobile"}
                   </h2>
-                  <p className="text-sc-text-muted leading-relaxed mb-8">
-                    {lang === "TR"
-                      ? "3D harita ayrı yüklenir; katalog hızlı kalır, haritaya geçtiğinde Gözlemci ve Sistem bakışları tek motor içinde açılır."
-                      : "The 3D map loads only when requested, keeping the catalog fast while Observatory and System views share one engine."}
+                  <p style={{ color: "#9CA3AF", marginBottom: 22, lineHeight: 1.4 }}>
+                    {lang === "TR" ? "Telefonunu gökyüzüne tut — sahip olduğun yıldızları gerçek zamanlı bul." : "Point your phone at the sky — discover the stars you own in real time."}
                   </p>
-                  <div className="grid sm:grid-cols-3 gap-3 mb-8 text-left">
-                    {[
-                      [Radio, "RA/Dec", "J2000"],
-                      [ShieldCheck, "Aegis", "HUD"],
-                      [Orbit, "Dual View", "Observer/System"],
-                    ].map(([Icon, title, body]) => (
-                      <div key={title} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                        <Icon className="w-4 h-4 text-cyan-200 mb-3" />
-                        <div className="font-display text-sm text-white">{title}</div>
-                        <div className="text-[10px] uppercase tracking-widest text-sc-text-muted">{body}</div>
-                      </div>
-                    ))}
+
+                  <div className="flex items-center gap-4">
+                    <button disabled style={{ background: "#C9A84C", color: "#0A0A0F", padding: "10px 18px", borderRadius: 8, fontWeight: 700, opacity: 0.95, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span>{lang === "TR" ? "App Store" : "App Store"}</span>
+                      <span style={{ fontSize: 12, color: "#0A0A0F", opacity: 0.85 }}>[{lang === "TR" ? "Yakında" : "Soon"}]</span>
+                    </button>
+
+                    <button disabled style={{ background: "#C9A84C", color: "#0A0A0F", padding: "10px 18px", borderRadius: 8, fontWeight: 700, opacity: 0.95, display: "flex", alignItems: "center", gap: 8 }}>
+                      <span>{lang === "TR" ? "Google Play" : "Google Play"}</span>
+                      <span style={{ fontSize: 12, color: "#0A0A0F", opacity: 0.85 }}>[{lang === "TR" ? "Yakında" : "Soon"}]</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={connectMap}
-                    disabled={mapLoading}
-                    className="btn-gold min-w-[220px] justify-center disabled:opacity-60"
-                    data-testid="connect-sky-map"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      {mapLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                      {lang === "TR" ? "3D Haritaya Bağlan" : "Connect 3D Map"}
-                    </span>
-                  </button>
+                </div>
+
+                <div style={{ width: 200, height: 200, background: "#000000", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="200" height="200" fill="#000" />
+                    {/* Random white dots */}
+                    {Array.from({ length: 35 }).map((_, i) => {
+                      const x = 20 + Math.floor(Math.random() * 160);
+                      const y = 20 + Math.floor(Math.random() * 160);
+                      return <circle key={i} cx={x} cy={y} r={2} fill="#fff" opacity={0.95} />;
+                    })}
+                    {/* Some thin constellation lines */}
+                    <g stroke="#fff" strokeWidth={0.6} strokeOpacity={0.25}>
+                      <line x1="30" y1="40" x2="70" y2="60" />
+                      <line x1="70" y1="60" x2="100" y2="30" />
+                      <line x1="120" y1="80" x2="150" y2="60" />
+                      <line x1="50" y1="140" x2="90" y2="120" />
+                      <line x1="90" y1="120" x2="130" y2="150" />
+                    </g>
+                  </svg>
                 </div>
               </div>
-            )
+            </div>
+          ) : (
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
