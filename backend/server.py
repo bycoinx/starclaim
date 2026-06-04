@@ -1881,3 +1881,21 @@ async def cors_preflight(rest_of_path: str):
     })
 
 app.include_router(api)
+
+
+# Global middleware to ensure CORS headers are present on all responses.
+@app.middleware("http")
+async def ensure_cors_headers(request: Request, call_next):
+    response = await call_next(request)
+    origin = request.headers.get("origin")
+    # If request has an Origin header, echo it back so browsers accept the response.
+    if origin:
+        # If allow_origins contains '*' we still echo the origin to support credentialed requests.
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true" if allow_credentials else "false"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Accept,Origin,User-Agent"
+    else:
+        # No Origin header (likely a server-to-server call); keep safe defaults.
+        response.headers.setdefault("Access-Control-Allow-Origin", "*")
+    return response
