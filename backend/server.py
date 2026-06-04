@@ -1857,8 +1857,6 @@ async def ai_health():
     }
 
 
-app.include_router(api)
-
 raw_origins = os.environ.get("CORS_ORIGINS", "*")
 allow_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 allow_credentials = True
@@ -1872,3 +1870,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.options('/{rest_of_path:path}')
+async def cors_preflight(rest_of_path: str):
+    return Response(status_code=204, headers={
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization,Content-Type,Accept,Origin,User-Agent",
+        "Access-Control-Allow-Credentials": "false",
+    })
+
+app.include_router(api)

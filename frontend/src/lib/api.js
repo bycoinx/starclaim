@@ -1,7 +1,8 @@
 import axios from "axios";
 
-export const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "";
-export const API = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "";
+const isVercel = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app");
+export const API = isVercel ? "/api" : (BACKEND_URL ? `${BACKEND_URL}/api` : "/api");
 
 export const api = axios.create({
   baseURL: API,
