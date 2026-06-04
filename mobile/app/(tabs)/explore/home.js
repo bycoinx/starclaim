@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity } from 'react-na
 import PagerView from 'react-native-pager-view';
 import SpaceBackground from '../../../components/SpaceBackground';
 import GoldButton from '../../../components/GoldButton';
+import StarButton from '../../../components/StarButton';
 import LanguagePicker from '../../../components/LanguagePicker';
 import PurchaseModal from '../../../components/PurchaseModal';
 import { useState } from 'react';
@@ -19,7 +20,7 @@ export default function HomeScreen() {
         <View key="1" style={styles.page}>
           <Text style={styles.title}>GÖKYÜZÜNDE SONSUZ BİR İZ BIRAK</Text>
           <View style={styles.actions}>
-            <GoldButton title="YILDIZ AL" onPress={() => setShowBuy(true)} />
+            <StarButton title="YILDIZ AL" onPress={() => setShowBuy(true)} />
             <GoldButton title="KEŞFET" onPress={() => {}} outline />
           </View>
           <View style={{marginTop:16}}>

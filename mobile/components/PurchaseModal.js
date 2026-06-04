@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
-export default function PurchaseModal({visible, onClose}){
+export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess}){
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [selected, setSelected] = useState(null);
@@ -32,8 +32,8 @@ export default function PurchaseModal({visible, onClose}){
   }
 
   useEffect(()=>{
-    if(visible){ setStep(1); setName(''); }
-  },[visible])
+    if(visible){ setStep(1); setName(star?.proper || star?.name || ''); setSelected(null); }
+  },[visible, star])
 
   useEffect(()=>{
     if(step===3){
@@ -66,11 +66,18 @@ export default function PurchaseModal({visible, onClose}){
                   try{
                     const purchasesRaw = await AsyncStorage.getItem('@purchases');
                     const purchases = purchasesRaw ? JSON.parse(purchasesRaw) : [];
-                    const rec = { id: Date.now().toString(), name: name||'Yeni Yıldız', method: selected, createdAt: Date.now() };
+                    const rec = {
+                      id: Date.now().toString(),
+                      starId: star?.id ?? star?.hip ?? Date.now().toString(),
+                      name: name || star?.proper || star?.name || 'Yeni Yıldız',
+                      method: selected,
+                      createdAt: Date.now(),
+                    };
                     purchases.unshift(rec);
                     await AsyncStorage.setItem('@purchases', JSON.stringify(purchases));
                     setLoading(false);
                     setStep(3);
+                    if(onPurchaseSuccess) onPurchaseSuccess(rec);
                   }catch(e){ setLoading(false); alert('Kaydedilemedi'); }
                 }, 1200)
               }} />

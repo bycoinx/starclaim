@@ -85,7 +85,11 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [x] `mobile/src/utils/astronomy.js` ile RA/Dec → ekran koordinat dönüşümü yazıldı.
     - [x] `mobile/components/StarCanvas.js` ile manuel modda hızlı yıldız görselleştirmesi eklendi.
     - [x] `mobile/components/StarPopup.js` ile dokunma ve yıldız detay popup'ı çalışır hale getirildi.
+    - [x] `mobile/components/StarButton.js` ile ana ekranda ve popup içinde yıldız biçimli butonlar eklendi.
+    - [x] `mobile/components/PurchaseModal.js` ile seçilen yıldız üzerinden mobil satın alma akışı bağlandı.
     - [x] `mobile/app/(tabs)/explore/starmap.js` ana ekranı oluşturuldu.
+    - [x] `mobile/app/(tabs)/explore/starmap.js` içinde takımyıldız çizgilerini açıp kapatan buton eklendi.
+    - [x] `mobile/app/(tabs)/explore/starmap.js` içinde `Yıldız Al`, `Yıldızımı Gör` ve satın alma modal entegrasyonu tamamlandı.
     - [x] `mobile/components/MyStarsOverlay.js` ile "Yıldızlarım" listesi için altyapı hazırlandı.
     - [x] `expo-sqlite` ve `astronomia` bağımlılıkları `mobile/package.json`a eklendi.
     - [x] Kamera modu ve manyetometre / ivmeölçer altyapısı için temel hazırlık yapıldı.
@@ -132,6 +136,20 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [ ] Marketcap göstergesi gerçek marketplace verilerinden hesaplanmalı.
     - [ ] Backend’te `GET /api/marketplace/metrics` gibi bir metrik endpoint önerilmeli.
     - [ ] Frontend, `marketplace` sayfasında gerçek değerleri gösterecek şekilde güncellenmeli.
+- [ ] **Task 6.5.5: Web/Mobil Star Map Erişim Politikası**
+    - [ ] Web’de sadece NFT sahibi kullanıcılar canlı star map’i görebilecek.
+    - [ ] Normal giriş yapanlar veya anonim ziyaretçiler web’de yalnızca Marketcap/Star listesi bölümünü görecek.
+    - [ ] Mobilde bu ayrım olmayacak; mobil yükleyen herkes star map’e bakabilecek.
+- [ ] **Task 6.5.6: Marketcap & Kategori Filtreleme**
+    - [ ] Marketcap bölümünde tüm yıldızlar listelenecek.
+    - [ ] Takımyıldız, sıradan, zodiac, legendary gibi kategori bazlı filtreleme eklenecek.
+    - [ ] Aynı filtreleme mobilde de sunulacak.
+- [ ] **Task 6.5.7: Gerçek Sahiplik Bilgisi**
+    - [ ] Web’de satın alma bilgisi gerçeğe bağlanacak.
+    - [ ] Gerçek alan kişilerin isimleri veya sahiplik kayıtları ilgili yıldız bilgi ekranında gösterilecek.
+- [ ] **Task 6.5.8: Satın Alma Akışı Stabilizasyonu**
+    - [ ] Yıldız Al bölümündeki hatalar giderilecek.
+    - [ ] Giderilemezse, kullanıcıya güvenli bir hata fallback’i sağlanacak.
 
 ## 🛒 Phase 7: Commerce & Fulfillment
 **Hedef:** Satın alma, pazar ve teslimat akışlarını uçtan uca tamamlamak.

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import StarButton from './StarButton';
 
 export default function StarPopup({ visible, star, owned, onClose, onPurchase, onProfile }) {
   if (!star) return null;
@@ -15,9 +16,9 @@ export default function StarPopup({ visible, star, owned, onClose, onPurchase, o
           {owned ? <Text style={styles.badge}>★ Sahiplenilmiş</Text> : null}
           <View style={styles.actions}>
             {!owned ? (
-              <TouchableOpacity style={styles.button} onPress={onPurchase}><Text style={styles.buttonText}>Yıldız Al</Text></TouchableOpacity>
+              <StarButton compact title="Yıldız Al" active onPress={onPurchase} />
             ) : (
-              <TouchableOpacity style={styles.button} onPress={onProfile}><Text style={styles.buttonText}>Yıldız Profilini Gör</Text></TouchableOpacity>
+              <StarButton compact title="Yıldızımı Gör" active onPress={onProfile} />
             )}
             <TouchableOpacity style={[styles.button, styles.close]} onPress={onClose}><Text style={styles.buttonText}>Kapat</Text></TouchableOpacity>
           </View>
