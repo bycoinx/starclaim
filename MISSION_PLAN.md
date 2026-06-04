@@ -80,6 +80,15 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [x] Home ekranına gerçek zamanlı Market Cap ve Hacim verileri bağlandı.
     - [x] Canlı aktivite akışı (Live Feed) mobil terminale entegre edildi.
     - [x] Vault Core ve Neural Link ekranları "Landscape Cockpit" temasına uyarlandı.
+- [x] **Task 4.8: Gökyüzüne Bak (StarMap)**
+    - [x] `mobile/src/data/starLoader.js` ile HYG verisi çekilip AsyncStorage'a kaydedildi.
+    - [x] `mobile/src/utils/astronomy.js` ile RA/Dec → ekran koordinat dönüşümü yazıldı.
+    - [x] `mobile/components/StarCanvas.js` ile manuel modda hızlı yıldız görselleştirmesi eklendi.
+    - [x] `mobile/components/StarPopup.js` ile dokunma ve yıldız detay popup'ı çalışır hale getirildi.
+    - [x] `mobile/app/(tabs)/explore/starmap.js` ana ekranı oluşturuldu.
+    - [x] `mobile/components/MyStarsOverlay.js` ile "Yıldızlarım" listesi için altyapı hazırlandı.
+    - [x] `expo-sqlite` ve `astronomia` bağımlılıkları `mobile/package.json`a eklendi.
+    - [x] Kamera modu ve manyetometre / ivmeölçer altyapısı için temel hazırlık yapıldı.
 
 ## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n) [COMPLETED]
 **Hedef:** n8n tabanlı, projenin tüm teknik ve vizyoner verisine hakim bir AI asistan kurulumu.

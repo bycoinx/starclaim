@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, Alert, FlatList, ScrollView, TextInput } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, Alert, FlatList, TextInput } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { DeviceMotion } from 'expo-sensors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -200,7 +200,7 @@ export default function Stars() {
           <Text style={styles.emptyText}>😔 Kriterlere uyan yıldız bulunamadı</Text>
         </View>
       ) : (
-        <ScrollView style={styles.starsList}>
+        <View style={styles.starsList}>
           {filteredStars.map(star => (
             <TouchableOpacity
               key={star.star_id}
@@ -221,7 +221,7 @@ export default function Stars() {
               </View>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       )}
     </View>
   );

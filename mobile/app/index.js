@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSolanaWallet } from '../hooks/useSolanaWallet';
 import { SecurityService } from '../lib/security';
@@ -73,7 +73,7 @@ export default function Home() {
 
   return (
     <CockpitLayout showHUD={false}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>★ STARCLAIM</Text>
@@ -184,7 +184,7 @@ export default function Home() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
     </CockpitLayout>
   );
 }

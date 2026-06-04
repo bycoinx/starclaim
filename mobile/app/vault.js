@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { decryptData } from '../lib/crypto';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,7 +69,7 @@ export default function Vault() {
 
   return (
     <CockpitLayout leftWing={LeftWing}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={[styles.container, styles.content]}>
         <View style={styles.header}>
            <Text style={styles.title}>VAULT_CORE_v2.0</Text>
            <Text style={styles.subtitle}>QUANTUM_ENCRYPTION_ACCESS_PORTAL</Text>
@@ -131,7 +131,7 @@ export default function Vault() {
              </View>
           )}
         </View>
-      </ScrollView>
+      </View>
     </CockpitLayout>
   );
 }
