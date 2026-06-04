@@ -1859,10 +1859,16 @@ async def ai_health():
 
 app.include_router(api)
 
+raw_origins = os.environ.get("CORS_ORIGINS", "*")
+allow_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+allow_credentials = True
+if allow_origins == ["*"]:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_credentials=allow_credentials,
+    allow_origins=allow_origins or ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

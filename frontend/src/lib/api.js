@@ -5,7 +5,7 @@ export const API = BACKEND_URL ? `${BACKEND_URL}/api` : "/api";
 
 export const api = axios.create({
   baseURL: API,
-  withCredentials: true,
+  withCredentials: false,
   timeout: 60000, // 60s timeout
 });
 
