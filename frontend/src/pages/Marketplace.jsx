@@ -28,7 +28,7 @@ export default function Marketplace() {
   const loadListings = () => {
     setLoading(true);
     setError("");
-    api.get("/marketplace/listings")
+    api.get("/marketplace/listings", { params: { sort: "importance" } })
       .then(({ data }) => {
         if (Array.isArray(data)) setListings(data);
         else setListings([]);
@@ -94,6 +94,9 @@ export default function Marketplace() {
             <p className="text-sc-text-muted max-w-md mt-4 text-sm font-mono opacity-70">
               {t("market_sub")}
             </p>
+            <div className="text-[10px] uppercase tracking-[0.3em] text-sc-gold/70 mt-3 font-bold font-mono">
+              {lang === "TR" ? "Yıldızlar önem ve fiyat bazında sıralandı." : "Stars are sorted by importance and price."}
+            </div>
           </div>
 
           <div className="flex gap-4">
@@ -114,6 +117,13 @@ export default function Marketplace() {
                   {metrics.market_cap >= 1000000 ? `$${(metrics.market_cap / 1000000).toFixed(1)}M` : `$${metrics.market_cap.toLocaleString()}`}
                 </div>
                 <div className="text-[8px] text-sc-blue mt-1 font-mono">NETWORK: STABLE</div>
+             </div>
+             <div className="dashboard-stats-card min-w-[160px] hidden xl:block">
+                <div className="corner-accent corner-tl" />
+                <div className="corner-accent corner-br" />
+                <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1 font-bold">Avg. Star Price</div>
+                <div className="text-2xl font-display text-sc-blue">${metrics.star_price?.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) || '0.00'}</div>
+                <div className="text-[8px] mt-1 font-mono text-sc-text-muted">Importance-based pricing feed</div>
              </div>
           </div>
         </div>
@@ -189,7 +199,12 @@ export default function Marketplace() {
 
                   <div className="flex items-start justify-between mt-4 mb-6">
                     <div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-sc-gold font-bold mb-1">{l.tier}</div>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-sc-gold font-bold">{l.tier}</span>
+                        <span className="text-[8px] uppercase tracking-[0.2em] text-sc-blue font-bold px-2 py-1 rounded border border-sc-blue/20 bg-sc-blue/5">
+                          {l.importance_label || 'Galaxy Asset'}
+                        </span>
+                      </div>
                       <h3 className="font-display text-2xl gold-gradient-text tracking-tight">{l.star_name}</h3>
                       <div className="text-[10px] text-sc-text-muted font-mono tracking-wider flex items-center gap-1 mt-1">
                         <Activity size={10} /> {l.constellation.toUpperCase()} // CODE: {l.star_code}

@@ -146,6 +146,15 @@ class TestStars:
         r = api_client.get(f"{API}/stars/nonexistent_id")
         assert r.status_code == 404
 
+    def test_stars_health_endpoint(self, api_client):
+        r = api_client.get(f"{API}/stars/health")
+        assert r.status_code == 200
+        d = r.json()
+        assert d["service"] == "StarClaim Star Catalog"
+        assert isinstance(d["total_stars"], int)
+        assert isinstance(d["available_stars"], int)
+        assert d["ok"] == (d["total_stars"] > 0)
+
 
 # --------- marketplace ---------
 class TestMarketplace:
@@ -158,6 +167,18 @@ class TestMarketplace:
             assert "percent_increase" in l
             assert l["asking_price"] >= 0
             assert "_id" not in l
+
+    def test_marketplace_metrics(self, api_client):
+        r = api_client.get(f"{API}/marketplace/metrics")
+        assert r.status_code == 200
+        d = r.json()
+        assert "market_cap" in d
+        assert "volume_24h" in d
+        assert "sol_price" in d
+        assert "star_price" in d
+        assert isinstance(d["total_stars"], int)
+        assert d["market_cap"] >= 0
+        assert d["star_price"] >= 0
 
 
 # --------- stats / activities ---------

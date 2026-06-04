@@ -43,6 +43,10 @@ export default function Home() {
           if (data?.sol_price && data?.star_price) {
             setMetrics({ sol: data.sol_price, star: data.star_price });
             console.log('Metrics fetched from:', url);
+          } else if (data?.market_cap && data?.total_stars) {
+            const avgPrice = Number((data.market_cap / Math.max(data.total_stars, 1)).toFixed(2));
+            setMetrics({ sol: Number((avgPrice * 0.12).toFixed(2)), star: avgPrice });
+            console.log('Metrics fetched with fallback from:', url);
           }
           break;
         } catch (err) {

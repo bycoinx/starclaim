@@ -17,6 +17,18 @@ const AegisTerminal = () => {
     }
   }, [history, isTyping]);
 
+  const formatAegisError = (error) => {
+    if (error?.response) {
+      const { status, data } = error.response;
+      const serverMsg = data?.detail || data?.error || data?.reply;
+      if (status === 404) {
+        return 'Aegis endpoint bulunamadı. `REACT_APP_BACKEND_URL` veya API yönlendirmesini kontrol edin.';
+      }
+      return serverMsg ? `Sunucu hatası ${status}: ${serverMsg}` : `Sunucu hatası ${status}`;
+    }
+    return error?.message || 'Sistemleri kontrol ediyorum.';
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -36,7 +48,7 @@ const AegisTerminal = () => {
 
       setHistory(prev => [...prev, { role: 'assistant', content: response.data.reply || 'Aegis destek yanıtı alınamadı.' }]);
     } catch (error) {
-      const errorMessage = error?.response?.data?.detail || error?.response?.data?.error || error?.response?.data?.reply || error?.response?.statusText || error?.message || 'Sistemleri kontrol ediyorum.';
+      const errorMessage = formatAegisError(error);
       setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${errorMessage}` }]);
     } finally {
       setIsTyping(false);

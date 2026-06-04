@@ -3,6 +3,7 @@ StarClaim backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
 + Stripe checkout + Resend email + ReportLab PDF certificate.
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -82,6 +83,22 @@ api = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("starclaim")
+
+TIER_IMPORTANCE = {
+    "legendary": 5,
+    "zodiac": 4,
+    "named": 3,
+    "constellation": 2,
+    "standard": 1,
+}
+
+TIER_LABELS = {
+    "legendary": "Cosmic Legacy",
+    "zodiac": "Stellar Maven",
+    "named": "Honorary Star",
+    "constellation": "Celestial Pattern",
+    "standard": "Galaxy Asset",
+}
 
 
 def load_support_document(path: Path, max_lines: int = 80, max_chars: int = 3500) -> str:
@@ -719,6 +736,18 @@ async def list_my_stars(user: User = Depends(get_current_user)):
     return stars
 
 
+@api.get("/stars/health")
+async def stars_health():
+    total_stars = await db.stars.count_documents({})
+    available_stars = await db.stars.count_documents({"owner_id": None})
+    return {
+        "service": "StarClaim Star Catalog",
+        "ok": total_stars > 0,
+        "total_stars": total_stars,
+        "available_stars": available_stars,
+    }
+
+
 @api.post("/stellar/testnet/create-account")
 async def stellar_create_testnet_account():
     try:
@@ -962,12 +991,27 @@ async def release_star(body: dict, user: User = Depends(get_current_user)):
 
 # -------------------- Marketplace --------------------
 @api.get("/marketplace/listings")
-async def get_listings(limit: int = 50):
-    cur = db.listings.find({"status": {"$ne": "sold"}}, {"_id": 0}).sort([("listed_at", -1)]).limit(limit)
+async def get_listings(limit: int = 50, sort: str = "importance"):
+    cur = db.listings.find({"status": {"$ne": "sold"}}, {"_id": 0}).limit(limit)
     rows = await cur.to_list(limit)
     for r in rows:
         orig = r.get("original_price") or 1
         r["percent_increase"] = round((r["asking_price"] - orig) / orig * 100)
+        r["tier_rank"] = TIER_IMPORTANCE.get(r.get("tier", "standard"), 0)
+        r["importance_label"] = TIER_LABELS.get(r.get("tier", "standard"), "Galaxy Asset")
+
+    if sort == "importance":
+        rows.sort(
+            key=lambda r: (
+                r.get("tier_rank", 0),
+                r.get("asking_price", 0),
+                r.get("listed_at", ""),
+            ),
+            reverse=True,
+        )
+    else:
+        rows.sort(key=lambda r: r.get("listed_at", ""), reverse=True)
+
     return rows
 
 
@@ -1680,6 +1724,8 @@ async def marketplace_metrics():
     cursor_vol = db.marketplace_sales.aggregate(pipeline_vol)
     result_vol = await cursor_vol.to_list(1)
     volume_24h = result_vol[0]["total"] if result_vol else (market_cap * 0.00012) # Tiny fallback for aesthetic
+    avg_price = round((market_cap / total_stars) if total_stars else 0, 2)
+    sol_price = round(avg_price * 0.12, 2)
 
     return {
         "market_cap": round(market_cap, 2),
@@ -1687,6 +1733,8 @@ async def marketplace_metrics():
         "total_stars": total_stars,
         "owned_stars": owned_stars,
         "active_listings": await db.listings.count_documents({"status": "active"}),
+        "sol_price": sol_price,
+        "star_price": avg_price,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
@@ -1791,10 +1839,13 @@ async def ai_support(body: SupportRequest):
         return {"reply": (reply or "Aegis yanıtı alınamadı, Sir.").strip()}
     except Exception as e:
         logger.exception("Aegis Support failed")
-        return {
-            "reply": f"Kuantum bağlantı hatası, Sir. Birimlerim şu an yanıt veremiyor ({str(e)}).",
-            "error": True
-        }
+        return JSONResponse(
+            status_code=500,
+            content={
+                "reply": f"Kuantum bağlantı hatası, Sir. Birimlerim şu an yanıt veremiyor ({str(e)}).",
+                "error": True,
+            },
+        )
 
 
 @api.get("/ai/health")
