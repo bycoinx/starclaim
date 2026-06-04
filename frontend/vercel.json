@@ -25,7 +25,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://starclaim-api.onrender.com/api/:path*"
+      "destination": "https://starclaim.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

@@ -119,7 +119,7 @@ If your frontend is deployed on Netlify, use the Netlify dashboard. If it is dep
 1. **Netlify dashboard** → your site → **Site configuration → Environment variables**
 2. Add:
    ```
-   REACT_APP_BACKEND_URL = https://starclaim-api.onrender.com
+   REACT_APP_BACKEND_URL = https://starclaim.onrender.com
    ```
    (No trailing slash. No quotes.)
 
@@ -130,7 +130,7 @@ If your frontend is deployed on Netlify, use the Netlify dashboard. If it is dep
 1. **Vercel dashboard** → your project → **Settings → Environment Variables**
 2. Add:
    ```
-   REACT_APP_BACKEND_URL = https://starclaim-api.onrender.com
+   REACT_APP_BACKEND_URL = https://starclaim.onrender.com
    ```
    Environment: `Production` and `Preview` if you want preview deploys to work.
    (No trailing slash. No quotes.)

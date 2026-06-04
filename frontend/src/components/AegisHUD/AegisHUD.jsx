@@ -28,7 +28,7 @@ export default function AegisHUD({ onComplete }) {
   const [canvasError, setCanvasError] = useState(null);
 
   useEffect(() => {
-    const wsUrl = `wss://starclaim-api.onrender.com/ws/bridge/${sessionID}`;
+    const wsUrl = `wss://starclaim.onrender.com/ws/bridge/${sessionID}`;
     let ws;
 
     try {

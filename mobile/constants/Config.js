@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 // For local development, replace with your PC's local IP (e.g., 192.168.1.37)
 // When deploying, use your production API URL
 const LOCAL_IP = '192.168.1.37'; 
-const PRODUCTION_URL = 'https://starclaim-api.onrender.com';
+const PRODUCTION_URL = 'https://starclaim.onrender.com';
 
 export const CONFIG = {
   API_URL: `http://${LOCAL_IP}:8000`,

@@ -13,7 +13,7 @@ export default function QRLoginModal({ isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const wsUrl = `wss://starclaim-api.onrender.com/ws/auth/${authSessionId}`;
+    const wsUrl = `wss://starclaim.onrender.com/ws/auth/${authSessionId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
