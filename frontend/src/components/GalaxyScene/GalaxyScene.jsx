@@ -24,11 +24,11 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
   const refFar = useRef();
   const refUltraFar = useRef();
 
-  // LOD thresholds (parsec) - optimized for 120K stars
-  const NEAR_MAX = 50;    // ultra detail (bright stars)
-  const MID_MAX = 200;    // detail (mid brightness)
-  const FAR_MAX = 500;    // sparse (distant stars)
-  const ULTRA_FAR_MAX = 2000; // very distant (minimal detail)
+  // LOD thresholds (parsec) - optimized for 120K stars with better visibility
+  const NEAR_MAX = 100;   // ultra detail (bright stars)
+  const MID_MAX = 400;    // detail (mid brightness)
+  const FAR_MAX = 800;    // sparse (distant stars)
+  const ULTRA_FAR_MAX = 3000; // very distant (minimal detail)
 
   // Lists computed unconditionally to satisfy hooks rules
   const nearList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d <= NEAR_MAX; }) : [], [stars]);
@@ -59,18 +59,18 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
       return g;
     };
 
-    const nG = nearList.length ? build(nearList, 1.0) : null;
-    const mG = midList.length ? build(midList, 0.6) : null;
-    const fG = farList.length ? build(farList, 0.3) : null;
-    const uG = ultraFarList.length ? build(ultraFarList, 0.15) : null;
+    const nG = nearList.length ? build(nearList, 1.5) : null;
+    const mG = midList.length ? build(midList, 1.0) : null;
+    const fG = farList.length ? build(farList, 0.6) : null;
+    const uG = ultraFarList.length ? build(ultraFarList, 0.3) : null;
     return { nearGeom: nG, midGeom: mG, farGeom: fG, ultraFarGeom: uG };
   }, [nearList, midList, farList, ultraFarList]);
 
   useFrame(({ clock }) => {
     if (refNear.current) refNear.current.material.opacity = 0.95 + Math.sin(clock.getElapsedTime() * 0.6) * 0.03;
-    if (refMid.current) refMid.current.material.opacity = 0.35 + Math.sin(clock.getElapsedTime() * 0.4) * 0.02;
-    if (refFar.current) refFar.current.material.opacity = 0.2 + Math.sin(clock.getElapsedTime() * 0.3) * 0.01;
-    if (refUltraFar.current) refUltraFar.current.material.opacity = 0.1 + Math.sin(clock.getElapsedTime() * 0.2) * 0.005;
+    if (refMid.current) refMid.current.material.opacity = 0.6 + Math.sin(clock.getElapsedTime() * 0.4) * 0.02;
+    if (refFar.current) refFar.current.material.opacity = 0.4 + Math.sin(clock.getElapsedTime() * 0.3) * 0.01;
+    if (refUltraFar.current) refUltraFar.current.material.opacity = 0.25 + Math.sin(clock.getElapsedTime() * 0.2) * 0.005;
   });
 
   const handlePointerDown = (e, list) => {
@@ -90,22 +90,22 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
     <>
       {nearGeom && (
         <points ref={refNear} geometry={nearGeom} onPointerDown={(e) => handlePointerDown(e, nearList)}>
-          <pointsMaterial vertexColors size={0.8} sizeAttenuation={true} depthWrite={false} transparent opacity={0.95} blending={THREE.AdditiveBlending} />
+          <pointsMaterial vertexColors size={1.2} sizeAttenuation={true} depthWrite={false} transparent opacity={0.95} blending={THREE.AdditiveBlending} />
         </points>
       )}
       {midGeom && (
         <points ref={refMid} geometry={midGeom} onPointerDown={(e) => handlePointerDown(e, midList)}>
-          <pointsMaterial vertexColors size={0.5} sizeAttenuation={true} depthWrite={false} transparent opacity={0.35} blending={THREE.AdditiveBlending} />
+          <pointsMaterial vertexColors size={0.8} sizeAttenuation={true} depthWrite={false} transparent opacity={0.6} blending={THREE.AdditiveBlending} />
         </points>
       )}
       {farGeom && (
         <points ref={refFar} geometry={farGeom}>
-          <pointsMaterial vertexColors size={0.3} sizeAttenuation={true} depthWrite={false} transparent opacity={0.2} blending={THREE.AdditiveBlending} />
+          <pointsMaterial vertexColors size={0.5} sizeAttenuation={true} depthWrite={false} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
         </points>
       )}
       {ultraFarGeom && (
         <points ref={refUltraFar} geometry={ultraFarGeom}>
-          <pointsMaterial vertexColors size={0.15} sizeAttenuation={true} depthWrite={false} transparent opacity={0.1} blending={THREE.AdditiveBlending} />
+          <pointsMaterial vertexColors size={0.3} sizeAttenuation={true} depthWrite={false} transparent opacity={0.25} blending={THREE.AdditiveBlending} />
         </points>
       )}
     </>
