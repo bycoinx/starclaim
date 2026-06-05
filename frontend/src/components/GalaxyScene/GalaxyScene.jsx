@@ -21,18 +21,22 @@ function LoadingOverlay() {
 function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
   const refNear = useRef();
   const refMid = useRef();
+  const refFar = useRef();
+  const refUltraFar = useRef();
 
-  // LOD thresholds (parsec) - adjusted for better visual distribution
-  const NEAR_MAX = 100;   // ultra detail (bright stars)
-  const MID_MAX = 300;    // detail (mid brightness)
-  const FAR_MAX = 800;    // sparse (distant stars)
+  // LOD thresholds (parsec) - optimized for 120K stars
+  const NEAR_MAX = 50;    // ultra detail (bright stars)
+  const MID_MAX = 200;    // detail (mid brightness)
+  const FAR_MAX = 500;    // sparse (distant stars)
+  const ULTRA_FAR_MAX = 2000; // very distant (minimal detail)
 
   // Lists computed unconditionally to satisfy hooks rules
   const nearList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d <= NEAR_MAX; }) : [], [stars]);
   const midList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > NEAR_MAX && d <= MID_MAX; }) : [], [stars]);
   const farList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > MID_MAX && d <= FAR_MAX; }) : [], [stars]);
+  const ultraFarList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > FAR_MAX && d <= ULTRA_FAR_MAX; }) : [], [stars]);
 
-  const { nearGeom, midGeom, farGeom } = useMemo(() => {
+  const { nearGeom, midGeom, farGeom, ultraFarGeom } = useMemo(() => {
     const build = (arr, sizeMultiplier = 1) => {
       const positions = new Float32Array(arr.length * 3);
       const colors = new Float32Array(arr.length * 3);
@@ -57,12 +61,16 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
 
     const nG = nearList.length ? build(nearList, 1.0) : null;
     const mG = midList.length ? build(midList, 0.6) : null;
-    return { nearGeom: nG, midGeom: mG };
-  }, [nearList, midList]);
+    const fG = farList.length ? build(farList, 0.3) : null;
+    const uG = ultraFarList.length ? build(ultraFarList, 0.15) : null;
+    return { nearGeom: nG, midGeom: mG, farGeom: fG, ultraFarGeom: uG };
+  }, [nearList, midList, farList, ultraFarList]);
 
   useFrame(({ clock }) => {
     if (refNear.current) refNear.current.material.opacity = 0.95 + Math.sin(clock.getElapsedTime() * 0.6) * 0.03;
     if (refMid.current) refMid.current.material.opacity = 0.35 + Math.sin(clock.getElapsedTime() * 0.4) * 0.02;
+    if (refFar.current) refFar.current.material.opacity = 0.2 + Math.sin(clock.getElapsedTime() * 0.3) * 0.01;
+    if (refUltraFar.current) refUltraFar.current.material.opacity = 0.1 + Math.sin(clock.getElapsedTime() * 0.2) * 0.005;
   });
 
   const handlePointerDown = (e, list) => {
@@ -76,7 +84,7 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
     }
   };
 
-  if (!nearGeom && !midGeom) return null;
+  if (!nearGeom && !midGeom && !farGeom && !ultraFarGeom) return null;
 
   return (
     <>
@@ -88,6 +96,16 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
       {midGeom && (
         <points ref={refMid} geometry={midGeom} onPointerDown={(e) => handlePointerDown(e, midList)}>
           <pointsMaterial vertexColors size={0.5} sizeAttenuation={true} depthWrite={false} transparent opacity={0.35} blending={THREE.AdditiveBlending} />
+        </points>
+      )}
+      {farGeom && (
+        <points ref={refFar} geometry={farGeom}>
+          <pointsMaterial vertexColors size={0.3} sizeAttenuation={true} depthWrite={false} transparent opacity={0.2} blending={THREE.AdditiveBlending} />
+        </points>
+      )}
+      {ultraFarGeom && (
+        <points ref={refUltraFar} geometry={ultraFarGeom}>
+          <pointsMaterial vertexColors size={0.15} sizeAttenuation={true} depthWrite={false} transparent opacity={0.1} blending={THREE.AdditiveBlending} />
         </points>
       )}
     </>
@@ -185,7 +203,7 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
 
   useEffect(() => {
     let mounted = true;
-    loadHygStars({ limit: 50000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
+    loadHygStars({ limit: 120000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
     return () => { mounted = false; };
   }, []);
 
