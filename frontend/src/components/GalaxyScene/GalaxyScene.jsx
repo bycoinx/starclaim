@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, FlyControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
 import { PLANETS, keplerEllipsePosition, SOLAR_SCALE } from '../../data/solarSystem';
@@ -17,55 +17,22 @@ function LoadingOverlay() {
   );
 }
 
-function MilkyWayBackground() {
-  const geom = useMemo(() => {
-    const points = 20000;
-    const positions = new Float32Array(points * 3);
-    const colors = new Float32Array(points * 3);
-    for (let i = 0; i < points; i++) {
-      const r = Math.random() * 800;
-      const theta = Math.random() * Math.PI * 2;
-      const x = r * Math.cos(theta);
-      const y = (Math.random() - 0.5) * 4.0;
-      const z = r * Math.sin(theta);
-      positions[i * 3 + 0] = x;
-      positions[i * 3 + 1] = y;
-      positions[i * 3 + 2] = z;
-      const t = Math.min(1, r / 800);
-      // inner warm, outer cool
-      const ir = 1.0 * (1 - t) + 0.6 * t;
-      const ig = 0.9 * (1 - t) + 0.7 * t;
-      const ib = 0.5 * (1 - t) + 1.0 * t;
-      colors[i * 3 + 0] = ir;
-      colors[i * 3 + 1] = ig;
-      colors[i * 3 + 2] = ib;
-    }
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    return g;
-  }, []);
-
-  return (
-    <points geometry={geom} frustumCulled={false}>
-      <pointsMaterial vertexColors size={0.3} sizeAttenuation={true} depthWrite={false} transparent opacity={0.9} />
-    </points>
-  );
-}
 
 function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
   const refNear = useRef();
   const refMid = useRef();
 
-  // LOD thresholds (parsec)
-  const NEAR_MAX = 200; // fully detailed
-  const MID_MAX = 500; // mid detail, faded
+  // LOD thresholds (parsec) - adjusted for better visual distribution
+  const NEAR_MAX = 100;   // ultra detail (bright stars)
+  const MID_MAX = 300;    // detail (mid brightness)
+  const FAR_MAX = 800;    // sparse (distant stars)
 
   // Lists computed unconditionally to satisfy hooks rules
   const nearList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d <= NEAR_MAX; }) : [], [stars]);
   const midList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > NEAR_MAX && d <= MID_MAX; }) : [], [stars]);
+  const farList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > MID_MAX && d <= FAR_MAX; }) : [], [stars]);
 
-  const { nearGeom, midGeom } = useMemo(() => {
+  const { nearGeom, midGeom, farGeom } = useMemo(() => {
     const build = (arr, sizeMultiplier = 1) => {
       const positions = new Float32Array(arr.length * 3);
       const colors = new Float32Array(arr.length * 3);
@@ -190,32 +157,99 @@ function SolarSystemScene() {
 export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnStarClick }) {
   const [stars, setStars] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [useFlyControls, setUseFlyControls] = useState(false);
+  const [targetStar, setTargetStar] = useState(null);
+  const cameraRef = useRef();
   const orient = useDeviceOrientation();
 
   useEffect(() => {
     let mounted = true;
-    loadHygStars({ limit: 9000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
+    loadHygStars({ limit: 50000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
     return () => { mounted = false; };
   }, []);
+
+  // Fly to selected star
+  const flyToStar = (star) => {
+    setTargetStar(star);
+    setUseFlyControls(false); // Switch to orbit mode for better control
+  };
+
+  // Camera animation for flying to star
+  useFrame(({ camera }) => {
+    if (targetStar && cameraRef.current) {
+      const targetPos = new THREE.Vector3(targetStar.threeX, targetStar.threeY, targetStar.threeZ);
+      const currentPos = camera.position.clone();
+      const distance = currentPos.distanceTo(targetPos);
+      
+      if (distance > 2) {
+        const direction = new THREE.Vector3().subVectors(targetPos, currentPos).normalize();
+        const speed = Math.min(distance * 0.1, 5); // Smooth approach
+        camera.position.add(direction.multiplyScalar(speed));
+        camera.lookAt(targetPos);
+      } else {
+        setTargetStar(null); // Arrived
+      }
+    }
+  });
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {!stars && <LoadingOverlay />}
-      <Canvas camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
+      <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
         <Suspense fallback={null}>
           <color attach="background" args={["#000005"]} />
-          <fog attach="fog" args={["#000010", 200, 2000]} />
-          <ambientLight intensity={0.1} />
-          <MilkyWayBackground />
+          <fog attach="fog" args={["#000010", 100, 3000]} />
+          <ambientLight intensity={0.12} />
           {stars && <HYGStarField stars={stars} ownedStars={ownedStars} onStarClick={(s) => setSelected(s)} />}
           <SolarSystemScene />
           <CameraRig enableCinematic={true} />
           <EffectComposer>
             <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.9} intensity={1.0} />
           </EffectComposer>
-          <OrbitControls enablePan enableZoom enableRotate={!orient.isMobile} zoomSpeed={0.8} minDistance={0.5} maxDistance={5000} makeDefault />
+          {useFlyControls ? (
+            <FlyControls
+              makeDefault
+              movementSpeed={50}
+              domElement={document.documentElement}
+              rollSpeed={0.5}
+            />
+          ) : (
+            <OrbitControls enablePan enableZoom enableRotate={!orient.isMobile} zoomSpeed={0.8} minDistance={0.5} maxDistance={5000} makeDefault />
+          )}
         </Suspense>
       </Canvas>
+      <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 10, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <button
+          onClick={() => setUseFlyControls(!useFlyControls)}
+          style={{
+            background: 'rgba(0, 0, 0, 0.7)',
+            color: '#fff',
+            border: '1px solid #444',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+        >
+          {useFlyControls ? 'Orbit Mode' : 'Fly Mode'}
+        </button>
+        {selected && (
+          <button
+            onClick={() => flyToStar(selected)}
+            style={{
+              background: 'rgba(0, 100, 200, 0.7)',
+              color: '#fff',
+              border: '1px solid #4488ff',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px'
+            }}
+          >
+            Go to {selected.proper || 'Star'}
+          </button>
+        )}
+      </div>
       <StarPopup star={selected} onClose={() => setSelected(null)} onClaim={() => { if (externalOnStarClick) externalOnStarClick(selected); }} />
     </div>
   );

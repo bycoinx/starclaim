@@ -41,7 +41,8 @@ function bvToColor(bv) {
 function computeSize(mag) {
   const m = parseFloat(mag);
   if (isNaN(m)) return 0.5;
-  return Math.max(0.5, (6.5 - m) * 0.4);
+  // Brighter stars (lower mag) are bigger, with exponential curve for realism
+  return Math.max(0.2, Math.pow(10, (6.5 - m) * 0.15));
 }
 
 const FALLBACK = [
@@ -52,7 +53,7 @@ const FALLBACK = [
   { id: 'ARCTURUS', proper: 'Arcturus', ra: 213.9153, dec: 19.1824, dist: 11.26, mag: -0.05, ci: 1.23, x: -10.1, y: 3.2, z: -1.1 },
 ];
 
-export async function loadHygStars({ url = HYG_URL, limit = 9000 } = {}) {
+export async function loadHygStars({ url = HYG_URL, limit = 50000 } = {}) {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error('Network error');
