@@ -51,8 +51,8 @@ Notes & Next steps
 - Current HYG loader uses a minimal in-file CSV parser to avoid adding `papaparse` during initial PR; we can switch
   to `papaparse` for robust parsing if preferred.
 - LOD thresholds: near (<=200 pc), mid (<=500 pc); >500 pc are culled for performance. Adjust thresholds as needed.
-- TODO: Wire claim/purchase flow from `StarPopup` to existing claim API.
-- TODO: (Optional) Move CSV parsing to a Web Worker for non-blocking load of full HYG (~9k stars).
+- Completed: StarPopup claim button now calls the existing `onClaim` checkout flow from `StarPicker`.
+- Optional: Move CSV parsing to a Web Worker for non-blocking load of full HYG (~9k stars).
 
 Testing checklist (to include in PR):
 - [ ] `npm run build` completes without errors

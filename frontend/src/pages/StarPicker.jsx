@@ -278,7 +278,7 @@ export default function StarPicker({ onClaim }) {
                 </div>
               }>
                 <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
-                  <GalaxyScene ownedStars={[]} onStarClick={(s)=>{ /* bridge to claim if needed */ }} />
+                  <GalaxyScene ownedStars={[]} onStarClick={onClaim} />
                 </ErrorBoundary>
               </Suspense>
             </div>
