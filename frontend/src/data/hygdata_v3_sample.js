@@ -62,23 +62,33 @@ export async function loadHygStars({ url = HYG_URL, limit = 9000 } = {}) {
     return stars;
   } catch (err) {
     // fallback
-    return FALLBACK.map(s => ({
-      id: s.id,
-      proper: s.proper,
-      ra: s.ra,
-      dec: s.dec,
-      dist: s.dist,
-      mag: s.mag,
-      ci: s.ci,
-      x: s.x,
-      y: s.y,
-      z: s.z,
-      threeX: s.x * SCALE,
-      threeY: s.z * SCALE,
-      threeZ: -s.y * SCALE,
-      color: bvToColor(s.ci),
-      size: computeSize(s.mag),
-    }));
+    return FALLBACK.map(s => {
+      const ra = s.ra;
+      const dec = s.dec;
+      const dist = s.dist;
+      const raRad = ra * Math.PI / 180;
+      const decRad = dec * Math.PI / 180;
+      const x = dist * Math.cos(decRad) * Math.cos(raRad);
+      const y = dist * Math.cos(decRad) * Math.sin(raRad);
+      const z = dist * Math.sin(decRad);
+      return {
+        id: s.id,
+        proper: s.proper,
+        ra: s.ra,
+        dec: s.dec,
+        dist: s.dist,
+        mag: s.mag,
+        ci: s.ci,
+        x,
+        y,
+        z,
+        threeX: x * SCALE,
+        threeY: z * SCALE,
+        threeZ: -y * SCALE,
+        color: bvToColor(s.ci),
+        size: computeSize(s.mag),
+      };
+    });
   }
 }
 

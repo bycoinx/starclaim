@@ -127,34 +127,62 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
   );
 }
 
+function OrbitRing({ radius, tilt, visible }) {
+  const geometry = useMemo(() => {
+    const inner = Math.max(0.01, radius * SOLAR_SCALE - 0.02);
+    const outer = radius * SOLAR_SCALE + 0.02;
+    return new THREE.RingGeometry(inner, outer, 128);
+  }, [radius]);
+
+  return visible ? (
+    <mesh rotation={[Math.PI / 2, 0, 0]} geometry={geometry}>
+      <meshBasicMaterial color="#8fb8ff" transparent opacity={0.1} side={THREE.DoubleSide} />
+    </mesh>
+  ) : null;
+}
+
 function SolarSystemScene() {
-  const group = useRef();
+  const planetRefs = useRef([]);
+
   useFrame(() => {
-    // update planets positions
-    if (!group.current) return;
     const t = Date.now() / 1000;
     for (let i = 0; i < PLANETS.length; i++) {
-      const node = group.current.children[i];
+      const node = planetRefs.current[i];
       if (!node) continue;
-      const p = keplerEllipsePosition(PLANETS[i].sma, PLANETS[i].e, PLANETS[i].period, t);
-      node.position.set(p[0], p[1], p[2]);
+      const orbit = keplerEllipsePosition(PLANETS[i].sma, PLANETS[i].e, PLANETS[i].period, t);
+      node.position.set(orbit[0], orbit[1], orbit[2]);
     }
   });
 
   return (
-    <group ref={group}>
-      {/* Sun */}
-      <mesh position={[0,0,0]}>
+    <group>
+      <mesh position={[0, 0, 0]}>
         <sphereGeometry args={[1.5, 32, 32]} />
         <meshStandardMaterial emissive={'#FFA500'} emissiveIntensity={3} color={'#FFA500'} />
       </mesh>
-      <pointLight position={[0,0,0]} intensity={5} distance={500} color={'#FFF5E0'} />
-      {PLANETS.map((p, i) => (
-        <mesh key={p.name} position={[p.sma * SOLAR_SCALE, 0, 0]}>
-          <sphereGeometry args={[p.radius * SOLAR_SCALE, 16, 16]} />
-          <meshStandardMaterial color={p.color} />
-        </mesh>
-      ))}
+      <pointLight position={[0, 0, 0]} intensity={5} distance={500} color={'#FFF5E0'} />
+      {PLANETS.map((p, index) => {
+        const tiltRad = (p.tilt || 0) * Math.PI / 180;
+        return (
+          <group key={p.name}>
+            <group rotation={[tiltRad, 0, 0]}>
+              <OrbitRing radius={p.sma} visible={p.sma > 0.3} />
+            </group>
+            <group ref={(el) => { planetRefs.current[index] = el; }}>
+              <mesh position={[p.sma * SOLAR_SCALE, 0, 0]}>
+                <sphereGeometry args={[Math.max(p.radius * SOLAR_SCALE, 0.04), 24, 24]} />
+                <meshStandardMaterial color={p.color} emissive={p.color} emissiveIntensity={0.2} />
+              </mesh>
+              {p.hasRings && (
+                <mesh rotation={[Math.PI / 2, 0, 0]} position={[p.sma * SOLAR_SCALE, 0, 0]}>
+                  <ringGeometry args={[0.11 * SOLAR_SCALE, 0.14 * SOLAR_SCALE, 64]} />
+                  <meshStandardMaterial color="#d6c18d" transparent opacity={0.35} side={THREE.DoubleSide} />
+                </mesh>
+              )}
+            </group>
+          </group>
+        );
+      })}
     </group>
   );
 }

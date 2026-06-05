@@ -19,6 +19,15 @@ function computeSize(mag) {
   return Math.max(0.5, (6.5 - m) * 0.4);
 }
 
+function toCartesian(ra, dec, dist) {
+  const raRad = ra * Math.PI / 180;
+  const decRad = dec * Math.PI / 180;
+  const x = dist * Math.cos(decRad) * Math.cos(raRad);
+  const y = dist * Math.cos(decRad) * Math.sin(raRad);
+  const z = dist * Math.sin(decRad);
+  return { x, y, z };
+}
+
 function parseCSV(text, limit = 9000) {
   const lines = text.split(/\r?\n/).filter(Boolean);
   if (lines.length === 0) return [];
@@ -43,16 +52,23 @@ function parseCSV(text, limit = 9000) {
     }
     const mag = parseFloat(row.mag);
     if (isNaN(mag) || mag >= 6.5) continue;
-    const x = parseFloat(row.x);
-    const y = parseFloat(row.y);
-    const z = parseFloat(row.z);
+    const ra = parseFloat(row.ra);
+    const dec = parseFloat(row.dec);
+    const dist = parseFloat(row.dist);
+    let pos = null;
+    if (!isNaN(ra) && !isNaN(dec) && !isNaN(dist)) {
+      pos = toCartesian(ra, dec, dist);
+    }
+    let x = pos?.x ?? parseFloat(row.x);
+    let y = pos?.y ?? parseFloat(row.y);
+    let z = pos?.z ?? parseFloat(row.z);
     if ([x, y, z].some(v => isNaN(v))) continue;
     stars.push({
       id: row.id || row.hip || row.hyg || String(i),
       proper: row.proper || row.name || row.properName || '',
-      ra: parseFloat(row.ra) || null,
-      dec: parseFloat(row.dec) || null,
-      dist: parseFloat(row.dist) || null,
+      ra: !isNaN(ra) ? ra : null,
+      dec: !isNaN(dec) ? dec : null,
+      dist: !isNaN(dist) ? dist : null,
       mag,
       ci: row.ci === '' ? null : parseFloat(row.ci),
       x,

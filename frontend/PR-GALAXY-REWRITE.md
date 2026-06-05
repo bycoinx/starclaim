@@ -48,11 +48,10 @@ npm run build
 
 Notes & Next steps
 ------------------
-- Current HYG loader uses a minimal in-file CSV parser to avoid adding `papaparse` during initial PR; we can switch
-  to `papaparse` for robust parsing if preferred.
+- Current HYG loader uses a minimal in-file CSV parser, but parsing now runs inside a dedicated Web Worker.
+- Star positions now convert RA/Dec/Distance into proper 3D cartesian space for realistic distribution.
 - LOD thresholds: near (<=200 pc), mid (<=500 pc); >500 pc are culled for performance. Adjust thresholds as needed.
 - Completed: StarPopup claim button now calls the existing `onClaim` checkout flow from `StarPicker`.
-- Optional: Move CSV parsing to a Web Worker for non-blocking load of full HYG (~9k stars).
 
 Testing checklist (to include in PR):
 - [ ] `npm run build` completes without errors
