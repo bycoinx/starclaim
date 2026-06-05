@@ -11,6 +11,7 @@ import { Telescope, Loader2, Search, Orbit, LayoutGrid, Satellite, Radio, Shield
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 
 const SkySphere = React.lazy(() => import("../components/SkySphere"));
+const GalaxyScene = React.lazy(() => import("../components/GalaxyScene/GalaxyScene"));
 
 const TIERS = ["all", "legendary", "zodiac", "named", "constellation", "standard"];
 const SORTS = [
@@ -268,16 +269,19 @@ export default function StarPicker({ onClaim }) {
               {lang === "TR" ? "Bu filtreyle yıldız bulunamadı." : "No stars match these filters."}
             </div>
           ) : activeSection === "sky" ? (
-            // Re-enable the Three.js sky sphere for testing.
-            <Suspense fallback={
-              <div className="py-20 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
-              </div>
-            }>
-              <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
-                <SkySphere stars={stars} onClaim={onClaim} />
-              </ErrorBoundary>
-            </Suspense>
+            // GalaxyScene replaces the old SkySphere/Observatory view.
+            // Old SkySphere usage is preserved above as a lazy import for reference.
+            <div style={{ height: '80vh', width: '100%' }}>
+              <Suspense fallback={
+                <div className="py-20 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
+                </div>
+              }>
+                <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
+                  <GalaxyScene ownedStars={[]} onStarClick={(s)=>{ /* bridge to claim if needed */ }} />
+                </ErrorBoundary>
+              </Suspense>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
