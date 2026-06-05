@@ -193,6 +193,85 @@ function CameraAnimator({ targetStar, onArrived }) {
   return null;
 }
 
+function ShootingStar() {
+  const groupRef = useRef();
+  const [active, setActive] = useState(false);
+  const startPos = useRef(new THREE.Vector3());
+  const endPos = useRef(new THREE.Vector3());
+  const progress = useRef(0);
+  const speed = useRef(0.5 + Math.random() * 0.5);
+
+  useEffect(() => {
+    const spawn = () => {
+      if (Math.random() < 0.1) { // 10% chance every check
+        // Random start position in sky
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const r = 500 + Math.random() * 500;
+        
+        startPos.current.set(
+          r * Math.sin(phi) * Math.cos(theta),
+          r * Math.cos(phi),
+          r * Math.sin(phi) * Math.sin(theta)
+        );
+        
+        // End position (downward direction)
+        endPos.current.copy(startPos.current).add(
+          new THREE.Vector3(
+            (Math.random() - 0.5) * 100,
+            -200 - Math.random() * 100,
+            (Math.random() - 0.5) * 100
+          )
+        );
+        
+        progress.current = 0;
+        speed.current = 0.5 + Math.random() * 0.5;
+        setActive(true);
+      }
+    };
+
+    const interval = setInterval(spawn, 3000); // Check every 3 seconds
+    return () => clearInterval(interval);
+  }, []);
+
+  useFrame(() => {
+    if (active && groupRef.current) {
+      progress.current += 0.02 * speed.current;
+      
+      if (progress.current >= 1) {
+        setActive(false);
+        return;
+      }
+
+      const currentPos = new THREE.Vector3().lerpVectors(startPos.current, endPos.current, progress.current);
+      groupRef.current.position.copy(currentPos);
+      
+      // Rotate to face direction of movement
+      const direction = new THREE.Vector3().subVectors(endPos.current, startPos.current).normalize();
+      groupRef.current.lookAt(groupRef.current.position.clone().add(direction));
+    }
+  });
+
+  if (!active) return null;
+
+  return (
+    <group ref={groupRef}>
+      {/* Shooting star head */}
+      <mesh>
+        <sphereGeometry args={[0.3, 8, 8]} />
+        <meshBasicMaterial color="#ffffff" />
+      </mesh>
+      {/* Trail */}
+      <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.1, 0.01, 15, 8]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.6} />
+      </mesh>
+      {/* Glow */}
+      <pointLight intensity={2} distance={20} color="#ffffff" />
+    </group>
+  );
+}
+
 export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnStarClick }) {
   const [stars, setStars] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -229,6 +308,7 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
           <SolarSystemScene />
           <CameraRig enableCinematic={true} />
           <CameraAnimator targetStar={targetStar} onArrived={handleArrival} />
+          <ShootingStar />
           <EffectComposer>
             <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.9} intensity={1.0} />
           </EffectComposer>
