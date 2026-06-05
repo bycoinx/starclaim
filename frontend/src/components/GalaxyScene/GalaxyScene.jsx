@@ -154,6 +154,27 @@ function SolarSystemScene() {
   );
 }
 
+function CameraAnimator({ targetStar, onArrived }) {
+  useFrame(({ camera }) => {
+    if (targetStar) {
+      const targetPos = new THREE.Vector3(targetStar.threeX, targetStar.threeY, targetStar.threeZ);
+      const currentPos = camera.position.clone();
+      const distance = currentPos.distanceTo(targetPos);
+      
+      if (distance > 2) {
+        const direction = new THREE.Vector3().subVectors(targetPos, currentPos).normalize();
+        const speed = Math.min(distance * 0.1, 5);
+        camera.position.add(direction.multiplyScalar(speed));
+        camera.lookAt(targetPos);
+      } else {
+        onArrived();
+      }
+    }
+  });
+
+  return null;
+}
+
 export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnStarClick }) {
   const [stars, setStars] = useState(null);
   const [selected, setSelected] = useState(null);
@@ -174,23 +195,9 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
     setUseFlyControls(false); // Switch to orbit mode for better control
   };
 
-  // Camera animation for flying to star
-  useFrame(({ camera }) => {
-    if (targetStar && cameraRef.current) {
-      const targetPos = new THREE.Vector3(targetStar.threeX, targetStar.threeY, targetStar.threeZ);
-      const currentPos = camera.position.clone();
-      const distance = currentPos.distanceTo(targetPos);
-      
-      if (distance > 2) {
-        const direction = new THREE.Vector3().subVectors(targetPos, currentPos).normalize();
-        const speed = Math.min(distance * 0.1, 5); // Smooth approach
-        camera.position.add(direction.multiplyScalar(speed));
-        camera.lookAt(targetPos);
-      } else {
-        setTargetStar(null); // Arrived
-      }
-    }
-  });
+  const handleArrival = () => {
+    setTargetStar(null);
+  };
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -203,6 +210,7 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
           {stars && <HYGStarField stars={stars} ownedStars={ownedStars} onStarClick={(s) => setSelected(s)} />}
           <SolarSystemScene />
           <CameraRig enableCinematic={true} />
+          <CameraAnimator targetStar={targetStar} onArrived={handleArrival} />
           <EffectComposer>
             <Bloom luminanceThreshold={0.3} luminanceSmoothing={0.9} intensity={1.0} />
           </EffectComposer>
