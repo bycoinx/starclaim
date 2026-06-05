@@ -22,11 +22,22 @@ import stripe
 from openai import AsyncOpenAI
 from nacl.signing import VerifyKey
 import base58
+import sys
 
-from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
-from backend.certificate import generate_certificate
-from backend.emails import send_certificate_email
-from backend.stellar import create_testnet_account, get_account_balances, send_xlm
+try:
+    from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
+    from backend.certificate import generate_certificate
+    from backend.emails import send_certificate_email
+    from backend.stellar import create_testnet_account, get_account_balances, send_xlm
+except ModuleNotFoundError:
+    # Allow running the backend directly from the backend/ directory during local development.
+    ROOT_DIR = Path(__file__).resolve().parent
+    if str(ROOT_DIR) not in sys.path:
+        sys.path.insert(0, str(ROOT_DIR))
+    from seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
+    from certificate import generate_certificate
+    from emails import send_certificate_email
+    from stellar import create_testnet_account, get_account_balances, send_xlm
 
 # Redis-backed rate limiter (optional for production). If REDIS_URL is set
 # in the environment we'll initialize FastAPILimiter during startup and use
@@ -1857,16 +1868,16 @@ async def ai_health():
     }
 
 
-raw_origins = os.environ.get("CORS_ORIGINS", "*")
+raw_origins = os.environ.get("CORS_ORIGINS", "*").strip()
 allow_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-allow_credentials = True
-if allow_origins == ["*"]:
-    allow_credentials = False
+allow_any_origin = allow_origins == ["*"] or not allow_origins
+allow_credentials = False if allow_any_origin else True
+cors_origins = ["*"] if allow_any_origin else allow_origins
 
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=allow_credentials,
-    allow_origins=allow_origins or ["*"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -1888,14 +1899,15 @@ app.include_router(api)
 async def ensure_cors_headers(request: Request, call_next):
     response = await call_next(request)
     origin = request.headers.get("origin")
-    # If request has an Origin header, echo it back so browsers accept the response.
     if origin:
-        # If allow_origins contains '*' we still echo the origin to support credentialed requests.
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true" if allow_credentials else "false"
+        if allow_any_origin:
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "false"
+        else:
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Accept,Origin,User-Agent"
     else:
-        # No Origin header (likely a server-to-server call); keep safe defaults.
         response.headers.setdefault("Access-Control-Allow-Origin", "*")
     return response

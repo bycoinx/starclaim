@@ -268,51 +268,16 @@ export default function StarPicker({ onClaim }) {
               {lang === "TR" ? "Bu filtreyle yıldız bulunamadı." : "No stars match these filters."}
             </div>
           ) : activeSection === "sky" ? (
-            // Replace the live Three.js canvas with a static promo card.
-            <div className="w-full">
-              <div style={{ background: "#0A0A0F", border: "1px solid #C9A84C", borderRadius: 12, padding: 40 }} className="w-full flex items-center justify-between gap-8">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h2 style={{ color: "#FFFFFF", fontSize: 32, fontWeight: 700, marginBottom: 12 }}>
-                    {lang === "TR" ? "Mobil Uygulamada Yıldız Haritanı Keşfet" : "Discover Your Star Map on Mobile"}
-                  </h2>
-                  <p style={{ color: "#9CA3AF", marginBottom: 22, lineHeight: 1.4 }}>
-                    {lang === "TR" ? "Telefonunu gökyüzüne tut — sahip olduğun yıldızları gerçek zamanlı bul." : "Point your phone at the sky — discover the stars you own in real time."}
-                  </p>
-
-                  <div className="flex items-center gap-4">
-                    <button disabled style={{ background: "#C9A84C", color: "#0A0A0F", padding: "10px 18px", borderRadius: 8, fontWeight: 700, opacity: 0.95, display: "flex", alignItems: "center", gap: 8 }}>
-                      <span>{lang === "TR" ? "App Store" : "App Store"}</span>
-                      <span style={{ fontSize: 12, color: "#0A0A0F", opacity: 0.85 }}>[{lang === "TR" ? "Yakında" : "Soon"}]</span>
-                    </button>
-
-                    <button disabled style={{ background: "#C9A84C", color: "#0A0A0F", padding: "10px 18px", borderRadius: 8, fontWeight: 700, opacity: 0.95, display: "flex", alignItems: "center", gap: 8 }}>
-                      <span>{lang === "TR" ? "Google Play" : "Google Play"}</span>
-                      <span style={{ fontSize: 12, color: "#0A0A0F", opacity: 0.85 }}>[{lang === "TR" ? "Yakında" : "Soon"}]</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ width: 200, height: 200, background: "#000000", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="200" height="200" fill="#000" />
-                    {/* Random white dots */}
-                    {Array.from({ length: 35 }).map((_, i) => {
-                      const x = 20 + Math.floor(Math.random() * 160);
-                      const y = 20 + Math.floor(Math.random() * 160);
-                      return <circle key={i} cx={x} cy={y} r={2} fill="#fff" opacity={0.95} />;
-                    })}
-                    {/* Some thin constellation lines */}
-                    <g stroke="#fff" strokeWidth={0.6} strokeOpacity={0.25}>
-                      <line x1="30" y1="40" x2="70" y2="60" />
-                      <line x1="70" y1="60" x2="100" y2="30" />
-                      <line x1="120" y1="80" x2="150" y2="60" />
-                      <line x1="50" y1="140" x2="90" y2="120" />
-                      <line x1="90" y1="120" x2="130" y2="150" />
-                    </g>
-                  </svg>
-                </div>
+            // Re-enable the Three.js sky sphere for testing.
+            <Suspense fallback={
+              <div className="py-20 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
               </div>
-            </div>
+            }>
+              <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
+                <SkySphere stars={stars} onClaim={onClaim} />
+              </ErrorBoundary>
+            </Suspense>
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
