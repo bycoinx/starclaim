@@ -3,12 +3,11 @@ import QRCode from "qrcode.react";
 import { v4 as uuidv4 } from "uuid";
 import { X, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { useAuth } from "../lib/auth";
-import { api } from "../lib/api";
 
 export default function QRLoginModal({ isOpen, onClose }) {
   const [authSessionId] = useState(uuidv4());
   const [status, setStatus] = useState("initializing"); // initializing | waiting | success | error
-  const { setUser, checkAuth } = useAuth();
+  const { checkAuth } = useAuth();
 
   useEffect(() => {
     if (!isOpen) return;

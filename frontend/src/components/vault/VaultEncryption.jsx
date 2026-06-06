@@ -4,7 +4,7 @@ import { encryptData } from '../../lib/crypto';
 import { UploadToChain } from './UploadToChain';
 import ConstellationPicker from '../ConstellationPicker';
 import ShamirBridgeUI from '../ShamirBridgeUI';
-import { Lock, Star, ShieldCheck, Share2 } from 'lucide-react';
+import { Lock, Star, ShieldCheck } from 'lucide-react';
 
 export function VaultEncryption({ onComplete }) {
   const [data, setData] = useState('');

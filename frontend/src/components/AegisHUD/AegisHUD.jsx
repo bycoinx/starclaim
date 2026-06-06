@@ -1,6 +1,6 @@
 import React, { Suspense, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Stars } from "@react-three/drei";
+import { OrbitControls, Stars } from "@react-three/drei";
 import { EffectComposer, Bloom, ChromaticAberration, Noise } from "@react-three/postprocessing";
 import * as THREE from "three";
 

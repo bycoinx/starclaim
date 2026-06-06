@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
-import { TrendingUp, Clock, Loader2, ArrowUpRight, ShoppingCart, BarChart3, Activity, RefreshCw, Telescope } from "lucide-react";
+import { TrendingUp, Clock, Loader2, ShoppingCart, BarChart3, Activity, RefreshCw, Telescope } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import "./Console.css";

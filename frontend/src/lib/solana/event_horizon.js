@@ -1,4 +1,4 @@
-import { Connection, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
+import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
 import * as anchor from '@project-serum/anchor';
 
 // Program ID (Placeholder - should match lib.rs)

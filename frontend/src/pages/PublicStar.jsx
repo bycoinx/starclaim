@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { Star, Globe, ShieldCheck, Share2, Loader2, Sparkles } from "lucide-react";
+import { Globe, ShieldCheck, Share2, Loader2, Sparkles } from "lucide-react";
 import StarCanvas from "../components/StarCanvas";
 import { motion } from "framer-motion";
 

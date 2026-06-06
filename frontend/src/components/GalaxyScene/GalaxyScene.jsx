@@ -1,10 +1,10 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitControls, FlyControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
-import { PLANETS, keplerEllipsePosition, SOLAR_SCALE } from '../../data/solarSystem';
+import { PLANETS, MOONS, SUN, SOLAR_SCALE, TEXTURES } from '../../data/solarSystemData';
 import CameraRig from './CameraRig';
 import useDeviceOrientation from '../../hooks/useDeviceOrientation';
 import StarPopup from './StarPopup';
@@ -153,43 +153,153 @@ function OrbitRing({ radius, tilt, visible }) {
 
 function SolarSystemScene() {
   const planetRefs = useRef([]);
+  const moonRefs = useRef([]);
 
-  useFrame(() => {
-    const t = Date.now() / 1000;
-    for (let i = 0; i < PLANETS.length; i++) {
-      const node = planetRefs.current[i];
-      if (!node) continue;
-      const orbit = keplerEllipsePosition(PLANETS[i].sma, PLANETS[i].e, PLANETS[i].period, t);
-      node.position.set(orbit[0], orbit[1], orbit[2]);
-    }
+  const textureUrls = useMemo(() => [
+    SUN.texture,
+    ...PLANETS.map((planet) => planet.texture),
+    ...MOONS.map((moon) => moon.texture).filter(Boolean),
+    TEXTURES.earthClouds,
+    TEXTURES.saturnRing,
+  ].filter(Boolean), []);
+
+  const textures = useLoader(THREE.TextureLoader, textureUrls);
+
+  const textureMap = useMemo(() => {
+    if (!textures || textures.length < 1 + PLANETS.length) return null;
+    let cursor = 1;
+    const planetTextures = PLANETS.reduce((map, planet) => {
+      map[planet.id] = textures[cursor++] || null;
+      return map;
+    }, {});
+
+    const moonTextures = MOONS.reduce((map, moon) => {
+      if (moon.texture) {
+        map[moon.id] = textures[cursor++] || null;
+      }
+      return map;
+    }, {});
+
+    const extras = {};
+    if (TEXTURES.earthClouds) extras.earthClouds = textures[cursor++] || null;
+    if (TEXTURES.saturnRing) extras.saturnRing = textures[cursor++] || null;
+
+    return {
+      sun: textures[0],
+      planets: planetTextures,
+      moons: moonTextures,
+      ...extras,
+    };
+  }, [textures]);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime() * 0.18;
+
+    PLANETS.forEach((planet, index) => {
+      const node = planetRefs.current[index];
+      if (!node) return;
+      const phase = (t / planet.orbitalPeriod) % 1;
+      const angle = phase * Math.PI * 2;
+      const a = planet.sma * SOLAR_SCALE;
+      const b = a * Math.sqrt(1 - Math.pow(planet.eccentricity, 2));
+      const x = Math.cos(angle) * a - a * planet.eccentricity;
+      const z = Math.sin(angle) * b;
+      node.position.set(x, 0, z);
+    });
+
+    MOONS.forEach((moon, index) => {
+      const moonNode = moonRefs.current[index];
+      const parentIndex = PLANETS.findIndex((planet) => planet.id === moon.parent);
+      const parentNode = planetRefs.current[parentIndex];
+      if (!moonNode || !parentNode) return;
+      const parentRadius = planetRefs.current[parentIndex]?.children?.[0]?.geometry?.parameters?.radius || 0.05;
+      const moonOrbitDistance = Math.max(parentRadius * 2.5, moon.sma * SOLAR_SCALE * 16);
+      const phase = (t / moon.orbitalPeriod) % 1;
+      const angle = phase * Math.PI * 2;
+      const x = Math.cos(angle) * moonOrbitDistance;
+      const z = Math.sin(angle) * moonOrbitDistance;
+      moonNode.position.set(parentNode.position.x + x, parentNode.position.y, parentNode.position.z + z);
+    });
   });
 
   return (
     <group>
-      <mesh position={[0, 0, 0]}>
-        <sphereGeometry args={[1.5, 32, 32]} />
-        <meshStandardMaterial emissive={'#FFA500'} emissiveIntensity={3} color={'#FFA500'} />
+      <mesh>
+        <sphereGeometry args={[SUN.radius * 1.4, 32, 32]} />
+        <meshStandardMaterial
+          map={textureMap?.sun}
+          emissive={SUN.emissive}
+          emissiveIntensity={SUN.intensity}
+          color={SUN.color}
+        />
       </mesh>
-      <pointLight position={[0, 0, 0]} intensity={5} distance={500} color={'#FFF5E0'} />
-      {PLANETS.map((p, index) => {
-        const tiltRad = (p.tilt || 0) * Math.PI / 180;
+      <pointLight position={[0, 0, 0]} intensity={SUN.intensity} distance={600} color={SUN.color} />
+
+      {PLANETS.map((planet, index) => {
+        const tiltRad = (planet.tilt || 0) * Math.PI / 180;
+        const planetRadius = Math.max(planet.radius * SOLAR_SCALE, 0.05);
+
         return (
-          <group key={p.name}>
-            <group rotation={[tiltRad, 0, 0]}>
-              <OrbitRing radius={p.sma} visible={p.sma > 0.3} />
+          <group key={planet.id}>
+            <group rotation={[planet.inclination * Math.PI / 180, 0, 0]}>
+              <OrbitRing radius={planet.sma} visible={planet.sma > 0.28} />
             </group>
-            <group ref={(el) => { planetRefs.current[index] = el; }}>
-              <mesh position={[p.sma * SOLAR_SCALE, 0, 0]}>
-                <sphereGeometry args={[Math.max(p.radius * SOLAR_SCALE, 0.04), 24, 24]} />
-                <meshStandardMaterial color={p.color} emissive={p.color} emissiveIntensity={0.2} />
+            <group ref={(el) => { planetRefs.current[index] = el; }} rotation={[0, 0, tiltRad]}>
+              <mesh>
+                <sphereGeometry args={[planetRadius, 32, 32]} />
+                <meshStandardMaterial
+                  map={textureMap?.planets?.[planet.id]}
+                  color={planet.color}
+                  emissive={planet.color}
+                  emissiveIntensity={0.12}
+                  roughness={0.6}
+                  metalness={0.05}
+                />
               </mesh>
-              {p.hasRings && (
-                <mesh rotation={[Math.PI / 2, 0, 0]} position={[p.sma * SOLAR_SCALE, 0, 0]}>
-                  <ringGeometry args={[0.11 * SOLAR_SCALE, 0.14 * SOLAR_SCALE, 64]} />
-                  <meshStandardMaterial color="#d6c18d" transparent opacity={0.35} side={THREE.DoubleSide} />
+
+              {planet.id === 'earth' && textureMap?.earthClouds && (
+                <mesh>
+                  <sphereGeometry args={[planetRadius * 1.03, 32, 32]} />
+                  <meshStandardMaterial
+                    map={textureMap.earthClouds}
+                    transparent
+                    opacity={0.35}
+                    depthWrite={false}
+                  />
+                </mesh>
+              )}
+
+              {planet.ringTexture && textureMap?.saturnRing && (
+                <mesh rotation={[Math.PI / 2, 0, 0]}>
+                  <ringGeometry args={[planetRadius * 1.4, planetRadius * 1.95, 96]} />
+                  <meshBasicMaterial
+                    map={textureMap.saturnRing}
+                    transparent
+                    opacity={0.78}
+                    side={THREE.DoubleSide}
+                    depthWrite={false}
+                  />
                 </mesh>
               )}
             </group>
+          </group>
+        );
+      })}
+
+      {MOONS.map((moon, index) => {
+        const moonRadius = Math.max(moon.radius * SOLAR_SCALE, 0.02);
+        return (
+          <group key={moon.id} ref={(el) => { moonRefs.current[index] = el; }}>
+            <mesh>
+              <sphereGeometry args={[moonRadius, 16, 16]} />
+              <meshStandardMaterial
+                map={textureMap?.moons?.[moon.id]}
+                color={moon.color}
+                emissive={moon.color}
+                emissiveIntensity={0.05}
+                roughness={0.8}
+              />
+            </mesh>
           </group>
         );
       })}

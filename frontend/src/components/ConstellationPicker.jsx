@@ -1,6 +1,6 @@
-import React, { useState, useRef, useMemo } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Stars, OrbitControls, Line, Text } from "@react-three/drei";
+import React, { useState, useMemo } from "react";
+import { Canvas } from "@react-three/fiber";
+import { Stars, OrbitControls, Line } from "@react-three/drei";
 import * as THREE from "three";
 import { generateConstellationHash } from "../lib/crypto";
 
@@ -61,7 +61,7 @@ function ConstellationLines({ selectedStars }) {
 export default function ConstellationPicker({ onHashGenerated }) {
   const [selectedStars, setSelectedStars] = useState([]);
   const [zoom, setZoom] = useState(10);
-  const [sector, setSector] = useState("ORION-B"); // Mock sector
+  const [sector] = useState("ORION-B"); // Mock sector
 
   const handleStarClick = (star) => {
     if (selectedStars.find(s => s.id === star.id)) {
@@ -107,7 +107,7 @@ export default function ConstellationPicker({ onHashGenerated }) {
 
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
         <div className="px-3 py-1 bg-sc-gold/10 border border-sc-gold/30 rounded text-[10px] text-sc-gold tracking-widest uppercase">
-          Sector: {sector}
+          Sector: ORION-B
         </div>
         <div className="px-3 py-1 bg-sc-blue/10 border border-sc-blue/30 rounded text-[10px] text-sc-blue tracking-widest uppercase">
           Nodes: {selectedStars.length}

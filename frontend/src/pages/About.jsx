@@ -1,9 +1,9 @@
 import React from "react";
 import { useT } from "../lib/i18n";
-import { Shield, Sparkles, Compass, Heart, Mail, Target, Zap, Globe } from "lucide-react";
+import { Shield, Sparkles, Compass, Heart, Mail } from "lucide-react";
 
 export default function About() {
-  const { t, lang } = useT();
+  const { t } = useT();
   return (
     <div className="min-h-screen bg-transparent pt-28 pb-24 relative overflow-hidden">
       {/* Subtle Overlay */}

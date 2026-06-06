@@ -9,7 +9,6 @@ import {
   ShoppingBag, 
   TrendingUp, 
   Activity, 
-  Search, 
   Package, 
   Clock, 
   ExternalLink 

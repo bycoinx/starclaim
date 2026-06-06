@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Connection, clusterApiUrl } from '@solana/web3.js';
@@ -14,13 +14,10 @@ import {
   Loader2, 
   Wallet, 
   Star,
-  ArrowRight,
-  ShieldCheck,
-  LayoutGrid,
-  ChevronRight
+  ArrowRight
 } from 'lucide-react';
 
-import { api, uploadToArweave } from '../../lib/api';
+import { uploadToArweave } from '../../lib/api';
 import { linkVaultToNFT } from '../../lib/solana/updateNFT';
 
 // Simple custom hook to replace react-use
@@ -45,7 +42,7 @@ function useWindowSize() {
 }
 
 export function UploadToChain({ encryptedBlob, onSuccess }) {
-  const { publicKey, wallet, connected, signTransaction } = useWallet();
+  const { publicKey, wallet, connected } = useWallet();
   const { width, height } = useWindowSize();
   
   const [nfts, setNfts] = useState([]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Send, X, MessageSquare, Cpu } from 'lucide-react';
+import { Send, X, MessageSquare, Cpu } from 'lucide-react';
 import { api } from '../lib/api';
 import './AegisTerminal.css';
 

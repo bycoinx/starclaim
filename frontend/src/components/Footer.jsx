@@ -22,9 +22,9 @@ export default function Footer() {
               {lang === "TR" ? "\"Yıldızlar sonsuz, anılar da öyle.\"" : "\"Stars are eternal, so are memories.\""}
             </p>
             <div className="flex gap-4 mt-6">
-              <a href="#" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
-              <a href="#" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
-              <a href="#" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="YouTube"><Youtube className="w-5 h-5" /></a>
+              <a href="https://www.instagram.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
+              <a href="https://twitter.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
+              <a href="https://www.youtube.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="YouTube"><Youtube className="w-5 h-5" /></a>
             </div>
           </div>
           <div>
@@ -38,17 +38,17 @@ export default function Footer() {
           <div>
             <h4 className="font-display text-sm tracking-widest text-sc-gold mb-4">{lang === "TR" ? "Destek" : "Support"}</h4>
             <ul className="space-y-3 text-sm text-sc-text-muted">
-              <li><a href="#faq" className="hover:text-sc-text">{lang === "TR" ? "SSS" : "FAQ"}</a></li>
+              <li><button type="button" className="hover:text-sc-text bg-transparent p-0 m-0 text-left">{lang === "TR" ? "SSS" : "FAQ"}</button></li>
               <li><Link to="/about" className="hover:text-sc-text">{lang === "TR" ? "İletişim" : "Contact"}</Link></li>
-              <li><a href="#" className="hover:text-sc-text">{lang === "TR" ? "İade" : "Refunds"}</a></li>
+              <li><button type="button" className="hover:text-sc-text bg-transparent p-0 m-0 text-left">{lang === "TR" ? "İade" : "Refunds"}</button></li>
             </ul>
           </div>
           <div>
             <h4 className="font-display text-sm tracking-widest text-sc-gold mb-4">{lang === "TR" ? "Yasal" : "Legal"}</h4>
             <ul className="space-y-3 text-sm text-sc-text-muted">
-              <li><a href="#" className="hover:text-sc-text">{lang === "TR" ? "Gizlilik" : "Privacy"}</a></li>
-              <li><a href="#" className="hover:text-sc-text">{lang === "TR" ? "Kullanım" : "Terms"}</a></li>
-              <li><a href="#" className="hover:text-sc-text">{lang === "TR" ? "Çerezler" : "Cookies"}</a></li>
+              <li><button type="button" className="hover:text-sc-text bg-transparent p-0 m-0 text-left">{lang === "TR" ? "Gizlilik" : "Privacy"}</button></li>
+              <li><button type="button" className="hover:text-sc-text bg-transparent p-0 m-0 text-left">{lang === "TR" ? "Kullanım" : "Terms"}</button></li>
+              <li><button type="button" className="hover:text-sc-text bg-transparent p-0 m-0 text-left">{lang === "TR" ? "Çerezler" : "Cookies"}</button></li>
             </ul>
           </div>
         </div>

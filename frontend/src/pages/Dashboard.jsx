@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, Cpu, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
+import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
 import { toast } from "sonner";
 import StarCanvas from "../components/StarCanvas";
 import "./Console.css";

@@ -6,7 +6,7 @@ import { Textarea } from "./ui/textarea";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Star, Check, Sparkles, Gift, CreditCard, PartyPopper, ChevronRight, ChevronLeft, Download, Share2, Loader2 } from "lucide-react";
+import { Star, Sparkles, Gift, CreditCard, ChevronRight, ChevronLeft, Download, Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "../lib/i18n";
 import { useAuth } from "../lib/auth";

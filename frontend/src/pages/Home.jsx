@@ -1,25 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Star, Sparkles, Gift, Crown, Telescope, Scroll, Heart, Users, Users2, TrendingUp, ArrowRight, Check, ShieldCheck, Database, Zap, Lock, EyeOff } from "lucide-react";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { Star, Scroll, Heart, Check, ShieldCheck, Database, Zap, Lock, EyeOff } from "lucide-react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import StarCanvas from "../components/StarCanvas";
-
-const ZODIAC = [
-  { sym: "♈", name: "Koç", en: "Aries", cons: "Aries" },
-  { sym: "♉", name: "Boğa", en: "Taurus", cons: "Taurus" },
-  { sym: "♊", name: "İkizler", en: "Gemini", cons: "Gemini" },
-  { sym: "♋", name: "Yengeç", en: "Cancer", cons: "Cancer" },
-  { sym: "♌", name: "Aslan", en: "Leo", cons: "Leo" },
-  { sym: "♍", name: "Başak", en: "Virgo", cons: "Virgo" },
-  { sym: "♎", name: "Terazi", en: "Libra", cons: "Libra" },
-  { sym: "♏", name: "Akrep", en: "Scorpio", cons: "Scorpius" },
-  { sym: "♐", name: "Yay", en: "Sagittarius", cons: "Sagittarius" },
-  { sym: "♑", name: "Oğlak", en: "Capricorn", cons: "Capricornus" },
-  { sym: "♒", name: "Kova", en: "Aquarius", cons: "Aquarius" },
-  { sym: "♓", name: "Balık", en: "Pisces", cons: "Pisces" },
-];
 
 const PACKAGES = [
   {
@@ -101,18 +85,6 @@ function Reveal({ children, delay = 0 }) {
 export default function Home({ onOpenClaim, stats }) {
   const { t, lang } = useT();
   const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const claimedToday = stats?.claimed_today ?? 24;
-
-  const subscribe = async (e) => {
-    e.preventDefault();
-    if (!email) return;
-    try {
-      await api.post("/newsletter", { email });
-      setSubscribed(true);
-      setEmail("");
-    } catch (_) {}
-  };
 
   return (
     <div className="bg-black relative">

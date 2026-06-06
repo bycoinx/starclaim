@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { Loader2, Star, Mail, ArrowRight, Download } from "lucide-react";
+import { Loader2, Star, Mail, ArrowRight } from "lucide-react";
 import StarCanvas from "../components/StarCanvas";
 
 const POLL_INTERVAL_MS = 2500;

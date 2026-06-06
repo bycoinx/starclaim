@@ -1,6 +1,6 @@
 import React from "react";
 import { useT } from "../lib/i18n";
-import { Heart, Gift, Users, GraduationCap, Baby, Crown, TrendingUp, BookOpen, Radio, Database, Activity } from "lucide-react";
+import { Heart, Users, GraduationCap, Baby, Crown, TrendingUp, Radio, Database, Activity } from "lucide-react";
 
 const STORIES = [
   { ic: Heart, title: "Sevgililer için yıldız", titleEn: "Star for Lovers", excerpt: "Bir yılbaşı gecesi Orion'u işaret ettik. Altı ay sonra oradaki yıldız bize aitti.", excerptEn: "On a New Year's Eve, we pointed at Orion. Six months later, that star was ours.", img: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986", code: "ARC-01/LV" },
