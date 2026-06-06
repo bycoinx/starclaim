@@ -1,10 +1,10 @@
 import React from "react";
-import GalaxyScene from "../components/GalaxyScene";
+import GalaxyScene from "../components/GalaxyScene/GalaxyScene";
 
-export default function StarPicker() {
+export default function StarPicker({ onClaim }) {
   return (
     <main className="min-h-screen bg-black text-white">
-      <GalaxyScene />
+      <GalaxyScene onStarClick={onClaim} />
     </main>
   );
 }

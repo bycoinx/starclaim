@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 export default function PublicStar() {
   const { code } = useParams();
-  const { lang, t } = useT();
+  const { lang } = useT();
   const [star, setStar] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
