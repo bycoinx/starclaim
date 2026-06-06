@@ -128,8 +128,8 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 6.5.2: No Results vs. Error Ayırımı**
     - [x] “Filtreyle yıldız bulunamadı” ile “Sunucu hatası” farklı mesajlar gösterilmeli.
     - [x] Hatalar frontend’de kullanıcıya net ifade edilmeli.
-- [ ] **Task 6.5.3: 3D Map Opt-in UX**
-    - [ ] 3D harita yalnızca kullanıcı isteyince yüklenmeli.
+- [x] **Task 6.5.3: 3D Map Opt-in UX**
+    - [x] 3D harita yalnızca kullanıcı isteyince yüklenmeli.
     - [ ] Web’de profesyonel görünmesi için “premium deneyim” olarak sunulmalı.
     - [ ] Mobilde hafif bir özel “star map” deneyimi planlanmalı; yüksek işlem gücü gerektirmeyen bir yol izlenmeli.
 - [ ] **Task 6.5.4: Market Cap Reality Layer**
@@ -207,9 +207,14 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 ## 🌌 Phase 12: Advanced Space Simulation (Gelişmiş Uzay Simülasyonu) [IN PROGRESS]
 **Hedef:** 3D galaksi görüntüsünü gerçekçi uzay simülasyonuna dönüştürmek (Celestia benzeri, telif haklarına saygılı).
 
-- [x] **Task 12.1: Procedural Background Removal**
+- [x] **Task 12.0: Safe Hybrid Reference Path**
+    - [x] Celestia sadece görsel ve UX referansı olarak kullanıldı
+    - [x] Hiçbir Celestia C++ kodu, shader veya telifli varlık aktarılmadı
+    - [x] Bütün 3D sahne React/ThreeFiber tabanlı olarak yeniden yazıldı
+- [x] **Task 12.1: Procedural Background Refinement**
     - [x] ProceduralStarDust ve NebulaGlow bileşenleri kaldırıldı
-    - [x] Milky Way bandı efekti temizlendi
+    - [x] Basit ama etkili nebula/galaksi shader’ı eklendi
+    - [x] Milky Way bandı efektleri güvenli biçimde uygulandı
 - [x] **Task 12.2: Free-Flight Camera System**
     - [x] FlyControls entegrasyonu yapıldı
     - [x] Orbit/Fly modu geçiş butonu eklendi
@@ -228,17 +233,28 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 12.7: R3F Hook Error Fix**
     - [x] useFrame hook'u Canvas içine taşındı
     - [x] 3D harita yüklenme hatası giderildi
-- [ ] **Task 12.8: Realistic Star Properties**
-    - [ ] Spektral tip renkleri (O, B, A, F, G, K, M)
-    - [ ] Luminosity bazlı boyutlandırma
-    - [ ] Proper motion (yıldız hareketi)
-- [ ] **Task 12.9: Binary Star Systems**
-    - [ ] Çift yıldız sistemleri için özel render
+- [x] **Task 12.8: Realistic Star Properties**
+    - [x] Spektral tip renkleri (O, B, A, F, G, K, M)
+    - [x] Luminosity bazlı boyutlandırma
+    - [x] Proper motion (yıldız hareketi)
+- [x] **Task 12.9: Binary Star Systems**
+    - [x] Çift yıldız sistemleri için özel render
     - [ ] Yörünge animasyonları
-- [ ] **Task 12.10: Nebula & Galaxy Background**
-    - [ ] Gerçekçi nebula dokuları
-    - [ ] Samanyolu bandı efekti (telif haklarına uygun)
-
+- [x] **Task 12.10: Nebula & Galaxy Background**
+    - [x] Gerçekçi nebula dokuları
+    - [x] Samanyolu bandı efekti (telif haklarına uygun)
+- [ ] **Task 12.11: 3D Map Polishing & Ownership UX**
+    - [ ] StarPopup / claim flow 3D sahnede çalışmalı
+    - [ ] “Go to Star” ile bilgi paneli eş zamanlı güncellenmeli
+    - [ ] Opt-in 3D map deneyimi premium bir ürün gibi sunulmalı
+- [ ] **Task 12.12: Performance, Fallback & QA**
+    - [ ] Desktop için 60 FPS, mobil / low-end için 30 FPS hedefi
+    - [ ] WebGL desteklemeyen tarayıcılarda hafif fallback sağlanmalı
+    - [ ] Yükleme/uygulama durumları için net kullanıcı bildirimleri eklenmeli
+- [ ] **Task 12.13: Branding & IP-safe Styling**
+    - [ ] Celestia adı, logo ve direkt UI akışları kullanılmayacak
+    - [ ] Aegis / StarClaim temalı görsel kimlik korunacak
+    - [ ] Tasarım tamamen özgün, sadece “uzay simülatörü hissi” referans alınacak
 
 ---
 ### 📜 Eternal Covenant (Mütalist Anayasa)

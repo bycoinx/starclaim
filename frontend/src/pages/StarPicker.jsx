@@ -30,8 +30,8 @@ export default function StarPicker({ onClaim }) {
   const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
   const [activeSection, setActiveSection] = useState("catalog");
-  const [mapConnected, setMapConnected] = useState(false);
-  const [mapLoading, setMapLoading] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const [checkoutBanner, setCheckoutBanner] = useState(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [fetchError, setFetchError] = useState("");
@@ -113,6 +113,18 @@ export default function StarPicker({ onClaim }) {
     }
   };
 
+  const handleClaim = (star) => {
+    if (!star) return;
+    const name = star.name || star.proper || star.code || `#${star.id}`;
+    setCheckoutBanner(
+      lang === "TR"
+        ? `"${name}" için ödeme ekranı açılıyor...`
+        : `Opening checkout for "${name}"...`
+    );
+    setTimeout(() => setCheckoutBanner(null), 4200);
+    if (typeof onClaim === "function") onClaim(star);
+  };
+
   const filtered = useMemo(() => {
     if (!Array.isArray(stars)) return [];
     if (!search.trim()) return stars;
@@ -124,14 +136,6 @@ export default function StarPicker({ onClaim }) {
     );
   }, [stars, search]);
 
-  const connectMap = () => {
-    setActiveSection("sky");
-    setMapLoading(true);
-    window.setTimeout(() => {
-      setMapConnected(true);
-      setMapLoading(false);
-    }, 1200);
-  };
 
   return (
     <div className="min-h-screen bg-transparent pt-28 pb-24 relative">
@@ -143,6 +147,11 @@ export default function StarPicker({ onClaim }) {
           </div>
           <h1 className="font-display text-4xl md:text-5xl mb-3">{t("picker_title")}</h1>
           <p className="text-sc-text-muted">{t("picker_sub")}</p>
+          {checkoutBanner && (
+            <div className="mt-6 inline-flex items-center justify-center rounded-2xl border border-sc-gold/20 bg-sc-gold/10 px-4 py-3 text-sm text-sc-gold max-w-2xl mx-auto">
+              {checkoutBanner}
+            </div>
+          )}
         </div>
 
         <div className="glass rounded-2xl p-6 mb-8" data-testid="filter-bar">
@@ -269,24 +278,42 @@ export default function StarPicker({ onClaim }) {
               {lang === "TR" ? "Bu filtreyle yıldız bulunamadı." : "No stars match these filters."}
             </div>
           ) : activeSection === "sky" ? (
-            // GalaxyScene replaces the old SkySphere/Observatory view.
-            // Old SkySphere usage is preserved above as a lazy import for reference.
-            <div style={{ height: '80vh', width: '100%' }}>
-              <Suspense fallback={
-                <div className="py-20 flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
+            mapReady ? (
+              <div style={{ height: '80vh', width: '100%' }}>
+                <Suspense fallback={
+                  <div className="py-20 flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
+                  </div>
+                }>
+                  <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
+                    <GalaxyScene ownedStars={[]} onStarClick={handleClaim} />
+                  </ErrorBoundary>
+                </Suspense>
+              </div>
+            ) : (
+              <div className="py-20 flex flex-col items-center justify-center gap-5 text-center text-sc-text-muted">
+                <div className="max-w-2xl">
+                  <p className="font-display text-2xl mb-3 text-white">{lang === "TR" ? "3D Harita Yükle" : "Load 3D Map"}</p>
+                  <p className="text-sm leading-6 text-sc-text-muted">
+                    {lang === "TR"
+                      ? "Uzay simülasyonunu başlatmak için aşağıdaki düğmeye basın. Bu deneyim sadece isteğe bağlı olarak yüklenir."
+                      : "Start the space simulation by loading the 3D map. This experience loads only on demand."}
+                  </p>
                 </div>
-              }>
-                <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
-                  <GalaxyScene ownedStars={[]} onStarClick={onClaim} />
-                </ErrorBoundary>
-              </Suspense>
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setMapReady(true)}
+                  className="btn-gold justify-center text-[10px] font-bold uppercase tracking-widest px-8"
+                >
+                  {lang === "TR" ? "HARİTAYI BAŞLAT" : "LAUNCH MAP"}
+                </button>
+              </div>
+            )
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" data-testid="star-grid">
                 {filtered.map((star) => (
-                  <StarCard key={star.star_id} star={star} onClaim={onClaim} />
+                  <StarCard key={star.star_id} star={star} onClaim={handleClaim} />
                 ))}
               </div>
               

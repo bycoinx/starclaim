@@ -87,7 +87,7 @@ export default function StarCanvas({
         ))}
       </Svg>
       {visibleStars.map((star) => {
-        const radius = radiusForMag(star.mag);
+        const radius = radiusForMag(star.mag, star.spect);
         const color = colorForSpectrum(star.spect);
         return (
           <TouchableOpacity key={star.id} style={[styles.star, { left: star.x - radius, top: star.y - radius, width: radius * 2, height: radius * 2, borderRadius: radius, backgroundColor: color }]} onPress={() => onSelect && onSelect(star)}>

@@ -19,96 +19,121 @@ function LoadingOverlay() {
 
 
 function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
-  const refNear = useRef();
-  const refMid = useRef();
-  const refFar = useRef();
-  const refUltraFar = useRef();
-
-  // LOD thresholds (parsec) - reduced for immediate visibility
-  const NEAR_MAX = 50;    // ultra detail (bright stars)
-  const MID_MAX = 200;    // detail (mid brightness)
-  const FAR_MAX = 500;    // sparse (distant stars)
-  const ULTRA_FAR_MAX = 2000; // very distant (minimal detail)
-
-  // Lists computed unconditionally to satisfy hooks rules
-  const nearList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d <= NEAR_MAX; }) : [], [stars]);
-  const midList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > NEAR_MAX && d <= MID_MAX; }) : [], [stars]);
-  const farList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > MID_MAX && d <= FAR_MAX; }) : [], [stars]);
-  const ultraFarList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d > FAR_MAX && d <= ULTRA_FAR_MAX; }) : [], [stars]);
-
-  const { nearGeom, midGeom, farGeom, ultraFarGeom } = useMemo(() => {
-    const build = (arr, sizeMultiplier = 1) => {
-      const positions = new Float32Array(arr.length * 3);
-      const colors = new Float32Array(arr.length * 3);
-      const sizes = new Float32Array(arr.length);
-      for (let i = 0; i < arr.length; i++) {
-        const s = arr[i];
-        positions[i * 3 + 0] = s.threeX;
-        positions[i * 3 + 1] = s.threeY;
-        positions[i * 3 + 2] = s.threeZ;
-        const c = new THREE.Color(s.color);
-        colors[i * 3 + 0] = c.r;
-        colors[i * 3 + 1] = c.g;
-        colors[i * 3 + 2] = c.b;
-        sizes[i] = (s.size || 0.5) * sizeMultiplier;
+  const refStars = useRef();
+  const STAR_SHADER = useMemo(() => ({
+    uniforms: {},
+    vertexShader: `
+      attribute float size;
+      varying vec3 vColor;
+      void main() {
+        vColor = color;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size * clamp(120.0 / -mvPosition.z, 0.2, 16.0);
+        gl_Position = projectionMatrix * mvPosition;
       }
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      g.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      g.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-      return g;
-    };
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      void main() {
+        float d = length(gl_PointCoord - vec2(0.5));
+        if (d > 0.5) discard;
+        float alpha = smoothstep(0.5, 0.2, d);
+        gl_FragColor = vec4(vColor, alpha);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexColors: true,
+  }), []);
 
-    const nG = nearList.length ? build(nearList, 2.0) : null;
-    const mG = midList.length ? build(midList, 1.5) : null;
-    const fG = farList.length ? build(farList, 1.0) : null;
-    const uG = ultraFarList.length ? build(ultraFarList, 0.6) : null;
-    return { nearGeom: nG, midGeom: mG, farGeom: fG, ultraFarGeom: uG };
-  }, [nearList, midList, farList, ultraFarList]);
+  const { starGeometry, starCount } = useMemo(() => {
+    if (!stars || !stars.length) return { starGeometry: null, starCount: 0 };
+    const positions = new Float32Array(stars.length * 3);
+    const colors = new Float32Array(stars.length * 3);
+    const sizes = new Float32Array(stars.length);
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      positions[i * 3] = s.threeX;
+      positions[i * 3 + 1] = s.threeY;
+      positions[i * 3 + 2] = s.threeZ;
+      const c = new THREE.Color(s.color);
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+      sizes[i] = Math.max(0.5, Math.min(6.0, s.size || 0.6));
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    return { starGeometry: geometry, starCount: stars.length };
+  }, [stars]);
 
   useFrame(({ clock }) => {
-    if (refNear.current) refNear.current.material.opacity = 0.95 + Math.sin(clock.getElapsedTime() * 0.6) * 0.03;
-    if (refMid.current) refMid.current.material.opacity = 0.8 + Math.sin(clock.getElapsedTime() * 0.4) * 0.02;
-    if (refFar.current) refFar.current.material.opacity = 0.6 + Math.sin(clock.getElapsedTime() * 0.3) * 0.01;
-    if (refUltraFar.current) refUltraFar.current.material.opacity = 0.4 + Math.sin(clock.getElapsedTime() * 0.2) * 0.005;
+    if (refStars.current) {
+      refStars.current.material.opacity = 0.7 + Math.sin(clock.getElapsedTime() * 0.3) * 0.12;
+    }
   });
 
-  const handlePointerDown = (e, list) => {
+  const handlePointerDown = (e) => {
     e.stopPropagation();
     const idx = e.index;
-    if (idx != null) {
-      // map back to correct star in original array: brute force search by position
-      const pos = [e.point.x, e.point.y, e.point.z];
-      const found = list.find(s => Math.abs(s.threeX - pos[0]) < 1e-4 && Math.abs(s.threeY - pos[1]) < 1e-4 && Math.abs(s.threeZ - pos[2]) < 1e-4);
-      if (found) onStarClick(found);
+    if (idx != null && Array.isArray(stars) && idx >= 0 && idx < stars.length) {
+      onStarClick(stars[idx]);
     }
   };
 
-  if (!nearGeom && !midGeom && !farGeom && !ultraFarGeom) return null;
+  if (!starGeometry || !starCount) return null;
 
   return (
-    <>
-      {nearGeom && (
-        <points ref={refNear} geometry={nearGeom} onPointerDown={(e) => handlePointerDown(e, nearList)}>
-          <pointsMaterial vertexColors size={1.8} sizeAttenuation={true} depthWrite={false} transparent opacity={0.95} blending={THREE.AdditiveBlending} />
-        </points>
-      )}
-      {midGeom && (
-        <points ref={refMid} geometry={midGeom} onPointerDown={(e) => handlePointerDown(e, midList)}>
-          <pointsMaterial vertexColors size={1.2} sizeAttenuation={true} depthWrite={false} transparent opacity={0.8} blending={THREE.AdditiveBlending} />
-        </points>
-      )}
-      {farGeom && (
-        <points ref={refFar} geometry={farGeom}>
-          <pointsMaterial vertexColors size={0.8} sizeAttenuation={true} depthWrite={false} transparent opacity={0.6} blending={THREE.AdditiveBlending} />
-        </points>
-      )}
-      {ultraFarGeom && (
-        <points ref={refUltraFar} geometry={ultraFarGeom}>
-          <pointsMaterial vertexColors size={0.5} sizeAttenuation={true} depthWrite={false} transparent opacity={0.4} blending={THREE.AdditiveBlending} />
-        </points>
-      )}
-    </>
+    <points ref={refStars} geometry={starGeometry} onPointerDown={handlePointerDown}>
+      <shaderMaterial attach="material" {...STAR_SHADER} />
+    </points>
+  );
+}
+
+function StarSelectionMarker({ star }) {
+  if (!star) return null;
+  return (
+    <mesh position={[star.threeX, star.threeY, star.threeZ]}>
+      <sphereGeometry args={[Math.max((star.size || 1) * 0.22, 0.22), 16, 16]} />
+      <meshBasicMaterial color="#89d7ff" transparent opacity={0.22} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+function BinaryStarNet({ stars }) {
+  const lineGeometry = useMemo(() => {
+    if (!stars || stars.length === 0) return null;
+    const candidates = stars.filter((s) => s.mag < 3.2).sort((a, b) => a.mag - b.mag).slice(0, 120);
+    const segments = [];
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length && segments.length < 28; j++) {
+        const a = candidates[i];
+        const b = candidates[j];
+        if (!a || !b) continue;
+        const dx = a.threeX - b.threeX;
+        const dy = a.threeY - b.threeY;
+        const dz = a.threeZ - b.threeZ;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > 0.015 && dist < 0.09) {
+          segments.push(a.threeX, a.threeY, a.threeZ);
+          segments.push(b.threeX, b.threeY, b.threeZ);
+        }
+      }
+    }
+    if (!segments.length) return null;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(segments), 3));
+    return geometry;
+  }, [stars]);
+
+  if (!lineGeometry) return null;
+  return (
+    <lineSegments geometry={lineGeometry}>
+      <lineBasicMaterial color="#7ae1ff" transparent opacity={0.18} depthWrite={false} />
+    </lineSegments>
   );
 }
 
@@ -169,6 +194,64 @@ function SolarSystemScene() {
         );
       })}
     </group>
+  );
+}
+
+function NebulaBackground() {
+  const meshRef = useRef();
+  const uniforms = useMemo(() => ({ time: { value: 0 } }), []);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.material.uniforms.time.value = state.clock.getElapsedTime();
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[0, 0, 0]}>
+      <sphereGeometry args={[850, 64, 64]} />
+      <shaderMaterial
+        transparent
+        side={THREE.BackSide}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        uniforms={uniforms}
+        vertexShader={
+          `varying vec3 vWorldPosition;
+           void main() {
+             vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+             vWorldPosition = worldPosition.xyz;
+             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+           }`
+        }
+        fragmentShader={
+          `uniform float time;
+           varying vec3 vWorldPosition;
+           float noise(vec3 p) {
+             return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+           }
+           void main() {
+             vec3 dir = normalize(vWorldPosition);
+             float n = noise(dir * 12.0 + vec3(0.0, time * 0.05, 0.0));
+             float band = pow(max(0.0, dot(dir, vec3(0.0, 0.08, 1.0))), 9.0);
+             float swirl = sin(dir.x * 15.0 + time * 0.08) * 0.22 + cos(dir.z * 10.0 - time * 0.07) * 0.16;
+             vec3 base = mix(vec3(0.01, 0.02, 0.05), vec3(0.06, 0.05, 0.10), band);
+             vec3 glow = vec3(0.18, 0.10, 0.20) * smoothstep(0.4, 0.75, n + swirl);
+             vec3 color = base + glow * 0.45;
+             gl_FragColor = vec4(color, 0.9);
+           }`
+        }
+      />
+    </mesh>
+  );
+}
+
+function MilkyWayBand() {
+  const geometry = useMemo(() => new THREE.TorusGeometry(430, 6, 90, 240, Math.PI * 1.2), []);
+  return (
+    <mesh geometry={geometry} rotation={[Math.PI / 2, 0, 0]}>
+      <meshBasicMaterial color="#4e71ff" transparent opacity={0.08} side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
   );
 }
 
@@ -286,10 +369,16 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
     return () => { mounted = false; };
   }, []);
 
-  // Fly to selected star
   const flyToStar = (star) => {
+    if (!star) return;
     setTargetStar(star);
-    setUseFlyControls(false); // Switch to orbit mode for better control
+    setUseFlyControls(false);
+  };
+
+  const claimStar = (star) => {
+    if (!star) return;
+    setSelected(null);
+    if (externalOnStarClick) externalOnStarClick(star);
   };
 
   const handleArrival = () => {
@@ -302,9 +391,13 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
       <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
         <Suspense fallback={null}>
           <color attach="background" args={["#000005"]} />
+          <NebulaBackground />
+          <MilkyWayBand />
           <fog attach="fog" args={["#000010", 500, 10000]} />
           <ambientLight intensity={0.12} />
           {stars && <HYGStarField stars={stars} ownedStars={ownedStars} onStarClick={(s) => setSelected(s)} />}
+          {selected && <StarSelectionMarker star={selected} />}
+          {stars && <BinaryStarNet stars={stars} />}
           <SolarSystemScene />
           <CameraRig enableCinematic={true} />
           <CameraAnimator targetStar={targetStar} onArrived={handleArrival} />
@@ -356,7 +449,12 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
           </button>
         )}
       </div>
-      <StarPopup star={selected} onClose={() => setSelected(null)} onClaim={() => { if (externalOnStarClick) externalOnStarClick(selected); }} />
+      <StarPopup
+        star={selected}
+        onClose={() => setSelected(null)}
+        onClaim={() => claimStar(selected)}
+        onFocus={() => flyToStar(selected)}
+      />
     </div>
   );
 }

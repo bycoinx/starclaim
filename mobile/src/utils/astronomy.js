@@ -24,12 +24,16 @@ export function projectRaDec(star, centerRa, centerDec, width, height, zoom) {
   return { x, y };
 }
 
-export function radiusForMag(mag) {
-  if (mag < 1) return 5;
-  if (mag < 2) return 4;
-  if (mag < 3) return 3;
-  if (mag < 4) return 2;
-  return 1;
+export function radiusForMag(mag, spect) {
+  const m = parseFloat(mag);
+  if (Number.isNaN(m)) return 2;
+  const brightness = Math.max(0, 6.5 - m);
+  let radius = Math.min(8, Math.max(1.2, 1.2 + Math.sqrt(brightness) * 1.6));
+  const spectral = (spect || '').trim().toUpperCase();
+  if (spectral.startsWith('O') || spectral.startsWith('B')) radius *= 1.1;
+  if (spectral.startsWith('K')) radius *= 1.05;
+  if (spectral.startsWith('M')) radius *= 0.9;
+  return Math.min(9, Math.max(1.1, radius));
 }
 
 export function colorForSpectrum(spect) {

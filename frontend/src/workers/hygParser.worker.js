@@ -18,25 +18,43 @@ function bvToColor(bv) {
   return '#ff6b35'; // Very red stars
 }
 
-function computeSize(mag, ci) {
+function spectralClass(ci) {
+  if (ci === null || ci === undefined || isNaN(ci)) return 'Unknown';
+  const v = parseFloat(ci);
+  if (v < -0.3) return 'O';
+  if (v < 0.0) return 'B';
+  if (v < 0.3) return 'A';
+  if (v < 0.5) return 'F';
+  if (v < 0.8) return 'G';
+  if (v < 1.2) return 'K';
+  return 'M';
+}
+
+function computeLuminosity(absmag) {
+  const M = parseFloat(absmag);
+  if (isNaN(M)) return null;
+  // Sun absolute magnitude ~4.83
+  return Math.pow(10, -0.4 * (M - 4.83));
+}
+
+function computeSize(mag, ci, absmag) {
   const m = parseFloat(mag);
   if (isNaN(m)) return 0.5;
-  
-  // Brighter stars (lower mag) are bigger, with exponential curve for realism
-  let baseSize = Math.max(0.2, Math.pow(10, (6.5 - m) * 0.15));
-  
-  // Adjust size based on color (spectral type)
-  // Redder stars (higher B-V) tend to be larger giants
+  const brightFactor = Math.max(0.2, Math.pow(10, (6.5 - m) * 0.16));
+  let baseSize = brightFactor;
+  const lum = computeLuminosity(absmag);
+  if (lum !== null) {
+    baseSize *= Math.min(3.5, 1.0 + Math.pow(lum, 0.2));
+  }
   if (ci !== null && ci !== undefined && !isNaN(ci)) {
     const colorIndex = parseFloat(ci);
     if (colorIndex > 0.8) {
-      baseSize *= 1.3; // Red giants are larger
+      baseSize *= 1.2;
     } else if (colorIndex < -0.2) {
-      baseSize *= 1.1; // Blue giants are slightly larger
+      baseSize *= 1.05;
     }
   }
-  
-  return baseSize;
+  return Math.max(0.22, Math.min(5.5, baseSize));
 }
 
 function toCartesian(ra, dec, dist) {
@@ -83,6 +101,9 @@ function parseCSV(text, limit = 9000) {
     let y = pos?.y ?? parseFloat(row.y);
     let z = pos?.z ?? parseFloat(row.z);
     if ([x, y, z].some(v => isNaN(v))) continue;
+    const absmag = parseFloat(row.absmag);
+    const pmra = parseFloat(row.pmra);
+    const pmdec = parseFloat(row.pmdec);
     stars.push({
       id: row.id || row.hip || row.hyg || String(i),
       proper: row.proper || row.name || row.properName || '',
@@ -90,7 +111,13 @@ function parseCSV(text, limit = 9000) {
       dec: !isNaN(dec) ? dec : null,
       dist: !isNaN(dist) ? dist : null,
       mag,
+      absmag: !isNaN(absmag) ? absmag : null,
       ci: row.ci === '' ? null : parseFloat(row.ci),
+      spectralType: spectralClass(row.ci),
+      properMotion: {
+        ra: !isNaN(pmra) ? pmra : null,
+        dec: !isNaN(pmdec) ? pmdec : null,
+      },
       x,
       y,
       z,
@@ -98,7 +125,7 @@ function parseCSV(text, limit = 9000) {
       threeY: z * SCALE,
       threeZ: -y * SCALE,
       color: bvToColor(row.ci),
-      size: computeSize(mag, row.ci),
+      size: computeSize(mag, row.ci, row.absmag),
     });
   }
   return stars;
