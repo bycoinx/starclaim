@@ -24,11 +24,11 @@ function HYGStarField({ stars, ownedStars = [], onStarClick = () => {} }) {
   const refFar = useRef();
   const refUltraFar = useRef();
 
-  // LOD thresholds (parsec) - optimized for 120K stars with maximum visibility
-  const NEAR_MAX = 200;   // ultra detail (bright stars)
-  const MID_MAX = 600;    // detail (mid brightness)
-  const FAR_MAX = 1200;    // sparse (distant stars)
-  const ULTRA_FAR_MAX = 5000; // very distant (minimal detail)
+  // LOD thresholds (parsec) - reduced for immediate visibility
+  const NEAR_MAX = 50;    // ultra detail (bright stars)
+  const MID_MAX = 200;    // detail (mid brightness)
+  const FAR_MAX = 500;    // sparse (distant stars)
+  const ULTRA_FAR_MAX = 2000; // very distant (minimal detail)
 
   // Lists computed unconditionally to satisfy hooks rules
   const nearList = useMemo(() => stars ? stars.filter(s => { const d = parseFloat(s.dist||0); return !isNaN(d) && d <= NEAR_MAX; }) : [], [stars]);
@@ -302,7 +302,7 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
       <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
         <Suspense fallback={null}>
           <color attach="background" args={["#000005"]} />
-          <fog attach="fog" args={["#000010", 100, 3000]} />
+          <fog attach="fog" args={["#000010", 500, 10000]} />
           <ambientLight intensity={0.12} />
           {stars && <HYGStarField stars={stars} ownedStars={ownedStars} onStarClick={(s) => setSelected(s)} />}
           <SolarSystemScene />
