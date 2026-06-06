@@ -10,8 +10,7 @@ import { Input } from "../components/ui/input";
 import { Telescope, Loader2, Search, Orbit, LayoutGrid, Satellite, Radio, ShieldCheck, AlertTriangle, RefreshCw } from "lucide-react";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 
-const SkySphere = React.lazy(() => import("../components/SkySphere"));
-const GalaxyScene = React.lazy(() => import("../components/GalaxyScene/GalaxyScene"));
+const GalaxyDemoScene = React.lazy(() => import("../components/GalaxyScene/GalaxyDemoScene"));
 
 const TIERS = ["all", "legendary", "zodiac", "named", "constellation", "standard"];
 const SORTS = [
@@ -285,8 +284,8 @@ export default function StarPicker({ onClaim }) {
                     <Loader2 className="w-8 h-8 animate-spin text-sc-gold" />
                   </div>
                 }>
-                  <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D harita yüklenemedi.</div>}>
-                    <GalaxyScene ownedStars={[]} onStarClick={handleClaim} />
+                  <ErrorBoundary fallback={<div className="text-center py-20 text-sc-red">3D demo yüklenemedi.</div>}>
+                    <GalaxyDemoScene />
                   </ErrorBoundary>
                 </Suspense>
               </div>
@@ -296,8 +295,8 @@ export default function StarPicker({ onClaim }) {
                   <p className="font-display text-2xl mb-3 text-white">{lang === "TR" ? "3D Harita Yükle" : "Load 3D Map"}</p>
                   <p className="text-sm leading-6 text-sc-text-muted">
                     {lang === "TR"
-                      ? "Uzay simülasyonunu başlatmak için aşağıdaki düğmeye basın. Bu deneyim sadece isteğe bağlı olarak yüklenir."
-                      : "Start the space simulation by loading the 3D map. This experience loads only on demand."}
+                      ? "Web demo sadece Milky Way görünümünü gösterir; katalog ve satış işlemleri Marketplace üzerinden devam eder."
+                      : "This web demo shows only the Milky Way view; catalog and purchase flows remain in the Marketplace."}
                   </p>
                 </div>
                 <button
@@ -305,7 +304,7 @@ export default function StarPicker({ onClaim }) {
                   onClick={() => setMapReady(true)}
                   className="btn-gold justify-center text-[10px] font-bold uppercase tracking-widest px-8"
                 >
-                  {lang === "TR" ? "HARİTAYI BAŞLAT" : "LAUNCH MAP"}
+                  {lang === "TR" ? "DEMOYU GÖSTER" : "VIEW DEMO"}
                 </button>
               </div>
             )
