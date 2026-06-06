@@ -5,33 +5,86 @@ import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import CameraRig from './CameraRig';
 
-function GalaxyDemoStars({ count = 5400 }) {
+function GalaxyDemoStars({ count = 9000 }) {
   const geometry = useMemo(() => {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const sizes = new Float32Array(count);
 
-    for (let i = 0; i < count; i++) {
-      const radius = Math.pow(Math.random(), 0.58) * 140 + 10;
-      const angle = Math.random() * Math.PI * 2;
-      const height = (Math.random() - 0.5) * 16 * (1 - Math.pow(radius / 160, 2));
-      const x = Math.cos(angle) * radius;
-      const y = height;
-      const z = Math.sin(angle) * radius;
+    const getStarColor = () => {
+      const p = Math.random();
+      let h, s, l;
+      if (p < 0.02) { h = 0.61; s = 0.92; l = 0.84; } // O / B
+      else if (p < 0.12) { h = 0.58; s = 0.80; l = 0.87; } // A
+      else if (p < 0.25) { h = 0.55; s = 0.68; l = 0.88; } // F
+      else if (p < 0.45) { h = 0.53; s = 0.50; l = 0.88; } // G
+      else if (p < 0.70) { h = 0.10; s = 0.70; l = 0.84; } // K
+      else { h = 0.04; s = 0.84; l = 0.78; } // M
+      return new THREE.Color().setHSL(h + (Math.random() - 0.5) * 0.02, s - Math.random() * 0.12, l - Math.random() * 0.14);
+    };
 
+    const spiralArm = (armId, t) => {
+      const armOffset = (Math.random() - 0.5) * 0.16;
+      const radius = 20 + Math.pow((t + 0.5) * 18, 1.03);
+      const theta = armId * (Math.PI / 2) + t + armOffset + (Math.random() - 0.5) * 0.2;
+      return { x: Math.cos(theta) * radius, z: Math.sin(theta) * radius, theta, radius };
+    };
+
+    const haloPoint = () => {
+      const u = Math.random();
+      const r = 190 + Math.pow(u, 0.25) * 80;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      return {
+        x: Math.sin(phi) * Math.cos(theta) * r,
+        y: Math.sin(phi) * Math.sin(theta) * r,
+        z: Math.cos(phi) * r,
+      };
+    };
+
+    for (let i = 0; i < count; i++) {
+      const population = Math.random();
+      let x, y, z;
+      let size = 1.4 + Math.random() * 4.6;
+
+      if (population < 0.16) {
+        // Bulge
+        const r = Math.pow(Math.random(), 0.5) * 24;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        x = Math.sin(phi) * Math.cos(theta) * r;
+        y = Math.sin(phi) * Math.sin(theta) * r * 0.65;
+        z = Math.cos(phi) * r;
+        size *= 1.1;
+      } else if (population < 0.88) {
+        // Disk + spiral arms
+        if (Math.random() < 0.75) {
+          const arm = spiralArm(Math.floor(Math.random() * 4), Math.random() * 5.2);
+          x = arm.x + (Math.random() - 0.5) * 8;
+          z = arm.z + (Math.random() - 0.5) * 8;
+          y = (Math.random() - 0.5) * (1.5 + arm.radius * 0.03);
+          size *= 1.05;
+        } else {
+          const radius = 25 + Math.pow(Math.random(), 0.4) * 130;
+          const angle = Math.random() * Math.PI * 2;
+          x = Math.cos(angle) * radius;
+          z = Math.sin(angle) * radius;
+          y = (Math.random() - 0.5) * 3.2 * (1 - radius / 180);
+        }
+      } else {
+        const p = haloPoint();
+        x = p.x; y = p.y; z = p.z;
+        size *= 0.5;
+      }
+
+      const color = getStarColor();
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
-
-      const hue = 0.54 + (Math.random() - 0.5) * 0.1;
-      const saturation = 0.5 + Math.random() * 0.3;
-      const lightness = 0.75 + Math.random() * 0.2;
-      const color = new THREE.Color().setHSL(hue, saturation, lightness);
-
       colors[i * 3] = color.r;
       colors[i * 3 + 1] = color.g;
       colors[i * 3 + 2] = color.b;
-      sizes[i] = 1.6 + Math.random() * 4.1;
+      sizes[i] = size;
     }
 
     const bufferGeometry = new THREE.BufferGeometry();
@@ -45,8 +98,8 @@ function GalaxyDemoStars({ count = 5400 }) {
 
   useFrame(({ clock }) => {
     if (ref.current) {
-      ref.current.rotation.y = clock.getElapsedTime() * 0.0025;
-      ref.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.08) * 0.003;
+      ref.current.rotation.y = clock.getElapsedTime() * 0.0022;
+      ref.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.06) * 0.002;
     }
   });
 
@@ -63,7 +116,7 @@ function GalaxyDemoStars({ count = 5400 }) {
            void main() {
              vColor = color;
              vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-             gl_PointSize = size * clamp(170.0 / -mvPosition.z, 0.4, 28.0);
+             gl_PointSize = size * clamp(190.0 / -mvPosition.z, 0.3, 36.0);
              gl_Position = projectionMatrix * mvPosition;
            }`
         }
@@ -72,9 +125,9 @@ function GalaxyDemoStars({ count = 5400 }) {
            void main() {
              vec2 coord = gl_PointCoord - vec2(0.5);
              float dist = length(coord);
-             if (dist > 0.55) discard;
-             float alpha = smoothstep(0.55, 0.06, dist);
-             alpha *= 1.0 - dist * 0.85;
+             if (dist > 0.6) discard;
+             float alpha = smoothstep(0.6, 0.08, dist);
+             alpha *= 1.0 - dist * 0.78;
              gl_FragColor = vec4(vColor, alpha);
            }`
         }
@@ -138,36 +191,6 @@ function DistantStarfield({ count = 1600 }) {
   );
 }
 
-function GalaxyGrid() {
-  const lines = useMemo(() => {
-    const positions = [];
-    const radius = 165;
-    for (let ring = 0; ring < 6; ring++) {
-      const currentRadius = 20 + ring * 22;
-      const segments = 120;
-      for (let i = 0; i < segments; i++) {
-        const theta = (i / segments) * Math.PI * 2;
-        const x = Math.cos(theta) * currentRadius;
-        const z = Math.sin(theta) * currentRadius;
-        positions.push(x, -1.5, z);
-        const nextTheta = ((i + 1) / segments) * Math.PI * 2;
-        const nx = Math.cos(nextTheta) * currentRadius;
-        const nz = Math.sin(nextTheta) * currentRadius;
-        positions.push(nx, -1.5, nz);
-      }
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    return geometry;
-  }, []);
-
-  return (
-    <lineSegments geometry={lines}>
-      <lineBasicMaterial color="#3d5f9f" transparent opacity={0.14} />
-    </lineSegments>
-  );
-}
-
 function CoreGlow() {
   return (
     <group>
@@ -188,10 +211,35 @@ function CoreGlow() {
 }
 
 function MilkyWayBand() {
-  const geometry = useMemo(() => new THREE.TorusGeometry(120, 12, 120, 320, Math.PI * 1.88), []);
+  const geometry = useMemo(() => new THREE.RingGeometry(26, 170, 320, 1), []);
   return (
-    <mesh geometry={geometry} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
-      <meshBasicMaterial color="#6b9cff" transparent opacity={0.14} side={THREE.DoubleSide} depthWrite={false} />
+    <mesh geometry={geometry} rotation={[Math.PI / 2, 0.1, 0]} position={[0, 0, 0]}>
+      <shaderMaterial
+        transparent
+        side={THREE.DoubleSide}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        vertexShader={
+          `varying vec2 vUv;
+           void main() {
+             vUv = uv;
+             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+           }`
+        }
+        fragmentShader={
+          `varying vec2 vUv;
+           void main() {
+             vec2 uv = vUv - vec2(0.5);
+             float dist = length(uv);
+             float band = smoothstep(0.42, 0.38, dist) * (1.0 - smoothstep(0.48, 0.52, dist));
+             float glow = smoothstep(0.35, 0.28, dist) * 0.2;
+             vec3 base = mix(vec3(0.02, 0.03, 0.08), vec3(0.08, 0.06, 0.16), 1.0 - dist);
+             vec3 color = base + vec3(0.18, 0.12, 0.22) * band;
+             float alpha = band * 0.32 + glow * 0.06;
+             gl_FragColor = vec4(color, alpha);
+           }`
+        }
+      />
     </mesh>
   );
 }
@@ -244,12 +292,15 @@ function NebulaSphere() {
 
            void main() {
              vec3 dir = normalize(vWorldPosition);
-             float band = pow(max(0.0, dot(dir, vec3(0.0, 0.1, 1.0))), 12.0);
-             float detail = noise(dir * 16.0 + vec3(0.0, time * 0.02, 0.0));
-             float glow = smoothstep(0.2, 0.75, detail + band * 1.2);
-             vec3 color = mix(vec3(0.02, 0.03, 0.08), vec3(0.07, 0.06, 0.16), band);
-             color += vec3(0.18, 0.14, 0.22) * glow * 0.9;
-             float alpha = pow(glow, 1.4) * 0.45;
+             float band = pow(max(0.0, dot(dir, vec3(0.0, 0.08, 1.0))), 13.0);
+             float detail = noise(dir * 18.0 + vec3(0.0, time * 0.025, 0.0));
+             float plane = smoothstep(0.05, 0.28, abs(dir.y) * 1.16 + detail * 0.22);
+             float glow = smoothstep(0.20, 0.72, detail + band * 1.1);
+             vec3 color = mix(vec3(0.01, 0.02, 0.05), vec3(0.08, 0.07, 0.16), band);
+             vec3 dust = mix(vec3(0.03, 0.025, 0.05), vec3(0.09, 0.08, 0.13), band);
+             color = mix(color * 0.62, dust, plane);
+             color += vec3(0.16, 0.11, 0.18) * glow * 0.9;
+             float alpha = pow(glow, 1.5) * 0.42 + band * 0.09;
              gl_FragColor = vec4(color, alpha);
            }`
         }
@@ -285,7 +336,6 @@ export default function GalaxyDemoScene() {
           <MilkyWayBand />
           <CoreGlow />
           <GalacticCore />
-          <GalaxyGrid />
           <NebulaSphere />
           <CameraRig enableCinematic={true} />
           <OrbitControls enablePan enableZoom enableRotate zoomSpeed={0.8} minDistance={40} maxDistance={250} makeDefault />

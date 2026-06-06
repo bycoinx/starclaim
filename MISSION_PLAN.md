@@ -243,7 +243,11 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 - [x] **Task 12.10: Nebula & Galaxy Background**
     - [x] Gerçekçi nebula dokuları
     - [x] Samanyolu bandı efekti (telif haklarına uygun)
-- [ ] **Task 12.11: 3D Map Polishing & Ownership UX**
+- [ ] **Task 12.11: Web Milky Way Demo First**
+    - [ ] Web için sadece Milky Way odaklı, view-only 3D demo hazırlandı
+    - [ ] Alım/satım 3D içinden değil marketplace üzerinden gerçekleşecek
+    - [ ] Mobil için önce 2D yüksek kaliteli star map, sonra Celestia tarzı 3D yapılacak
+- [ ] **Task 12.12: 3D Map Polishing & Ownership UX**
     - [ ] StarPopup / claim flow 3D sahnede çalışmalı
     - [ ] “Go to Star” ile bilgi paneli eş zamanlı güncellenmeli
     - [ ] Opt-in 3D map deneyimi premium bir ürün gibi sunulmalı
