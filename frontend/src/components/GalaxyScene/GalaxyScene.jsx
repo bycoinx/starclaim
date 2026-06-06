@@ -496,7 +496,7 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
   };
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
       {!stars && <LoadingOverlay />}
       <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
         <Suspense fallback={null}>
