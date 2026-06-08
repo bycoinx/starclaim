@@ -56,21 +56,33 @@ export default function StarCanvas({
   }, [visibleStars]);
 
   const constellationPaths = useMemo(() => {
-    if (!showConstellations || !layout.width || !layout.height) return [];
+    if (!showConstellations || !layout.width || !layout.height || !constellations.features) return [];
     const result = [];
-    constellations.forEach((entry) => {
-      if (!entry.lines || !Array.isArray(entry.lines)) return;
-      entry.lines.forEach((line) => {
-        const [a, b] = line;
-        const s1 = starMap.get(String(a));
-        const s2 = starMap.get(String(b));
-        if (s1 && s2) {
-          result.push({ x1: s1.x, y1: s1.y, x2: s2.x, y2: s2.y, name: entry.name });
-        }
-      });
+    constellations.features.forEach((feature) => {
+      if (feature.geometry && feature.geometry.type === 'MultiLineString') {
+        feature.geometry.coordinates.forEach((path) => {
+          for (let i = 0; i < path.length - 1; i++) {
+            const [ra1, dec1] = path[i];
+            const [ra2, dec2] = path[i + 1];
+            
+            const p1 = projectRaDec({ ra: ra1, dec: dec1 }, centerRa, centerDec, layout.width, layout.height, zoom);
+            const p2 = projectRaDec({ ra: ra2, dec: dec2 }, centerRa, centerDec, layout.width, layout.height, zoom);
+            
+            // Only add if both points are reasonably within or near view to avoid massive lines
+            if (
+              p1.x > -layout.width && p1.x < layout.width * 2 &&
+              p1.y > -layout.height && p1.y < layout.height * 2 &&
+              p2.x > -layout.width && p2.x < layout.width * 2 &&
+              p2.y > -layout.height && p2.y < layout.height * 2
+            ) {
+              result.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, id: `${feature.id}-${i}` });
+            }
+          }
+        });
+      }
     });
     return result;
-  }, [constellations, showConstellations, starMap, layout.width, layout.height]);
+  }, [constellations, showConstellations, layout, centerRa, centerDec, zoom]);
 
   return (
     <View
@@ -82,8 +94,8 @@ export default function StarCanvas({
       }}
     >
       <Svg style={StyleSheet.absoluteFill} width={layout.width} height={layout.height}>
-        {constellationPaths.map((line, index) => (
-          <Line key={`line-${index}`} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="rgba(100,150,255,0.35)" strokeWidth="1" />
+        {constellationPaths.map((line) => (
+          <Line key={line.id} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="rgba(100,150,255,0.35)" strokeWidth="1" />
         ))}
       </Svg>
       {visibleStars.map((star) => {

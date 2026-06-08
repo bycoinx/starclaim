@@ -3,7 +3,7 @@ import GalaxyScene from "../components/GalaxyScene/GalaxyScene";
 
 export default function StarPicker({ onClaim }) {
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="w-full h-screen bg-black overflow-hidden relative">
       <GalaxyScene onStarClick={onClaim} />
     </main>
   );

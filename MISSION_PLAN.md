@@ -247,6 +247,7 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
     - [ ] Web için sadece Milky Way odaklı, view-only 3D demo hazırlandı
     - [ ] Alım/satım 3D içinden değil marketplace üzerinden gerçekleşecek
     - [ ] Mobil için önce 2D yüksek kaliteli star map, sonra Celestia tarzı 3D yapılacak
+    - [!] **Note (Rollback):** Web 3D harita güncellemesi layout bozukluğu ve veri senkronizasyon hataları nedeniyle geri çekildi. Mevcut stabil sürüm (Phase 2) production'da kalacak. Düzeltme sonrası tekrar denenecek.
 - [ ] **Task 12.12: 3D Map Polishing & Ownership UX**
     - [ ] StarPopup / claim flow 3D sahnede çalışmalı
     - [ ] “Go to Star” ile bilgi paneli eş zamanlı güncellenmeli

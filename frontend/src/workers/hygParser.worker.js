@@ -1,6 +1,6 @@
 /* eslint-env worker */
 /* global globalThis */
-const SCALE = 0.01;
+const SCALE = 0.02;
 
 function bvToColor(bv) {
   if (bv === null || bv === undefined || isNaN(bv)) return '#ffffff';
@@ -89,7 +89,9 @@ function parseCSV(text, limit = 9000) {
       row[headers[j]] = vals[j] === undefined ? '' : vals[j];
     }
     const mag = parseFloat(row.mag);
-    if (isNaN(mag) || mag >= 6.5) continue;
+    // Removed strict magnitude filter to allow loading up to the requested limit (e.g. 120k)
+    // if (isNaN(mag) || mag >= 6.5) continue; 
+    if (isNaN(mag)) continue;
     const ra = parseFloat(row.ra);
     const dec = parseFloat(row.dec);
     const dist = parseFloat(row.dist);

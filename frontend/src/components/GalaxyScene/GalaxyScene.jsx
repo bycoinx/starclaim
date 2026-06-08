@@ -475,7 +475,8 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
 
   useEffect(() => {
     let mounted = true;
-    loadHygStars({ limit: 120000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
+    // Reduced limit to 80k for stability while maintaining richness
+    loadHygStars({ limit: 80000 }).then(s => { if (mounted) setStars(s); }).catch(() => {});
     return () => { mounted = false; };
   }, []);
 
@@ -496,11 +497,11 @@ export default function GalaxyScene({ ownedStars = [], onStarClick: externalOnSt
   };
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100vh', position: 'relative', overflow: 'hidden' }}>
       {!stars && <LoadingOverlay />}
-      <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000005' }}>
+      <Canvas ref={cameraRef} camera={{ position: [0, 15, 50], fov: 60, near: 0.001, far: 100000 }} gl={{ antialias: true, logarithmicDepthBuffer: true }} style={{ width: '100%', height: '100%', background: '#000000' }}>
         <Suspense fallback={null}>
-          <color attach="background" args={["#000005"]} />
+          <color attach="background" args={["#000000"]} />
           <NebulaBackground />
           <MilkyWayBand />
           <fog attach="fog" args={["#000010", 500, 10000]} />

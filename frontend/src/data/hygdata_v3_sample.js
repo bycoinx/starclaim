@@ -2,7 +2,7 @@
 // Exports: loadHygStars() -> Promise<stars[]>
 
 const HYG_URL = 'https://raw.githubusercontent.com/astronexus/HYG-Database/master/hyg/v3/hyg_v3.csv';
-const SCALE = 0.01; // 1 parsec = 0.01 three units
+const SCALE = 0.02; // 1 parsec = 0.02 three units
 
 async function parseHygCsvWithWorker(text, limit = 9000) {
   return new Promise((resolve, reject) => {
@@ -30,12 +30,12 @@ async function parseHygCsvWithWorker(text, limit = 9000) {
 function bvToColor(bv) {
   if (bv === null || bv === undefined || isNaN(bv)) return '#ffffff';
   const v = parseFloat(bv);
-  if (v < -0.3) return '#aaaaff';
-  if (v < 0.0) return '#ffffff';
-  if (v < 0.3) return '#ffffee';
-  if (v < 0.6) return '#ffff88';
-  if (v < 1.0) return '#ffcc44';
-  return '#ff8844';
+  if (v < -0.3) return '#9bb0ff';
+  if (v < 0.0) return '#aabfff';
+  if (v < 0.3) return '#cad7ff';
+  if (v < 0.6) return '#f8f7ff';
+  if (v < 1.0) return '#fff4ea';
+  return '#ffd2a1';
 }
 
 function computeSize(mag) {
