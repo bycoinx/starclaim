@@ -1,299 +1,61 @@
-# 🛰️ StarClaim: Mission Plan (Surgical Execution)
+# 🛰️ StarClaim: Mission Plan (Infinite Voyage Edition)
 
-Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana yol haritasıdır. Her adım cerrahi bir titizlikle, mevcut sistemi bozmadan uygulanacaktır.
-
-## ⚙️ Phase 0: Environment Setup (Tomorrow's Mission)
-**Hedef:** Solana/Anchor geliştirme ortamının WSL2 üzerinde hatasız kurulması.
-
-- [ ] **Task 0.1: WSL2 & Ubuntu Installation** (`wsl --install`)
-- [ ] **Task 0.2: Rust & Solana CLI Setup**
-- [ ] **Task 0.3: Anchor Framework & Yarn Installation**
-
-## 🏁 Phase 1: The Great Void (Görsel Kusursuzluk) [COMPLETED]
-**Hedef:** Web sitesindeki uzay haritasını "AAA" kalitesine taşımak.
-
-- [x] **Task 1.1: Post-Processing & Atmosphere**
-- [x] **Task 1.2: NASA Deep Space Integration**
-- [x] **Task 1.3: Aegis HUD 2.0**
-- [x] **Task 1.4: Cinematic Landing (Home.jsx)**
-    - [x] Hero bölümüne interaktif HUD animasyonları ve telemetri verileri eklendi.
-    - [x] "Yıldız Al" butonuna kuantum efekti (quantum-btn) entegrasyonu yapıldı.
-    - [x] Glitch ve tarama hattı (scan-line) gibi J.A.R.V.I.S. estetiği güçlendirildi.
-
-## 🏁 Phase 2: Cinematic Storytelling (İçerik Estetiği) [COMPLETED]
-**Hedef:** Tüm kullanıcı panellerini "Kişisel Terminal" (Console) ruhuna taşımak.
-
-- [x] **Task 2.1: Quantum Stories v2**
-- [x] **Task 2.2: Mission Briefing (About Us)**
-- [x] **Task 2.3: Personal Command Console (Dashboard.jsx)**
-- [x] **Task 2.4: Interstellar Stock Exchange (Marketplace.jsx)**
-- [x] **Task 2.5: Secure Legacy Interface (Vault.jsx) [EXTRA]**
-    - [x] Tüm paneller (Dashboard, Marketplace, Vault, StarCard) "Console" ve JARVIS estetiğine taşındı.
-    - [x] Telemetry-grid, terminal-scanline ve HUD öğeleri projenin geneline yayıldı.
-
-## 🏁 Phase 5: Data & Backend Optimization (NEW) [COMPLETED]
-**Hedef:** 10.000 yıldızın sistemde hatasız çalışmasını sağlamak.
-
-- [x] **Task 5.1: High-Volume Cosmic Injection**
-    - [x] `seed_data.py` dosyasının 10.000 gerçek yıldız (NASA/HYG) verisini destekleyecek şekilde güncellenmesi.
-    - [x] MongoDB Atlas üzerinde "Index" oluşturularak arama hızının optimize edilmesi.
-- [x] **Task 5.2: Interstellar Pagination (Frontend & Backend)**
-    - [x] `/api/stars` endpoint'ine `limit` ve `offset` parametrelerinin eklenmesi.
-    - [x] Frontend tarafında "Sonsuz Kaydırma" (Infinite Scroll) veya "Sayfalama" mekanizmasının kurulması.
-- [x] **Task 5.3: Aegis Persistence (Wake-up Strategy)**
-    - [x] Render.com'un ücretsiz paketindeki uyku sorununu çözmek için frontend'e "Pre-fetch/Wake-up" pingi eklenmesi.
-
-## 🏁 Phase 3: Interstellar Treasury (Solana Modülü - The Eternal Covenant) [COMPLETED]
-**Hedef:** Finansal altyapıyı "Mütalist" bir yaklaşımla, güven ve sonsuzluk üzerine inşa etmek.
-
-- [x] **Task 3.1: Anchor Program Setup & Integration**
-- [x] **Task 3.2: The Eternal Vault (Smart Contract)**
-    - [x] **Multi-Stablecoin Support:** USDC ve USDT kabul eden ödeme altyapısı.
-    - [x] **Tier System:** Nova ve Supernova ayrımı.
-    - [x] **Pioneer Refund Logic:** İlk alıcılara özel, kilitli iade garantisi.
-    - [x] **Yield Integration Strategy:** Hazine fonlarının getiri protokollerine yönlendirilmesi ve yönetilmesi (CPI Entegrasyonu).
-- [x] **Task 3.3: Voyager Messages (Time-Locked Data)**
-- [x] **Task 3.4: Marketplace Protocol**
-
-## 🏁 Phase 4: Aegis Sentinel (Mobil Güvenlik) [COMPLETED]
-**Hedef:** Mobil uygulamayı donanım cüzdanı seviyesine çekmek.
-
-- [x] **Task 4.1: Biometrik Onay Entegrasyonu**
-    - [x] `expo-local-authentication` ile FaceID/TouchID desteği eklendi.
-    - [x] QR Login ve hassas işlemler öncesi biyometrik zorunluluk getirildi.
-- [x] **Task 4.2: Neural Link (QR) Finalizasyonu**
-    - [x] QR tarama sonrası imzalama işlemi biyometrik katmanla korundu.
-- [x] **Task 4.3: Wallet Session Persistence ve Recovery**
-    - [x] `expo-secure-store` ile cüzdan oturumu şifreli olarak kaydediliyor.
-    - [x] Uygulama açılışında otomatik oturum kurtarma (recovery) aktif edildi.
-- [x] **Task 4.4: Mobil cüzdan doğrulama, fallback ve hatalı imza yönetimi**
-    - [x] `SecurityService` üzerinden hata yönetimi ve fallback mekanizmaları kuruldu.
-- [x] **Task 4.5: High-Fidelity Landscape Cockpit UI**
-    - [x] Uygulama oryantasyonu tamamen yatay (landscape) moda sabitlendi.
-    - [x] Üçlü panel sistemi (Sol Kanat, Merkez Viewport, Sağ Kanat) ile kokpit arayüzü kuruldu.
-    - [x] `WarpBackground` ve `HUDOverlay` ile derin uzay yolculuğu estetiği sağlandı.
-- [x] **Task 4.6: AR Star Map & Real-Data Integration**
-    - [x] Kamera feed'i üzerine şeffaf "Aegis HUD" katmanı eklendi.
-    - [x] Backend'den 100+ yıldız canlı olarak çekilip AR ortamına yerleştirildi.
-    - [x] Hedefleme (Lock-on) ve detay paneli (Star Details) özellikleri eklendi.
-- [x] **Task 4.7: Full System Synchronization**
-    - [x] Home ekranına gerçek zamanlı Market Cap ve Hacim verileri bağlandı.
-    - [x] Canlı aktivite akışı (Live Feed) mobil terminale entegre edildi.
-    - [x] Vault Core ve Neural Link ekranları "Landscape Cockpit" temasına uyarlandı.
-- [x] **Task 4.8: Gökyüzüne Bak (StarMap)**
-    - [x] `mobile/src/data/starLoader.js` ile HYG verisi çekilip AsyncStorage'a kaydedildi.
-    - [x] `mobile/src/utils/astronomy.js` ile RA/Dec → ekran koordinat dönüşümü yazıldı.
-    - [x] `mobile/components/StarCanvas.js` ile manuel modda hızlı yıldız görselleştirmesi eklendi.
-    - [x] `mobile/components/StarPopup.js` ile dokunma ve yıldız detay popup'ı çalışır hale getirildi.
-    - [x] `mobile/components/StarButton.js` ile ana ekranda ve popup içinde yıldız biçimli butonlar eklendi.
-    - [x] `mobile/components/PurchaseModal.js` ile seçilen yıldız üzerinden mobil satın alma akışı bağlandı.
-    - [x] `mobile/app/(tabs)/explore/starmap.js` ana ekranı oluşturuldu.
-    - [x] `mobile/app/(tabs)/explore/starmap.js` içinde takımyıldız çizgilerini açıp kapatan buton eklendi.
-    - [x] `mobile/app/(tabs)/explore/starmap.js` içinde `Yıldız Al`, `Yıldızımı Gör` ve satın alma modal entegrasyonu tamamlandı.
-    - [x] `mobile/components/MyStarsOverlay.js` ile "Yıldızlarım" listesi için altyapı hazırlandı.
-    - [x] `expo-sqlite` ve `astronomia` bağımlılıkları `mobile/package.json`a eklendi.
-    - [x] Kamera modu ve manyetometre / ivmeölçer altyapısı için temel hazırlık yapıldı.
-
-## 🏁 Phase 6: Aegis Support Intelligence (AI & n8n) [COMPLETED]
-**Hedef:** n8n tabanlı, projenin tüm teknik ve vizyoner verisine hakim bir AI asistan kurulumu.
-
-- [x] **Task 6.1: n8n Webhook Architecture**
-    - [x] Backend üzerinde `/api/ai/support` endpoint'i ile AI asistan altyapısı kuruldu.
-- [x] **Task 6.2: Aegis Knowledge Base**
-    - [x] Projenin "Anayasası" ve tüm teknik detayları AI'ya context olarak öğretildi.
-- [x] **Task 6.3: Floating Command Terminal**
-    - [x] Sitede sağ altta beliren, "Iron Man" ses dalgaları efektli `AegisTerminal.jsx` bileşeni geliştirildi.
-    - [x] **"Eternal Sentinel" Modu:** J.A.R.V.I.S. kişiliği ile interaktif destek sağlayan arayüz yayına alındı.
-- [x] **Task 6.4: AI Support Durability**
-    - [x] Backend `ai/support` endpoint'i proje bilgi bankasıyla genişletildi.
-    - [x] Frontend terminal yanıt ve hata yönetimi iyileştirildi.
-- [ ] **Task 6.5: AI Support Stabilization**
-    - [ ] `api/ai/support` 404/JSON hatalarını izolasyonla çöz.
-    - [ ] `REACT_APP_API_URL` deploy ortamında kontrol edilip sabitlenmeli.
-    - [ ] Yanıt durumları için backend ve frontend tarafında `response.ok` kontrolü eklenmeli.
-- [ ] **Task 6.6: AI Knowledge & FAQ Fallback**
-    - [ ] `MISSION_PLAN.md`, `PRD.md`, `WORK_LOG.md`, `README.md` gibi kritik bilgi kaynakları backend bilgi bankasında kullanılmalı.
-    - [ ] LLM token sınırına takılmamak için kısa, seçilmiş proje özetleri ve gereken yerlerde FAQ katmanı eklenmeli.
-- [ ] **Task 6.7: AI & n8n Telemetry**
-    - [ ] AI destek sorguları loglanmalı ve n8n üzerinden geribildirim/sorun kaydı oluşturulmalı.
-    - [ ] “Not Found / API unreachable” gibi hata durumları yönetime raporlanmalı.
-
-## 📌 Phase 6.5: Star Catalog Validation & Map Readiness
-**Hedef:** kataloğun gerçek verilerle çalıştığını doğrulamak ve 3D harita deneyimini doğru kapsamda sunmak.
-
-- [ ] **Task 6.5.1: Star Catalog Health Check**
-    - [ ] `GET /api/stars` canlı veri döndürmeli.
-    - [ ] Filtre parametreleri (`tier`, `constellation`, `available`, `price`) düzgün çalışmalı.
-    - [ ] Eğer veri yoksa deploy DB `seed_data.py` ile yeniden doldurulmalı.
-- [x] **Task 6.5.2: No Results vs. Error Ayırımı**
-    - [x] “Filtreyle yıldız bulunamadı” ile “Sunucu hatası” farklı mesajlar gösterilmeli.
-    - [x] Hatalar frontend’de kullanıcıya net ifade edilmeli.
-- [x] **Task 6.5.3: 3D Map Opt-in UX**
-    - [x] 3D harita yalnızca kullanıcı isteyince yüklenmeli.
-    - [ ] Web’de profesyonel görünmesi için “premium deneyim” olarak sunulmalı.
-    - [ ] Mobilde hafif bir özel “star map” deneyimi planlanmalı; yüksek işlem gücü gerektirmeyen bir yol izlenmeli.
-- [ ] **Task 6.5.4: Market Cap Reality Layer**
-    - [ ] Marketcap göstergesi gerçek marketplace verilerinden hesaplanmalı.
-    - [ ] Backend’te `GET /api/marketplace/metrics` gibi bir metrik endpoint önerilmeli.
-    - [ ] Frontend, `marketplace` sayfasında gerçek değerleri gösterecek şekilde güncellenmeli.
-- [ ] **Task 6.5.5: Web/Mobil Star Map Erişim Politikası**
-    - [ ] Web’de sadece NFT sahibi kullanıcılar canlı star map’i görebilecek.
-    - [ ] Normal giriş yapanlar veya anonim ziyaretçiler web’de yalnızca Marketcap/Star listesi bölümünü görecek.
-    - [ ] Mobilde bu ayrım olmayacak; mobil yükleyen herkes star map’e bakabilecek.
-- [ ] **Task 6.5.6: Marketcap & Kategori Filtreleme**
-    - [ ] Marketcap bölümünde tüm yıldızlar listelenecek.
-    - [ ] Takımyıldız, sıradan, zodiac, legendary gibi kategori bazlı filtreleme eklenecek.
-    - [ ] Aynı filtreleme mobilde de sunulacak.
-- [ ] **Task 6.5.7: Gerçek Sahiplik Bilgisi**
-    - [ ] Web’de satın alma bilgisi gerçeğe bağlanacak.
-    - [ ] Gerçek alan kişilerin isimleri veya sahiplik kayıtları ilgili yıldız bilgi ekranında gösterilecek.
-- [ ] **Task 6.5.8: Satın Alma Akışı Stabilizasyonu**
-    - [ ] Yıldız Al bölümündeki hatalar giderilecek.
-    - [ ] Giderilemezse, kullanıcıya güvenli bir hata fallback’i sağlanacak.
-
-## 🛒 Phase 7: Commerce & Fulfillment
-**Hedef:** Satın alma, pazar ve teslimat akışlarını uçtan uca tamamlamak.
-
-- [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
-- [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
-- [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
-- [x] **Task 7.4: Admin Dashboard & Order Management**
-- [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
-
-## 🤖 Phase 8: AI & Experience
-**Hedef:** AI yardımını güvenilir, ölçülebilir ve içeriğe bağlı bir destek kanalına dönüştürmek.
-
-- [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
-- [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
-- [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
-- [x] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü (AdminDashboard.jsx)**
-- [ ] **Task 8.5: 3D harita opt-in deneyimi ve performans gating**
-- [ ] **Task 8.6: Mobil star map / AR preview konsepti**
-- [ ] **Task 8.7: Marketplace health / marketcap dashboardu**
-
-## 🚀 Phase 9: Growth & Product Expansion
-**Hedef:** StarClaim deneyimini genişletmek, yeni satış kanalları ve sürdürülebilir büyüme altyapısı kurmak.
-
-- [ ] **Task 9.1: AR yıldız bulucu ve mobil keşif özellikleri**
-- [ ] **Task 9.2: NFT / dijital mülkiyet sertifikası**
-- [ ] **Task 9.3: Fiziksel sertifika / kargo opsiyonları**
-- [ ] **Task 9.4: Yönetici paneli ve içerik yayınlama**
-- [ ] **Task 9.5: Performans, güvenlik, izleme ve test kapsamı artırımı**
-
-## 🚀 Phase 11: Android Studio Migration (Tomorrow's Mission)
-**Hedef:** Expo Go kısıtlamalarından kurtulup gerçek cihaz/emülatör üzerinde native özellikleri (Solana Wallet) test etmek.
-
-- [ ] **Task 11.1: Android Studio & SDK Setup**
-- [ ] **Task 11.2: Prebuild & Native Build Creation** (`npx expo run:android`)
-- [ ] **Task 11.3: Reverse Solana Mock logic** (Re-enable native wallet adapter)
-
-## 🧪 Phase 10: Launch Readiness & Diagnosis
-**Hedef:** Web ve mobil için üretime hazır bir kalite ve izleme paketi oluşturmak.
-
-- [ ] **Task 10.1: Web/mobile QA, performans ve hata izleme**
-- [ ] **Task 10.2: AI fallback FAQ ve destek analitiği**
-- [ ] **Task 10.3: Kullanıcı metrikleri için n8n / analytics entegrasyonu**
-- [ ] **Task 10.4: Launch readiness kontrol listesi**
-
-## 🚧 Current Status (Hazırla)
-- **Admin Command Center:** `is_admin` yetkilendirmesi ve yönetim paneli (AdminDashboard) eklendi. Siparişler ve sistem metrikleri aktif takip ediliyor.
-- **Mobile Navigation Fixed:** "GO_BACK" hatası `canGoBack()` kontrolleri ve global `BackHandler` ile giderildi.
-- **Mobile Connectivity:** Yerel backend bağlantısı için `CONFIG.js` ve dinamik IP altyapısı kuruldu.
-- **Expo Go Compatibility:** Native modül çökmesini önlemek için Solana Wallet fonksiyonları geçici olarak mock/hibrit hale getirildi.
-- AI terminal (Aegis Support) Gemini 1.5 Pro entegrasyonu backend'de hazır, anahtar stabilizasyonu bekleniyor.
-- Yıldız kataloğunda 120,000 veri mevcut ve mobil/web üzerinden erişilebilir.
-- **Not:** Yarın Expo Go bırakılıp Android Studio üzerinden devam edilecek.
-
-## 🌌 Phase 12: Advanced Space Simulation (Gelişmiş Uzay Simülasyonu) [IN PROGRESS]
-**Hedef:** 3D galaksi görüntüsünü gerçekçi uzay simülasyonuna dönüştürmek (Celestia benzeri, telif haklarına saygılı).
-
-- [x] **Task 12.0: Safe Hybrid Reference Path**
-    - [x] Celestia sadece görsel ve UX referansı olarak kullanıldı
-    - [x] Hiçbir Celestia C++ kodu, shader veya telifli varlık aktarılmadı
-    - [x] Bütün 3D sahne React/ThreeFiber tabanlı olarak yeniden yazıldı
-- [x] **Task 12.1: Procedural Background Refinement**
-    - [x] ProceduralStarDust ve NebulaGlow bileşenleri kaldırıldı
-    - [x] Basit ama etkili nebula/galaksi shader’ı eklendi
-    - [x] Milky Way bandı efektleri güvenli biçimde uygulandı
-- [x] **Task 12.2: Free-Flight Camera System**
-    - [x] FlyControls entegrasyonu yapıldı
-    - [x] Orbit/Fly modu geçiş butonu eklendi
-- [x] **Task 12.3: Star Catalog Expansion**
-    - [x] Yıldız sayısı 50.000'den 120.000'e çıkarıldı
-    - [x] HYG katalog (Hipparcos verisi içeriyor) kullanıldı
-- [x] **Task 12.4: LOD System Optimization**
-    - [x] 4 seviyeli LOD sistemi (near, mid, far, ultra-far)
-    - [x] Threshold'lar optimize edildi (100, 400, 800, 3000 parsec)
-- [x] **Task 12.5: Star Visibility Enhancement**
-    - [x] Yıldız boyutları artırıldı (1.2x, 0.8x, 0.5x, 0.3x)
-    - [x] Opacity değerleri yükseltildi (0.95, 0.6, 0.4, 0.25)
-- [x] **Task 12.6: Go to Star Navigation**
-    - [x] Seçilen yıldıza kamera animasyonu ile uçma özelliği
-    - [x] CameraAnimator componenti eklendi
-- [x] **Task 12.7: R3F Hook Error Fix**
-    - [x] useFrame hook'u Canvas içine taşındı
-    - [x] 3D harita yüklenme hatası giderildi
-- [x] **Task 12.8: Realistic Star Properties**
-    - [x] Spektral tip renkleri (O, B, A, F, G, K, M)
-    - [x] Luminosity bazlı boyutlandırma
-    - [x] Proper motion (yıldız hareketi)
-- [x] **Task 12.9: Binary Star Systems**
-    - [x] Çift yıldız sistemleri için özel render
-    - [ ] Yörünge animasyonları
-- [x] **Task 12.10: Nebula & Galaxy Background**
-    - [x] Gerçekçi nebula dokuları
-    - [x] Samanyolu bandı efekti (telif haklarına uygun)
-- [ ] **Task 12.11: Web Milky Way Demo First**
-    - [ ] Web için sadece Milky Way odaklı, view-only 3D demo hazırlandı
-    - [ ] Alım/satım 3D içinden değil marketplace üzerinden gerçekleşecek
-    - [ ] Mobil için önce 2D yüksek kaliteli star map, sonra Celestia tarzı 3D yapılacak
-    - [!] **Note (Rollback):** Web 3D harita güncellemesi layout bozukluğu ve veri senkronizasyon hataları nedeniyle geri çekildi. Mevcut stabil sürüm (Phase 2) production'da kalacak. Düzeltme sonrası tekrar denenecek.
-- [ ] **Task 12.12: 3D Map Polishing & Ownership UX**
-    - [ ] StarPopup / claim flow 3D sahnede çalışmalı
-    - [ ] “Go to Star” ile bilgi paneli eş zamanlı güncellenmeli
-    - [ ] Opt-in 3D map deneyimi premium bir ürün gibi sunulmalı
-- [ ] **Task 12.12: Performance, Fallback & QA**
-    - [ ] Desktop için 60 FPS, mobil / low-end için 30 FPS hedefi
-    - [ ] WebGL desteklemeyen tarayıcılarda hafif fallback sağlanmalı
-    - [ ] Yükleme/uygulama durumları için net kullanıcı bildirimleri eklenmeli
-- [ ] **Task 12.13: Branding & IP-safe Styling**
-    - [ ] Celestia adı, logo ve direkt UI akışları kullanılmayacak
-    - [ ] Aegis / StarClaim temalı görsel kimlik korunacak
-    - [ ] Tasarım tamamen özgün, sadece “uzay simülatörü hissi” referans alınacak
+Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana yol haritasıdır. Yeni vizyonumuzla birlikte Web tarafı sinematik bir "Gözlemci", Mobil tarafı ise yüksek kaliteli bir "3D Kokpit" olarak konumlandırılmıştır.
 
 ---
-### 📜 Eternal Covenant (Mütalist Anayasa)
-**Hedef:** Satın alma, pazar ve teslimat akışlarını uçtan uca tamamlamak.
 
-- [ ] **Task 7.1: Stripe Checkout + gerçek ödeme status sync**
-- [ ] **Task 7.2: PDF sertifika üretimi ve e-posta onayı**
-- [ ] **Task 7.3: Marketplace satın alma ve otomatik ownership transferi**
-- [x] **Task 7.4: Admin Dashboard & Order Management**
-- [ ] **Task 7.5: Hediye alıcı e-postası ve paylaşılabilir yıldız linkleri**
+## ✅ Tamamlanan Aşamalar (Current Status)
 
-## 🤖 Phase 8: AI & Experience
-**Hedef:** AI yardımını güvenilir, ölçülebilir ve içeriğe bağlı bir destek kanalına dönüştürmek.
+### Phase 1-6: Temel Altyapı & Backend
+- [x] **Backend & API:** FastAPI tabanlı ölçeklenebilir sunucu mimarisi kuruldu.
+- [x] **Database:** MongoDB üzerinde 10.000+ gerçekçi yıldız verisi (HIP/HD) indexlendi.
+- [x] **AI Support (Aegis):** Gemini 1.5 Pro entegreli akıllı destek terminali (J.A.R.V.I.S.) yayına alındı.
+- [x] **Stellar Blockchain:** Solana/Anchor akıllı sözleşmeleri (Royalty, Refund, Purchase) hazır.
 
-- [ ] **Task 8.1: AI destek analizi, kullanıcı geribildirimi ve fallback FAQ**
-- [ ] **Task 8.2: n8n otomasyonunu teslimat/e-posta iş akışına bağlama**
-- [ ] **Task 8.3: TR/EN tutarlılık ve cevap kalitesi iyileştirmeleri**
-- [x] **Task 8.4: Yönetici hikaye/CMS düzenleme arayüzü (AdminDashboard.jsx)**
-
-## 🚀 Phase 9: Growth & Product Expansion
-**Hedef:** StarClaim deneyimini genişletmek, yeni satış kanalları ve sürdürülebilir büyüme altyapısı kurmak.
-
-- [ ] **Task 9.1: AR yıldız bulucu ve mobil keşif özellikleri**
-- [ ] **Task 9.2: NFT / dijital mülkiyet sertifikası**
-- [ ] **Task 9.3: Fiziksel sertifika / kargo opsiyonları**
-- [ ] **Task 9.4: Yönetici paneli ve içerik yayınlama**
-- [ ] **Task 9.5: Performans, güvenlik, izleme ve test kapsamı artırımı**
-
+### Phase 10-15: Mobil Geliştirme (AAA Polish)
+- [x] **Aegis HUD UI:** Landscape (yatay) modda çalışan, kavisli HUD ve cam efektli kokpit tasarımı tamamlandı.
+- [x] **Hybrid Mapping:** 2D harita üzerinde Güneş Sistemi nesneleri ve Derin Uzay Nesneleri (DSO) aktif.
+- [x] **StarDetail 2.0:** Sahiplenilen yıldızlar için telemetri verileri, ebedi mesaj mühürleme ve paylaşım özelliği eklendi.
+- [x] **Discovery Hub:** Profesyonel keşif ekranı ve kategori bazlı navigasyon sistemi kuruldu.
 
 ---
-### 📜 Eternal Covenant (Mütalist Anayasa)
-1. **Güven:** İlk alıcıların anaparası "Escrow" kasasında korunur.
-2. **Ekoloji:** Her yıldız, dünyada büyüyen bir fidan demektir.
-3. **Sonsuzluk:** Mesajlar blockchain'de ebediyen kalır, vasiyetler zamanı gelince açılır.
-4. **Maddi Fayda:** Kullanıcılar ikincil pazarda serbestçe ticaret yapabilir, biz havuz faiziyle sistemi büyütürüz.
 
-*Not: Bu dosya her başarılı görevden sonra güncellenecektir.*
+## 🚀 Yeni Strateji: Project Aegis 2.0
+
+**Vizyon:** Web bir "Pencere" (Demo/Stratejik Görünüm), Mobil ise bir "Kokpit" (Tam Deneyim/Satın Alma Merkezi).
+
+### Phase 20: Core Space Engine (Ortak 3D Altyapı)
+- [ ] **Task 20.1: Universal Coordinate System**
+    - [ ] RA/Dec/Distance verilerini X, Y, Z uzay koordinatlarına çeviren matematiksel motorun stabilizasyonu.
+- [ ] **Task 20.2: Procedural Star Shaders**
+    - [ ] React Three Fiber için hafif, Spectral Type bazlı (O, B, A, F, G, K, M) yıldız shader'larının yazılması.
+- [ ] **Task 20.3: Performance Tuning**
+    - [ ] 10.000+ yıldızın akıcı render edilmesi için Frustum Culling ve Instanced Mesh optimizasyonu.
+
+### Phase 21: Web Reconstruction (The Strategic Observer)
+- [ ] **Task 21.1: Web Harita Temizliği**
+    - [ ] Mevcut düşük performanslı 3D haritanın kaldırılması ve Three.js altyapısının sıfırdan kurulması.
+- [ ] **Task 21.2: Cinematic Star Browser**
+    - [ ] Web ana sayfasında kullanıcıyı "büyüleyecek" ve mobili indirmeye teşvik edecek sinematik 3D sekanslar.
+- [ ] **Task 21.3: Bridge to Mobile**
+    - [ ] Web üzerinden yıldız seçen kullanıcının, QR kod veya derin link (Deep Link) ile mobildeki satın alma noktasına yönlendirilmesi.
+
+### Phase 22: Mobile Hub (The Tactical Cockpit 3D)
+- [ ] **Task 22.1: 3D Navigation Module**
+    - [ ] `explore/3dmap.js` ile "Celestia" tarzı interaktif 3D navigasyonun mobil uygulamaya entegre edilmesi.
+- [ ] **Task 22.2: The Warp Jump Experience**
+    - [ ] Satın alma/İnceleme anında yıldıza doğru yapılan ışık hızı (Warp) animasyonunun geliştirilmesi.
+- [ ] **Task 22.3: Audio-Visual Immersion**
+    - [ ] Uzay ambiyansı ses motoru (Ambient Engine) ve haptik geri bildirimlerin eklenmesi.
+
+### Phase 23: Production Hardening & Launch
+- [ ] **Task 23.1: Final Optimization**
+    - [ ] Uygulama boyutunun (Bundle Size) 50MB altında tutulması için asset sıkıştırma.
+- [ ] **Task 23.2: Multi-Platform Sync**
+    - [ ] Web ve Mobil arasındaki sahiplik verilerinin WebSocket/Real-time DB ile senkronizasyonu.
+- [ ] **Task 23.3: Grand Deployment**
+    - [ ] Google Play ve App Store hazırlıklarının tamamlanması.
+
+---
+
+*Not: Bu dosya her başarılı görevden sonra cerrahi bir titizlikle güncellenecektir.*

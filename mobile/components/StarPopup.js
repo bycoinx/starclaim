@@ -1,9 +1,32 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert } from 'react-native';
+import * as Sharing from 'expo-sharing';
 import StarButton from './StarButton';
 
 export default function StarPopup({ visible, star, owned, onClose, onPurchase, onProfile }) {
   if (!star) return null;
+
+  const handleShare = async () => {
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('Hata', 'Paylaşım bu cihazda kullanılamıyor.');
+        return;
+      }
+      
+      const message = owned 
+        ? `✨ StarClaim Mirasım: ${star.proper || star.id} artık sonsuza dek benim! Bu yıldız ${star.con} takımyıldızında parlıyor. 🌌`
+        : `🔭 StarClaim: ${star.proper || star.id} yıldızını keşfettim! ${star.con} takımyıldızında, ${star.dist.toFixed(1)} ışık yılı uzaklıkta. 🛰️`;
+      
+      await Sharing.shareAsync('https://starclaim.app', {
+        dialogTitle: 'Yıldızını Paylaş',
+        UTI: 'public.plain-text'
+      });
+    } catch (error) {
+      console.warn('Sharing error', error);
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade">
       <View style={styles.backdrop}>
@@ -20,6 +43,7 @@ export default function StarPopup({ visible, star, owned, onClose, onPurchase, o
             ) : (
               <StarButton compact title="Yıldızımı Gör" active onPress={onProfile} />
             )}
+            <TouchableOpacity style={styles.button} onPress={handleShare}><Text style={styles.buttonText}>Paylaş</Text></TouchableOpacity>
             <TouchableOpacity style={[styles.button, styles.close]} onPress={onClose}><Text style={styles.buttonText}>Kapat</Text></TouchableOpacity>
           </View>
         </View>

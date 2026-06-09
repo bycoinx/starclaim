@@ -1,126 +1,391 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, PanResponder, TouchableOpacity } from 'react-native';
-import Svg, { Line } from 'react-native-svg';
-import { projectRaDec, radiusForMag, colorForSpectrum } from '../src/utils/astronomy';
+import React, { useMemo, useState, useEffect } from 'react';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity } from 'react-native';
+import { 
+  Canvas, 
+  Circle, 
+  Line, 
+  Group, 
+  Text as SkiaText, 
+  useFont, 
+  vec,
+  LinearGradient,
+  RadialGradient,
+  Rect,
+  Skia,
+  useFrameCallback,
+  RuntimeEffect,
+  Image as SkiaImage,
+  useImage
+} from '@shopify/react-native-skia';
+import { 
+  Gesture, 
+  GestureDetector, 
+  GestureHandlerRootView 
+} from 'react-native-gesture-handler';
+import Animated, { 
+  useSharedValue, 
+  useDerivedValue,
+  runOnJS,
+  withSpring,
+  withTiming
+} from 'react-native-reanimated';
+import { radiusForMag, colorForSpectrum } from '../src/utils/astronomy';
+import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
+import { getPlanetPositions } from '../src/utils/solarSystem';
+import { DSO_CATALOG } from '../src/data/dsoData';
+
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const deg2rad = (deg) => deg * Math.PI / 180;
+const SPRING_CONFIG = { damping: 20, stiffness: 90 };
+
+const TWINKLE_SHADER = `
+uniform float iTime;
+half4 main(vec2 fragCoord) {
+  float twinkle = sin(iTime * 3.0 + fragCoord.x * 0.1 + fragCoord.y * 0.1) * 0.15 + 0.85;
+  return half4(twinkle, twinkle, twinkle, 1.0);
+}
+`;
+
+const twinkleEffect = Skia.RuntimeEffect.Make(TWINKLE_SHADER);
+
+function normalizeRaDelta(delta) {
+  'worklet';
+  let value = delta;
+  while (value > 180) value -= 360;
+  while (value < -180) value += 360;
+  return value;
+}
+
+function project(starRa, starDec, centerRa, centerDec, width, height, zoom) {
+  'worklet';
+  const raDiff = normalizeRaDelta(starRa * 15 - centerRa);
+  const decDiff = starDec - centerDec;
+  const field = 90 / Math.max(0.1, zoom);
+  const scale = width / field;
+  const x = width / 2 + raDiff * scale * Math.cos(deg2rad(centerDec));
+  const y = height / 2 - decDiff * scale;
+  return { x, y };
+}
 
 export default function StarCanvas({
   stars,
-  centerRa,
-  centerDec,
-  zoom,
+  selectedStar,
+  centerRa: initialRa,
+  centerDec: initialDec,
+  zoom: initialZoom,
   onCenterChange,
   onZoomChange,
   onSelect,
   ownedStarIds = [],
   showConstellations = false,
-  constellations = []
+  constellations = [],
+  showMythology = false,
+  showLabels = false,
+  showPlanets = true,
+  showDSOs = true
 }) {
-  const [layout, setLayout] = useState({ width: 0, height: 0 });
-  const offsetRef = useRef({ x: 0, y: 0 });
+  const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
+  
+  const ra = useSharedValue(initialRa);
+  const dec = useSharedValue(initialDec);
+  const zoom = useSharedValue(initialZoom);
+  const time = useSharedValue(0);
 
-  const panResponder = useRef(PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
-    onPanResponderGrant: () => {
-      offsetRef.current = { x: 0, y: 0 };
-    },
-    onPanResponderMove: (evt, gestureState) => {
-      const dx = gestureState.dx - offsetRef.current.x;
-      const dy = gestureState.dy - offsetRef.current.y;
-      offsetRef.current = { x: gestureState.dx, y: gestureState.dy };
-      const raMove = (dx / Math.max(layout.width, 1)) * 90 / zoom;
-      const decMove = (dy / Math.max(layout.height, 1)) * 90 / zoom;
-      onCenterChange({ ra: centerRa - raMove, dec: centerDec + decMove });
-    },
-    onPanResponderRelease: () => {},
-    onPanResponderTerminationRequest: () => true
-  })).current;
+  const planetData = useMemo(() => getPlanetPositions(), []);
+  const dsoData = useMemo(() => DSO_CATALOG, []);
 
-  const visibleStars = useMemo(() => {
-    if (!layout.width || !layout.height) return [];
-    return stars
-      .map((star) => {
-        const { x, y } = projectRaDec(star, centerRa, centerDec, layout.width, layout.height, zoom);
-        return { ...star, x, y };
-      })
-      .filter((star) => star.x >= -40 && star.x <= layout.width + 40 && star.y >= -40 && star.y <= layout.height + 40);
-  }, [stars, centerRa, centerDec, layout, zoom]);
+  useFrameCallback((info) => {
+    time.value = info.timestamp / 1000;
+  });
+  
+  useEffect(() => {
+    // Smooth transition (Fly-to effect)
+    ra.value = withSpring(initialRa, SPRING_CONFIG);
+    dec.value = withSpring(initialDec, SPRING_CONFIG);
+    zoom.value = withSpring(initialZoom, SPRING_CONFIG);
+  }, [initialRa, initialDec, initialZoom]);
 
-  const starMap = useMemo(() => {
-    const map = new Map();
-    visibleStars.forEach((star) => {
-      map.set(String(star.id), star);
-      if (star.hip) map.set(String(star.hip), star);
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      const field = 90 / zoom.value;
+      const scale = layout.width / field;
+      const raMove = (e.changeX / scale) / Math.cos(deg2rad(dec.value));
+      const decMove = (e.changeY / scale);
+      ra.value -= raMove;
+      dec.value += decMove;
+      if (dec.value > 90) dec.value = 90;
+      if (dec.value < -90) dec.value = -90;
+    })
+    .onEnd(() => {
+      if (onCenterChange) runOnJS(onCenterChange)({ ra: ra.value, dec: dec.value });
     });
-    return map;
-  }, [visibleStars]);
 
-  const constellationPaths = useMemo(() => {
-    if (!showConstellations || !layout.width || !layout.height || !constellations.features) return [];
-    const result = [];
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      const newZoom = zoom.value * e.scaleChange;
+      zoom.value = Math.max(0.2, Math.min(15, newZoom));
+    })
+    .onEnd(() => {
+      if (onZoomChange) runOnJS(onZoomChange)(zoom.value);
+    });
+
+  const tapGesture = Gesture.Tap().onEnd((e) => {
+    if (!onSelect) return;
+    let closestStar = null;
+    let minDistance = 25;
+    stars.forEach((star) => {
+      const p = project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value);
+      const dist = Math.sqrt(Math.pow(p.x - e.x, 2) + Math.pow(p.y - e.y, 2));
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestStar = star;
+      }
+    });
+    if (closestStar) runOnJS(onSelect)(closestStar);
+  });
+
+  const combinedGesture = Gesture.Simultaneous(panGesture, pinchGesture, tapGesture);
+
+  const starElements = useMemo(() => {
+    return stars.map(s => ({
+      ...s,
+      radius: radiusForMag(s.mag, s.spect),
+      color: colorForSpectrum(s.spect)
+    }));
+  }, [stars]);
+
+  const constellationLines = useMemo(() => {
+    if (!showConstellations || !constellations.features) return [];
+    const lines = [];
     constellations.features.forEach((feature) => {
       if (feature.geometry && feature.geometry.type === 'MultiLineString') {
         feature.geometry.coordinates.forEach((path) => {
           for (let i = 0; i < path.length - 1; i++) {
-            const [ra1, dec1] = path[i];
-            const [ra2, dec2] = path[i + 1];
-            
-            const p1 = projectRaDec({ ra: ra1, dec: dec1 }, centerRa, centerDec, layout.width, layout.height, zoom);
-            const p2 = projectRaDec({ ra: ra2, dec: dec2 }, centerRa, centerDec, layout.width, layout.height, zoom);
-            
-            // Only add if both points are reasonably within or near view to avoid massive lines
-            if (
-              p1.x > -layout.width && p1.x < layout.width * 2 &&
-              p1.y > -layout.height && p1.y < layout.height * 2 &&
-              p2.x > -layout.width && p2.x < layout.width * 2 &&
-              p2.y > -layout.height && p2.y < layout.height * 2
-            ) {
-              result.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y, id: `${feature.id}-${i}` });
-            }
+            lines.push({ ra1: path[i][0], dec1: path[i][1], ra2: path[i+1][0], dec2: path[i+1][1], id: `${feature.id}-${i}` });
           }
         });
       }
     });
-    return result;
-  }, [constellations, showConstellations, layout, centerRa, centerDec, zoom]);
+    return lines;
+  }, [constellations, showConstellations]);
+
+  const font = useFont(null, 10);
+  const boldFont = useFont(null, 11);
+
+  const selectedStarPos = useDerivedValue(() => {
+    if (!selectedStar) return null;
+    return project(selectedStar.ra, selectedStar.dec, ra.value, dec.value, layout.width, layout.height, zoom.value);
+  });
+
+  const isSelectedVisible = useDerivedValue(() => {
+    if (!selectedStarPos.value) return false;
+    return selectedStarPos.value.x > 0 && selectedStarPos.value.x < layout.width &&
+           selectedStarPos.value.y > 0 && selectedStarPos.value.y < layout.height;
+  });
+
+  const arrowAngle = useDerivedValue(() => {
+    if (!selectedStarPos.value) return 0;
+    const dx = selectedStarPos.value.x - layout.width / 2;
+    const dy = selectedStarPos.value.y - layout.height / 2;
+    return Math.atan2(dy, dx);
+  });
 
   return (
-    <View
-      style={styles.canvas}
-      {...panResponder.panHandlers}
-      onLayout={(e) => {
-        const { width, height } = e.nativeEvent.layout;
-        setLayout({ width, height });
-      }}
-    >
-      <Svg style={StyleSheet.absoluteFill} width={layout.width} height={layout.height}>
-        {constellationPaths.map((line) => (
-          <Line key={line.id} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="rgba(100,150,255,0.35)" strokeWidth="1" />
-        ))}
-      </Svg>
-      {visibleStars.map((star) => {
-        const radius = radiusForMag(star.mag, star.spect);
-        const color = colorForSpectrum(star.spect);
-        return (
-          <TouchableOpacity key={star.id} style={[styles.star, { left: star.x - radius, top: star.y - radius, width: radius * 2, height: radius * 2, borderRadius: radius, backgroundColor: color }]} onPress={() => onSelect && onSelect(star)}>
-            {star.proper ? <Text style={[styles.label, { left: star.x + radius + 2, top: star.y - radius - 8 }]}>{star.proper}</Text> : null}
-            {ownedStarIds.includes(star.id) ? <Text style={[styles.owned, { left: star.x + radius + 2, top: star.y + radius + 2 }]}>★</Text> : null}
-          </TouchableOpacity>
-        );
-      })}
-      <View style={styles.controls} pointerEvents="box-none">
-        <TouchableOpacity style={styles.zoomButton} onPress={() => onZoomChange(Math.min(6, zoom + 0.4))}><Text style={styles.zoomText}>+</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.zoomButton} onPress={() => onZoomChange(Math.max(0.6, zoom - 0.4))}><Text style={styles.zoomText}>-</Text></TouchableOpacity>
-      </View>
-    </View>
+    <GestureHandlerRootView style={styles.container}>
+      <GestureDetector gesture={combinedGesture}>
+        <View style={styles.container} onLayout={(e) => setLayout(e.nativeEvent.layout)}>
+          <Canvas style={styles.canvas}>
+            <Rect x={0} y={0} width={layout.width} height={layout.height}>
+              <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={['#050B1A', '#000000']} />
+            </Rect>
+
+            {/* Mythology Layer */}
+            {showMythology && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
+              <MythologyFigure 
+                key={key} 
+                data={MYTHOLOGY_ASSETS[key]} 
+                ra={ra} 
+                dec={dec} 
+                zoom={zoom} 
+                layout={layout} 
+              />
+            ))}
+
+            <Group opacity={0.08}>
+              <Rect x={0} y={0} width={layout.width} height={layout.height}>
+                <LinearGradient start={vec(0, layout.height * 0.2)} end={vec(layout.width, layout.height * 0.8)} colors={['transparent', '#4A90E2', 'transparent']} />
+              </Rect>
+            </Group>
+
+            {showDSOs && dsoData.map((dso) => (
+              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} />
+            ))}
+
+            {constellationLines.map((line) => (
+              <ConstellationLine key={line.id} line={line} ra={ra} dec={dec} zoom={zoom} layout={layout} />
+            ))}
+
+            {starElements.map((star) => (
+              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} />
+            ))}
+
+            {showPlanets && planetData.map((planet) => (
+              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} />
+            ))}
+
+            {!isSelectedVisible.value && selectedStarPos.value && (
+              <Group origin={vec(layout.width/2, layout.height/2)} transform={useDerivedValue(() => [{ rotate: arrowAngle.value }])}>
+                 <Circle cx={layout.width/2 + 100} cy={layout.height/2} r={6} color="#C9A84C" opacity={0.8} />
+              </Group>
+            )}
+
+            {selectedStarPos.value && isSelectedVisible.value && (
+              <Group>
+                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 20 + Math.sin(time.value * 4) * 4)} color="#C9A84C" style="stroke" strokeWidth={1} opacity={0.4} />
+                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 15)} y={useDerivedValue(() => selectedStarPos.value.y - 15)} width={30} height={30} color="#C9A84C" style="stroke" strokeWidth={1.5} opacity={useDerivedValue(() => 0.6 + Math.sin(time.value * 6) * 0.2)} />
+              </Group>
+            )}
+          </Canvas>
+          
+          <View style={styles.controls} pointerEvents="box-none">
+            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.min(15, zoom.value + 0.5); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
+              <Text style={styles.zoomText}>+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.max(0.2, zoom.value - 0.5); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
+              <Text style={styles.zoomText}>-</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </GestureDetector>
+    </GestureHandlerRootView>
   );
 }
 
+function PlanetMarker({ planet, ra, dec, zoom, layout, font }) {
+  const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const isVisible = useDerivedValue(() => pos.value.x > -20 && pos.value.x < layout.width + 20 && pos.value.y > -20 && pos.value.y < layout.height + 20);
+  
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 4 * (zoom.value > 2 ? 1.5 : 1))} color={planet.color} />
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 8 * (zoom.value > 2 ? 1.5 : 1))} color={planet.color} opacity={0.2} style="stroke" strokeWidth={1} />
+      {font && (
+        <SkiaText 
+          x={useDerivedValue(() => pos.value.x + 10)} 
+          y={useDerivedValue(() => pos.value.y + 4)} 
+          text={planet.name} 
+          font={font} 
+          color="#fff" 
+        />
+      )}
+    </Group>
+  );
+}
+
+function DSOMarker({ dso, ra, dec, zoom, layout, font }) {
+  const pos = useDerivedValue(() => project(dso.ra, dso.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const isVisible = useDerivedValue(() => pos.value.x > -50 && pos.value.x < layout.width + 50 && pos.value.y > -50 && pos.value.y < layout.height + 50);
+  
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 0.6 : 0)}>
+      {dso.type === 'galaxy' && (
+        <Circle 
+          cx={useDerivedValue(() => pos.value.x)} 
+          cy={useDerivedValue(() => pos.value.y)} 
+          r={useDerivedValue(() => 15 * dso.size * (zoom.value / 2))} 
+          color={dso.color} 
+          style="stroke" 
+          strokeWidth={1} 
+          opacity={0.3}
+        />
+      )}
+      {dso.type === 'nebula' && (
+        <Rect 
+          x={useDerivedValue(() => pos.value.x - 10)} 
+          y={useDerivedValue(() => pos.value.y - 10)} 
+          width={20} 
+          height={20} 
+          color={dso.color} 
+          style="stroke" 
+          strokeWidth={1} 
+          opacity={0.3}
+        />
+      )}
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={2} color={dso.color} />
+      {font && zoom.value > 1.5 && (
+        <SkiaText 
+          x={useDerivedValue(() => pos.value.x + 10)} 
+          y={useDerivedValue(() => pos.value.y - 10)} 
+          text={dso.name} 
+          font={font} 
+          color={dso.color} 
+        />
+      )}
+    </Group>
+  );
+}
+
+function MythologyFigure({ data, ra, dec, zoom, layout }) {
+  const image = useImage(data.url);
+  
+  const pos = useDerivedValue(() => project(data.ra, data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  
+  const size = useDerivedValue(() => {
+    const baseSize = 300 * (data.scale || 1.0);
+    return baseSize * (zoom.value / 2.0);
+  });
+
+  const isVisible = useDerivedValue(() => {
+    return pos.value.x > -size.value && pos.value.x < layout.width + size.value &&
+           pos.value.y > -size.value && pos.value.y < layout.height + size.value;
+  });
+
+  if (!image) return null;
+
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 0.25 : 0)}>
+      <SkiaImage
+        image={image}
+        x={useDerivedValue(() => pos.value.x - size.value / 2)}
+        y={useDerivedValue(() => pos.value.y - size.value / 2)}
+        width={size}
+        height={size}
+        fit="contain"
+      />
+    </Group>
+  );
+}
+
+function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels }) {
+  const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const isVisible = useDerivedValue(() => pos.value.x > -20 && pos.value.x < layout.width + 20 && pos.value.y > -20 && pos.value.y < layout.height + 20);
+  const twinkleUniforms = useDerivedValue(() => ({ iTime: time.value + (parseFloat(star.id) % 10) }));
+  const labelVisible = useDerivedValue(() => isVisible.value && !!star.proper && (zoom.value > 2.5 || (showLabels && zoom.value > 1.2)));
+
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={star.radius} color={star.color}>
+        <RuntimeEffect source={twinkleEffect} uniforms={twinkleUniforms} />
+      </Circle>
+      {star.mag < 2.2 && <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={star.radius * 2.5} color={star.color} opacity={0.06} />}
+      {font && star.proper && (
+        <SkiaText x={useDerivedValue(() => pos.value.x + star.radius + 4)} y={useDerivedValue(() => pos.value.y - star.radius - 2)} text={star.proper} font={font} color="rgba(255,255,255,0.6)" opacity={useDerivedValue(() => labelVisible.value ? 1 : 0)} />
+      )}
+    </Group>
+  );
+}
+
+function ConstellationLine({ line, ra, dec, zoom, layout }) {
+  const p1 = useDerivedValue(() => project(line.ra1 / 15, line.dec1, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const p2 = useDerivedValue(() => project(line.ra2 / 15, line.dec2, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const isVisible = useDerivedValue(() => (p1.value.x > -layout.width && p1.value.x < layout.width * 2) || (p2.value.x > -layout.width && p2.value.x < layout.width * 2));
+  return <Line p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))} p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))} color="rgba(74,144,226,0.15)" strokeWidth={1} opacity={useDerivedValue(() => isVisible.value ? 1 : 0)} />;
+}
+
 const styles = StyleSheet.create({
-  canvas: { flex: 1, backgroundColor: '#000' },
-  star: { position: 'absolute' },
-  label: { position: 'absolute', color: '#fff', fontSize: 10, fontWeight: '600' },
-  owned: { position: 'absolute', color: '#FFD700', fontSize: 12, fontWeight: '900' },
+  container: { flex: 1, backgroundColor: '#000' },
+  canvas: { flex: 1 },
   controls: { position: 'absolute', right: 12, bottom: 20, width: 44, alignItems: 'center' },
   zoomButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.08)', marginBottom: 10, alignItems: 'center', justifyContent: 'center' },
   zoomText: { color: '#fff', fontSize: 18, fontWeight: '700' }

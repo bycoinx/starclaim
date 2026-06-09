@@ -212,7 +212,11 @@ class Star(BaseModel):
     price: float
     ra: str
     dec: str
+    ra_deg: Optional[float] = None  # Right Ascension in degrees
+    dec_deg: Optional[float] = None # Declination in degrees
     magnitude: Optional[float] = None
+    spect: Optional[str] = None     # Spectral type
+    hip: Optional[str] = None       # Hipparcos ID
     owner_id: Optional[str] = None
     owner_name: Optional[str] = None
     custom_name: Optional[str] = None
@@ -452,6 +456,7 @@ async def ensure_indexes():
     await db.stars.create_index([("owner_id", 1)])
     await db.stars.create_index([("name", 1)])
     await db.stars.create_index([("code", 1)], unique=True)
+    await db.stars.create_index([("ra_deg", 1), ("dec_deg", 1)])  # Spatial/compound index
     logger.info("Database indexes verified/created")
 
 

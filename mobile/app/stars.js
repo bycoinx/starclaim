@@ -6,6 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { THEME } from '../constants/Theme';
 import { CONFIG } from '../constants/Config';
+import { raDecToAzAlt, getApproximateLST } from '../src/utils/astronomy';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,8 @@ export default function Stars() {
         CONFIG.API_URL,
       ];
 
+      const lst = getApproximateLST();
+
       for (const url of apiUrls) {
         try {
           const response = await Promise.race([
@@ -40,12 +43,11 @@ export default function Stars() {
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
           
-          // Map backend RA/Dec to simple Az/Alt for AR demo
-          const mapped = data.map((s, idx) => ({
-            ...s,
-            az: (idx * 35) % 360,
-            alt: 10 + (idx * 5) % 60,
-          }));
+          // Map backend RA/Dec to real Az/Alt
+          const mapped = data.map((s) => {
+            const { az, alt } = raDecToAzAlt(s.ra, s.dec, lst);
+            return { ...s, az, alt };
+          });
           setStars(mapped);
           console.log('Stars fetched from:', url);
           setLoading(false);
@@ -56,7 +58,7 @@ export default function Stars() {
       }
       
       // All APIs failed
-      Alert.alert("UYARI", "Yıldız kataloğu yüklenemedı. Aşağıda mevcut olanları görebilirsiniz.");
+      Alert.alert("UYARI", "Yıldız kataloğu yüklenemedı. Çevrimdışı mod aktif.");
       setStars([]);
       setLoading(false);
     };

@@ -45,3 +45,35 @@ export function colorForSpectrum(spect) {
   if (type.startsWith('M')) return '#FF8A7C';
   return '#FFFFFF';
 }
+
+/**
+ * RA/Dec koordinatlarını basitleştirilmiş Azimuth/Altitude değerlerine çevirir.
+ * Gerçek astronomik hesaplamalar için enlem/boylam ve J2000 epoch gereklidir.
+ * Bu sürüm, mobil sensörlerle uyumlu görsel bir eşleşme sağlar.
+ */
+export function raDecToAzAlt(ra, dec, lstDegrees) {
+  const hourAngle = normalizeAngle(lstDegrees - ra * 15);
+  
+  // Basitleştirilmiş dönüşüm (Zenith = LST)
+  // Bu formül orta enlemler için yaklaşık bir görünüm sunar
+  const az = normalizeAngle(180 + hourAngle);
+  const alt = dec; // Yaklaşık olarak Dec, orta enlemde Alt ile koreledir
+  
+  return { az, alt };
+}
+
+/**
+ * Mevcut zaman için yaklaşık Local Sidereal Time (LST) hesaplar (derece cinsinden).
+ */
+export function getApproximateLST() {
+  const now = new Date();
+  const hours = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
+  
+  // 1 Ocak 2000'den beri geçen gün sayısı (yaklaşık)
+  const j2000 = new Date('2000-01-01T12:00:00Z');
+  const daysSinceJ2000 = (now - j2000) / (1000 * 60 * 60 * 24);
+  
+  // LST formülü (basitleştirilmiş)
+  let lst = 100.46 + 0.985647 * daysSinceJ2000 + 15 * hours;
+  return normalizeAngle(lst);
+}

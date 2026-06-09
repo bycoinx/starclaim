@@ -92,10 +92,10 @@ export default function Home() {
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/stars')}>
             <Text style={styles.navTabText}>Yıldızını Seç</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/vault')}>
+          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/(tabs)/vault/home')}>
             <Text style={styles.navTabText}>StarVault</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.navTab}>
+          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/marketplace')}>
             <Text style={styles.navTabText}>Marketplace</Text>
           </TouchableOpacity>
         </View>
@@ -113,8 +113,8 @@ export default function Home() {
             <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/stars')}>
               <Text style={styles.primaryBtnText}>YILDIZ AL</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/stars')}>
-              <Text style={styles.secondaryBtnText}>KEŞFET</Text>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/(tabs)/explore/starmap')}>
+              <Text style={styles.secondaryBtnText}>GÖKYÜZÜNE BAK</Text>
             </TouchableOpacity>
           </View>
 
@@ -134,7 +134,7 @@ export default function Home() {
         {/* Features Section */}
         <Text style={styles.sectionTitle}>BAŞLAYALIM</Text>
         <View style={styles.featuresGrid}>
-          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/stars')}>
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/explore/home')}>
             <View style={styles.featureIcon}>
               <Text style={styles.featureEmoji}>🔍</Text>
             </View>
@@ -143,7 +143,7 @@ export default function Home() {
             <Text style={styles.featureCardDesc}>Yıldız kataloğu, AR düğmesi, arama + filtre.</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/vault')}>
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/mystars/collection')}>
             <View style={styles.featureIcon}>
               <Text style={styles.featureEmoji}>⭐</Text>
             </View>
@@ -152,13 +152,22 @@ export default function Home() {
             <Text style={styles.featureCardDesc}>Mesaj bırak, satışa çıkar veya miras planla.</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/vault')}>
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/vault/home')}>
             <View style={styles.featureIcon}>
               <Text style={styles.featureEmoji}>🔐</Text>
             </View>
             <Text style={styles.featureCardTitle}>Vault</Text>
             <Text style={styles.featureCardSub}>Zaman kapsülü</Text>
             <Text style={styles.featureCardDesc}>Mesajları kilitle, vasiyet oluştur ve sakla.</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/about')}>
+            <View style={styles.featureIcon}>
+              <Text style={styles.featureEmoji}>ℹ️</Text>
+            </View>
+            <Text style={styles.featureCardTitle}>Hakkımızda</Text>
+            <Text style={styles.featureCardSub}>Misyon & Vizyon</Text>
+            <Text style={styles.featureCardDesc}>StarClaim dünyasını ve geleceğimizi tanı.</Text>
           </TouchableOpacity>
         </View>
 
