@@ -24,6 +24,7 @@ export default function Navbar({ onOpenClaim }) {
     { to: "/", label: t("nav_home") },
     { to: "/stars", label: t("nav_pick") },
     { to: "/vision", label: "StarVault" },
+    { to: "/cosmos", label: "Cosmos" },
     { to: "/marketplace", label: t("nav_market") },
     { to: "/stories", label: t("nav_stories") },
     { to: "/about", label: t("nav_about") },

@@ -80,6 +80,9 @@ export default function Home() {
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/(tabs)/vault/home')}>
             <Text style={styles.navTabText}>Vault</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.navTab} onPress={() => router.push('/(tabs)/explore/starvoyage')}>
+            <Text style={styles.navTabText}>Cosmos</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/marketplace')}>
             <Text style={styles.navTabText}>Market</Text>
           </TouchableOpacity>

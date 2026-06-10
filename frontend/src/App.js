@@ -19,6 +19,7 @@ import ErrorBoundary from "./components/ui/ErrorBoundary";
 
 const Home = lazy(() => import("./pages/Home"));
 const StarPicker = lazy(() => import("./pages/StarPicker"));
+const Cosmos = lazy(() => import("./pages/Cosmos"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const Stories = lazy(() => import("./pages/Stories"));
 const About = lazy(() => import("./pages/About"));
@@ -169,6 +170,7 @@ function AppShell() {
           <Routes>
             <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
             <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
+            <Route path="/cosmos" element={<Cosmos onClaim={openClaim} />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/stories" element={<Stories />} />
             <Route path="/about" element={<About />} />

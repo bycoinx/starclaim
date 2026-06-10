@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from "react";
 
 /**
- * StarCanvas — animated starfield with twinkle + periodic shooting stars.
+ * StarCanvas — animated starfield with twinkle + periodic shooting stars + mouse parallax.
  * Pure canvas, 300+ particles, requestAnimationFrame.
  */
 export default function StarCanvas({ density = 320, className = "" }) {
   const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -18,7 +19,8 @@ export default function StarCanvas({ density = 320, className = "" }) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     function resize() {
-      const { clientWidth, clientHeight } = canvas.parentElement;
+      const parent = canvas.parentElement || { clientWidth: window.innerWidth, clientHeight: window.innerHeight };
+      const { clientWidth, clientHeight } = parent;
       canvas.width = clientWidth * dpr;
       canvas.height = clientHeight * dpr;
       canvas.style.width = clientWidth + "px";
@@ -34,11 +36,21 @@ export default function StarCanvas({ density = 320, className = "" }) {
         hue: Math.random() > 0.92 ? "gold" : Math.random() > 0.85 ? "blue" : "white",
         vx: (Math.random() - 0.5) * 0.05, // Slow drift X
         vy: (Math.random() - 0.5) * 0.05, // Slow drift Y
+        parallaxFactor: Math.random() * 20 + 5, // How much it reacts to mouse
       }));
     }
 
+    function handleMouseMove(e) {
+      const { clientWidth, clientHeight } = canvas.parentElement || { clientWidth: window.innerWidth, clientHeight: window.innerHeight };
+      mouseRef.current = {
+        x: (e.clientX / clientWidth) - 0.5,
+        y: (e.clientY / clientHeight) - 0.5,
+      };
+    }
+
     function spawnShooting() {
-      const { clientWidth, clientHeight } = canvas.parentElement;
+      const parent = canvas.parentElement || { clientWidth: window.innerWidth, clientHeight: window.innerHeight };
+      const { clientWidth, clientHeight } = parent;
       shootingStars.push({
         x: Math.random() * clientWidth * 0.4,
         y: Math.random() * clientHeight * 0.4,
@@ -50,7 +62,8 @@ export default function StarCanvas({ density = 320, className = "" }) {
     }
 
     function draw() {
-      const { clientWidth, clientHeight } = canvas.parentElement;
+      const parent = canvas.parentElement || { clientWidth: window.innerWidth, clientHeight: window.innerHeight };
+      const { clientWidth, clientHeight } = parent;
       ctx.clearRect(0, 0, clientWidth, clientHeight);
 
       // stars
@@ -61,25 +74,34 @@ export default function StarCanvas({ density = 320, className = "" }) {
         // Drift movement
         s.x += s.vx;
         s.y += s.vy;
+
+        // Mouse Parallax
+        const px = mouseRef.current.x * s.parallaxFactor;
+        const py = mouseRef.current.y * s.parallaxFactor;
         
-        // Wrap around
-        if (s.x < 0) s.x = clientWidth;
-        if (s.x > clientWidth) s.x = 0;
-        if (s.y < 0) s.y = clientHeight;
-        if (s.y > clientHeight) s.y = 0;
+        let drawX = s.x + px;
+        let drawY = s.y + py;
+        
+        // Wrap around logic for drift (considering parallax)
+        if (s.x < -30) s.x = clientWidth + 30;
+        if (s.x > clientWidth + 30) s.x = -30;
+        if (s.y < -30) s.y = clientHeight + 30;
+        if (s.y > clientHeight + 30) s.y = -30;
 
         const color = s.hue === "gold"
           ? `rgba(224, 187, 106, ${s.a})`
           : s.hue === "blue"
             ? `rgba(150, 195, 255, ${s.a})`
             : `rgba(240, 244, 255, ${s.a})`;
+        
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.arc(drawX, drawY, s.r, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+
         if (s.r > 1.1) {
           ctx.beginPath();
-          ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+          ctx.arc(drawX, drawY, s.r * 3, 0, Math.PI * 2);
           ctx.fillStyle = color.replace(/[\d.]+\)$/, `${s.a * 0.08})`);
           ctx.fill();
         }
@@ -112,6 +134,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
 
     resize();
     window.addEventListener("resize", resize);
+    window.addEventListener("mousemove", handleMouseMove);
     raf = requestAnimationFrame(draw);
 
     const shootingInterval = setInterval(() => {
@@ -122,6 +145,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
       cancelAnimationFrame(raf);
       clearInterval(shootingInterval);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("mousemove", handleMouseMove);
     };
   }, [density]);
 
@@ -133,3 +157,4 @@ export default function StarCanvas({ density = 320, className = "" }) {
     />
   );
 }
+
