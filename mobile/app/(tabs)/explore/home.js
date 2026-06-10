@@ -90,10 +90,16 @@ export default function DiscoveryScreen() {
               color="#4A90E2"
             />
             <CategoryCard 
-              title="Harita" 
+              title="Harita (2D)" 
               icon="map-outline" 
               onPress={() => router.push('/(tabs)/explore/starmap')} 
               color="#50E3C2"
+            />
+            <CategoryCard 
+              title="Keşif (3D)" 
+              icon="rocket-outline" 
+              onPress={() => router.push('/(tabs)/explore/starvoyage')} 
+              color="#A569BD"
             />
             <CategoryCard 
               title="Pazar" 
@@ -109,6 +115,23 @@ export default function DiscoveryScreen() {
             />
           </View>
         </View>
+
+        <TouchableOpacity style={styles.neuralBanner} onPress={() => router.push('/neural-link')}>
+          <LinearGradient 
+            colors={['rgba(201, 168, 76, 0.15)', 'rgba(0, 0, 0, 0.6)']}
+            style={styles.neuralGradient}
+          >
+            <View style={styles.neuralContent}>
+               <View style={styles.neuralIconCircle}>
+                 <Ionicons name="flash-outline" size={30} color="#C9A84C" />
+               </View>
+               <View style={styles.neuralTextSide}>
+                 <Text style={styles.neuralTitle}>NEURAL_LINK</Text>
+                 <Text style={styles.neuralDesc}>Aegis AI ile kuantum bağlantısı kurun. Yıldızlarınız hakkında konuşun.</Text>
+               </View>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.arBanner} onPress={() => router.push('/stars')}>
           <LinearGradient 
@@ -181,7 +204,14 @@ const styles = StyleSheet.create({
   },
   categoryIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   categoryName: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  arBanner: { margin: 20, marginTop: 40, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: THEME.colors.primary + '40' },
+  neuralBanner: { margin: 20, marginTop: 32, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: '#C9A84C40' },
+  neuralGradient: { padding: 20 },
+  neuralContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  neuralIconCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(201, 168, 76, 0.1)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C40' },
+  neuralTextSide: { flex: 1 },
+  neuralTitle: { color: '#C9A84C', fontSize: 18, fontWeight: '900', letterSpacing: 2 },
+  neuralDesc: { color: '#fff', fontSize: 11, opacity: 0.6, marginTop: 2 },
+  arBanner: { margin: 20, marginTop: 12, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: THEME.colors.primary + '40' },
   arGradient: { padding: 24 },
   arContent: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   arTextSide: { flex: 1 },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSolanaWallet } from '../hooks/useSolanaWallet';
 import { SecurityService } from '../lib/security';
@@ -24,37 +24,22 @@ export default function Home() {
         console.error('Session restoration failed', e);
       }
 
-      // Fetch metrics - try production API
-      const apiUrls = [
-        CONFIG.PRODUCTION_URL,
-        CONFIG.API_URL, // fallback to local
-      ];
-
+      // Fetch metrics
+      const apiUrls = [CONFIG.PRODUCTION_URL, CONFIG.API_URL];
       for (const url of apiUrls) {
         try {
-          const response = await Promise.race([
-            fetch(`${url}/api/marketplace/metrics`),
-            new Promise((_, reject) =>
-              setTimeout(() => reject(new Error('Timeout')), 5000)
-            ),
-          ]);
+          const response = await fetch(`${url}/api/marketplace/metrics`);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
           if (data?.sol_price && data?.star_price) {
             setMetrics({ sol: data.sol_price, star: data.star_price });
-            console.log('Metrics fetched from:', url);
-          } else if (data?.market_cap && data?.total_stars) {
-            const avgPrice = Number((data.market_cap / Math.max(data.total_stars, 1)).toFixed(2));
-            setMetrics({ sol: Number((avgPrice * 0.12).toFixed(2)), star: avgPrice });
-            console.log('Metrics fetched with fallback from:', url);
           }
           break;
         } catch (err) {
-          console.warn(`API ${url} failed:`, err.message);
+          console.warn(`API ${url} failed`);
         }
       }
     };
-
     initializeApp();
   }, []);
 
@@ -77,11 +62,11 @@ export default function Home() {
 
   return (
     <CockpitLayout showHUD={false}>
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>★ STARCLAIM</Text>
-          <Text style={styles.subtitle}>AEGIS MOBILE</Text>
+          <Text style={styles.subtitle}>AEGIS MOBILE COMMAND</Text>
         </View>
 
         {/* Navigation Tabs */}
@@ -90,354 +75,148 @@ export default function Home() {
             <Text style={styles.navTabTextActive}>Ana Sayfa</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/stars')}>
-            <Text style={styles.navTabText}>Yıldızını Seç</Text>
+            <Text style={styles.navTabText}>Yıldız Al</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/(tabs)/vault/home')}>
-            <Text style={styles.navTabText}>StarVault</Text>
+            <Text style={styles.navTabText}>Vault</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.navTab} onPress={() => router.push('/marketplace')}>
-            <Text style={styles.navTabText}>Marketplace</Text>
+            <Text style={styles.navTabText}>Market</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Metrics & Marketcap */}
+        <View style={styles.metricsContainer}>
+          <View style={styles.metricsRow}>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>SOLANA</Text>
+              <Text style={styles.metricValue}>${metrics.sol.toFixed(2)}</Text>
+            </View>
+            <View style={styles.metricCard}>
+              <Text style={styles.metricLabel}>STAR_PRICE</Text>
+              <Text style={styles.metricValue}>${metrics.star.toFixed(2)}</Text>
+            </View>
+          </View>
+          
+          <View style={styles.marketcapCard}>
+             <View style={styles.marketcapInfo}>
+                <Text style={styles.marketcapLabel}>ESTIMATED_MARKET_CAP</Text>
+                <Text style={styles.marketcapValue}>$4,208,150.00</Text>
+             </View>
+             <View style={styles.marketcapGraph}>
+                <View style={[styles.graphBar, { height: '30%' }]} />
+                <View style={[styles.graphBar, { height: '50%' }]} />
+                <View style={[styles.graphBar, { height: '80%' }]} />
+                <View style={[styles.graphBar, { height: '65%', backgroundColor: THEME.colors.primary }]} />
+                <View style={[styles.graphBar, { height: '90%', backgroundColor: THEME.colors.primary }]} />
+             </View>
+          </View>
         </View>
 
         {/* Hero Section */}
         <View style={styles.heroSection}>
           <Text style={styles.heroTitle}>GÖKYÜZÜNDE</Text>
-          <Text style={styles.heroTitle}>SONSUZ BİR ÖZ BIRAK</Text>
+          <Text style={styles.heroTitle}>BİR İZ BIRAK</Text>
           <Text style={styles.heroDescription}>
-            Kendi yıldızını sahiplen. İşim ver. Hikayeni yaz. Sevdiklerinle konuş.
+            Kendi yıldızını sahiplen. Hikayeni ebediyete yaz. Sevdiklerine miras bırak.
           </Text>
 
-          {/* Action Buttons */}
           <View style={styles.heroButtons}>
             <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/stars')}>
-              <Text style={styles.primaryBtnText}>YILDIZ AL</Text>
+              <Text style={styles.primaryBtnText}>ŞİMDİ KEŞFET</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/(tabs)/explore/starmap')}>
-              <Text style={styles.secondaryBtnText}>GÖKYÜZÜNE BAK</Text>
+              <Text style={styles.secondaryBtnText}>HARİTAYI AÇ</Text>
             </TouchableOpacity>
-          </View>
-
-          {/* Price Metrics */}
-          <View style={styles.metricsRow}>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricLabel}>SOL</Text>
-              <Text style={styles.metricValue}>${metrics.sol.toFixed(2)}</Text>
-            </View>
-            <View style={styles.metricCard}>
-              <Text style={styles.metricLabel}>STAR</Text>
-              <Text style={styles.metricValue}>${metrics.star.toFixed(2)}</Text>
-            </View>
           </View>
         </View>
 
-        {/* Features Section */}
-        <Text style={styles.sectionTitle}>BAŞLAYALIM</Text>
+        {/* Features Grid */}
+        <Text style={styles.sectionTitle}>SİSTEM_MODÜLLERİ</Text>
         <View style={styles.featuresGrid}>
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/explore/home')}>
-            <View style={styles.featureIcon}>
-              <Text style={styles.featureEmoji}>🔍</Text>
-            </View>
-            <Text style={styles.featureCardTitle}>Keşfet</Text>
-            <Text style={styles.featureCardSub}>Katalog / AR</Text>
-            <Text style={styles.featureCardDesc}>Yıldız kataloğu, AR düğmesi, arama + filtre.</Text>
+            <Text style={styles.featureEmoji}>🔍</Text>
+            <Text style={styles.featureCardTitle}>Gözlem</Text>
+            <Text style={styles.featureCardDesc}>Yıldız kataloğu ve AR modülü.</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/mystars/collection')}>
-            <View style={styles.featureIcon}>
-              <Text style={styles.featureEmoji}>⭐</Text>
-            </View>
-            <Text style={styles.featureCardTitle}>Yıldızlarım</Text>
-            <Text style={styles.featureCardSub}>Sahip olduğun yıldızlar</Text>
-            <Text style={styles.featureCardDesc}>Mesaj bırak, satışa çıkar veya miras planla.</Text>
+            <Text style={styles.featureEmoji}>⭐</Text>
+            <Text style={styles.featureCardTitle}>Varlıklarım</Text>
+            <Text style={styles.featureCardDesc}>Sahip olduğun yıldızlar.</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/(tabs)/vault/home')}>
-            <View style={styles.featureIcon}>
-              <Text style={styles.featureEmoji}>🔐</Text>
-            </View>
-            <Text style={styles.featureCardTitle}>Vault</Text>
-            <Text style={styles.featureCardSub}>Zaman kapsülü</Text>
-            <Text style={styles.featureCardDesc}>Mesajları kilitle, vasiyet oluştur ve sakla.</Text>
+            <Text style={styles.featureEmoji}>🔐</Text>
+            <Text style={styles.featureCardTitle}>StarVault</Text>
+            <Text style={styles.featureCardDesc}>Zaman kapsülü ve mesajlar.</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/about')}>
-            <View style={styles.featureIcon}>
-              <Text style={styles.featureEmoji}>ℹ️</Text>
-            </View>
-            <Text style={styles.featureCardTitle}>Hakkımızda</Text>
-            <Text style={styles.featureCardSub}>Misyon & Vizyon</Text>
-            <Text style={styles.featureCardDesc}>StarClaim dünyasını ve geleceğimizi tanı.</Text>
+            <Text style={styles.featureEmoji}>ℹ️</Text>
+            <Text style={styles.featureCardTitle}>Aegis OS</Text>
+            <Text style={styles.featureCardDesc}>Sistem bilgileri ve vizyon.</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Info Section */}
-        <View style={styles.infoSection}>
-          <Text style={styles.infoTitle}>Mobil Deneyim</Text>
-          <Text style={styles.infoText}>
-            StarClaim mobil uygulaması sana özel tasarlandı. Yıldız al, sakla, paylaş ve yönet.
-          </Text>
-          <Text style={styles.infoText}>
-            Her yıldız bir hikaye. Her hikaye bir miras.
-          </Text>
         </View>
 
         {/* Wallet Section */}
         <View style={styles.walletSection}>
-          <Text style={styles.walletLabel}>CÜZDAN BAĞLAN</Text>
+          <Text style={styles.walletLabel}>NODE_CONNECTION</Text>
           <Text style={styles.walletAddress}>
-            {address ? `${address.slice(0, 10)}...${address.slice(-10)}` : 'Bağlı değil'}
+            {address ? `${address.slice(0, 12)}...${address.slice(-12)}` : 'DISCONNECTED'}
           </Text>
           <TouchableOpacity
             style={[styles.walletButton, address && styles.walletButtonDisconnect]}
             onPress={address ? handleDisconnect : handleConnect}
           >
             <Text style={styles.walletButtonText}>
-              {address ? '❌ ÇIKIS YAP' : '✓ CÜZDAN BAĞLA'}
+              {address ? 'TERMINATE_SESSION' : 'ESTABLISH_CONNECTION'}
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </CockpitLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  header: {
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  logo: {
-    fontSize: 28,
-    fontWeight: '900',
-    color: '#fff',
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 10,
-    color: THEME.colors.primary,
-    fontWeight: '700',
-    letterSpacing: 2.5,
-  },
-  navTabs: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 28,
-  },
-  navTab: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-  },
-  navTabActive: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: 'rgba(0, 204, 255, 0.15)',
-    borderWidth: 1.5,
-    borderColor: THEME.colors.primary,
-    alignItems: 'center',
-  },
-  navTabText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: THEME.colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  navTabTextActive: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#fff',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  heroSection: {
-    marginBottom: 32,
-  },
-  heroTitle: {
-    fontSize: 38,
-    fontWeight: '900',
-    color: '#fff',
-    lineHeight: 44,
-    letterSpacing: 0.5,
-  },
-  heroDescription: {
-    fontSize: 14,
-    color: THEME.colors.textMuted,
-    marginTop: 12,
-    lineHeight: 21,
-    marginBottom: 20,
-  },
-  heroButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
-  },
-  primaryBtn: {
-    flex: 1,
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  primaryBtnText: {
-    color: '#000',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  secondaryBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  secondaryBtnText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  metricCard: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  metricLabel: {
-    fontSize: 9,
-    color: THEME.colors.textMuted,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    marginBottom: 6,
-  },
-  metricValue: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: THEME.colors.primary,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '900',
-    color: THEME.colors.secondary,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 16,
-  },
-  featuresGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 28,
-  },
-  featureCard: {
-    width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 18,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  featureIcon: {
-    fontSize: 32,
-    marginBottom: 12,
-  },
-  featureEmoji: {
-    fontSize: 32,
-  },
-  featureCardTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  featureCardSub: {
-    fontSize: 10,
-    color: THEME.colors.secondary,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  featureCardDesc: {
-    fontSize: 11,
-    color: THEME.colors.textMuted,
-    lineHeight: 16,
-  },
-  infoSection: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    marginBottom: 24,
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#fff',
-    marginBottom: 10,
-  },
-  infoText: {
-    fontSize: 13,
-    color: THEME.colors.textMuted,
-    lineHeight: 20,
-    marginBottom: 8,
-  },
-  walletSection: {
-    backgroundColor: 'rgba(0, 204, 255, 0.08)',
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: THEME.colors.primary,
-  },
-  walletLabel: {
-    fontSize: 9,
-    color: THEME.colors.primary,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  walletAddress: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: '700',
-    marginBottom: 14,
-    fontFamily: 'monospace',
-  },
-  walletButton: {
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  walletButtonDisconnect: {
-    backgroundColor: THEME.colors.danger,
-  },
-  walletButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
+  container: { padding: 16, paddingBottom: 60 },
+  header: { marginBottom: 24, alignItems: 'center' },
+  logo: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 3 },
+  subtitle: { fontSize: 10, color: THEME.colors.primary, fontWeight: '700', letterSpacing: 2 },
+  navTabs: { flexDirection: 'row', gap: 6, marginBottom: 24 },
+  navTab: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.05)', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  navTabActive: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: THEME.colors.primary + '20', alignItems: 'center', borderWidth: 1, borderColor: THEME.colors.primary },
+  navTabText: { fontSize: 10, fontWeight: '700', color: THEME.colors.textMuted, textTransform: 'uppercase' },
+  navTabTextActive: { fontSize: 10, fontWeight: '700', color: '#fff', textTransform: 'uppercase' },
+  metricsContainer: { marginBottom: 24, gap: 12 },
+  metricsRow: { flexDirection: 'row', gap: 12 },
+  metricCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  metricLabel: { fontSize: 8, color: THEME.colors.textMuted, fontWeight: '700', marginBottom: 4 },
+  metricValue: { fontSize: 18, fontWeight: '900', color: THEME.colors.primary },
+  marketcapCard: { backgroundColor: 'rgba(0, 204, 255, 0.05)', borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: THEME.colors.primary + '40' },
+  marketcapLabel: { fontSize: 8, color: THEME.colors.primary, fontWeight: '900', marginBottom: 4 },
+  marketcapValue: { fontSize: 20, fontWeight: '900', color: '#fff' },
+  marketcapGraph: { flexDirection: 'row', alignItems: 'flex-end', gap: 4, height: 40 },
+  graphBar: { width: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 },
+  heroSection: { marginBottom: 32 },
+  heroTitle: { fontSize: 36, fontWeight: '900', color: '#fff', lineHeight: 40 },
+  heroDescription: { fontSize: 14, color: THEME.colors.textMuted, marginTop: 12, lineHeight: 22, marginBottom: 20 },
+  heroButtons: { flexDirection: 'row', gap: 12 },
+  primaryBtn: { flex: 1, backgroundColor: THEME.colors.primary, paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
+  primaryBtnText: { color: '#000', fontSize: 12, fontWeight: '900' },
+  secondaryBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.06)', paddingVertical: 14, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  secondaryBtnText: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  sectionTitle: { fontSize: 10, fontWeight: '900', color: THEME.colors.secondary, letterSpacing: 2, marginBottom: 16, textTransform: 'uppercase' },
+  featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 32 },
+  featureCard: { width: '48%', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)' },
+  featureEmoji: { fontSize: 24, marginBottom: 8 },
+  featureCardTitle: { fontSize: 14, fontWeight: '900', color: '#fff', marginBottom: 4 },
+  featureCardDesc: { fontSize: 10, color: THEME.colors.textMuted, lineHeight: 14 },
+  walletSection: { backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 16, padding: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  walletLabel: { fontSize: 8, color: THEME.colors.textMuted, fontWeight: '900', marginBottom: 8 },
+  walletAddress: { fontSize: 11, color: '#fff', fontWeight: '700', marginBottom: 16, fontFamily: 'monospace' },
+  walletButton: { backgroundColor: THEME.colors.primary, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  walletButtonDisconnect: { backgroundColor: THEME.colors.danger },
+  walletButtonText: { color: '#fff', fontSize: 10, fontWeight: '900' },
 });

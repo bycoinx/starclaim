@@ -77,3 +77,19 @@ export function getApproximateLST() {
   let lst = 100.46 + 0.985647 * daysSinceJ2000 + 15 * hours;
   return normalizeAngle(lst);
 }
+
+/**
+ * RA/Dec ve Mesafe verilerini 3D uzay koordinatlarına (X, Y, Z) çevirir.
+ * RA: Saat (0-24), Dec: Derece (-90 to +90), Dist: Işık yılı veya birim mesafe.
+ */
+export function raDecDistToXYZ(ra, dec, dist = 100) {
+  const raRad = deg2rad(ra * 15);
+  const decRad = deg2rad(dec);
+  
+  // Astronomik standart: X (Spring Equinox), Y (East), Z (North Pole)
+  const x = dist * Math.cos(decRad) * Math.cos(raRad);
+  const y = dist * Math.cos(decRad) * Math.sin(raRad);
+  const z = dist * Math.sin(decRad);
+  
+  return { x, y, z };
+}

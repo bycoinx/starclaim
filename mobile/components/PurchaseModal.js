@@ -104,6 +104,22 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
       purchases.unshift(rec);
       await AsyncStorage.setItem('@purchases', JSON.stringify(purchases));
       
+      // Automatic Vault Integration
+      try {
+        const vaultMessagesRaw = await AsyncStorage.getItem('@vault_messages');
+        const vaultMessages = vaultMessagesRaw ? JSON.parse(vaultMessagesRaw) : [];
+        vaultMessages.unshift({
+          id: 'welcome-' + Date.now(),
+          type: 'text',
+          text: `SİSTEM MESAJI: ${name.toUpperCase()} yıldızı başarıyla tescil edildi. Ebedi mirasınızın ilk parçası StarVault'a eklendi.`,
+          lockType: 'none',
+          date: new Date().toISOString(),
+        });
+        await AsyncStorage.setItem('@vault_messages', JSON.stringify(vaultMessages));
+      } catch (vErr) {
+        console.warn('Vault integration failed', vErr);
+      }
+      
       if(onPurchaseSuccess) onPurchaseSuccess(rec);
       setStep(3);
     } catch (e) {

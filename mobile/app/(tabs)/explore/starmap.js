@@ -4,7 +4,6 @@ import { Camera } from 'expo-camera';
 import { Magnetometer, Accelerometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import LanguagePicker from '../../../components/LanguagePicker';
 import StarCanvas from '../../../components/StarCanvas';
 import StarPopup from '../../../components/StarPopup';
 import MyStarsOverlay from '../../../components/MyStarsOverlay';
@@ -49,7 +48,6 @@ export default function StarMapScreen() {
       setStars(list); 
       setLoading(false); 
       
-      // Auto-navigate if starId param exists
       if (params.starId) {
         const found = list.find(s => s.id === params.starId || s.hip === params.starId);
         if (found) {
@@ -71,20 +69,15 @@ export default function StarMapScreen() {
       setSearchResults([]);
       return;
     }
-
     const lower = text.toLowerCase();
     const planetResults = getPlanetPositions().filter(p => p.name.toLowerCase().includes(lower));
     const dsoResults = DSO_CATALOG.filter(d => d.name.toLowerCase().includes(lower));
     const starResults = stars.filter(s => s.proper && s.proper.toLowerCase().includes(lower)).slice(0, 5);
-
     setSearchResults([...planetResults, ...dsoResults, ...starResults]);
   };
 
   const navigateToObject = (obj) => {
     setMode('manual');
-    // Convert RA to degrees if it's in hours (stars/dsos are in hours, planets already in degrees?)
-    // Actually project uses starRa * 15 - centerRa, and planets in solarSystem.js use ra = normalize(lon)/15.
-    // So all RA should be in hours.
     setCenterRa(obj.ra * 15);
     setCenterDec(obj.dec);
     setZoom(3.5);
@@ -98,42 +91,32 @@ export default function StarMapScreen() {
       const raw = await AsyncStorage.getItem('@purchases');
       const list = raw ? JSON.parse(raw) : [];
       setPurchases(list);
-    } catch (error) {
-      console.warn('Purchase load error', error);
-    }
+    } catch (error) { console.warn('Purchase load error', error); }
   };
 
-  // Low-pass filter variables
   const lastHeading = React.useRef(0);
   const lastTilt = React.useRef(0);
-  const ALPHA = 0.15; // Filter strength (0.1 - 0.2 is usually good)
+  const ALPHA = 0.15;
 
   useEffect(() => {
     const magSub = Magnetometer.addListener((data) => {
       const angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
       const newHeading = normalizeAngle(90 - angle);
-      
-      // Low-pass filter for heading
       let diff = newHeading - lastHeading.current;
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
-      
       const filteredHeading = normalizeAngle(lastHeading.current + diff * ALPHA);
       lastHeading.current = filteredHeading;
       setHeading(filteredHeading);
     });
-
     const accSub = Accelerometer.addListener((data) => {
       const pitch = -Math.atan2(data.z, data.y) * (180 / Math.PI);
       const newTilt = Math.max(-90, Math.min(90, pitch));
-      
-      // Low-pass filter for tilt
       const filteredTilt = lastTilt.current + (newTilt - lastTilt.current) * ALPHA;
       lastTilt.current = filteredTilt;
       setTilt(filteredTilt);
     });
-
-    Magnetometer.setUpdateInterval(40); // 25Hz for smoother tracking
+    Magnetometer.setUpdateInterval(40);
     Accelerometer.setUpdateInterval(40);
     return () => { magSub.remove(); accSub.remove(); };
   }, []);
@@ -160,13 +143,9 @@ export default function StarMapScreen() {
   const handleCenterOnSelected = () => {
     if (selectedStar) {
       setMode('manual');
-      setCenterRa(selectedStar.ra * 15); // project uses starRa * 15 - centerRa
+      setCenterRa(selectedStar.ra * 15);
       setCenterDec(selectedStar.dec);
     }
-  };
-
-  const handlePurchaseSuccess = (newPurchase) => {
-    setPurchases((current) => [newPurchase, ...current]);
   };
 
   return (
@@ -174,11 +153,8 @@ export default function StarMapScreen() {
       {mode === 'camera' && cameraPermission ? (
         <Camera style={styles.camera} type={Camera.Constants.Type.back} ratio="16:9" />
       ) : null}
-      {!cameraPermission && mode === 'camera' ? (
-        <View style={styles.permissionFallback}><Text style={styles.permissionText}>Kamera izni gerekli</Text></View>
-      ) : null}
       <View style={styles.overlay} pointerEvents="box-none">
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/')}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
         
@@ -187,7 +163,7 @@ export default function StarMapScreen() {
             <Ionicons name="search-outline" size={18} color={THEME.colors.textMuted} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Yıldız, gezegen veya galaksi ara..."
+              placeholder="Yıldız ara..."
               placeholderTextColor="rgba(255,255,255,0.4)"
               value={searchQuery}
               onChangeText={handleSearch}
@@ -197,11 +173,7 @@ export default function StarMapScreen() {
             <View style={styles.searchResults}>
               {searchResults.map((item) => (
                 <TouchableOpacity key={item.id} style={styles.searchResultItem} onPress={() => navigateToObject(item)}>
-                  <Ionicons 
-                    name={item.type === 'planet' ? "planet-outline" : item.type === 'star' ? "star-outline" : "aperture-outline"} 
-                    size={16} 
-                    color={THEME.colors.primary} 
-                  />
+                  <Ionicons name="star-outline" size={16} color={THEME.colors.primary} />
                   <Text style={styles.searchResultText}>{item.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -211,58 +183,22 @@ export default function StarMapScreen() {
 
         <View style={styles.topBar}>
           <View style={styles.controlGroup}>
-            <TouchableOpacity 
-              style={[styles.modeButton, mode==='manual' && styles.modeActive]} 
-              onPress={() => setMode('manual')}
-            >
+            <TouchableOpacity style={[styles.modeButton, mode==='manual' && styles.modeActive]} onPress={() => setMode('manual')}>
               <Ionicons name="hand-right-outline" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modeButton, mode==='camera' && styles.modeActive]} 
-              onPress={() => setMode('camera')}
-            >
+            <TouchableOpacity style={[styles.modeButton, mode==='camera' && styles.modeActive]} onPress={() => setMode('camera')}>
               <Ionicons name="camera-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
 
           <View style={styles.controlGroup}>
-            <TouchableOpacity 
-              style={[styles.modeButton, showConstellations && styles.modeActive]} 
-              onPress={() => setShowConstellations((prev) => !prev)}
-            >
+            <TouchableOpacity style={[styles.modeButton, showConstellations && styles.modeActive]} onPress={() => setShowConstellations(!showConstellations)}>
               <Ionicons name="git-merge-outline" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modeButton, showPlanets && styles.modeActive]} 
-              onPress={() => setShowPlanets((prev) => !prev)}
-            >
-              <Ionicons name="planet-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modeButton, showDSOs && styles.modeActive]} 
-              onPress={() => setShowDSOs((prev) => !prev)}
-            >
-              <Ionicons name="aperture-outline" size={20} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modeButton, showLabels && styles.modeActive]} 
-              onPress={() => setShowLabels((prev) => !prev)}
-            >
+            <TouchableOpacity style={[styles.modeButton, showLabels && styles.modeActive]} onPress={() => setShowLabels(!showLabels)}>
               <Ionicons name="text-outline" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.modeButton, showMythology && styles.modeActive]} 
-              onPress={() => setShowMythology((prev) => !prev)}
-            >
-              <Ionicons name="color-palette-outline" size={20} color="#fff" />
-            </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.statusBar}>
-          <Text style={styles.statusText}>
-            {mode === 'camera' ? `Heading ${Math.round(heading)}° • Tilt ${Math.round(tilt)}°` : `RA ${centerRa.toFixed(1)}° • DEC ${centerDec.toFixed(1)}°`}
-          </Text>
         </View>
 
         <View style={styles.mapContainer}>
@@ -292,12 +228,10 @@ export default function StarMapScreen() {
               <Text style={styles.focusBtnText}>ODAKLAN</Text>
             </TouchableOpacity>
           )}
-
-          <MyStarsOverlay stars={stars} onSelectStar={(item) => { const found = stars.find((star) => star.proper.toLowerCase() === item.name.toLowerCase()); if (found) { setCenterRa(found.ra * 15); setCenterDec(found.dec); setMode('manual'); } }} />
         </View>
         
         <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
-        <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={handlePurchaseSuccess} />
+        <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
       </View>
     </SafeAreaView>
   );
@@ -306,21 +240,15 @@ export default function StarMapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   camera: { ...StyleSheet.absoluteFillObject },
-  overlay: { flex: 1, backgroundColor: 'transparent' },
+  overlay: { flex: 1 },
   backBtn: { position: 'absolute', top: 40, left: 20, zIndex: 10, width: 44, height: 44, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 22, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  lang: { position: 'absolute', top: 40, right: 20, zIndex: 10 },
   topBar: { flexDirection: 'row', justifyContent: 'center', gap: 12, marginTop: 40, paddingHorizontal: 20, zIndex: 10 },
   controlGroup: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   modeButton: { padding: 10, borderRadius: 16, marginHorizontal: 2 },
   modeActive: { backgroundColor: THEME.colors.primary + '40', borderWidth: 1, borderColor: THEME.colors.primary },
-  modeText: { color: '#fff', fontWeight: '700', fontSize: 10 },
-  statusBar: { alignItems: 'center', paddingVertical: 8, backgroundColor: 'rgba(0,0,0,0.3)' },
-  statusText: { color: THEME.colors.textMuted, fontSize: 10, letterSpacing: 1, fontWeight: '700' },
   mapContainer: { flex: 1 },
   focusBtn: { position: 'absolute', bottom: 100, left: 20, backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: THEME.colors.primary },
   focusBtnText: { color: THEME.colors.primary, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
-  permissionFallback: { ...StyleSheet.absoluteFillObject, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center' },
-  permissionText: { color: '#fff' },
   searchContainer: { position: 'absolute', top: 100, left: 20, right: 20, zIndex: 20 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   searchInput: { flex: 1, color: '#fff', paddingVertical: 10, paddingHorizontal: 8, fontSize: 14 },

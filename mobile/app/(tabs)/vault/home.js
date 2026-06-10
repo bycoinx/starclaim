@@ -156,9 +156,14 @@ export default function VaultHomeScreen(){
       <SpaceBackground />
       <View style={styles.content}>
         <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.header}>STAR_VAULT</Text>
-            <Text style={styles.subHeader}>SECURE_TIME_CAPSULE_RECORDS</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity onPress={() => router.replace('/')} style={styles.backBtn}>
+              <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.header}>STAR_VAULT</Text>
+              <Text style={styles.subHeader}>SECURE_TIME_CAPSULE_RECORDS</Text>
+            </View>
           </View>
           <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('./newmessage')}>
             <Ionicons name="add" size={24} color="#000" />
