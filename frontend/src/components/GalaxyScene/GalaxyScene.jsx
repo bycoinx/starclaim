@@ -1,154 +1,263 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, Float } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
 import CameraRig from './CameraRig';
 
-// EXTREME STAR SHADER
-const STAR_VERTEX_SHADER = `
+// --- SHADERS ---
+
+const GALAXY_STAR_VERTEX = `
   attribute float size;
+  attribute vec3 color;
+  attribute float aRandom;
   varying vec3 vColor;
+  uniform float uTime;
+
   void main() {
     vColor = color;
-    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * (1000.0 / -mvPosition.z);
-    gl_Position = projectionMatrix * mvPosition;
+    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+    // Dynamic rotation based on distance
+    float distanceToCenter = length(modelPosition.xz);
+    float angle = atan(modelPosition.x, modelPosition.z);
+    float angleOffset = (1.0 / distanceToCenter) * uTime * 0.15;
+    angle += angleOffset;
+
+    modelPosition.x = cos(angle) * distanceToCenter;
+    modelPosition.z = sin(angle) * distanceToCenter;
+
+    // Small twinkle effect
+    float twinkle = 0.8 + 0.2 * sin(uTime * 2.0 + aRandom * 100.0);
+
+    vec4 viewPosition = viewMatrix * modelPosition;
+    gl_Position = projectionMatrix * viewPosition;
+    
+    // Perspective sizing
+    gl_PointSize = size * (800.0 / -viewPosition.z) * twinkle;
   }
 `;
 
-const STAR_FRAGMENT_SHADER = `
-  uniform float time;
+const GALAXY_STAR_FRAGMENT = `
   varying vec3 vColor;
   void main() {
-    float r = distance(gl_PointCoord, vec2(0.5, 0.5));
-    if (r > 0.5) discard;
-    float glow = exp(-4.0 * r);
-    float pulse = 0.8 + 0.2 * sin(time * 3.0);
-    gl_FragColor = vec4(vColor * glow * pulse * 2.0, glow);
+    float d = distance(gl_PointCoord, vec2(0.5));
+    if (d > 0.5) discard;
+    float strength = pow(1.0 - d * 2.0, 4.0);
+    gl_FragColor = vec4(vColor * 2.0, strength);
   }
 `;
 
-const NEBULA_VERTEX_SHADER = `
-  varying vec2 vUv;
+const GAS_FRAGMENT = `
+  varying vec3 vColor;
   void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    float d = distance(gl_PointCoord, vec2(0.5));
+    if (d > 0.5) discard;
+    float strength = exp(-5.0 * d);
+    gl_FragColor = vec4(vColor, strength * 0.3);
   }
 `;
 
-const NEBULA_FRAGMENT_SHADER = `
-  uniform float time;
-  varying vec2 vUv;
-
-  float hash(vec2 p) {
-    p = fract(p * vec2(123.34, 456.21));
-    p += dot(p, p + 45.32);
-    return fract(p.x * p.y);
-  }
-
-  float noise(vec2 p) {
-    vec2 i = floor(p);
-    vec2 f = fract(p);
-    float a = hash(i);
-    float b = hash(i + vec2(1.0, 0.0));
-    float c = hash(i + vec2(0.0, 1.0));
-    float d = hash(i + vec2(1.0, 1.0));
-    vec2 u = f * f * (3.0 - 2.0 * f);
-    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-  }
-
-  void main() {
-    float n = noise(vUv * 2.0 + time * 0.05);
-    n += 0.5 * noise(vUv * 4.0 - time * 0.02);
-    
-    vec3 col = mix(vec3(0.1, 0.0, 0.3), vec3(0.0, 0.2, 0.4), n);
-    float mask = pow(1.0 - distance(vUv, vec2(0.5)) * 2.0, 2.0);
-    gl_FragColor = vec4(col * 2.0, n * 0.3 * mask);
-  }
-`;
+// --- COMPONENTS ---
 
 function Nebula() {
-  const ref = useRef();
-  const uniforms = useMemo(() => ({ time: { value: 0 } }), []);
+  const meshRef = useRef();
+  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
+
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.material.uniforms.time.value = clock.getElapsedTime();
+    if (meshRef.current) {
+      meshRef.current.rotation.y = clock.getElapsedTime() * 0.005;
+      meshRef.current.material.uniforms.uTime.value = clock.getElapsedTime();
+    }
   });
+
   return (
-    <mesh ref={ref} scale={1500}>
-      <sphereGeometry args={[1, 32, 32]} />
-      <shaderMaterial 
-        vertexShader={NEBULA_VERTEX_SHADER} 
-        fragmentShader={NEBULA_FRAGMENT_SHADER} 
-        uniforms={uniforms} 
-        side={THREE.BackSide} 
-        transparent 
-        depthWrite={false} 
-        blending={THREE.AdditiveBlending} 
+    <mesh ref={meshRef} scale={2500}>
+      <sphereGeometry args={[1, 64, 64]} />
+      <shaderMaterial
+        side={THREE.BackSide}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        uniforms={uniforms}
+        vertexShader={`
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={`
+          uniform float uTime;
+          varying vec2 vUv;
+          
+          float noise(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+          }
+
+          void main() {
+            vec2 p = vUv * 4.0;
+            float n = noise(p + uTime * 0.01);
+            vec3 col = mix(vec3(0.01, 0.02, 0.05), vec3(0.05, 0.02, 0.08), n);
+            float mask = pow(1.0 - distance(vUv, vec2(0.5)) * 2.0, 3.0);
+            gl_FragColor = vec4(col, mask * 0.2);
+          }
+        `}
       />
     </mesh>
   );
 }
 
-function MilkyWay() {
-  const ref = useRef();
-  const { positions, colors, sizes } = useMemo(() => {
-    const count = 30000;
-    const pos = new Float32Array(count * 3);
-    const col = new Float32Array(count * 3);
-    const siz = new Float32Array(count);
-    const color = new THREE.Color();
-    for(let i=0; i<count; i++) {
-      const r = Math.random() * 1000;
-      const branch = i % 4;
-      const angle = (r * 0.005) + (branch * Math.PI * 0.5);
-      const dist = (Math.random() - 0.5) * (r * 0.15 + 20);
-      pos[i*3] = Math.cos(angle) * r + (Math.random()-0.5)*dist;
-      pos[i*3+1] = (Math.random()-0.5) * (r * 0.05 + 10);
-      pos[i*3+2] = Math.sin(angle) * r + (Math.random()-0.5)*dist;
-      color.set(i < 5000 ? "#ffccaa" : "#aabbff").lerp(new THREE.Color("#ffffff"), Math.random());
-      col[i*3]=color.r; col[i*3+1]=color.g; col[i*3+2]=color.b;
-      siz[i] = Math.random() * 3 + 2;
+function ProfessionalMilkyWay() {
+  const starRef = useRef();
+  const gasRef = useRef();
+  
+  const parameters = {
+    count: 60000,
+    size: 2,
+    radius: 1200,
+    branches: 4,
+    spin: 1.2,
+    randomness: 0.2,
+    randomnessPower: 3,
+    insideColor: "#ffaa44",
+    outsideColor: "#4488ff"
+  };
+
+  const { positions, colors, sizes, randomness, gasPositions, gasColors } = useMemo(() => {
+    const pos = new Float32Array(parameters.count * 3);
+    const col = new Float32Array(parameters.count * 3);
+    const siz = new Float32Array(parameters.count);
+    const rand = new Float32Array(parameters.count);
+    
+    const gasPos = new Float32Array(parameters.count * 0.5 * 3);
+    const gasCol = new Float32Array(parameters.count * 0.5 * 3);
+
+    const colorInside = new THREE.Color(parameters.insideColor);
+    const colorOutside = new THREE.Color(parameters.outsideColor);
+
+    for (let i = 0; i < parameters.count; i++) {
+      const i3 = i * 3;
+      const radius = Math.random() * parameters.radius;
+      const spinAngle = radius * parameters.spin * 0.01;
+      const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2;
+
+      const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+      const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius * 0.3;
+      const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+
+      pos[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+      pos[i3 + 1] = randomY;
+      pos[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+      const mixedColor = colorInside.clone().lerp(colorOutside, radius / parameters.radius);
+      col[i3] = mixedColor.r;
+      col[i3 + 1] = mixedColor.g;
+      col[i3 + 2] = mixedColor.b;
+
+      siz[i] = Math.random() * parameters.size + 1;
+      rand[i] = Math.random();
+
+      // Gas layer (H-alpha)
+      if (i < parameters.count * 0.5) {
+        gasPos[i3] = pos[i3] * 1.05;
+        gasPos[i3 + 1] = pos[i3 + 1] * 1.2;
+        gasPos[i3 + 2] = pos[i3 + 2] * 1.05;
+        
+        const gasColor = new THREE.Color(i % 10 === 0 ? "#ff22aa" : "#4444ff"); // Pink/Purple gas
+        gasCol[i3] = gasColor.r;
+        gasCol[i3 + 1] = gasColor.g;
+        gasCol[i3 + 2] = gasColor.b;
+      }
     }
-    return { positions: pos, colors: col, sizes: siz };
+
+    return { positions: pos, colors: col, sizes: siz, randomness: rand, gasPositions: gasPos, gasColors: gasCol };
   }, []);
 
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = clock.getElapsedTime() * 0.01;
+    const t = clock.getElapsedTime();
+    if (starRef.current) starRef.current.material.uniforms.uTime.value = t;
+    if (gasRef.current) gasRef.current.rotation.y = t * 0.005;
   });
 
   return (
-    <points ref={ref} position={[0, -100, -600]} rotation={[0.4, 0, 0.2]}>
-      <bufferGeometry>
-        <bufferAttribute attach="attributes-position" count={30000} array={positions} itemSize={3} />
-        <bufferAttribute attach="attributes-color" count={30000} array={colors} itemSize={3} />
-        <bufferAttribute attach="attributes-size" count={30000} array={sizes} itemSize={1} />
-      </bufferGeometry>
-      <shaderMaterial vertexShader={STAR_VERTEX_SHADER} fragmentShader={STAR_FRAGMENT_SHADER} transparent depthWrite={false} blending={THREE.AdditiveBlending} vertexColors uniforms={{time:{value:0}}} />
-    </points>
+    <group position={[0, -100, -800]} rotation={[0.4, 0, 0.2]}>
+      {/* Stars Layer */}
+      <points ref={starRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={parameters.count} array={positions} itemSize={3} />
+          <bufferAttribute attach="attributes-color" count={parameters.count} array={colors} itemSize={3} />
+          <bufferAttribute attach="attributes-size" count={parameters.count} array={sizes} itemSize={1} />
+          <bufferAttribute attach="attributes-aRandom" count={parameters.count} array={randomness} itemSize={1} />
+        </bufferGeometry>
+        <shaderMaterial
+          vertexShader={GALAXY_STAR_VERTEX}
+          fragmentShader={GALAXY_STAR_FRAGMENT}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          vertexColors
+          uniforms={{ uTime: { value: 0 } }}
+        />
+      </points>
+
+      {/* Gas/Nebula Layer (H-alpha) */}
+      <points ref={gasRef}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={parameters.count * 0.5} array={gasPositions} itemSize={3} />
+          <bufferAttribute attach="attributes-color" count={parameters.count * 0.5} array={gasColors} itemSize={3} />
+        </bufferGeometry>
+        <shaderMaterial
+          vertexShader={GALAXY_STAR_VERTEX.replace('gl_PointSize = size', 'gl_PointSize = 40.0')}
+          fragmentShader={GAS_FRAGMENT}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          vertexColors
+          uniforms={{ uTime: { value: 0 } }}
+        />
+      </points>
+
+      {/* Volumetric Bulge Core */}
+      <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+        <mesh>
+          <sphereGeometry args={[80, 32, 32]} />
+          <meshBasicMaterial color="#ffccaa" transparent opacity={0.15} blending={THREE.AdditiveBlending} />
+        </mesh>
+        <pointLight intensity={10} color="#ffccaa" distance={500} />
+      </Float>
+    </group>
   );
 }
 
-function Warp({ active }) {
+function WarpStreaks({ active }) {
   const ref = useRef();
   const geom = useMemo(() => {
     const pts = [];
-    for(let i=0; i<500; i++) pts.push((Math.random()-0.5)*200, (Math.random()-0.5)*200, Math.random()*-2000);
+    for(let i=0; i<1000; i++) {
+      const x = (Math.random()-0.5) * 400;
+      const y = (Math.random()-0.5) * 400;
+      const z = Math.random() * -2000;
+      pts.push(x, y, z, x, y, z + 200);
+    }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     return g;
   }, []);
+
   useFrame(() => {
     if(active && ref.current) {
-      ref.current.position.z += 50;
-      if(ref.current.position.z > 1000) ref.current.position.z = 0;
+      ref.current.position.z += 80;
+      if(ref.current.position.z > 1500) ref.current.position.z = 0;
     }
   });
+
   if(!active) return null;
+
   return (
     <lineSegments ref={ref} geometry={geom}>
-      <lineBasicMaterial color="#4488ff" transparent opacity={0.5} />
+      <lineBasicMaterial color="#88ccff" transparent opacity={0.4} />
     </lineSegments>
   );
 }
@@ -158,43 +267,85 @@ export default function GalaxyScene({ onStarClick }) {
   const [selected, setSelected] = useState(null);
   const [warp, setWarp] = useState(false);
 
-  useEffect(() => { loadHygStars({ limit: 40000 }).then(setStars); }, []);
+  useEffect(() => {
+    loadHygStars({ limit: 40000 }).then(setStars);
+  }, []);
+
+  const triggerWarp = () => {
+    setWarp(true);
+    setTimeout(() => setWarp(false), 3000);
+  };
 
   return (
-    <div style={{ width: '100%', height: '100vh', background: '#000' }}>
-      <Canvas camera={{ position: [0, 50, 200], fov: 60, far: 20000 }}>
+    <div style={{ width: '100%', height: '100vh', background: '#000', position: 'relative' }}>
+      <Canvas camera={{ position: [0, 80, 250], fov: 60, far: 20000 }}>
         <Suspense fallback={null}>
-          <color attach="background" args={["#000005"]} />
-          <Stars radius={3000} depth={50} count={10000} factor={4} saturation={0} fade speed={1} />
+          <color attach="background" args={["#000002"]} />
+          
+          <Stars radius={3000} depth={100} count={15000} factor={6} saturation={0} fade speed={1} />
+          
           <Nebula />
-          <MilkyWay />
-          <Warp active={warp} />
+          <ProfessionalMilkyWay />
+          <WarpStreaks active={warp} />
+
           {stars && (
             <points onPointerDown={(e) => { e.stopPropagation(); const s=stars[e.index]; setSelected(s); onStarClick?.(s); }}>
               <bufferGeometry>
                 <bufferAttribute attach="attributes-position" count={stars.length} array={new Float32Array(stars.flatMap(s=>[s.threeX, s.threeY, s.threeZ]))} itemSize={3} />
                 <bufferAttribute attach="attributes-color" count={stars.length} array={new Float32Array(stars.flatMap(s=>{const c=new THREE.Color(s.color||"#fff"); return [c.r,c.g,c.b]}))} itemSize={3} />
-                <bufferAttribute attach="attributes-size" count={stars.length} array={new Float32Array(stars.map(s=>Math.max(2, 8-(s.mag||6))))} itemSize={1} />
+                <bufferAttribute attach="attributes-size" count={stars.length} array={new Float32Array(stars.map(s=>Math.max(2, 10-(s.mag||6))))} itemSize={1} />
               </bufferGeometry>
-              <shaderMaterial vertexShader={STAR_VERTEX_SHADER} fragmentShader={STAR_FRAGMENT_SHADER} transparent depthWrite={false} blending={THREE.AdditiveBlending} vertexColors uniforms={{time:{value:0}}} />
+              <shaderMaterial
+                vertexShader={GALAXY_STAR_VERTEX}
+                fragmentShader={GALAXY_STAR_FRAGMENT}
+                transparent
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                vertexColors
+                uniforms={{ uTime: { value: 0 } }}
+              />
             </points>
           )}
+
           {selected && (
-            <mesh position={[selected.threeX, selected.threeY, selected.threeZ]}>
-              <sphereGeometry args={[0.5, 16, 16]} />
-              <meshBasicMaterial color="#C9A84C" />
-              <pointLight intensity={5} color="#C9A84C" />
-            </mesh>
+            <group position={[selected.threeX, selected.threeY, selected.threeZ]}>
+              <mesh>
+                <sphereGeometry args={[0.8, 16, 16]} />
+                <meshBasicMaterial color="#C9A84C" />
+              </mesh>
+              <pointLight intensity={8} color="#C9A84C" distance={100} />
+            </group>
           )}
+
           <CameraRig enableCinematic={!selected && !warp} fovBoost={warp} />
-          <OrbitControls enablePan={false} makeDefault />
+          <OrbitControls enablePan={false} maxDistance={5000} makeDefault />
+          
           <EffectComposer>
-            <Bloom intensity={1.5} luminanceThreshold={0.1} radius={0.8} />
+            <Bloom intensity={2.0} luminanceThreshold={0.05} radius={0.7} />
           </EffectComposer>
         </Suspense>
       </Canvas>
+
       <div style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)' }}>
-        <button onClick={() => { setWarp(true); setTimeout(()=>setWarp(false), 3000); }} style={{ background: 'rgba(201,168,76,0.1)', color: '#C9A84C', border: '1px solid #C9A84C', padding: '10px 30px', borderRadius: '20px', cursor: 'pointer', letterSpacing: '2px', fontWeight: 'bold' }}>ENGAGE_WARP_DRIVE</button>
+        <button 
+          onClick={triggerWarp}
+          style={{ 
+            background: 'rgba(201,168,76,0.1)', 
+            color: '#C9A84C', 
+            border: '1px solid #C9A84C', 
+            padding: '12px 40px', 
+            borderRadius: '100px', 
+            cursor: 'pointer', 
+            letterSpacing: '5px', 
+            fontWeight: '900',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.3s'
+          }}
+          onMouseEnter={(e) => e.target.style.background = 'rgba(201,168,76,0.2)'}
+          onMouseLeave={(e) => e.target.style.background = 'rgba(201,168,76,0.1)'}
+        >
+          ENGAGE_WARP_DRIVE
+        </button>
       </div>
     </div>
   );
