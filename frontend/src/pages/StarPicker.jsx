@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { Loader2, Telescope, Activity, Star, Info } from "lucide-react";
+import { Loader2, Telescope, Activity, Star, Info, ArrowUpDown, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Console.css";
 
@@ -19,6 +19,7 @@ export default function StarPicker({ onClaim }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("default"); // default, price-high, price-low, name-az, name-za
 
   const loadStars = () => {
     setLoading(true);
@@ -40,26 +41,54 @@ export default function StarPicker({ onClaim }) {
     loadStars();
   }, [lang]);
 
-  const filteredStars = stars.filter(s => filter === "all" || s.tier?.toLowerCase() === filter);
+  const sortedStars = [...stars].sort((a, b) => {
+    if (sortBy === "price-high") return b.price - a.price;
+    if (sortBy === "price-low") return a.price - b.price;
+    if (sortBy === "name-az") return (a.proper || a.name).localeCompare(b.proper || b.name);
+    if (sortBy === "name-za") return (b.proper || b.name).localeCompare(a.proper || a.name);
+    return 0; // default (ranking from API)
+  });
+
+  const filteredStars = sortedStars.filter(s => filter === "all" || s.tier?.toLowerCase() === filter);
 
   return (
-    <div className="min-h-screen bg-transparent pt-28 pb-24 relative overflow-hidden dashboard-container">
+    <div className="min-h-screen bg-[#010208] pt-28 pb-24 relative overflow-hidden dashboard-container">
       <div className="absolute inset-0 bg-black/40 pointer-events-none" />
       
       <div className="relative max-w-7xl mx-auto px-6 md:px-10 z-10">
-        <div className="mb-12">
-          <div className="flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-sc-gold mb-2 font-bold">
-            <Telescope size={12} className="animate-pulse" />
-            AEGIS_TELESCOPE // STAR_CATALOG_SYNCHRONIZED
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-sc-gold mb-2 font-bold">
+              <Telescope size={12} className="animate-pulse" />
+              AEGIS_TELESCOPE // STAR_CATALOG_PRIMARY
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl tracking-tight">
+              Yıldızını <span className="gold-gradient-text">Seç</span>
+            </h1>
+            <p className="text-sc-text-muted max-w-md mt-4 text-sm font-mono opacity-70">
+              {lang === "TR" 
+                ? "Evrendeki ebedi mirasınızı seçin. Her yıldız kendine has bir koordinat ve tarihe sahiptir." 
+                : "Choose your eternal legacy in the universe. Each star has unique coordinates and history."}
+            </p>
           </div>
-          <h1 className="font-display text-4xl md:text-6xl tracking-tight">
-            Yıldızını <span className="gold-gradient-text">Seç</span>
-          </h1>
-          <p className="text-sc-text-muted max-w-md mt-4 text-sm font-mono opacity-70">
-            {lang === "TR" 
-              ? "Evrendeki ebedi mirasınızı seçin. Her yıldız kendine has bir koordinat ve tarihe sahiptir." 
-              : "Choose your eternal legacy in the universe. Each star has unique coordinates and history."}
-          </p>
+
+          {/* Sorting Controls */}
+          <div className="flex items-center gap-4 bg-sc-deep/40 p-2 rounded-xl border border-white/5 self-start md:self-end">
+             <div className="flex items-center gap-2 px-3 text-[10px] text-sc-gold/60 font-bold tracking-widest border-r border-white/10 uppercase">
+                <ArrowUpDown size={12} /> {isTR ? "Sıralama" : "Sort"}
+             </div>
+             <select 
+               value={sortBy} 
+               onChange={(e) => setSortBy(e.target.value)}
+               className="bg-transparent text-white text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer pr-4"
+             >
+                <option value="default" className="bg-sc-deep">{isTR ? "Varsayılan" : "Default"}</option>
+                <option value="price-high" className="bg-sc-deep">{isTR ? "En Pahalı" : "Price: High"}</option>
+                <option value="price-low" className="bg-sc-deep">{isTR ? "En Ucuz" : "Price: Low"}</option>
+                <option value="name-az" className="bg-sc-deep">A → Z</option>
+                <option value="name-za" className="bg-sc-deep">Z → A</option>
+             </select>
+          </div>
         </div>
 
         {/* Filter Tabs */}
@@ -72,7 +101,7 @@ export default function StarPicker({ onClaim }) {
                 filter === t ? "border-sc-gold bg-sc-gold/10 text-sc-gold" : "border-white/10 text-white/40 hover:border-white/20"
               }`}
             >
-              {t === "all" ? "Tümü" : t}
+              {t === "all" ? (isTR ? "Tümü" : "All") : t}
             </button>
           ))}
         </div>
