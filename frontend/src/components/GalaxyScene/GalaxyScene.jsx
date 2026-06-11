@@ -15,7 +15,8 @@ const STAR_VERTEX_SHADER = `
     vColor = color;
     vSize = size;
     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-    gl_PointSize = size * (300.0 / -mvPosition.z);
+    // Perspective sizing
+    gl_PointSize = size * (450.0 / -mvPosition.z);
     gl_Position = projectionMatrix * mvPosition;
   }
 `;
@@ -27,11 +28,109 @@ const STAR_FRAGMENT_SHADER = `
   void main() {
     float r = distance(gl_PointCoord, vec2(0.5, 0.5));
     if (r > 0.5) discard;
-    float glow = exp(-5.0 * r);
-    float pulse = 0.8 + 0.2 * sin(time * 2.0 + vSize * 10.0);
-    gl_FragColor = vec4(vColor * glow * pulse, glow * 1.5);
+    
+    // Sharper core, wider glow
+    float core = exp(-15.0 * r);
+    float glow = exp(-4.0 * r) * 0.4;
+    
+    float pulse = 0.9 + 0.1 * sin(time * 1.5 + vSize * 20.0);
+    vec3 finalColor = vColor * (core + glow) * pulse;
+    
+    // HDR-ish boost
+    gl_FragColor = vec4(finalColor * 2.0, core + glow);
   }
 `;
+
+const NEBULA_VERTEX_SHADER = `
+  varying vec2 vUv;
+  varying vec3 vPosition;
+  void main() {
+    vUv = uv;
+    vPosition = position;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const NEBULA_FRAGMENT_SHADER = `
+  uniform float time;
+  varying vec2 vUv;
+  varying vec3 vPosition;
+
+  // Simple procedural noise
+  float hash(vec2 p) {
+    p = fract(p * vec2(123.34, 456.21));
+    p += dot(p, p + 45.32);
+    return fract(p.x * p.y);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+  }
+
+  void main() {
+    float n = noise(vUv * 4.0 + time * 0.02);
+    n += 0.5 * noise(vUv * 8.0 - time * 0.01);
+    
+    vec3 color1 = vec3(0.05, 0.1, 0.2); // Deep Blue
+    vec3 color2 = vec3(0.1, 0.05, 0.15); // Deep Purple
+    vec3 finalColor = mix(color1, color2, n);
+    
+    float edgeMask = pow(1.0 - distance(vUv, vec2(0.5)) * 2.0, 2.0);
+    gl_FragColor = vec4(finalColor, n * 0.15 * edgeMask);
+  }
+`;
+
+function NebulaClouds() {
+  const ref = useRef();
+  const uniforms = useMemo(() => ({
+    time: { value: 0 }
+  }), []);
+
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.material.uniforms.time.value = clock.getElapsedTime();
+      ref.current.rotation.y = clock.getElapsedTime() * 0.01;
+    }
+  });
+
+  return (
+    <group>
+      {/* Primary Nebula Shell */}
+      <mesh ref={ref} rotation={[Math.PI / 4, 0, 0]}>
+        <sphereGeometry args={[800, 64, 64]} />
+        <shaderMaterial 
+          vertexShader={NEBULA_VERTEX_SHADER}
+          fragmentShader={NEBULA_FRAGMENT_SHADER}
+          uniforms={uniforms}
+          side={THREE.BackSide}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function TacticalGrid() {
+  return (
+    <group opacity={0.1}>
+      <gridHelper args={[2000, 40, "#ffffff", "#ffffff"]} rotation={[Math.PI/2, 0, 0]} position={[0,0,-500]}>
+         <meshBasicMaterial color="#ffffff" transparent opacity={0.03} />
+      </gridHelper>
+      <gridHelper args={[2000, 20, "#C9A84C", "#C9A84C"]} rotation={[0, 0, 0]} position={[0,-100,0]}>
+         <meshBasicMaterial color="#C9A84C" transparent opacity={0.02} />
+      </gridHelper>
+    </group>
+  );
+}
 
 const WARP_VERTEX_SHADER = `
   varying float vOpacity;
@@ -263,6 +362,8 @@ export default function GalaxyScene({ onStarClick }) {
       <Canvas camera={{ position: [0, 40, 120], fov: 60, near: 1, far: 10000 }} gl={{ antialias: true, alpha: false }}>
         <Suspense fallback={null}>
           <SpaceBackground />
+          <NebulaClouds />
+          <TacticalGrid />
           <ambientLight intensity={0.4} />
           <HYGStarField stars={stars} onStarClick={handleStarSelect} warpActive={isWarping} />
           {selected && <StarSelectionMarker star={selected} />}
