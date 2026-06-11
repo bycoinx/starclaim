@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { useAuth } from "../lib/auth";
-import { TrendingUp, Shield, Activity, ArrowUpDown, ChevronRight, Search, LayoutGrid } from "lucide-react";
+import { TrendingUp, Shield, Activity, ArrowUpDown, Search, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Marketplace() {
-  const { t, lang } = useT();
-  const { user } = useAuth();
+  const { lang } = useT();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({ vol: 0, cap: 0, avg: 0 });
@@ -23,11 +20,11 @@ export default function Marketplace() {
           api.get("/marketplace/listings")
         ]);
         setMetrics({
-          vol: mRes.data.volume_24h,
-          cap: mRes.data.market_cap,
-          avg: mRes.data.avg_price
+          vol: mRes.data?.volume_24h || 0,
+          cap: mRes.data?.market_cap || 0,
+          avg: mRes.data?.avg_price || 0
         });
-        setItems(iRes.data);
+        setItems(Array.isArray(iRes.data) ? iRes.data : []);
       } catch (err) {
         console.error("Market load error", err);
       } finally {
@@ -38,10 +35,10 @@ export default function Marketplace() {
   }, []);
 
   const sortedItems = [...items].sort((a, b) => {
-    if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "name-az") return a.star_name.localeCompare(b.star_name);
-    if (sortBy === "name-za") return b.star_name.localeCompare(a.star_name);
+    if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
+    if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
+    if (sortBy === "name-az") return (a.star_name || "").localeCompare(b.star_name || "");
+    if (sortBy === "name-za") return (b.star_name || "").localeCompare(a.star_name || "");
     return 0;
   });
 
@@ -141,7 +138,7 @@ export default function Marketplace() {
 
                   <h3 className="font-display text-3xl text-white mb-2 group-hover:text-sc-gold transition-colors uppercase tracking-tight">{item.star_name}</h3>
                   <div className="text-[9px] text-sc-text-muted font-mono uppercase tracking-[0.2em] mb-10 flex items-center gap-2">
-                     <Search size={10} /> {item.constellation} // CODE: {item.star_id}
+                     <Search size={10} /> {item.constellation} {" // CODE: "} {item.star_id}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-10">

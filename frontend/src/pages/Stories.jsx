@@ -1,9 +1,7 @@
 import React from "react";
 import { useT } from "../lib/i18n";
 import { 
-  Heart, Users, Crown, GraduationCap, Baby, TrendingUp, 
-  Radio, Database, Activity, Star, Moon, Sun, 
-  Map as MapIcon, Compass, Sparkles, BookOpen
+  Heart, Users, Crown, Radio, Map as MapIcon, Sparkles, BookOpen
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -50,7 +48,7 @@ const STORIES = [
 ];
 
 export default function Stories() {
-  const { t, lang } = useT();
+  const { lang } = useT();
   const isTR = lang === "TR";
 
   return (
@@ -98,7 +96,7 @@ export default function Stories() {
                 style={{ borderColor: entry.color + '20' }}
               >
                 <div className={`h-80 md:h-auto relative overflow-hidden ${idx % 2 !== 0 ? 'md:order-2' : ''}`}>
-                  <img src={entry.img} alt={entry.title} className="w-full h-full object-cover opacity-50 group-hover:scale-105 group-hover:opacity-80 transition-all duration-[3000ms]" />
+                  <img src={entry.img} alt={entry.title} className="w-full h-full object-cover opacity-50 group-hover:scale-105 group-hover:opacity-80 transition-all duration-[3001ms]" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#010208] via-transparent to-transparent" />
                   <div className="absolute top-6 left-6 flex flex-col gap-2">
                     <span className="px-3 py-1 bg-black/60 border border-white/10 rounded text-[9px] font-mono text-white tracking-[0.2em]">{entry.id}</span>
@@ -146,7 +144,7 @@ export default function Stories() {
                   className="glass-dark border border-white/5 hover:border-sc-blue/40 rounded-2xl overflow-hidden transition-all duration-700 group relative"
                 >
                   <div className="h-48 overflow-hidden relative">
-                    <img src={s.img} alt="" className="w-full h-full object-cover opacity-40 group-hover:opacity-80 group-hover:scale-110 transition-all duration-[2000ms]" />
+                    <img src={s.img} alt="" className="w-full h-full object-cover opacity-40 group-hover:opacity-80 group-hover:scale-110 transition-all duration-[2001ms]" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#010208] to-transparent" />
                     <div className="absolute bottom-4 left-6 p-2 rounded-lg bg-sc-blue/10 border border-sc-blue/20">
                       <Ic className="w-4 h-4 text-sc-blue" />

@@ -14,7 +14,7 @@ const tierCls = {
 };
 
 export default function StarPicker({ onClaim }) {
-  const { t, lang } = useT();
+  const { lang } = useT();
   const isTR = lang === "TR";
   const [stars, setStars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,10 +43,10 @@ export default function StarPicker({ onClaim }) {
   }, [lang]);
 
   const sortedStars = [...stars].sort((a, b) => {
-    if (sortBy === "price-high") return b.price - a.price;
-    if (sortBy === "price-low") return a.price - b.price;
-    if (sortBy === "name-az") return (a.proper || a.name).localeCompare(b.proper || b.name);
-    if (sortBy === "name-za") return (b.proper || b.name).localeCompare(a.proper || a.name);
+    if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
+    if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
+    if (sortBy === "name-az") return (a.proper || a.name || "").localeCompare(b.proper || b.name || "");
+    if (sortBy === "name-za") return (b.proper || b.name || "").localeCompare(a.proper || a.name || "");
     return 0; // default (ranking from API)
   });
 
@@ -140,7 +140,7 @@ export default function StarPicker({ onClaim }) {
                       <div className="text-[9px] uppercase tracking-[0.2em] text-sc-gold font-bold mb-1">{s.tier}</div>
                       <h3 className="font-display text-2xl gold-gradient-text tracking-tight">{s.name}</h3>
                       <div className="text-[9px] text-sc-text-muted font-mono tracking-wider mt-1 uppercase">
-                         {s.constellation} // {s.code}
+                         {s.constellation} {" // "} {s.code}
                       </div>
                     </div>
                     {s.spect && (

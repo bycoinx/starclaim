@@ -79,10 +79,10 @@ export default function PublicStar() {
                 <Sparkles size={12} /> INTERSTELLAR_REGISTRY_OFFICIAL
               </div>
               <h1 className="font-display text-6xl gold-gradient-text mb-2">
-                {star.custom_name || star.name}
+                {star.custom_name || star.name || "Unnamed Star"}
               </h1>
               <div className="text-xl text-sc-text-muted font-accent italic">
-                {star.name} // {star.constellation.toUpperCase()}
+                {star.name || star.code} {" // "} {(star.constellation || "Deep Space").toUpperCase()}
               </div>
             </div>
             

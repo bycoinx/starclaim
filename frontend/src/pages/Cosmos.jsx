@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import GalaxyScene from "../components/GalaxyScene/GalaxyScene";
 import { QRCodeSVG } from "qrcode.react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Shield, Cpu, Zap, ChevronRight, X, Smartphone } from "lucide-react";
+import { Shield, Cpu, ChevronRight, X, Smartphone } from "lucide-react";
 
 export default function Cosmos({ onClaim }) {
   const [selectedStar, setSelectedStar] = useState(null);
@@ -87,7 +87,7 @@ export default function Cosmos({ onClaim }) {
                     </div>
                     <div className="telemetry-item-box bg-white/2 border-white/5 p-4">
                       <div className="text-[8px] text-sc-text-muted uppercase font-bold tracking-widest mb-2">Magnitude</div>
-                      <div className="text-sm text-sc-gold font-mono font-bold tracking-wide">{selectedStar.mag?.toFixed(2)}</div>
+                      <div className="text-sm text-sc-gold font-mono font-bold tracking-wide">{selectedStar.mag !== undefined ? selectedStar.mag.toFixed(2) : 'N/A'}</div>
                     </div>
                   </div>
 
@@ -103,7 +103,7 @@ export default function Cosmos({ onClaim }) {
                     </div>
                     <div className="flex justify-between items-center text-[10px]">
                       <span className="text-sc-text-muted uppercase">Coordinates</span>
-                      <span className="text-white/60">{selectedStar.ra.toFixed(4)}h / {selectedStar.dec.toFixed(4)}°</span>
+                      <span className="text-white/60">{(selectedStar.ra || 0).toFixed(4)}h / {(selectedStar.dec || 0).toFixed(4)}°</span>
                     </div>
                   </div>
 

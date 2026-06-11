@@ -1,10 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
-import { PLANETS, SUN, SOLAR_SCALE } from '../../data/solarSystemData';
 import CameraRig from './CameraRig';
 
 // Celestia-Grade Star Shader
