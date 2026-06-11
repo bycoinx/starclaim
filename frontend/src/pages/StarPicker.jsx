@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { Loader2, Telescope, Activity, Star, Info, ArrowUpDown, ChevronDown } from "lucide-react";
+import { Loader2, Telescope, Activity, Star, Info, ArrowUpDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./Console.css";
 
@@ -15,6 +15,7 @@ const tierCls = {
 
 export default function StarPicker({ onClaim }) {
   const { t, lang } = useT();
+  const isTR = lang === "TR";
   const [stars, setStars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
