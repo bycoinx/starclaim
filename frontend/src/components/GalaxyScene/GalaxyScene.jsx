@@ -363,7 +363,6 @@ export default function GalaxyScene({ onStarClick }) {
         <Suspense fallback={null}>
           <SpaceBackground />
           <NebulaClouds />
-          <TacticalGrid />
           <ambientLight intensity={0.4} />
           <HYGStarField stars={stars} onStarClick={handleStarSelect} warpActive={isWarping} />
           {selected && <StarSelectionMarker star={selected} />}
