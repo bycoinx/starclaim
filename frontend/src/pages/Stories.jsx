@@ -1,126 +1,187 @@
 import React from "react";
 import { useT } from "../lib/i18n";
-import { Heart, Users, GraduationCap, Baby, Crown, TrendingUp, Radio, Database, Activity } from "lucide-react";
+import { 
+  Heart, Users, Crown, GraduationCap, Baby, TrendingUp, 
+  Radio, Database, Activity, Star, Moon, Sun, 
+  Map as MapIcon, Compass, Sparkles, BookOpen
+} from "lucide-react";
+import { motion } from "framer-motion";
 
-const STORIES = [
-  { ic: Heart, title: "Sevgililer için yıldız", titleEn: "Star for Lovers", excerpt: "Bir yılbaşı gecesi Orion'u işaret ettik. Altı ay sonra oradaki yıldız bize aitti.", excerptEn: "On a New Year's Eve, we pointed at Orion. Six months later, that star was ours.", img: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986", code: "ARC-01/LV" },
-  { ic: Users, title: "Grup yıldızı", titleEn: "Group Star", excerpt: "Altı arkadaş, aynı takımyıldızında komşu altı yıldız. Grubumuzun WhatsApp fotoğrafı artık Lyra.", excerptEn: "Six friends, six neighboring stars in the same constellation. Our WhatsApp group photo is now Lyra.", img: "https://images.unsplash.com/photo-1464802686167-b939a67e06a1", code: "ARC-02/GR" },
-  { ic: Crown, title: "Anma yıldızı", titleEn: "Memorial Star", excerpt: "Babama Betelgeuse'u adadım. Her gece Orion'a baktığımda o bana bakıyor.", excerptEn: "I dedicated Betelgeuse to my father. Every night I look at Orion, he looks back at me.", img: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78", code: "ARC-03/MM" },
-  { ic: GraduationCap, title: "Mezuniyet hediyesi", titleEn: "Graduation Gift", excerpt: "Kendime mezun olurken bir yıldız aldım. Hayatımın bu anı, gökyüzünde yıldız olarak duruyor.", excerptEn: "I bought myself a star when I graduated. This moment of my life stands as a star in the sky.", img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa", code: "ARC-04/GD" },
-  { ic: Baby, title: "Bebek yıldızı", titleEn: "Newborn Star", excerpt: "Oğlumuz doğduğu gün gökyüzünde ona bir isim bıraktık. Büyüdüğünde ona anlatacağız.", excerptEn: "The day our son was born, we left a name for him in the sky. We'll tell him when he grows up.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", code: "ARC-05/NB" },
-  { ic: TrendingUp, title: "Yatırım yıldızı", titleEn: "Investment Star", excerpt: "50 dolara aldığım SC-014 yıldızı üç ay sonra 300 dolara satıldı. Değeri zamanla büyüyor.", excerptEn: "The SC-014 star I bought for $50 sold for $300 three months later. Its value grows over time.", img: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564", code: "ARC-06/IV" },
+const LORE_ENTRIES = [
+  {
+    id: "CON-01",
+    title: "Orion: Göklerin Avcısı",
+    titleEn: "Orion: Hunter of the Heavens",
+    myth: "Poseidon'un oğlu efsanevi avcı Orion, ölümüyle gökyüzüne yükseldi. Üç kuşak yıldızı (Alnitak, Alnilam, Mintaka), antik çağlardan beri kaşiflerin pusulası olmuştur.",
+    mythEn: "The legendary hunter Orion, son of Poseidon, ascended to the stars upon his death. His three belt stars have served as a compass for explorers since antiquity.",
+    vision: "StarClaim ekosisteminde Orion, 'Kaşifler' (Explorers) sınıfını temsil eder. Bu bölgeden bir yıldız sahiplenmek, sonsuz arayışın bir parçası olmaktır.",
+    visionEn: "In the StarClaim ecosystem, Orion represents the 'Explorers' class. Owning a star here means being part of the eternal quest.",
+    img: "https://images.unsplash.com/photo-1464802686167-b939a67e06a1",
+    color: "#C9A84C"
+  },
+  {
+    id: "CON-02",
+    title: "Ursa Major: Büyük Ayı",
+    titleEn: "Ursa Major: The Great Bear",
+    myth: "Zeus tarafından bir ayıya dönüştürülen Kallisto'nun hikayesidir. Kuzey Yıldızı'nı (Polaris) bulmak için kullanılan yedi parlak yıldız, gökyüzünün en sadık rehberidir.",
+    mythEn: "The story of Callisto, transformed into a bear by Zeus. The seven bright stars used to find the North Star (Polaris) are the most faithful guides of the sky.",
+    vision: "Aegis sisteminde Ursa Major, 'Muhafızlar' (Guardians) bölgesidir. Buradaki yıldızlar, ebedi mirasın korunmasını ve yol göstericiliği simgeler.",
+    visionEn: "In the Aegis system, Ursa Major is the 'Guardians' sector. Stars here symbolize the protection of eternal legacy and guidance.",
+    img: "https://images.unsplash.com/photo-1534796636912-3b95b3ab5986",
+    color: "#4A90E2"
+  },
+  {
+    id: "CON-03",
+    title: "Scorpius: Akrep Kapısı",
+    titleEn: "Scorpius: The Scorpion Gate",
+    myth: "Orion'un kibirlenmesine karşı gönderilen dev akrep. Mitolojide bu iki takımyıldızı asla aynı anda göremezsiniz; biri doğarken diğeri kaçar.",
+    mythEn: "The giant scorpion sent against Orion's hubris. In mythology, you never see these two constellations at once; as one rises, the other flees.",
+    vision: "StarVault veritabanında Scorpius, 'Zaman Kapsülleri'nin (Time Capsules) en yoğun olduğu derin uzay geçididir. Gizem ve derinlik arayanlar içindir.",
+    visionEn: "In the StarVault database, Scorpius is the deep space passage with the highest density of Time Capsules. For those seeking mystery and depth.",
+    img: "https://images.unsplash.com/photo-1502134249126-9f3755a50d78",
+    color: "#E94E77"
+  }
 ];
 
-const ASTRO = [
-  { t: "Bu Gece Gökyüzünde Ne Var?", tEn: "What's in the Sky Tonight?", d: "Bu haftaki gezegen hareketleri, meteor yağmurları ve görünür takımyıldızları.", dEn: "This week's planetary movements, meteor showers, and visible constellations.", id: "DATA-01" },
-  { t: "Orion Neden Bu Kadar Özel?", tEn: "Why is Orion So Special?", d: "Üç kuşak yıldızı, efsanevi avcı ve Orion'un gizemli bulutsusu hakkında her şey.", dEn: "Everything about the three belt stars, the legendary hunter, and Orion's mysterious nebula.", id: "DATA-02" },
-  { t: "Takımyıldızların Hikayesi", tEn: "The Story of Constellations", d: "Mitolojiden günümüze — gökyüzündeki 88 takımyıldızı anlatımıyla.", dEn: "From mythology to today — with the narration of the 88 constellations in the sky.", id: "DATA-03" },
+const STORIES = [
+  { ic: Heart, title: "Sonsuz Bağ", titleEn: "Eternal Bond", excerpt: "Kız arkadaşıma evlenme teklifi ettiğim gece, o anın tanığı olan yıldızı adına tescil ettirdim. Şimdi her baktığımızda o sözü görüyoruz.", excerptEn: "The night I proposed to my girlfriend, I registered the witness star in her name. Now every time we look up, we see that promise.", img: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23", code: "ARC-01/LV" },
+  { ic: Users, title: "Dostluk Takımı", titleEn: "Friendship Constellation", excerpt: "Lise grubumuzla Pleiades'ten 7 yıldız seçtik. Her birimiz bir yıldızın muhafızıyız. Aramızdaki mesafe ne olursa olsun, gökyüzünde yan yanayız.", excerptEn: "We chose 7 stars from Pleiades with our high school group. Each of us is a guardian of one star. No matter the distance, we are side by side in the sky.", img: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa", code: "ARC-02/GR" },
+  { ic: Crown, title: "Baba Yadigarı", titleEn: "Father's Legacy", excerpt: "Babamın vefatından sonra onun anısına bir yıldız adadım. Aegis AI her yıl ölüm yıldönümünde yıldızın telemetrisini bana özel bir mesajla gönderiyor.", excerptEn: "After my father passed away, I dedicated a star to his memory. Aegis AI sends me the star's telemetry with a special message every year on his anniversary.", img: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564", code: "ARC-03/MM" },
 ];
 
 export default function Stories() {
   const { t, lang } = useT();
+  const isTR = lang === "TR";
+
   return (
-    <div className="min-h-screen bg-transparent pt-28 pb-24 relative overflow-hidden">
-      {/* Subtle Overlay */}
-      <div className="absolute inset-0 bg-[#020208]/60 pointer-events-none" />
+    <div className="min-h-screen bg-[#010208] pt-28 pb-24 relative overflow-hidden">
+      {/* Background Starfield (Static) */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
       
       <div className="relative max-w-7xl mx-auto px-6 md:px-10 z-10">
-        {/* Header Section */}
-        <div className="text-center mb-16 animate-in fade-in slide-in-from-top-4 duration-1000">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sc-gold/20 bg-sc-gold/5 text-[10px] uppercase tracking-[0.4em] text-sc-gold mb-6 font-bold">
-            <Radio className="w-3.5 h-3.5 animate-pulse" /> COSMIC TRANSMISSIONS
-          </div>
-          <h1 className="font-display text-4xl md:text-5xl mb-4 gold-gradient-text uppercase tracking-tight">
-            {t("stories_title")}
-          </h1>
-          <p className="text-sc-text-muted/70 uppercase tracking-[0.2em] text-[10px] font-mono">
-            {t("stories_sub")}
+        {/* Cinematic Header */}
+        <div className="text-center mb-24">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-sc-gold/20 bg-sc-gold/5 text-[10px] uppercase tracking-[0.4em] text-sc-gold mb-6 font-bold"
+          >
+            <Radio className="w-3.5 h-3.5 animate-pulse" /> Stellar Archive // Transmissions Active
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="font-display text-5xl md:text-7xl mb-6 gold-gradient-text uppercase tracking-tight"
+          >
+            {isTR ? "Göklerin Hikayesi" : "Celestial Tales"}
+          </motion.h1>
+          <p className="text-sc-text-muted/60 max-w-2xl mx-auto uppercase tracking-[0.3em] text-[10px] font-mono leading-relaxed">
+            {isTR ? "Mitolojik kökenlerden dijital mirasa: Evrenin kadim anlatılarını keşfedin ve kendi izinizi bırakın." : "From mythological origins to digital legacy: Explore ancient narratives of the universe and leave your own mark."}
           </p>
         </div>
 
-        {/* Featured Story - HUD Style Refined */}
-        <div className="glass-dark border border-white/5 rounded-3xl overflow-hidden mb-16 grid md:grid-cols-2 relative group backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.3)]">
-          <div className="h-80 md:h-auto relative overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1749544812189-193ccae5e2f4" alt="Featured" className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent z-10" />
-            <div className="absolute bottom-6 left-6 z-30 flex items-center gap-2">
-              <div className="px-2 py-0.5 bg-sc-gold/80 text-black text-[8px] font-display font-bold rounded">VERIFIED ENTRY</div>
-            </div>
+        {/* Section 1: Constellation Lore (The New Content) */}
+        <div className="mb-32">
+          <div className="flex items-center gap-3 mb-12">
+            <MapIcon className="w-5 h-5 text-sc-gold" />
+            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">Takımyıldız <span className="text-sc-gold">Mitolojisi</span></h2>
           </div>
           
-          <div className="p-10 flex flex-col justify-center relative z-10">
-            <div className="text-[9px] tracking-[0.3em] uppercase text-sc-gold/60 mb-4">Featured Transmission</div>
-            <h2 className="font-display text-3xl mb-6 text-white tracking-tight gold-gradient-text uppercase">{t("stories_featured_title")}</h2>
-            <p className="font-accent italic text-sc-text-muted leading-relaxed mb-8 border-l border-sc-gold/20 pl-6 text-sm">
-              {t("stories_featured_p")}
-            </p>
-            <div className="flex items-center justify-between">
-              <div className="text-[9px] text-sc-text-muted/50 tracking-[0.2em] uppercase font-mono">{lang === "TR" ? "Kemal T., İstanbul // 08 DK OKUMA" : "Kemal T., Istanbul // 08 MIN READ"}</div>
-              <Activity className="w-4 h-4 text-sc-gold/30" />
-            </div>
-          </div>
-        </div>
-
-        {/* Grid of Archive Entries */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-24">
-          {STORIES.map((s, i) => {
-            const Ic = s.ic;
-            return (
-              <div key={i} className="glass-dark border border-white/5 hover:border-sc-gold/40 rounded-2xl overflow-hidden transition-all duration-700 group relative backdrop-blur-sm">
-                {/* Kinetic HUD Frame */}
-                <div className="absolute inset-0 border-2 border-sc-gold/0 group-hover:border-sc-gold/20 transition-all duration-700 pointer-events-none z-20 rounded-2xl" />
-                
-                <div className="h-48 overflow-hidden relative">
-                  <img src={s.img} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-90 scale-100 group-hover:scale-110 transition-all duration-[2000ms] ease-out" />
-                  
-                  {/* Atmospheric Moving Stars Overlay */}
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-0 group-hover:opacity-20 transition-opacity duration-1000 pointer-events-none" />
-                  
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent z-10" />
-                  
-                  <div className="absolute top-4 right-4 px-2 py-0.5 bg-black/80 border border-sc-gold/30 rounded text-[7px] font-mono text-sc-gold tracking-widest z-20 group-hover:scale-110 transition-transform">
-                    {s.code}
+          <div className="space-y-12">
+            {LORE_ENTRIES.map((entry, idx) => (
+              <motion.div 
+                key={entry.id}
+                initial={{ opacity: 0, x: idx % 2 === 0 ? -30 : 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className={`grid md:grid-cols-2 gap-0 rounded-3xl overflow-hidden border border-white/5 bg-sc-deep/30 backdrop-blur-xl group hover:border-${entry.color}/30 transition-all duration-500`}
+                style={{ borderColor: entry.color + '20' }}
+              >
+                <div className={`h-80 md:h-auto relative overflow-hidden ${idx % 2 !== 0 ? 'md:order-2' : ''}`}>
+                  <img src={entry.img} alt={entry.title} className="w-full h-full object-cover opacity-50 group-hover:scale-105 group-hover:opacity-80 transition-all duration-[3000ms]" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#010208] via-transparent to-transparent" />
+                  <div className="absolute top-6 left-6 flex flex-col gap-2">
+                    <span className="px-3 py-1 bg-black/60 border border-white/10 rounded text-[9px] font-mono text-white tracking-[0.2em]">{entry.id}</span>
                   </div>
+                </div>
+                <div className="p-12 flex flex-col justify-center border-l border-white/5">
+                  <div className="text-[10px] tracking-[0.3em] uppercase mb-4" style={{ color: entry.color }}>Ancient Mythology</div>
+                  <h3 className="font-display text-3xl mb-6 text-white tracking-tight uppercase">{isTR ? entry.title : entry.titleEn}</h3>
                   
-                  {/* Bottom Scanline Animation on Hover */}
-                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-sc-gold/40 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none z-20" />
-                </div>
-                <div className="p-8 relative z-20">
-                  <div className="flex items-center gap-3 mb-4 group-hover:translate-x-1 transition-transform duration-500">
-                    <div className="p-1.5 rounded-lg bg-sc-gold/5 border border-sc-gold/20 group-hover:bg-sc-gold/10 transition-colors">
-                      <Ic className="w-4 h-4 text-sc-gold/80" />
-                    </div>
-                    <h3 className="font-display text-lg text-white tracking-wide uppercase group-hover:text-sc-gold transition-colors">{lang === "TR" ? s.title : s.titleEn}</h3>
+                  <div className="space-y-6">
+                     <p className="text-sc-text-muted text-sm leading-relaxed border-l-2 pl-6" style={{ borderLeftColor: entry.color + '40' }}>
+                       {isTR ? entry.myth : entry.mythEn}
+                     </p>
+                     
+                     <div className="pt-6 border-t border-white/5">
+                        <div className="flex items-center gap-2 text-[9px] text-sc-gold uppercase tracking-widest font-black mb-3">
+                           <Sparkles size={12} /> Aegis Vision
+                        </div>
+                        <p className="text-[11px] text-sc-text-muted/60 font-mono italic">
+                           {isTR ? entry.vision : entry.visionEn}
+                         </p>
+                     </div>
                   </div>
-                  <p className="text-sc-text-muted/60 text-xs leading-relaxed italic font-light line-clamp-3 group-hover:text-sc-text-muted transition-colors">
-                    {lang === "TR" ? s.excerpt : s.excerptEn}
-                  </p>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Astronomy Guide */}
-        <div className="animate-in fade-in duration-1000">
-          <div className="flex items-center gap-3 mb-10">
-            <Database className="w-5 h-5 text-sc-gold/60" />
-            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase gold-gradient-text">{t("stories_guide_title")}</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {ASTRO.map((a, i) => (
-              <div key={i} className="glass-dark border border-white/5 rounded-2xl p-8 hover:bg-white/5 hover:border-sc-gold/20 transition-all group relative overflow-hidden backdrop-blur-sm">
-                <div className="text-[8px] font-mono text-sc-gold/40 mb-3 tracking-widest">{a.id}</div>
-                <h3 className="font-display text-lg mb-3 text-cyan-50 uppercase tracking-wide">
-                  {lang === "TR" ? a.t : a.tEn}
-                </h3>
-                <p className="text-xs text-sc-text-muted/60 leading-relaxed font-light">
-                  {lang === "TR" ? a.d : a.dEn}
-                </p>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
+
+        {/* Section 2: User Experiences (Restored & Refined) */}
+        <div className="mb-32">
+          <div className="flex items-center gap-3 mb-12">
+            <BookOpen className="w-5 h-5 text-sc-blue" />
+            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">Kaşif <span className="text-sc-blue">Günlükleri</span></h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {STORIES.map((s, i) => {
+              const Ic = s.ic;
+              return (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="glass-dark border border-white/5 hover:border-sc-blue/40 rounded-2xl overflow-hidden transition-all duration-700 group relative"
+                >
+                  <div className="h-48 overflow-hidden relative">
+                    <img src={s.img} alt="" className="w-full h-full object-cover opacity-40 group-hover:opacity-80 group-hover:scale-110 transition-all duration-[2000ms]" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#010208] to-transparent" />
+                    <div className="absolute bottom-4 left-6 p-2 rounded-lg bg-sc-blue/10 border border-sc-blue/20">
+                      <Ic className="w-4 h-4 text-sc-blue" />
+                    </div>
+                  </div>
+                  <div className="p-8">
+                    <h3 className="font-display text-lg text-white mb-4 tracking-wide group-hover:text-sc-blue transition-colors">{isTR ? s.title : s.titleEn}</h3>
+                    <p className="text-sc-text-muted/60 text-xs leading-relaxed italic font-light italic">
+                      "{isTR ? s.excerpt : s.excerptEn}"
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Section 3: Call to Action */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          className="terminal-frame p-16 text-center border-sc-gold/20 bg-sc-gold/5 relative overflow-hidden"
+        >
+          <div className="terminal-scanline" />
+          <div className="relative z-10">
+            <h2 className="font-display text-3xl text-white mb-6 tracking-widest uppercase">Kendi Hikayeni <span className="gold-gradient-text">Yaz</span></h2>
+            <p className="text-sc-text-muted/70 text-sm font-mono max-w-xl mx-auto mb-10 uppercase tracking-wider">
+               Evrende bir iz bırakmak için milyonlarca ışık yılı uzakta bir tanığınız olsun.
+            </p>
+            <button className="btn-gold px-12 py-4 text-xs font-black tracking-[0.4em] uppercase hover:scale-105 transition-transform">
+               Initialize_Registration
+            </button>
+          </div>
+        </motion.div>
+
       </div>
     </div>
   );
