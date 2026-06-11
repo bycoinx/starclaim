@@ -132,6 +132,136 @@ function TacticalGrid() {
   );
 }
 
+const GALAXY_VERTEX_SHADER = `
+  attribute float size;
+  varying vec3 vColor;
+  void main() {
+    vColor = color;
+    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+    gl_PointSize = size * (600.0 / -mvPosition.z);
+    gl_Position = projectionMatrix * mvPosition;
+  }
+`;
+
+const GALAXY_FRAGMENT_SHADER = `
+  varying vec3 vColor;
+  void main() {
+    float r = distance(gl_PointCoord, vec2(0.5, 0.5));
+    if (r > 0.5) discard;
+    float glow = exp(-4.0 * r);
+    gl_FragColor = vec4(vColor, glow * 0.8);
+  }
+`;
+
+function MilkyWay() {
+  const pointsRef = useRef();
+  
+  const { positions, colors, sizes } = useMemo(() => {
+    const count = 15000;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+    const color = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      // Create Spiral Arms
+      const i3 = i * 3;
+      const branch = i % 4; // 4 arms
+      const radius = Math.random() * 1200;
+      const spin = 0.8;
+      const angle = (radius * spin) + (branch * (Math.PI * 2 / 4));
+      
+      // Randomness / Dispersion
+      const randomX = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * (radius * 0.15);
+      const randomY = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * (radius * 0.05);
+      const randomZ = Math.pow(Math.random(), 3) * (Math.random() < 0.5 ? 1 : -1) * (radius * 0.15);
+
+      positions[i3] = Math.cos(angle) * radius + randomX;
+      positions[i3 + 1] = randomY;
+      positions[i3 + 2] = Math.sin(angle) * radius + randomZ;
+
+      // Color Gradient (Center: Yellow/White, Arms: Blue/Purple)
+      const mixedColor = color.set("#fff4ea").lerp(new THREE.Color("#4455ff"), radius / 1200);
+      colors[i3] = mixedColor.r;
+      colors[i3 + 1] = mixedColor.g;
+      colors[i3 + 2] = mixedColor.b;
+      
+      sizes[i] = Math.random() * 2 + 1;
+    }
+    return { positions, colors, sizes };
+  }, []);
+
+  const { corePositions, coreColors, coreSizes } = useMemo(() => {
+    const count = 5000;
+    const corePositions = new Float32Array(count * 3);
+    const coreColors = new Float32Array(count * 3);
+    const coreSizes = new Float32Array(count);
+    const color = new THREE.Color();
+
+    for (let i = 0; i < count; i++) {
+      const i3 = i * 3;
+      const r = Math.random() * 150;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+
+      corePositions[i3] = r * Math.sin(phi) * Math.cos(theta);
+      corePositions[i3 + 1] = r * Math.cos(phi) * 0.6; // Flattened core
+      corePositions[i3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+      const mixedColor = color.set("#ffcc66").lerp(new THREE.Color("#ffffff"), Math.random());
+      coreColors[i3] = mixedColor.r;
+      coreColors[i3 + 1] = mixedColor.g;
+      coreColors[i3 + 2] = mixedColor.b;
+      
+      coreSizes[i] = Math.random() * 4 + 2;
+    }
+    return { corePositions, coreColors, coreSizes };
+  }, []);
+
+  useFrame(({ clock }) => {
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.005;
+    }
+  });
+
+  return (
+    <group ref={pointsRef} position={[0, -200, -1500]} rotation={[0.4, 0, 0.2]}>
+      {/* Arms */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={15000} array={positions} itemSize={3} />
+          <bufferAttribute attach="attributes-color" count={15000} array={colors} itemSize={3} />
+          <bufferAttribute attach="attributes-size" count={15000} array={sizes} itemSize={1} />
+        </bufferGeometry>
+        <shaderMaterial 
+          vertexShader={GALAXY_VERTEX_SHADER} 
+          fragmentShader={GALAXY_FRAGMENT_SHADER} 
+          transparent 
+          blending={THREE.AdditiveBlending} 
+          depthWrite={false} 
+          vertexColors 
+        />
+      </points>
+      {/* Core */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" count={5000} array={corePositions} itemSize={3} />
+          <bufferAttribute attach="attributes-color" count={5000} array={coreColors} itemSize={3} />
+          <bufferAttribute attach="attributes-size" count={5000} array={coreSizes} itemSize={1} />
+        </bufferGeometry>
+        <shaderMaterial 
+          vertexShader={GALAXY_VERTEX_SHADER} 
+          fragmentShader={GALAXY_FRAGMENT_SHADER} 
+          transparent 
+          blending={THREE.AdditiveBlending} 
+          depthWrite={false} 
+          vertexColors 
+        />
+      </points>
+    </group>
+  );
+}
+
 const WARP_VERTEX_SHADER = `
   varying float vOpacity;
   void main() {
@@ -363,6 +493,7 @@ export default function GalaxyScene({ onStarClick }) {
         <Suspense fallback={null}>
           <SpaceBackground />
           <NebulaClouds />
+          <MilkyWay />
           <ambientLight intensity={0.4} />
           <HYGStarField stars={stars} onStarClick={handleStarSelect} warpActive={isWarping} />
           {selected && <StarSelectionMarker star={selected} />}
