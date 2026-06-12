@@ -1,8 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, AppState, SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AppState, Modal, SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
-import { Magnetometer, Accelerometer } from 'expo-sensors';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { DeviceMotion, Magnetometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarCanvas from '../../../components/StarCanvas';
@@ -50,7 +51,13 @@ export default function StarMapScreen() {
   const [observer, setObserver] = useState(null);
   const [siderealTime, setSiderealTime] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
+  const [headingAccuracy, setHeadingAccuracy] = useState(0);
+  const [headingSource, setHeadingSource] = useState('waiting');
+  const [calibrationVisible, setCalibrationVisible] = useState(false);
+  const lastHeading = useRef(0);
+  const lastTilt = useRef(0);
   const router = useRouter();
+  const ALPHA = 0.15;
 
   useEffect(() => {
     ensureStarData().then((list) => { 
@@ -179,34 +186,76 @@ export default function StarMapScreen() {
     } catch (error) { console.warn('Purchase load error', error); }
   };
 
-  const lastHeading = React.useRef(0);
-  const lastTilt = React.useRef(0);
-  const ALPHA = 0.15;
-
   useEffect(() => {
     if (mode !== 'camera' || appState !== 'active') return undefined;
 
-    const magSub = Magnetometer.addListener((data) => {
-      const angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
-      const newHeading = normalizeAngle(90 - angle);
-      let diff = newHeading - lastHeading.current;
+    let headingSubscription;
+    let cancelled = false;
+    let usingFallback = false;
+
+    const applyHeading = (nextHeading) => {
+      let diff = nextHeading - lastHeading.current;
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
       const filteredHeading = normalizeAngle(lastHeading.current + diff * ALPHA);
       lastHeading.current = filteredHeading;
       setHeading(filteredHeading);
+    };
+
+    const fallbackMagSub = Magnetometer.addListener((data) => {
+      if (!usingFallback) return;
+      const angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
+      applyHeading(normalizeAngle(90 - angle));
     });
-    const accSub = Accelerometer.addListener((data) => {
-      const pitch = -Math.atan2(data.z, data.y) * (180 / Math.PI);
-      const newTilt = Math.max(-90, Math.min(90, pitch));
+
+    const motionSub = DeviceMotion.addListener((data) => {
+      const betaDegrees = (data.rotation?.beta || 0) * (180 / Math.PI);
+      const newTilt = Math.max(-90, Math.min(90, betaDegrees - 90));
       const filteredTilt = lastTilt.current + (newTilt - lastTilt.current) * ALPHA;
       lastTilt.current = filteredTilt;
       setTilt(filteredTilt);
     });
+
+    const startHeading = async () => {
+      try {
+        headingSubscription = await Location.watchHeadingAsync((measurement) => {
+          if (cancelled) return;
+          const trueHeadingAvailable = measurement.trueHeading >= 0;
+          applyHeading(trueHeadingAvailable ? measurement.trueHeading : measurement.magHeading);
+          setHeadingSource(trueHeadingAvailable ? 'true' : 'magnetic');
+          setHeadingAccuracy(measurement.accuracy);
+          if (measurement.accuracy >= 2) setCalibrationVisible(false);
+        });
+        if (cancelled) headingSubscription.remove();
+      } catch (error) {
+        console.warn('Heading sensor error', error);
+        usingFallback = true;
+        setHeadingSource('fallback');
+        setHeadingAccuracy(0);
+        setCalibrationVisible(true);
+      }
+    };
+
+    startHeading();
     Magnetometer.setUpdateInterval(40);
-    Accelerometer.setUpdateInterval(40);
-    return () => { magSub.remove(); accSub.remove(); };
+    DeviceMotion.setUpdateInterval(40);
+    return () => {
+      cancelled = true;
+      headingSubscription?.remove();
+      fallbackMagSub.remove();
+      motionSub.remove();
+    };
   }, [appState, mode]);
+
+  useEffect(() => {
+    if (mode !== 'camera') return undefined;
+    ScreenOrientation.lockAsync(
+      ScreenOrientation.OrientationLock.PORTRAIT_UP,
+    ).catch((error) => console.warn('Orientation lock error', error));
+    return () => {
+      ScreenOrientation.unlockAsync().catch(() => {});
+    };
+  }, [mode]);
 
   useEffect(() => {
     if (mode === 'camera') {
@@ -250,6 +299,7 @@ export default function StarMapScreen() {
 
     if (cameraPermission === true) {
       setCoordinateMode('horizontal');
+      setCalibrationVisible(headingAccuracy < 2);
       setMode('camera');
       return;
     }
@@ -258,6 +308,7 @@ export default function StarMapScreen() {
     setCameraPermission(status.granted);
     if (status.granted) {
       setCoordinateMode('horizontal');
+      setCalibrationVisible(true);
       setMode('camera');
     } else {
       Alert.alert(
@@ -335,6 +386,27 @@ export default function StarMapScreen() {
               </Text>
             </View>
           )}
+          {mode === 'camera' && (
+            <TouchableOpacity
+              style={[
+                styles.calibrationBadge,
+                headingAccuracy >= 2 && styles.calibrationBadgeReady,
+              ]}
+              onPress={() => setCalibrationVisible(true)}
+            >
+              <Ionicons
+                name={headingAccuracy >= 2 ? 'compass' : 'warning-outline'}
+                size={13}
+                color={headingAccuracy >= 2 ? '#64D99B' : '#F1C75B'}
+              />
+              <Text style={[
+                styles.calibrationBadgeText,
+                headingAccuracy >= 2 && styles.calibrationBadgeTextReady,
+              ]}>
+                {headingAccuracy >= 2 ? 'PUSULA HAZIR' : 'KALIBRE ET'}
+              </Text>
+            </TouchableOpacity>
+          )}
           {loading ? <ActivityIndicator color={THEME.colors.primary} size="large" /> : (
             <StarCanvas
               stars={stars}
@@ -370,6 +442,50 @@ export default function StarMapScreen() {
         
         <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
         <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
+        <Modal
+          visible={calibrationVisible && mode === 'camera'}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setCalibrationVisible(false)}
+        >
+          <View style={styles.calibrationBackdrop}>
+            <View style={styles.calibrationPanel}>
+              <View style={styles.calibrationIcon}>
+                <Ionicons name="infinite-outline" size={48} color={THEME.colors.primary} />
+              </View>
+              <Text style={styles.calibrationTitle}>PUSULAYI KALIBRE ET</Text>
+              <Text style={styles.calibrationBody}>
+                Telefonu metal nesnelerden uzak tutun ve havada yatay bir sekiz cizecek sekilde yavasca hareket ettirin.
+              </Text>
+              <View style={styles.accuracyRow}>
+                {[1, 2, 3].map((level) => (
+                  <View
+                    key={level}
+                    style={[
+                      styles.accuracySegment,
+                      headingAccuracy >= level && styles.accuracySegmentActive,
+                    ]}
+                  />
+                ))}
+              </View>
+              <Text style={styles.accuracyText}>
+                {headingAccuracy >= 2
+                  ? 'Kalibrasyon tamamlandi'
+                  : headingSource === 'fallback'
+                    ? 'Ham pusula kullaniliyor'
+                    : 'Daha fazla hareket gerekli'}
+              </Text>
+              <TouchableOpacity
+                style={styles.calibrationClose}
+                onPress={() => setCalibrationVisible(false)}
+              >
+                <Text style={styles.calibrationCloseText}>
+                  {headingAccuracy >= 2 ? 'DEVAM ET' : 'SIMDILIK KAPAT'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </SafeAreaView>
   );
@@ -389,6 +505,21 @@ const styles = StyleSheet.create({
   observerBadge: { position: 'absolute', top: 62, alignSelf: 'center', zIndex: 12, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(0,0,0,0.72)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: 14 },
   observerText: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   observerCoordinates: { color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600' },
+  calibrationBadge: { position: 'absolute', top: 96, alignSelf: 'center', zIndex: 13, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(30,20,0,0.78)', borderWidth: 1, borderColor: 'rgba(241,199,91,0.4)', borderRadius: 14 },
+  calibrationBadgeReady: { backgroundColor: 'rgba(0,25,16,0.78)', borderColor: 'rgba(100,217,155,0.35)' },
+  calibrationBadgeText: { color: '#F1C75B', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  calibrationBadgeTextReady: { color: '#64D99B' },
+  calibrationBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  calibrationPanel: { width: '100%', maxWidth: 360, backgroundColor: '#070B13', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: 8, padding: 24, alignItems: 'center' },
+  calibrationIcon: { width: 82, height: 82, borderRadius: 41, borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  calibrationTitle: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 1, marginBottom: 10 },
+  calibrationBody: { color: 'rgba(255,255,255,0.68)', fontSize: 13, lineHeight: 20, textAlign: 'center' },
+  accuracyRow: { width: '100%', flexDirection: 'row', gap: 6, marginTop: 22 },
+  accuracySegment: { flex: 1, height: 4, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 },
+  accuracySegmentActive: { backgroundColor: '#64D99B' },
+  accuracyText: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', marginTop: 9 },
+  calibrationClose: { marginTop: 22, minWidth: 160, paddingVertical: 12, paddingHorizontal: 18, alignItems: 'center', backgroundColor: THEME.colors.primary, borderRadius: 6 },
+  calibrationCloseText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   focusBtn: { position: 'absolute', bottom: 100, left: 20, backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: THEME.colors.primary },
   focusBtnText: { color: THEME.colors.primary, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
   searchContainer: { position: 'absolute', top: 100, left: 20, right: 20, zIndex: 20 },

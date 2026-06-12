@@ -100,7 +100,7 @@ z = -d * cos(dec) * sin(ra)
 - [x] RA/Dec verileri gerçek Altitude/Azimuth koordinatlarına dönüştürülecek.
 - [x] Ufuk altındaki yıldızlar gizlenecek.
 - [x] Kuzey, doğu, güney, batı ve ufuk çizgisi gösterilecek.
-- [ ] Sensör kalibrasyon durumu kullanıcıya gösterilecek.
+- [x] Sensör kalibrasyon durumu kullanıcıya gösterilecek.
 
 ## 2.3 Star Walk Görsel Katmanları
 
