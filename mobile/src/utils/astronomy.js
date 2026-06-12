@@ -30,16 +30,16 @@ export function getStarDecDegrees(star) {
 }
 
 export function normalizeAngle(angle) {
-  let value = angle;
+  let value = Number(angle) || 0;
   while (value < 0) value += 360;
   while (value >= 360) value -= 360;
   return value;
 }
 
 export function normalizeRaDelta(delta) {
-  let value = delta;
-  if (value > 180) value -= 360;
-  if (value < -180) value += 360;
+  let value = Number(delta) || 0;
+  while (value > 180) value -= 360;
+  while (value < -180) value += 360;
   return value;
 }
 
@@ -75,50 +75,56 @@ export function colorForSpectrum(spect) {
   return '#FFFFFF';
 }
 
-/**
- * RA/Dec koordinatlarını basitleştirilmiş Azimuth/Altitude değerlerine çevirir.
- * Gerçek astronomik hesaplamalar için enlem/boylam ve J2000 epoch gereklidir.
- * Bu sürüm, mobil sensörlerle uyumlu görsel bir eşleşme sağlar.
- */
-export function raDecToAzAlt(ra, dec, lstDegrees) {
-  const hourAngle = normalizeAngle(lstDegrees - ra * 15);
-  
-  // Basitleştirilmiş dönüşüm (Zenith = LST)
-  // Bu formül orta enlemler için yaklaşık bir görünüm sunar
-  const az = normalizeAngle(180 + hourAngle);
-  const alt = dec; // Yaklaşık olarak Dec, orta enlemde Alt ile koreledir
-  
-  return { az, alt };
+export function getJulianDate(date = new Date()) {
+  return date.getTime() / 86400000 + 2440587.5;
 }
 
-/**
- * Mevcut zaman için yaklaşık Local Sidereal Time (LST) hesaplar (derece cinsinden).
- */
-export function getApproximateLST() {
-  const now = new Date();
-  const hours = now.getUTCHours() + now.getUTCMinutes() / 60 + now.getUTCSeconds() / 3600;
-  
-  // 1 Ocak 2000'den beri geçen gün sayısı (yaklaşık)
-  const j2000 = new Date('2000-01-01T12:00:00Z');
-  const daysSinceJ2000 = (now - j2000) / (1000 * 60 * 60 * 24);
-  
-  // LST formülü (basitleştirilmiş)
-  let lst = 100.46 + 0.985647 * daysSinceJ2000 + 15 * hours;
-  return normalizeAngle(lst);
+export function getGreenwichSiderealTime(date = new Date()) {
+  const daysSinceJ2000 = getJulianDate(date) - 2451545;
+  return normalizeAngle(280.46061837 + 360.98564736629 * daysSinceJ2000);
 }
 
-/**
- * RA/Dec ve Mesafe verilerini 3D uzay koordinatlarına (X, Y, Z) çevirir.
- * RA: Saat (0-24), Dec: Derece (-90 to +90), Dist: Işık yılı veya birim mesafe.
- */
+export function getLocalSiderealTime(longitudeDegrees, date = new Date()) {
+  return normalizeAngle(getGreenwichSiderealTime(date) + Number(longitudeDegrees || 0));
+}
+
+export function raDecToAltAz(raHours, decDegrees, latitudeDegrees, lstDegrees) {
+  const hourAngle = deg2rad(normalizeRaDelta(
+    Number(lstDegrees || 0) - raHoursToDegrees(raHours),
+  ));
+  const declination = deg2rad(clampDeclination(decDegrees));
+  const latitude = deg2rad(clampDeclination(latitudeDegrees));
+
+  const sinAltitude = (
+    Math.sin(declination) * Math.sin(latitude)
+    + Math.cos(declination) * Math.cos(latitude) * Math.cos(hourAngle)
+  );
+  const altitude = Math.asin(Math.max(-1, Math.min(1, sinAltitude)));
+  const azimuth = Math.atan2(
+    -Math.sin(hourAngle) * Math.cos(declination),
+    Math.sin(declination) * Math.cos(latitude)
+      - Math.cos(declination) * Math.sin(latitude) * Math.cos(hourAngle),
+  );
+
+  return {
+    az: normalizeAngle(azimuth * 180 / Math.PI),
+    alt: altitude * 180 / Math.PI,
+  };
+}
+
+export function raDecToAzAlt(raHours, decDegrees, lstDegrees, latitudeDegrees = 0) {
+  return raDecToAltAz(raHours, decDegrees, latitudeDegrees, lstDegrees);
+}
+
+export function getApproximateLST(longitudeDegrees = 0, date = new Date()) {
+  return getLocalSiderealTime(longitudeDegrees, date);
+}
+
 export function raDecDistToXYZ(ra, dec, dist = 100) {
   const raRad = deg2rad(ra * 15);
   const decRad = deg2rad(dec);
-  
-  // Astronomik standart: X (Spring Equinox), Y (East), Z (North Pole)
   const x = dist * Math.cos(decRad) * Math.cos(raRad);
   const y = dist * Math.cos(decRad) * Math.sin(raRad);
   const z = dist * Math.sin(decRad);
-  
   return { x, y, z };
 }

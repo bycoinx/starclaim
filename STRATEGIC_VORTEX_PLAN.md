@@ -95,11 +95,11 @@ z = -d * cos(dec) * sin(ra)
 
 ## 2.2 Gerçek Gökyüzü
 
-- [ ] Kullanıcı konumu için açık izin akışı hazırlanacak.
-- [ ] Tarih, saat, enlem ve boylama göre Local Sidereal Time hesaplanacak.
-- [ ] RA/Dec verileri gerçek Altitude/Azimuth koordinatlarına dönüştürülecek.
-- [ ] Ufuk altındaki yıldızlar isteğe bağlı olarak gizlenecek.
-- [ ] Kuzey, doğu, güney, batı ve ufuk çizgisi gösterilecek.
+- [x] Kullanıcı konumu için açık izin akışı hazırlanacak.
+- [x] Tarih, saat, enlem ve boylama göre Local Sidereal Time hesaplanacak.
+- [x] RA/Dec verileri gerçek Altitude/Azimuth koordinatlarına dönüştürülecek.
+- [x] Ufuk altındaki yıldızlar gizlenecek.
+- [x] Kuzey, doğu, güney, batı ve ufuk çizgisi gösterilecek.
 - [ ] Sensör kalibrasyon durumu kullanıcıya gösterilecek.
 
 ## 2.3 Star Walk Görsel Katmanları

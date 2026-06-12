@@ -56,15 +56,78 @@ function normalizeRaDelta(delta) {
   return value;
 }
 
-function project(starRa, starDec, centerRa, centerDec, width, height, zoom) {
+function equatorialToHorizontal(raHours, decDegrees, latitudeDegrees, lstDegrees) {
   'worklet';
-  const raDiff = normalizeRaDelta(starRa * 15 - centerRa);
-  const decDiff = starDec - centerDec;
+  const hourAngle = normalizeRaDelta(lstDegrees - raHours * 15) * Math.PI / 180;
+  const declination = decDegrees * Math.PI / 180;
+  const latitude = latitudeDegrees * Math.PI / 180;
+  const sinAltitude = (
+    Math.sin(declination) * Math.sin(latitude)
+    + Math.cos(declination) * Math.cos(latitude) * Math.cos(hourAngle)
+  );
+  const altitude = Math.asin(Math.max(-1, Math.min(1, sinAltitude)));
+  let azimuth = Math.atan2(
+    -Math.sin(hourAngle) * Math.cos(declination),
+    Math.sin(declination) * Math.cos(latitude)
+      - Math.cos(declination) * Math.sin(latitude) * Math.cos(hourAngle),
+  ) * 180 / Math.PI;
+  while (azimuth < 0) azimuth += 360;
+  while (azimuth >= 360) azimuth -= 360;
+  return { az: azimuth, alt: altitude * 180 / Math.PI };
+}
+
+function projectDegrees(longitude, latitude, centerLongitude, centerLatitude, width, height, zoom) {
+  'worklet';
+  const longitudeDiff = normalizeRaDelta(longitude - centerLongitude);
+  const latitudeDiff = latitude - centerLatitude;
   const field = 90 / Math.max(0.1, zoom);
   const scale = width / field;
-  const x = width / 2 + raDiff * scale * Math.cos(deg2rad(centerDec));
-  const y = height / 2 - decDiff * scale;
+  const x = width / 2 + longitudeDiff * scale * Math.cos(deg2rad(centerLatitude));
+  const y = height / 2 - latitudeDiff * scale;
   return { x, y };
+}
+
+function project(
+  starRa,
+  starDec,
+  centerRa,
+  centerDec,
+  width,
+  height,
+  zoom,
+  coordinateMode,
+  observerLatitude,
+  lstDegrees,
+) {
+  'worklet';
+  if (coordinateMode === 'horizontal') {
+    const horizontal = equatorialToHorizontal(
+      starRa,
+      starDec,
+      observerLatitude,
+      lstDegrees,
+    );
+    const projected = projectDegrees(
+      horizontal.az,
+      horizontal.alt,
+      centerRa,
+      centerDec,
+      width,
+      height,
+      zoom,
+    );
+    return { x: projected.x, y: projected.y, skyAltitude: horizontal.alt };
+  }
+  const projected = projectDegrees(
+    starRa * 15,
+    starDec,
+    centerRa,
+    centerDec,
+    width,
+    height,
+    zoom,
+  );
+  return { x: projected.x, y: projected.y, skyAltitude: null };
 }
 
 export default function StarCanvas({
@@ -82,7 +145,12 @@ export default function StarCanvas({
   showMythology = false,
   showLabels = false,
   showPlanets = true,
-  showDSOs = true
+  showDSOs = true,
+  coordinateMode = 'equatorial',
+  observerLatitude = 0,
+  lstDegrees = 0,
+  hideBelowHorizon = true,
+  transparentBackground = false,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   
@@ -133,7 +201,18 @@ export default function StarCanvas({
     let closestStar = null;
     let minDistance = 25;
     stars.forEach((star) => {
-      const p = project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value);
+      const p = project(
+        star.ra,
+        star.dec,
+        ra.value,
+        dec.value,
+        layout.width,
+        layout.height,
+        zoom.value,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
       const dist = Math.sqrt(Math.pow(p.x - e.x, 2) + Math.pow(p.y - e.y, 2));
       if (dist < minDistance) {
         minDistance = dist;
@@ -161,13 +240,25 @@ export default function StarCanvas({
 
   const selectedStarPos = useDerivedValue(() => {
     if (!selectedStar) return null;
-    return project(selectedStar.ra, selectedStar.dec, ra.value, dec.value, layout.width, layout.height, zoom.value);
+    return project(
+      selectedStar.ra,
+      selectedStar.dec,
+      ra.value,
+      dec.value,
+      layout.width,
+      layout.height,
+      zoom.value,
+      coordinateMode,
+      observerLatitude,
+      lstDegrees,
+    );
   });
 
   const isSelectedVisible = useDerivedValue(() => {
     if (!selectedStarPos.value) return false;
     return selectedStarPos.value.x > 0 && selectedStarPos.value.x < layout.width &&
-           selectedStarPos.value.y > 0 && selectedStarPos.value.y < layout.height;
+           selectedStarPos.value.y > 0 && selectedStarPos.value.y < layout.height &&
+           (!hideBelowHorizon || selectedStarPos.value.skyAltitude == null || selectedStarPos.value.skyAltitude >= 0);
   });
 
   return (
@@ -175,28 +266,40 @@ export default function StarCanvas({
       <GestureDetector gesture={combinedGesture}>
         <View style={styles.container} onLayout={(e) => setLayout(e.nativeEvent.layout)}>
           <Canvas style={styles.canvas}>
-            <Rect x={0} y={0} width={layout.width} height={layout.height}>
-              <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={['#050B1A', '#000000']} />
-            </Rect>
+            {!transparentBackground && (
+              <Rect x={0} y={0} width={layout.width} height={layout.height}>
+                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={['#050B1A', '#000000']} />
+              </Rect>
+            )}
+
+            {coordinateMode === 'horizontal' && (
+              <HorizonOverlay
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                font={boldFont}
+              />
+            )}
 
             {showMythology && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
-              <MythologyFigure key={key} data={MYTHOLOGY_ASSETS[key]} ra={ra} dec={dec} zoom={zoom} layout={layout} />
+              <MythologyFigure key={key} data={MYTHOLOGY_ASSETS[key]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
             {showDSOs && dsoData.map((dso) => (
-              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} />
+              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
             {showConstellations && constellations.features && constellations.features.map((f, i) => (
-              <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} />
+              <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
             {starElements.map((star) => (
-              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} />
+              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} />
             ))}
 
             {showPlanets && planetData.map((planet) => (
-              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} />
+              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
             {selectedStarPos.value && isSelectedVisible.value && (
@@ -221,22 +324,107 @@ export default function StarCanvas({
   );
 }
 
-function ConstellationFeature({ feature, ra, dec, zoom, layout }) {
+function HorizonOverlay({ ra, dec, zoom, layout, font }) {
+  const horizonY = useDerivedValue(() => (
+    projectDegrees(ra.value, 0, ra.value, dec.value, layout.width, layout.height, zoom.value).y
+  ));
+  const directions = [
+    { az: 0, label: 'N' },
+    { az: 90, label: 'E' },
+    { az: 180, label: 'S' },
+    { az: 270, label: 'W' },
+  ];
+
+  return (
+    <Group>
+      <Rect
+        x={0}
+        y={horizonY}
+        width={layout.width}
+        height={useDerivedValue(() => Math.max(0, layout.height - horizonY.value))}
+        color="rgba(2,5,9,0.82)"
+      />
+      <Line
+        p1={useDerivedValue(() => vec(0, horizonY.value))}
+        p2={useDerivedValue(() => vec(layout.width, horizonY.value))}
+        color="rgba(201,168,76,0.35)"
+        strokeWidth={1}
+      />
+      {directions.map((direction) => (
+        <HorizonDirection
+          key={direction.label}
+          direction={direction}
+          ra={ra}
+          dec={dec}
+          zoom={zoom}
+          layout={layout}
+          font={font}
+        />
+      ))}
+    </Group>
+  );
+}
+
+function HorizonDirection({ direction, ra, dec, zoom, layout, font }) {
+  const pos = useDerivedValue(() => (
+    projectDegrees(
+      direction.az,
+      0,
+      ra.value,
+      dec.value,
+      layout.width,
+      layout.height,
+      zoom.value,
+    )
+  ));
+  const isVisible = useDerivedValue(() => (
+    pos.value.x > 8
+    && pos.value.x < layout.width - 18
+    && pos.value.y > 20
+    && pos.value.y < layout.height - 8
+  ));
+
+  if (!font) return null;
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={11} color="rgba(0,0,0,0.72)" />
+      <SkiaText
+        x={useDerivedValue(() => pos.value.x - 4)}
+        y={useDerivedValue(() => pos.value.y + 4)}
+        text={direction.label}
+        font={font}
+        color="#C9A84C"
+      />
+    </Group>
+  );
+}
+
+function ConstellationFeature({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees }) {
   if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return null;
   return feature.geometry.coordinates.map((path, idx) => (
     <Group key={idx}>
       {path.map((_, i) => {
         if (i === path.length - 1) return null;
-        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} ra={ra} dec={dec} zoom={zoom} layout={layout} />;
+        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />;
       })}
     </Group>
   ));
 }
 
-function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout }) {
-  const p1 = useDerivedValue(() => project(p1_data[0] / 15, p1_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value));
-  const p2 = useDerivedValue(() => project(p2_data[0] / 15, p2_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value));
-  const isVisible = useDerivedValue(() => (p1.value.x > -100 && p1.value.x < layout.width + 100) || (p2.value.x > -100 && p2.value.x < layout.width + 100));
+function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees }) {
+  const p1 = useDerivedValue(() => project(p1_data[0] / 15, p1_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const p2 = useDerivedValue(() => project(p2_data[0] / 15, p2_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => {
+    const onScreen = (
+      (p1.value.x > -100 && p1.value.x < layout.width + 100)
+      || (p2.value.x > -100 && p2.value.x < layout.width + 100)
+    );
+    const aboveHorizon = (
+      coordinateMode !== 'horizontal'
+      || (p1.value.skyAltitude >= 0 && p2.value.skyAltitude >= 0)
+    );
+    return onScreen && aboveHorizon;
+  });
   
   return (
     <Line 
@@ -249,9 +437,15 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout }) {
   );
 }
 
-function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels }) {
-  const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
-  const isVisible = useDerivedValue(() => pos.value.x > -30 && pos.value.x < layout.width + 30 && pos.value.y > -30 && pos.value.y < layout.height + 30);
+function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon }) {
+  const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => (
+    pos.value.x > -30
+    && pos.value.x < layout.width + 30
+    && pos.value.y > -30
+    && pos.value.y < layout.height + 30
+    && (!hideBelowHorizon || pos.value.skyAltitude == null || pos.value.skyAltitude >= 0)
+  ));
   const labelVisible = useDerivedValue(() => isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
   const ownedX = useDerivedValue(() => pos.value.x);
   const ownedY = useDerivedValue(() => pos.value.y);
@@ -300,9 +494,15 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels }) {
   );
 }
 
-function PlanetMarker({ planet, ra, dec, zoom, layout, font }) {
-  const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
-  const isVisible = useDerivedValue(() => pos.value.x > -20 && pos.value.x < layout.width + 20 && pos.value.y > -20 && pos.value.y < layout.height + 20);
+function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees }) {
+  const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => (
+    pos.value.x > -20
+    && pos.value.x < layout.width + 20
+    && pos.value.y > -20
+    && pos.value.y < layout.height + 20
+    && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
+  ));
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
       <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 5 * (zoom.value > 2 ? 1.4 : 1))} color={planet.color} />
@@ -314,9 +514,15 @@ function PlanetMarker({ planet, ra, dec, zoom, layout, font }) {
   );
 }
 
-function DSOMarker({ dso, ra, dec, zoom, layout, font }) {
-  const pos = useDerivedValue(() => project(dso.ra, dso.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
-  const isVisible = useDerivedValue(() => pos.value.x > -50 && pos.value.x < layout.width + 50 && pos.value.y > -50 && pos.value.y < layout.height + 50);
+function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees }) {
+  const pos = useDerivedValue(() => project(dso.ra, dso.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => (
+    pos.value.x > -50
+    && pos.value.x < layout.width + 50
+    && pos.value.y > -50
+    && pos.value.y < layout.height + 50
+    && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
+  ));
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 0.7 : 0)}>
       <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={2} color={dso.color} />
@@ -327,9 +533,9 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font }) {
   );
 }
 
-function MythologyFigure({ data, ra, dec, zoom, layout }) {
+function MythologyFigure({ data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees }) {
   const image = useImage(data.url);
-  const pos = useDerivedValue(() => project(data.ra, data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
+  const pos = useDerivedValue(() => project(data.ra, data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const size = useDerivedValue(() => 320 * (data.scale || 1.0) * (zoom.value / 2.0));
   const isVisible = useDerivedValue(() => pos.value.x > -size.value && pos.value.x < layout.width + size.value && pos.value.y > -size.value && pos.value.y < layout.height + size.value);
   if (!image) return null;

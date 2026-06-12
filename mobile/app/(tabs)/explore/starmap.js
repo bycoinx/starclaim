@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { Alert, AppState, SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
+import * as Location from 'expo-location';
 import { Magnetometer, Accelerometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,8 +12,11 @@ import { ensureStarData } from '../../../src/data/starLoader';
 import { ensureConstellations } from '../../../src/data/constellationLoader';
 import {
   getStarDecDegrees,
+  getStarRaHours,
   getStarRaDegrees,
+  getLocalSiderealTime,
   normalizeAngle,
+  raDecToAltAz,
 } from '../../../src/utils/astronomy';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
@@ -42,6 +46,10 @@ export default function StarMapScreen() {
   const [showMythology, setShowMythology] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [coordinateMode, setCoordinateMode] = useState('equatorial');
+  const [observer, setObserver] = useState(null);
+  const [siderealTime, setSiderealTime] = useState(0);
+  const [appState, setAppState] = useState(AppState.currentState);
   const router = useRouter();
 
   useEffect(() => {
@@ -62,6 +70,65 @@ export default function StarMapScreen() {
     ensureConstellations().then((data) => setConstellations(data)).catch(() => setConstellations([]));
     loadPurchases();
   }, [params.starId]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', setAppState);
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (!observer || coordinateMode !== 'horizontal') return undefined;
+    const updateSiderealTime = () => {
+      setSiderealTime(getLocalSiderealTime(observer.longitude, new Date()));
+    };
+    updateSiderealTime();
+    const timer = setInterval(updateSiderealTime, 15000);
+    return () => clearInterval(timer);
+  }, [coordinateMode, observer]);
+
+  const getHorizontalPosition = (object, activeObserver = observer) => {
+    if (!activeObserver) return null;
+    const lst = getLocalSiderealTime(activeObserver.longitude, new Date());
+    return raDecToAltAz(
+      getStarRaHours(object),
+      getStarDecDegrees(object),
+      activeObserver.latitude,
+      lst,
+    );
+  };
+
+  const activateRealSky = async () => {
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert(
+          'Konum izni gerekli',
+          'Gercek gokyuzunu gostermek icin konum izni vermelisiniz.',
+        );
+        return null;
+      }
+
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const nextObserver = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+      const nextSiderealTime = getLocalSiderealTime(nextObserver.longitude, new Date());
+      setObserver(nextObserver);
+      setSiderealTime(nextSiderealTime);
+      setCoordinateMode('horizontal');
+      setCenterRa(mode === 'camera' ? heading : 180);
+      setCenterDec(mode === 'camera' ? tilt : 25);
+      setZoom(1.2);
+      return nextObserver;
+    } catch (error) {
+      console.warn('Location error', error);
+      Alert.alert('Konum alinamadi', 'Konum servisini kontrol edip tekrar deneyin.');
+      return null;
+    }
+  };
 
   const handleSearch = (text) => {
     setSearchQuery(text);
@@ -90,8 +157,9 @@ export default function StarMapScreen() {
 
   const navigateToObject = (obj) => {
     setMode('manual');
-    setCenterRa(getStarRaDegrees(obj));
-    setCenterDec(getStarDecDegrees(obj));
+    const horizontal = coordinateMode === 'horizontal' ? getHorizontalPosition(obj) : null;
+    setCenterRa(horizontal ? horizontal.az : getStarRaDegrees(obj));
+    setCenterDec(horizontal ? horizontal.alt : getStarDecDegrees(obj));
     setZoom(3.5);
     setSearchQuery('');
     setSearchResults([]);
@@ -116,7 +184,7 @@ export default function StarMapScreen() {
   const ALPHA = 0.15;
 
   useEffect(() => {
-    if (mode !== 'camera') return undefined;
+    if (mode !== 'camera' || appState !== 'active') return undefined;
 
     const magSub = Magnetometer.addListener((data) => {
       const angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
@@ -138,7 +206,7 @@ export default function StarMapScreen() {
     Magnetometer.setUpdateInterval(40);
     Accelerometer.setUpdateInterval(40);
     return () => { magSub.remove(); accSub.remove(); };
-  }, [mode]);
+  }, [appState, mode]);
 
   useEffect(() => {
     if (mode === 'camera') {
@@ -156,8 +224,11 @@ export default function StarMapScreen() {
   const handleViewOwnedStar = () => {
     if (selectedStar) {
       setMode('manual');
-      setCenterRa(getStarRaDegrees(selectedStar));
-      setCenterDec(getStarDecDegrees(selectedStar));
+      const horizontal = coordinateMode === 'horizontal'
+        ? getHorizontalPosition(selectedStar)
+        : null;
+      setCenterRa(horizontal ? horizontal.az : getStarRaDegrees(selectedStar));
+      setCenterDec(horizontal ? horizontal.alt : getStarDecDegrees(selectedStar));
     }
     setPopupVisible(false);
   };
@@ -165,13 +236,20 @@ export default function StarMapScreen() {
   const handleCenterOnSelected = () => {
     if (selectedStar) {
       setMode('manual');
-      setCenterRa(getStarRaDegrees(selectedStar));
-      setCenterDec(getStarDecDegrees(selectedStar));
+      const horizontal = coordinateMode === 'horizontal'
+        ? getHorizontalPosition(selectedStar)
+        : null;
+      setCenterRa(horizontal ? horizontal.az : getStarRaDegrees(selectedStar));
+      setCenterDec(horizontal ? horizontal.alt : getStarDecDegrees(selectedStar));
     }
   };
 
   const enableCameraMode = async () => {
+    const activeObserver = observer || await activateRealSky();
+    if (!activeObserver) return;
+
     if (cameraPermission === true) {
+      setCoordinateMode('horizontal');
       setMode('camera');
       return;
     }
@@ -179,6 +257,7 @@ export default function StarMapScreen() {
     const status = await Camera.requestCameraPermissionsAsync();
     setCameraPermission(status.granted);
     if (status.granted) {
+      setCoordinateMode('horizontal');
       setMode('camera');
     } else {
       Alert.alert(
@@ -231,6 +310,9 @@ export default function StarMapScreen() {
             <TouchableOpacity style={[styles.modeButton, mode==='camera' && styles.modeActive]} onPress={enableCameraMode}>
               <Ionicons name="camera-outline" size={20} color="#fff" />
             </TouchableOpacity>
+            <TouchableOpacity style={[styles.modeButton, coordinateMode === 'horizontal' && styles.locationActive]} onPress={activateRealSky}>
+              <Ionicons name="location-outline" size={20} color={coordinateMode === 'horizontal' ? THEME.colors.primary : '#fff'} />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.controlGroup}>
@@ -244,6 +326,15 @@ export default function StarMapScreen() {
         </View>
 
         <View style={styles.mapContainer}>
+          {coordinateMode === 'horizontal' && observer && (
+            <View style={styles.observerBadge} pointerEvents="none">
+              <Ionicons name="navigate" size={12} color={THEME.colors.primary} />
+              <Text style={styles.observerText}>GERCEK GOKYUZU</Text>
+              <Text style={styles.observerCoordinates}>
+                {observer.latitude.toFixed(2)} / {observer.longitude.toFixed(2)}
+              </Text>
+            </View>
+          )}
           {loading ? <ActivityIndicator color={THEME.colors.primary} size="large" /> : (
             <StarCanvas
               stars={stars}
@@ -257,6 +348,11 @@ export default function StarMapScreen() {
               showDSOs={showDSOs}
               constellations={constellations}
               showMythology={showMythology}
+              coordinateMode={coordinateMode}
+              observerLatitude={observer?.latitude || 0}
+              lstDegrees={siderealTime}
+              hideBelowHorizon
+              transparentBackground={mode === 'camera'}
               onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
               onZoomChange={setZoom}
               onSelect={(star) => { setSelectedStar(star); setPopupVisible(true); }}
@@ -288,7 +384,11 @@ const styles = StyleSheet.create({
   controlGroup: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 4, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   modeButton: { padding: 10, borderRadius: 16, marginHorizontal: 2 },
   modeActive: { backgroundColor: THEME.colors.primary + '40', borderWidth: 1, borderColor: THEME.colors.primary },
+  locationActive: { backgroundColor: 'rgba(201,168,76,0.12)' },
   mapContainer: { flex: 1 },
+  observerBadge: { position: 'absolute', top: 62, alignSelf: 'center', zIndex: 12, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(0,0,0,0.72)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: 14 },
+  observerText: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  observerCoordinates: { color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600' },
   focusBtn: { position: 'absolute', bottom: 100, left: 20, backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: THEME.colors.primary },
   focusBtnText: { color: THEME.colors.primary, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
   searchContainer: { position: 'absolute', top: 100, left: 20, right: 20, zIndex: 20 },

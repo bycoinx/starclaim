@@ -30,7 +30,13 @@
       "expo-secure-store",
       "expo-font",
       "expo-localization",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "StarClaim, bulundugunuz yerden gorunen gercek gokyuzunu hesaplamak icin konumunuzu kullanir."
+        }
+      ]
     ]
   }
 }
