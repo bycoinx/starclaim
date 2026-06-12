@@ -1,23 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Star, Globe, LogOut, User, Menu, X, QrCode } from "lucide-react";
-import { useT } from "../lib/i18n";
+import { Star, Globe, LogOut, User, Menu, X, QrCode, ChevronDown, Check } from "lucide-react";
+import { useT, LANGUAGES } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import QRLoginModal from "./QRLoginModal";
 
 export default function Navbar({ onOpenClaim }) {
-  const { t, lang, toggle } = useT();
+  const { t, lang, setLang } = useT();
   const { user, login, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const navigate = useNavigate();
+  const langRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setLangOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const links = [
@@ -64,13 +76,37 @@ export default function Navbar({ onOpenClaim }) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={toggle}
-            data-testid="lang-toggle"
-            className="hidden md:flex items-center gap-1.5 text-xs text-sc-text-muted hover:text-sc-gold transition-colors mr-2"
-          >
-            <Globe className="w-4 h-4" /> {lang}
-          </button>
+          {/* LANGUAGE SELECTOR */}
+          <div className="relative" ref={langRef}>
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className="hidden md:flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-sc-text-muted hover:text-sc-gold transition-colors mr-2 uppercase"
+            >
+              <Globe className="w-3.5 h-3.5" /> {lang} <ChevronDown className={`w-3 h-3 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {langOpen && (
+              <div className="absolute top-full right-0 mt-2 w-48 py-2 bg-sc-deep/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                    {LANGUAGES.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => {
+                          setLang(l.code);
+                          setLangOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-2 text-[11px] font-bold tracking-wider uppercase transition-colors hover:bg-white/5 ${
+                          lang === l.code ? "text-sc-gold" : "text-white/60"
+                        }`}
+                      >
+                        <span>{l.name}</span>
+                        {lang === l.code && <Check size={12} />}
+                      </button>
+                    ))}
+                 </div>
+              </div>
+            )}
+          </div>
 
           {user ? (
             <div className="hidden md:flex items-center gap-3">
@@ -136,31 +172,52 @@ export default function Navbar({ onOpenClaim }) {
 
       {open && (
         <div className="lg:hidden bg-[#050A1A]/95 backdrop-blur-xl border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-4 text-left">
             {links.map((l) => (
               <NavLink
                 key={l.to}
                 to={l.to}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  `text-sm ${isActive ? "text-sc-gold" : "text-sc-text/80"}`
+                  `text-sm font-bold tracking-widest uppercase ${isActive ? "text-sc-gold" : "text-sc-text/80"}`
                 }
               >
                 {l.label}
               </NavLink>
             ))}
-            <button onClick={toggle} className="text-xs text-sc-text-muted text-left">
-              Dil / Language: {lang}
-            </button>
+            
+            <div className="h-[1px] bg-white/5 my-2" />
+            
+            <div className="flex flex-wrap gap-2">
+              {LANGUAGES.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => {
+                    setLang(l.code);
+                    setOpen(false);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg border text-[10px] font-black tracking-tighter uppercase transition-all ${
+                    lang === l.code 
+                    ? "bg-sc-gold/20 border-sc-gold text-sc-gold" 
+                    : "bg-white/5 border-white/10 text-white/40"
+                  }`}
+                >
+                  {l.code}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-[1px] bg-white/5 my-2" />
+
             {user ? (
               <>
-                <button onClick={() => { navigate("/dashboard"); setOpen(false); }} className="text-sm text-left">
+                <button onClick={() => { navigate("/dashboard"); setOpen(false); }} className="text-sm text-left uppercase font-bold tracking-widest">
                   {t("nav_dashboard")}
                 </button>
-                <button onClick={logout} className="text-sm text-left text-sc-red">{t("nav_logout")}</button>
+                <button onClick={logout} className="text-sm text-left text-sc-red uppercase font-bold tracking-widest">{t("nav_logout")}</button>
               </>
             ) : (
-              <button onClick={login} className="text-sm text-left">{t("nav_login")}</button>
+              <button onClick={login} className="text-sm text-left uppercase font-bold tracking-widest">{t("nav_login")}</button>
             )}
           </div>
         </div>

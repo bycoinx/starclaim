@@ -2345,29 +2345,40 @@ const DICT = {
 
 const LangContext = createContext(null);
 
+export const LANGUAGES = [
+  { code: "TR", name: "Türkçe" },
+  { code: "EN", name: "English" },
+  { code: "ES", name: "Español" },
+  { code: "RU", name: "Русский" },
+  { code: "FR", name: "Français" },
+  { code: "PT", name: "Português" },
+  { code: "CN", name: "简体中文" },
+  { code: "AR", name: "العربية" },
+  { code: "DE", name: "Deutsch" },
+  { code: "NL", name: "Nederlands" },
+  { code: "IT", name: "Italiano" },
+  { code: "HI", name: "हिन्दी" },
+  { code: "JA", name: "日本語" },
+];
+
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem("sc_lang") || "TR");
+
+  const changeLang = useCallback((newLang) => {
+    setLang(newLang);
+    localStorage.setItem("sc_lang", newLang);
+  }, []);
+
   const toggle = useCallback(() => {
     setLang((l) => {
-      let n = "TR";
-      if (l === "TR") n = "EN";
-      else if (l === "EN") n = "ES";
-      else if (l === "ES") n = "RU";
-      else if (l === "RU") n = "FR";
-      else if (l === "FR") n = "PT";
-      else if (l === "PT") n = "CN";
-      else if (l === "CN") n = "AR";
-      else if (l === "AR") n = "DE";
-      else if (l === "DE") n = "NL";
-      else if (l === "NL") n = "IT";
-      else if (l === "IT") n = "HI";
-      else if (l === "HI") n = "JA";
-      else n = "TR";
-      
+      const idx = LANGUAGES.findIndex(x => x.code === l);
+      const nextIdx = (idx + 1) % LANGUAGES.length;
+      const n = LANGUAGES[nextIdx].code;
       localStorage.setItem("sc_lang", n);
       return n;
     });
   }, []);
+
   const t = useCallback((key) => {
     const parts = key.split(".");
     let cur = DICT[lang];
@@ -2377,7 +2388,8 @@ export function LanguageProvider({ children }) {
     }
     return cur;
   }, [lang]);
-  const value = useMemo(() => ({ lang, setLang, toggle, t }), [lang, t, toggle]);
+
+  const value = useMemo(() => ({ lang, setLang: changeLang, toggle, t }), [lang, t, toggle, changeLang]);
   return <LangContext.Provider value={value}>{children}</LangContext.Provider>;
 }
 
