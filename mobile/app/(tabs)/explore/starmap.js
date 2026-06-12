@@ -38,10 +38,16 @@ export default function StarMapScreen() {
   const [tilt, setTilt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [showConstellations, setShowConstellations] = useState(true);
+  const [showConstellationLabels, setShowConstellationLabels] = useState(true);
+  const [showConstellationBoundaries, setShowConstellationBoundaries] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [showPlanets, setShowPlanets] = useState(true);
   const [showDSOs, setShowDSOs] = useState(true);
-  const [constellations, setConstellations] = useState([]);
+  const [constellations, setConstellations] = useState({
+    lines: { features: [] },
+    labels: { features: [] },
+    boundaries: { features: [] },
+  });
   const [purchases, setPurchases] = useState([]);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
   const [showMythology, setShowMythology] = useState(false);
@@ -76,7 +82,7 @@ export default function StarMapScreen() {
         }
       }
     });
-    ensureConstellations().then((data) => setConstellations(data)).catch(() => setConstellations([]));
+    ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
   }, [params.starId]);
 
@@ -422,6 +428,8 @@ export default function StarMapScreen() {
               centerDec={centerDec}
               zoom={zoom}
               showConstellations={showConstellations}
+              showConstellationLabels={showConstellationLabels}
+              showConstellationBoundaries={showConstellationBoundaries}
               showLabels={showLabels}
               showPlanets={showPlanets}
               showDSOs={showDSOs}
@@ -494,6 +502,8 @@ export default function StarMapScreen() {
                 </TouchableOpacity>
               </View>
               <LayerToggle icon="git-merge-outline" label="Takimyildizi cizgileri" active={showConstellations} onPress={() => setShowConstellations(!showConstellations)} nightVision={nightVision} />
+              <LayerToggle icon="pricetag-outline" label="Takimyildizi isimleri" active={showConstellationLabels} onPress={() => setShowConstellationLabels(!showConstellationLabels)} nightVision={nightVision} />
+              <LayerToggle icon="scan-outline" label="IAU sinirlari" active={showConstellationBoundaries} onPress={() => setShowConstellationBoundaries(!showConstellationBoundaries)} nightVision={nightVision} />
               <LayerToggle icon="text-outline" label="Yildiz isimleri" active={showLabels} onPress={() => setShowLabels(!showLabels)} nightVision={nightVision} />
               <LayerToggle icon="planet-outline" label="Gezegenler" active={showPlanets} onPress={() => setShowPlanets(!showPlanets)} nightVision={nightVision} />
               <LayerToggle icon="aperture-outline" label="Derin uzay" active={showDSOs} onPress={() => setShowDSOs(!showDSOs)} nightVision={nightVision} />

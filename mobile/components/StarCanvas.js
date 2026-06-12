@@ -154,6 +154,8 @@ export default function StarCanvas({
   onSelect,
   ownedStarIds = [],
   showConstellations = false,
+  showConstellationLabels = true,
+  showConstellationBoundaries = false,
   constellations = [],
   showMythology = false,
   showLabels = false,
@@ -411,12 +413,43 @@ export default function StarCanvas({
               <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
-            {showConstellations && constellations.features && constellations.features.map((f, i) => (
+            {showConstellationBoundaries && constellations.boundaries?.features?.map((feature) => (
+              <ConstellationBoundary
+                key={feature.id}
+                feature={feature}
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                nightVision={nightVision}
+              />
+            ))}
+
+            {showConstellations && constellations.lines?.features?.map((f, i) => (
               <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
             {renderedStars.map((star) => (
               <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
+            ))}
+
+            {showConstellationLabels && constellations.labels?.features?.map((feature) => (
+              <ConstellationLabel
+                key={feature.id}
+                feature={feature}
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                font={boldFont}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                nightVision={nightVision}
+              />
             ))}
 
             {showPlanets && planetData.map((planet) => (
@@ -516,6 +549,96 @@ function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision 
         text={direction.label}
         font={font}
         color={nightVision ? '#FF4A42' : '#C9A84C'}
+      />
+    </Group>
+  );
+}
+
+function getBoundaryPaths(feature) {
+  if (feature.geometry?.type === 'Polygon') return feature.geometry.coordinates;
+  if (feature.geometry?.type === 'MultiPolygon') return feature.geometry.coordinates.flat();
+  return [];
+}
+
+function ConstellationBoundary({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  return getBoundaryPaths(feature).map((path, pathIndex) => (
+    <Group key={`${feature.id}-${pathIndex}`}>
+      {path.map((point, pointIndex) => {
+        if (pointIndex === path.length - 1) return null;
+        return (
+          <ConstellationBoundaryLine
+            key={`${feature.id}-${pathIndex}-${pointIndex}`}
+            p1Data={point}
+            p2Data={path[pointIndex + 1]}
+            ra={ra}
+            dec={dec}
+            zoom={zoom}
+            layout={layout}
+            coordinateMode={coordinateMode}
+            observerLatitude={observerLatitude}
+            lstDegrees={lstDegrees}
+            nightVision={nightVision}
+          />
+        );
+      })}
+    </Group>
+  ));
+}
+
+function ConstellationBoundaryLine({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const p1 = useDerivedValue(() => project(p1Data[0] / 15, p1Data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const p2 = useDerivedValue(() => project(p2Data[0] / 15, p2Data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => {
+    const onScreen = (
+      (p1.value.x > -60 && p1.value.x < layout.width + 60)
+      || (p2.value.x > -60 && p2.value.x < layout.width + 60)
+    );
+    const aboveHorizon = (
+      coordinateMode !== 'horizontal'
+      || p1.value.skyAltitude >= 0
+      || p2.value.skyAltitude >= 0
+    );
+    return onScreen && aboveHorizon && zoom.value >= 0.75;
+  });
+
+  return (
+    <Line
+      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
+      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
+      color={nightVision ? 'rgba(255,74,66,0.13)' : 'rgba(130,160,190,0.11)'}
+      strokeWidth={0.65}
+      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
+    />
+  );
+}
+
+function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const coordinates = feature.geometry?.coordinates;
+  const label = feature.properties?.tr || feature.properties?.name || feature.id;
+  const rank = Number(feature.properties?.rank || 3);
+  const pos = useDerivedValue(() => project(coordinates[0] / 15, coordinates[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const isVisible = useDerivedValue(() => {
+    const rankVisible = rank <= 1 || zoom.value >= 1.2;
+    return (
+      rankVisible
+      && zoom.value >= 0.7
+      && pos.value.x > 10
+      && pos.value.x < layout.width - 80
+      && pos.value.y > 20
+      && pos.value.y < layout.height - 20
+      && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
+    );
+  });
+
+  if (!font || !coordinates) return null;
+  return (
+    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      <SkiaText
+        x={useDerivedValue(() => pos.value.x)}
+        y={useDerivedValue(() => pos.value.y)}
+        text={String(label).toUpperCase()}
+        font={font}
+        color={nightVision ? 'rgba(255,74,66,0.58)' : 'rgba(201,168,76,0.55)'}
       />
     </Group>
   );

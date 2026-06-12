@@ -105,7 +105,7 @@ z = -d * cos(dec) * sin(ra)
 ## 2.3 Star Walk Görsel Katmanları
 
 - [x] Takımyıldızı çizgileri varsayılan olarak açık olacak.
-- [ ] Takımyıldızı isimleri ve sınırları ayrı katmanlar olacak.
+- [x] Takımyıldızı isimleri ve sınırları ayrı katmanlar olacak.
 - [x] Yıldız isimleri zoom seviyesine göre gösterilecek.
 - [x] Gezegenler, DSO'lar ve mitoloji görselleri katman menüsünden yönetilecek.
 - [x] Gece görüşü için kırmızı ışık modu eklenecek.
