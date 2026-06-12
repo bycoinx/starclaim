@@ -48,7 +48,7 @@ const STORIES = [
 ];
 
 export default function Stories() {
-  const { lang } = useT();
+  const { lang, t } = useT();
   const isTR = lang === "TR";
 
   return (
@@ -71,10 +71,10 @@ export default function Stories() {
             animate={{ opacity: 1, scale: 1 }}
             className="font-display text-5xl md:text-7xl mb-6 gold-gradient-text uppercase tracking-tight"
           >
-            {isTR ? "Göklerin Hikayesi" : "Celestial Tales"}
+            {t("stories_title")}
           </motion.h1>
           <p className="text-sc-text-muted/60 max-w-2xl mx-auto uppercase tracking-[0.3em] text-[10px] font-mono leading-relaxed">
-            {isTR ? "Mitolojik kökenlerden dijital mirasa: Evrenin kadim anlatılarını keşfedin ve kendi izinizi bırakın." : "From mythological origins to digital legacy: Explore ancient narratives of the universe and leave your own mark."}
+            {t("stories_sub")}
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function Stories() {
         <div className="mb-32">
           <div className="flex items-center gap-3 mb-12">
             <MapIcon className="w-5 h-5 text-sc-gold" />
-            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">Takımyıldız <span className="text-sc-gold">Mitolojisi</span></h2>
+            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">{isTR ? "Takımyıldız" : "Constellation"} <span className="text-sc-gold">{isTR ? "Mitolojisi" : "Mythology"}</span></h2>
           </div>
           
           <div className="space-y-12">
@@ -130,7 +130,7 @@ export default function Stories() {
         <div className="mb-32">
           <div className="flex items-center gap-3 mb-12">
             <BookOpen className="w-5 h-5 text-sc-blue" />
-            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">Kaşif <span className="text-sc-blue">Günlükleri</span></h2>
+            <h2 className="font-display text-2xl text-white tracking-[0.2em] uppercase">{isTR ? "Kaşif" : "Explorer"} <span className="text-sc-blue">{isTR ? "Günlükleri" : "Logs"}</span></h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {STORIES.map((s, i) => {
@@ -170,12 +170,12 @@ export default function Stories() {
         >
           <div className="terminal-scanline" />
           <div className="relative z-10">
-            <h2 className="font-display text-3xl text-white mb-6 tracking-widest uppercase">Kendi Hikayeni <span className="gold-gradient-text">Yaz</span></h2>
+            <h2 className="font-display text-3xl text-white mb-6 tracking-widest uppercase">{isTR ? "Kendi Hikayeni" : "Write Your Own"} <span className="gold-gradient-text">{isTR ? "Yaz" : "Story"}</span></h2>
             <p className="text-sc-text-muted/70 text-sm font-mono max-w-xl mx-auto mb-10 uppercase tracking-wider">
-               Evrende bir iz bırakmak için milyonlarca ışık yılı uzakta bir tanığınız olsun.
+               {t("stories_cta_sub")}
             </p>
             <button className="btn-gold px-12 py-4 text-xs font-black tracking-[0.4em] uppercase hover:scale-105 transition-transform">
-               Initialize_Registration
+               {t("stories_cta_btn")}
             </button>
           </div>
         </motion.div>

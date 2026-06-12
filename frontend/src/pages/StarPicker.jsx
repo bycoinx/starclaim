@@ -14,7 +14,7 @@ const tierCls = {
 };
 
 export default function StarPicker({ onClaim }) {
-  const { lang } = useT();
+  const { lang, t } = useT();
   const isTR = lang === "TR";
   const [stars, setStars] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +33,7 @@ export default function StarPicker({ onClaim }) {
       .catch((err) => {
         console.error("Star Catalog fetch error:", err);
         setStars([]);
-        setError(lang === "TR" ? "Yıldız kataloğu şu anda yüklenemedi." : "Star catalog could not be loaded.");
+        setError(t("error_star_load") || (lang === "TR" ? "Yıldız kataloğu şu anda yüklenemedi." : "Star catalog could not be loaded."));
       })
       .finally(() => setLoading(false));
   };
@@ -64,19 +64,17 @@ export default function StarPicker({ onClaim }) {
               AEGIS_TELESCOPE // STAR_CATALOG_PRIMARY
             </div>
             <h1 className="font-display text-4xl md:text-6xl tracking-tight">
-              Yıldızını <span className="gold-gradient-text">Seç</span>
+              {isTR ? "Yıldızını" : "Pick Your"} <span className="gold-gradient-text">{isTR ? "Seç" : "Star"}</span>
             </h1>
             <p className="text-sc-text-muted max-w-md mt-4 text-sm font-mono opacity-70">
-              {lang === "TR" 
-                ? "Evrendeki ebedi mirasınızı seçin. Her yıldız kendine has bir koordinat ve tarihe sahiptir." 
-                : "Choose your eternal legacy in the universe. Each star has unique coordinates and history."}
+              {t("picker_sub")}
             </p>
           </div>
 
           {/* Sorting Controls */}
           <div className="flex items-center gap-4 bg-sc-deep/40 p-2 rounded-xl border border-white/5 self-start md:self-end">
              <div className="flex items-center gap-2 px-3 text-[10px] text-sc-gold/60 font-bold tracking-widest border-r border-white/10 uppercase">
-                <ArrowUpDown size={12} /> {isTR ? "Sıralama" : "Sort"}
+                <ArrowUpDown size={12} /> {t("picker_sort")}
              </div>
              <select 
                value={sortBy} 
@@ -94,15 +92,15 @@ export default function StarPicker({ onClaim }) {
 
         {/* Filter Tabs */}
         <div className="flex flex-wrap gap-3 mb-10">
-          {["all", "legendary", "zodiac", "supernova", "nova"].map((t) => (
+          {["all", "legendary", "zodiac", "supernova", "nova"].map((t_key) => (
             <button
-              key={t}
-              onClick={() => setFilter(t)}
+              key={t_key}
+              onClick={() => setFilter(t_key)}
               className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                filter === t ? "border-sc-gold bg-sc-gold/10 text-sc-gold" : "border-white/10 text-white/40 hover:border-white/20"
+                filter === t_key ? "border-sc-gold bg-sc-gold/10 text-sc-gold" : "border-white/10 text-white/40 hover:border-white/20"
               }`}
             >
-              {t === "all" ? (isTR ? "Tümü" : "All") : t}
+              {t_key === "all" ? (isTR ? "Tümü" : "All") : t_key}
             </button>
           ))}
         </div>
@@ -121,7 +119,7 @@ export default function StarPicker({ onClaim }) {
           </div>
         ) : filteredStars.length === 0 ? (
           <div className="text-center py-20 text-sc-text-muted uppercase tracking-[0.2em] text-xs font-mono">
-            Bu kategoride uygun yıldız bulunamadı.
+            {isTR ? "Bu kategoride uygun yıldız bulunamadı." : "No stars found in this category."}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -151,7 +149,7 @@ export default function StarPicker({ onClaim }) {
                   </div>
 
                   <div className="telemetry-item-box border-sc-gold/40 bg-sc-gold/5 mb-6">
-                    <div className="telemetry-label text-sc-gold">Sahiplenme Bedeli</div>
+                    <div className="telemetry-label text-sc-gold">{t("picker_price_label")}</div>
                     <div className="telemetry-value text-sc-gold font-bold text-2xl">${s.price}</div>
                   </div>
 
@@ -161,7 +159,7 @@ export default function StarPicker({ onClaim }) {
                       className="flex-1 py-3 rounded-lg bg-sc-gold text-sc-deep text-[10px] uppercase tracking-[0.2em] font-bold hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2"
                     >
                       <Star className="w-3.5 h-3.5 fill-current" />
-                      SAHİPLEN
+                      {t("picker_claim").toUpperCase()}
                     </button>
                     <button className="p-3 rounded-lg border border-white/10 text-white/40 hover:text-white transition-all">
                       <Info size={16} />

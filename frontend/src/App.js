@@ -76,6 +76,7 @@ function PageLoading() {
 }
 
 function AppShell() {
+  const { lang, t } = useT();
   const location = useLocation();
   const isCosmosRoute = location.pathname === "/cosmos";
   const [checkoutOpen, setCheckoutOpen] = useState(false);
@@ -117,20 +118,20 @@ function AppShell() {
                    setActiveStar(res.data[0]);
                    setCheckoutOpen(true);
                 } else {
-                   toast.error("Yıldızlar şu an yüklenemedi.");
+                   toast.error(lang === "TR" ? "Yıldızlar şu an yüklenemedi." : "Could not load stars at the moment.");
                 }
               });
           }
         })
         .catch((err) => {
           console.error("Claim fetch error:", err);
-          toast.error("Bağlantı hatası.");
+          toast.error(lang === "TR" ? "Bağlantı hatası." : "Connection error.");
         });
       return;
     }
     setActiveStar(star);
     setCheckoutOpen(true);
-  }, []);
+  }, [lang]);
 
   if (location.hash && location.hash.includes("session_id=")) {
     return <AuthCallback />;

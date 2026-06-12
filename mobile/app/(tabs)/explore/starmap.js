@@ -23,6 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 import { getPlanetPositions } from '../../../src/utils/solarSystem';
 import { DSO_CATALOG } from '../../../src/data/dsoData';
+import {
+  purchaseMatchesStar,
+  resolveStarTarget,
+  starMatchesQuery,
+} from '../../../src/utils/starIdentity';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -72,8 +77,8 @@ export default function StarMapScreen() {
       setStars(list); 
       setLoading(false); 
       
-      if (params.starId) {
-        const found = list.find(s => s.id === params.starId || s.hip === params.starId);
+      if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
+        const found = resolveStarTarget(list, params);
         if (found) {
           setCenterRa(getStarRaDegrees(found));
           setCenterDec(getStarDecDegrees(found));
@@ -84,7 +89,7 @@ export default function StarMapScreen() {
     });
     ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
-  }, [params.starId]);
+  }, [params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
@@ -155,16 +160,13 @@ export default function StarMapScreen() {
     const planetResults = getPlanetPositions().filter(p => p.name.toLowerCase().includes(lower));
     const dsoResults = DSO_CATALOG.filter(d => d.name.toLowerCase().includes(lower));
     const starResults = stars
-      .filter((star) => {
-        const terms = [
-          star.proper,
-          star.properName,
-          star.hip && `hip ${star.hip}`,
-          star.hd && `hd ${star.hd}`,
-          star.id,
-          star.starClaimCode,
-        ].filter(Boolean);
-        return terms.some((term) => String(term).toLowerCase().includes(lower));
+      .filter((star) => starMatchesQuery(star, text))
+      .sort((a, b) => {
+        const aName = String(a.properName || a.proper || '').toLowerCase();
+        const bName = String(b.properName || b.proper || '').toLowerCase();
+        const aExact = aName === lower ? 0 : 1;
+        const bExact = bName === lower ? 0 : 1;
+        return aExact - bExact || a.mag - b.mag;
       })
       .slice(0, 8);
     setSearchResults([...planetResults, ...dsoResults, ...starResults]);
@@ -272,14 +274,13 @@ export default function StarMapScreen() {
     }
   }, [mode, heading, tilt]);
 
-  const selectedPurchase = selectedStar && purchases.find((item) => (
-    item.starId === selectedStar.id
-    || item.starId === selectedStar.hip
-    || item.name === selectedStar.proper
-  ));
+  const selectedPurchase = selectedStar
+    && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
   const ownedStarIds = useMemo(
-    () => purchases.map((item) => item.starId).filter((id) => id != null),
+    () => purchases
+      .flatMap((item) => [item.starId, item.hip])
+      .filter((id) => id !== null && id !== undefined && id !== ''),
     [purchases],
   );
 

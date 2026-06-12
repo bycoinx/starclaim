@@ -96,6 +96,9 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
       const rec = {
         id: data.order_id || Date.now().toString(),
         starId: star?.star_id || star?.id,
+        hip: star?.hip || '',
+        hd: star?.hd || '',
+        starClaimCode: data.star_claim_code || data.starClaimCode || data.code || '',
         name: name || star?.proper || star?.name || 'Yeni Yıldız',
         method: selected,
         date: new Date().toISOString(),

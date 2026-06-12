@@ -1,21 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import SpaceBackground from '../../../components/SpaceBackground';
 import { THEME } from '../../../constants/Theme';
 
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getPurchaseMapParams } from '../../../src/utils/starIdentity';
 
 export default function CollectionScreen() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     loadPurchases();
-  }, []);
+  }, []));
 
   const loadPurchases = async () => {
     try {
@@ -36,7 +37,9 @@ export default function CollectionScreen() {
     >
       <View style={styles.cardHeader}>
         <View>
-          <Text style={styles.cardId}>REG_ID: {item.starId}</Text>
+          <Text style={styles.cardId}>
+            {item.starClaimCode ? `STARCLAIM: ${item.starClaimCode}` : `REG_ID: ${item.starId}`}
+          </Text>
           <Text style={styles.cardName}>{item.name.toUpperCase()}</Text>
         </View>
         <View style={styles.badge}>
@@ -58,9 +61,12 @@ export default function CollectionScreen() {
       <View style={styles.cardActions}>
         <TouchableOpacity 
           style={styles.actionBtn} 
-          onPress={() => router.push({ pathname: '/(tabs)/explore/starmap', params: { starId: item.starId } })}
+          onPress={() => router.push({
+            pathname: '/(tabs)/explore/starmap',
+            params: getPurchaseMapParams(item),
+          })}
         >
-          <Ionicons name="map-outline" size={16} color={THEME.colors.primary} />
+          <Ionicons name="locate-outline" size={16} color={THEME.colors.primary} />
           <Text style={styles.actionBtnText}>HARİTADA GÖR</Text>
         </TouchableOpacity>
         

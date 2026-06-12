@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, X, MessageSquare, Cpu } from 'lucide-react';
 import { api } from '../lib/api';
+import { useT } from '../lib/i18n';
 import './AegisTerminal.css';
 
 const AegisTerminal = () => {
+  const { lang, t } = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
@@ -22,11 +24,11 @@ const AegisTerminal = () => {
       const { status, data } = error.response;
       const serverMsg = data?.detail || data?.error || data?.reply;
       if (status === 404) {
-        return 'Aegis endpoint bulunamadı. `REACT_APP_BACKEND_URL` veya API yönlendirmesini kontrol edin.';
+        return t("aegis_error_404");
       }
-      return serverMsg ? `Sunucu hatası ${status}: ${serverMsg}` : `Sunucu hatası ${status}`;
+      return serverMsg ? `${t("aegis_error_server")} ${status}: ${serverMsg}` : `${t("aegis_error_server")} ${status}`;
     }
-    return error?.message || 'Sistemleri kontrol ediyorum.';
+    return error?.message || (lang === "TR" ? 'Sistemleri kontrol ediyorum.' : 'Checking systems.');
   };
 
   const handleSend = async (e) => {
@@ -43,13 +45,13 @@ const AegisTerminal = () => {
       const response = await api.post('/ai/support', {
         message: userMessage,
         history: nextHistory.slice(-5), // Son 5 mesajı context olarak gönder
-        language: 'TR'
+        language: lang
       });
 
-      setHistory(prev => [...prev, { role: 'assistant', content: response.data.reply || 'Aegis destek yanıtı alınamadı.' }]);
+      setHistory(prev => [...prev, { role: 'assistant', content: response.data.reply || t("aegis_no_reply") }]);
     } catch (error) {
       const errorMessage = formatAegisError(error);
-      setHistory(prev => [...prev, { role: 'assistant', content: `Kuantum bağlantı hatası, Sir. ${errorMessage}` }]);
+      setHistory(prev => [...prev, { role: 'assistant', content: `${t("aegis_error_connection")} ${errorMessage}` }]);
     } finally {
       setIsTyping(false);
     }
@@ -93,7 +95,7 @@ const AegisTerminal = () => {
 
             <div className="aegis-body" ref={scrollRef}>
               <div className="message assistant">
-                Sistemler aktif. Hoş geldiniz Explorer. StarClaim evreni hakkında her şeyi sorabilirsiniz.
+                {t("aegis_welcome")}
               </div>
               
               {history.map((msg, i) => (
@@ -116,7 +118,7 @@ const AegisTerminal = () => {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Bir komut girin veya soru sorun..."
+                placeholder={t("aegis_placeholder")}
                 autoFocus
               />
               <button type="submit" disabled={isTyping || !input.trim()}>

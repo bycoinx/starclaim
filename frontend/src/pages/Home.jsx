@@ -160,9 +160,18 @@ export default function Home({ onOpenClaim, stats }) {
                     </h2>
                     <div className="space-y-6">
                       {[
-                        { t: "Lattice-Based Encryption", d: "NIST standartlarında Kyber ve Dilithium algoritmaları ile sarsılmaz güvenlik." },
-                        { t: "Kuantum Dirençli NFT", d: "Sahiplik kayıtlarınız kuantum bilgisayarlar tarafından bile kırılamaz." },
-                        { t: "Hava Boşluklu Arşivleme", d: "En kritik verileriniz internetten izole StarVault sığınaklarında." }
+                        { 
+                          t: "Lattice-Based Encryption", 
+                          d: isTR ? "NIST standartlarında Kyber ve Dilithium algoritmaları ile sarsılmaz güvenlik." : "Unshakable security with Kyber and Dilithium algorithms at NIST standards."
+                        },
+                        { 
+                          t: isTR ? "Kuantum Dirençli NFT" : "Quantum-Resistant NFT", 
+                          d: isTR ? "Sahiplik kayıtlarınız kuantum bilgisayarlar tarafından bile kırılamaz." : "Your ownership records cannot be broken even by quantum computers."
+                        },
+                        { 
+                          t: isTR ? "Hava Boşluklu Arşivleme" : "Air-Gapped Archiving", 
+                          d: isTR ? "En kritik verileriniz internetten izole StarVault sığınaklarında." : "Your most critical data in StarVault sanctuaries isolated from the internet."
+                        }
                       ].map((f, i) => (
                         <div key={i} className="flex gap-4">
                           <div className="w-1 h-12 bg-sc-gold/20 rounded-full" />
@@ -225,18 +234,18 @@ export default function Home({ onOpenClaim, stats }) {
               {[
                 { 
                   ic: EyeOff, 
-                  t: "Görünmez Mühür", 
-                  d: "Güneş, Mars ve Jüpiter gibi ana gök cisimleri katalogda görünmez; sadece 'Aile Protokolü' sahiplerine özel sığınaklardır." 
+                  t: isTR ? "Görünmez Mühür" : "Invisible Seal", 
+                  d: isTR ? "Güneş, Mars ve Jüpiter gibi ana gök cisimleri katalogda görünmez; sadece 'Aile Protokolü' sahiplerine özel sığınaklardır." : "Main celestial bodies like Sun, Mars, and Jupiter are invisible in the catalog; they are exclusive sanctuaries for 'Family Protocol' holders."
                 },
                 { 
                   ic: Heart, 
-                  t: "Sesli Biyografi", 
-                  d: "Sevdiklerinizin gülüşlerini ve itiraflarını ses frekansları olarak gezegenlerin çekirdeklerine mühürleyin." 
+                  t: isTR ? "Sesli Biyografi" : "Voice Biography", 
+                  d: isTR ? "Sevdiklerinizin gülüşlerini ve itiraflarını ses frekansları olarak gezegenlerin çekirdeklerine mühürleyin." : "Seal the laughter and confessions of your loved ones as voice frequencies into the cores of planets."
                 },
                 { 
                   ic: Scroll, 
-                  t: "Vasiyet Modu", 
-                  d: "Sizden sonraki nesillere bırakılacak en değerli 'gerçek servet' — anılarınız ve hayat dersleriniz." 
+                  t: isTR ? "Vasiyet Modu" : "Legacy Mode", 
+                  d: isTR ? "Sizden sonraki nesillere bırakılacak en değerli 'gerçek servet' — anılarınız ve hayat dersleriniz." : "The most valuable 'true wealth' to be left to the next generations — your memories and life lessons."
                 }
               ].map((s, i) => {
                 const Ic = s.ic;

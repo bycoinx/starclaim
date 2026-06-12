@@ -122,10 +122,10 @@ z = -d * cos(dec) * sin(ra)
 
 ## 2.5 2D Tamamlanma Kriteri
 
-- [ ] Sirius adı/HIP koduyla aranıp doğru noktaya gidilebiliyor.
+- [x] Sirius adı/HIP koduyla aranıp doğru noktaya gidilebiliyor.
 - [ ] Takımyıldızı çizgileri pan ve zoom sırasında doğru kalıyor.
 - [ ] Sensör modu açılıp kapandığında gereksiz abonelik kalmıyor.
-- [ ] Kullanıcının sahip olduğu yıldız haritada tek dokunuşla bulunuyor.
+- [x] Kullanıcının sahip olduğu yıldız haritada tek dokunuşla bulunuyor.
 - [ ] Android cihazda 10 dakikalık kullanımda crash veya ciddi FPS düşüşü olmuyor.
 
 ---
