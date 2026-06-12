@@ -22,7 +22,7 @@ import {
   GestureDetector, 
   GestureHandlerRootView 
 } from 'react-native-gesture-handler';
-import Animated, { 
+import {
   useSharedValue, 
   useDerivedValue,
   runOnJS,
@@ -147,12 +147,14 @@ export default function StarCanvas({
 
   // OPTIMIZATION: Only render stars within a certain magnitude or proximity for better FPS
   const starElements = useMemo(() => {
-    return stars.map(s => ({
-      ...s,
-      radius: radiusForMag(s.mag, s.spect),
-      color: colorForSpectrum(s.spect)
+    const ownedIds = new Set(ownedStarIds.map((id) => String(id)));
+    return stars.map((star) => ({
+      ...star,
+      radius: radiusForMag(star.mag, star.spect),
+      color: colorForSpectrum(star.spect),
+      owned: ownedIds.has(String(star.id)) || ownedIds.has(String(star.hip)),
     }));
-  }, [stars]);
+  }, [ownedStarIds, stars]);
 
   const font = useFont(null, 10);
   const boldFont = useFont(null, 11);
@@ -251,6 +253,8 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels }) {
   const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value));
   const isVisible = useDerivedValue(() => pos.value.x > -30 && pos.value.x < layout.width + 30 && pos.value.y > -30 && pos.value.y < layout.height + 30);
   const labelVisible = useDerivedValue(() => isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
+  const ownedX = useDerivedValue(() => pos.value.x);
+  const ownedY = useDerivedValue(() => pos.value.y);
   
   const uniforms = useDerivedValue(() => ({ iTime: time.value + (parseFloat(star.id || 0) % 5) }));
 
@@ -259,6 +263,17 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels }) {
       <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={star.radius} color={star.color}>
          <RuntimeEffect source={twinkleEffect} uniforms={uniforms} />
       </Circle>
+      {star.owned && (
+        <Circle
+          cx={ownedX}
+          cy={ownedY}
+          r={star.radius + 6}
+          color="#C9A84C"
+          style="stroke"
+          strokeWidth={1.4}
+          opacity={0.85}
+        />
+      )}
       
       {/* High-Performance Labeling Enhancement */}
       {font && star.proper && (

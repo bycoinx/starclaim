@@ -1,5 +1,34 @@
 const deg2rad = (deg) => deg * Math.PI / 180;
 
+export function raHoursToDegrees(hours) {
+  return normalizeAngle((Number(hours) || 0) * 15);
+}
+
+export function raDegreesToHours(degrees) {
+  return normalizeAngle(Number(degrees) || 0) / 15;
+}
+
+export function clampDeclination(degrees) {
+  return Math.max(-90, Math.min(90, Number(degrees) || 0));
+}
+
+export function getStarRaHours(star) {
+  if (Number.isFinite(star?.raHours)) return star.raHours;
+  if (Number.isFinite(star?.ra)) return star.ra;
+  if (Number.isFinite(star?.raDegrees)) return raDegreesToHours(star.raDegrees);
+  return 0;
+}
+
+export function getStarRaDegrees(star) {
+  if (Number.isFinite(star?.raDegrees)) return normalizeAngle(star.raDegrees);
+  return raHoursToDegrees(getStarRaHours(star));
+}
+
+export function getStarDecDegrees(star) {
+  if (Number.isFinite(star?.decDegrees)) return clampDeclination(star.decDegrees);
+  return clampDeclination(star?.dec);
+}
+
 export function normalizeAngle(angle) {
   let value = angle;
   while (value < 0) value += 360;
