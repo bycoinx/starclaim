@@ -54,6 +54,8 @@ export default function StarMapScreen() {
   const [headingAccuracy, setHeadingAccuracy] = useState(0);
   const [headingSource, setHeadingSource] = useState('waiting');
   const [calibrationVisible, setCalibrationVisible] = useState(false);
+  const [layersVisible, setLayersVisible] = useState(false);
+  const [nightVision, setNightVision] = useState(false);
   const lastHeading = useRef(0);
   const lastTilt = useRef(0);
   const router = useRouter();
@@ -264,7 +266,12 @@ export default function StarMapScreen() {
     }
   }, [mode, heading, tilt]);
 
-  const selectedStarOwned = selectedStar && purchases.some((item) => item.starId === selectedStar.id || item.starId === selectedStar.hip || item.name === selectedStar.proper);
+  const selectedPurchase = selectedStar && purchases.find((item) => (
+    item.starId === selectedStar.id
+    || item.starId === selectedStar.hip
+    || item.name === selectedStar.proper
+  ));
+  const selectedStarOwned = Boolean(selectedPurchase);
   const ownedStarIds = useMemo(
     () => purchases.map((item) => item.starId).filter((id) => id != null),
     [purchases],
@@ -367,11 +374,11 @@ export default function StarMapScreen() {
           </View>
 
           <View style={styles.controlGroup}>
-            <TouchableOpacity style={[styles.modeButton, showConstellations && styles.modeActive]} onPress={() => setShowConstellations(!showConstellations)}>
-              <Ionicons name="git-merge-outline" size={20} color="#fff" />
+            <TouchableOpacity style={[styles.modeButton, layersVisible && styles.modeActive]} onPress={() => setLayersVisible(true)}>
+              <Ionicons name="layers-outline" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.modeButton, showLabels && styles.modeActive]} onPress={() => setShowLabels(!showLabels)}>
-              <Ionicons name="text-outline" size={20} color="#fff" />
+            <TouchableOpacity style={[styles.modeButton, nightVision && styles.nightModeActive]} onPress={() => setNightVision(!nightVision)}>
+              <Ionicons name="moon-outline" size={20} color={nightVision ? '#FF4A42' : '#fff'} />
             </TouchableOpacity>
           </View>
         </View>
@@ -425,23 +432,75 @@ export default function StarMapScreen() {
               lstDegrees={siderealTime}
               hideBelowHorizon
               transparentBackground={mode === 'camera'}
+              nightVision={nightVision}
               onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
               onZoomChange={setZoom}
-              onSelect={(star) => { setSelectedStar(star); setPopupVisible(true); }}
+              onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
               ownedStarIds={ownedStarIds}
             />
           )}
 
+          {nightVision && <View style={styles.nightFilter} pointerEvents="none" />}
+
           {selectedStar && (
-            <TouchableOpacity style={styles.focusBtn} onPress={handleCenterOnSelected}>
-              <Ionicons name="locate" size={24} color={THEME.colors.primary} />
-              <Text style={styles.focusBtnText}>ODAKLAN</Text>
-            </TouchableOpacity>
+            <View style={[styles.selectionPanel, nightVision && styles.selectionPanelNight]}>
+              <View style={styles.selectionIdentity}>
+                <Text style={[styles.selectionName, nightVision && styles.nightText]}>
+                  {selectedStar.properName || selectedStar.proper || `HIP ${selectedStar.hip || selectedStar.id}`}
+                </Text>
+                <Text style={[styles.selectionMeta, nightVision && styles.nightTextMuted]}>
+                  MAG {Number(selectedStar.mag).toFixed(2)}
+                  {selectedStar.constellation || selectedStar.con ? `  /  ${selectedStar.constellation || selectedStar.con}` : ''}
+                </Text>
+                {selectedStarOwned && (
+                  <Text style={[styles.selectionOwned, nightVision && styles.nightText]}>
+                    STARCLAIM {selectedPurchase?.starClaimCode || selectedPurchase?.code || selectedStar.starClaimCode || 'OWNED'}
+                  </Text>
+                )}
+              </View>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity style={styles.selectionIconButton} onPress={handleCenterOnSelected}>
+                  <Ionicons name="locate" size={20} color={nightVision ? '#FF4A42' : THEME.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionIconButton} onPress={() => setPopupVisible(true)}>
+                  <Ionicons name="information-circle-outline" size={21} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionIconButton} onPress={() => setSelectedStar(null)}>
+                  <Ionicons name="close" size={20} color="rgba(255,255,255,0.7)" />
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         </View>
         
         <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
         <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
+        <Modal
+          visible={layersVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLayersVisible(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.layersBackdrop}
+            onPress={() => setLayersVisible(false)}
+          >
+            <View style={[styles.layersPanel, nightVision && styles.layersPanelNight]}>
+              <View style={styles.layersHeader}>
+                <Text style={[styles.layersTitle, nightVision && styles.nightText]}>GOKYUZU KATMANLARI</Text>
+                <TouchableOpacity onPress={() => setLayersVisible(false)}>
+                  <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
+                </TouchableOpacity>
+              </View>
+              <LayerToggle icon="git-merge-outline" label="Takimyildizi cizgileri" active={showConstellations} onPress={() => setShowConstellations(!showConstellations)} nightVision={nightVision} />
+              <LayerToggle icon="text-outline" label="Yildiz isimleri" active={showLabels} onPress={() => setShowLabels(!showLabels)} nightVision={nightVision} />
+              <LayerToggle icon="planet-outline" label="Gezegenler" active={showPlanets} onPress={() => setShowPlanets(!showPlanets)} nightVision={nightVision} />
+              <LayerToggle icon="aperture-outline" label="Derin uzay" active={showDSOs} onPress={() => setShowDSOs(!showDSOs)} nightVision={nightVision} />
+              <LayerToggle icon="image-outline" label="Mitoloji gorselleri" active={showMythology} onPress={() => setShowMythology(!showMythology)} nightVision={nightVision} />
+            </View>
+          </TouchableOpacity>
+        </Modal>
         <Modal
           visible={calibrationVisible && mode === 'camera'}
           transparent
@@ -501,7 +560,9 @@ const styles = StyleSheet.create({
   modeButton: { padding: 10, borderRadius: 16, marginHorizontal: 2 },
   modeActive: { backgroundColor: THEME.colors.primary + '40', borderWidth: 1, borderColor: THEME.colors.primary },
   locationActive: { backgroundColor: 'rgba(201,168,76,0.12)' },
+  nightModeActive: { backgroundColor: 'rgba(255,45,35,0.16)', borderWidth: 1, borderColor: 'rgba(255,74,66,0.55)' },
   mapContainer: { flex: 1 },
+  nightFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(90,0,0,0.12)', zIndex: 2 },
   observerBadge: { position: 'absolute', top: 62, alignSelf: 'center', zIndex: 12, flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 10, backgroundColor: 'rgba(0,0,0,0.72)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.3)', borderRadius: 14 },
   observerText: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
   observerCoordinates: { color: 'rgba(255,255,255,0.55)', fontSize: 9, fontWeight: '600' },
@@ -520,8 +581,26 @@ const styles = StyleSheet.create({
   accuracyText: { color: 'rgba(255,255,255,0.55)', fontSize: 10, fontWeight: '700', marginTop: 9 },
   calibrationClose: { marginTop: 22, minWidth: 160, paddingVertical: 12, paddingHorizontal: 18, alignItems: 'center', backgroundColor: THEME.colors.primary, borderRadius: 6 },
   calibrationCloseText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  focusBtn: { position: 'absolute', bottom: 100, left: 20, backgroundColor: 'rgba(0,0,0,0.6)', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: THEME.colors.primary },
-  focusBtnText: { color: THEME.colors.primary, fontWeight: '900', fontSize: 10, letterSpacing: 1 },
+  selectionPanel: { position: 'absolute', left: 16, right: 68, bottom: 22, zIndex: 3, minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 14, backgroundColor: 'rgba(4,8,16,0.92)', borderWidth: 1, borderColor: 'rgba(201,168,76,0.35)', borderRadius: 8 },
+  selectionPanelNight: { backgroundColor: 'rgba(12,0,0,0.94)', borderColor: 'rgba(255,74,66,0.5)' },
+  selectionIdentity: { flex: 1, paddingRight: 10 },
+  selectionName: { color: '#fff', fontSize: 14, fontWeight: '900' },
+  selectionMeta: { color: 'rgba(255,255,255,0.5)', fontSize: 9, fontWeight: '700', marginTop: 4 },
+  selectionOwned: { color: '#C9A84C', fontSize: 9, fontWeight: '900', marginTop: 5, letterSpacing: 0.5 },
+  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  selectionIconButton: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
+  nightText: { color: '#FF4A42' },
+  nightTextMuted: { color: 'rgba(255,74,66,0.58)' },
+  layersBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.58)', justifyContent: 'flex-end', padding: 16 },
+  layersPanel: { backgroundColor: '#080C14', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', borderRadius: 8, padding: 16, marginBottom: 18 },
+  layersPanelNight: { backgroundColor: '#100000', borderColor: 'rgba(255,74,66,0.4)' },
+  layersHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)', marginBottom: 4 },
+  layersTitle: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  layerRow: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  layerIdentity: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  layerLabel: { color: 'rgba(255,255,255,0.82)', fontSize: 13, fontWeight: '700' },
+  layerSwitch: { width: 38, height: 22, borderRadius: 11, borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', padding: 2 },
+  layerSwitchKnob: { width: 16, height: 16, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.38)' },
   searchContainer: { position: 'absolute', top: 100, left: 20, right: 20, zIndex: 20 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   searchInput: { flex: 1, color: '#fff', paddingVertical: 10, paddingHorizontal: 8, fontSize: 14 },
@@ -529,3 +608,18 @@ const styles = StyleSheet.create({
   searchResultItem: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
   searchResultText: { color: '#fff', fontSize: 13, fontWeight: '600' }
 });
+
+function LayerToggle({ icon, label, active, onPress, nightVision }) {
+  const accent = nightVision ? '#FF4A42' : THEME.colors.primary;
+  return (
+    <TouchableOpacity style={styles.layerRow} onPress={onPress}>
+      <View style={styles.layerIdentity}>
+        <Ionicons name={icon} size={19} color={active ? accent : 'rgba(255,255,255,0.45)'} />
+        <Text style={[styles.layerLabel, nightVision && styles.nightText]}>{label}</Text>
+      </View>
+      <View style={[styles.layerSwitch, active && { borderColor: accent, backgroundColor: `${accent}25` }]}>
+        <View style={[styles.layerSwitchKnob, active && { backgroundColor: accent, transform: [{ translateX: 16 }] }]} />
+      </View>
+    </TouchableOpacity>
+  );
+}

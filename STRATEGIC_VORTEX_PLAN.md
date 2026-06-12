@@ -106,11 +106,11 @@ z = -d * cos(dec) * sin(ra)
 
 - [x] Takımyıldızı çizgileri varsayılan olarak açık olacak.
 - [ ] Takımyıldızı isimleri ve sınırları ayrı katmanlar olacak.
-- [ ] Yıldız isimleri zoom seviyesine göre gösterilecek.
-- [ ] Gezegenler, DSO'lar ve mitoloji görselleri katman menüsünden yönetilecek.
-- [ ] Gece görüşü için kırmızı ışık modu eklenecek.
-- [ ] Seçilen yıldız için alt bilgi paneli oluşturulacak.
-- [ ] Sahip olunan yıldız altın işaret ve StarClaim koduyla vurgulanacak.
+- [x] Yıldız isimleri zoom seviyesine göre gösterilecek.
+- [x] Gezegenler, DSO'lar ve mitoloji görselleri katman menüsünden yönetilecek.
+- [x] Gece görüşü için kırmızı ışık modu eklenecek.
+- [x] Seçilen yıldız için alt bilgi paneli oluşturulacak.
+- [x] Sahip olunan yıldız altın işaret ve StarClaim koduyla vurgulanacak.
 
 ## 2.4 2D Performans
 

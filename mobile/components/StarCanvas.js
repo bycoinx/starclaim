@@ -164,6 +164,7 @@ export default function StarCanvas({
   lstDegrees = 0,
   hideBelowHorizon = true,
   transparentBackground = false,
+  nightVision = false,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   
@@ -252,7 +253,7 @@ export default function StarCanvas({
       visible.push({
         ...star,
         radius: radiusForMag(star.mag, star.spect),
-        color: colorForSpectrum(star.spect),
+        color: nightVision ? '#FF514A' : colorForSpectrum(star.spect),
         owned,
       });
       return visible;
@@ -267,6 +268,7 @@ export default function StarCanvas({
     layout.width,
     lstDegrees,
     observerLatitude,
+    nightVision,
     ownedIdSet,
     selectedStar?.id,
     stars,
@@ -386,7 +388,7 @@ export default function StarCanvas({
           <Canvas style={styles.canvas}>
             {!transparentBackground && (
               <Rect x={0} y={0} width={layout.width} height={layout.height}>
-                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={['#050B1A', '#000000']} />
+                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={nightVision ? ['#160000', '#000000'] : ['#050B1A', '#000000']} />
               </Rect>
             )}
 
@@ -397,6 +399,7 @@ export default function StarCanvas({
                 zoom={zoom}
                 layout={layout}
                 font={boldFont}
+                nightVision={nightVision}
               />
             )}
 
@@ -405,25 +408,25 @@ export default function StarCanvas({
             ))}
 
             {showDSOs && dsoData.map((dso) => (
-              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
+              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
             {showConstellations && constellations.features && constellations.features.map((f, i) => (
-              <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
+              <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
             {renderedStars.map((star) => (
-              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} />
+              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
             ))}
 
             {showPlanets && planetData.map((planet) => (
-              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
+              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
             {selectedStarPos.value && isSelectedVisible.value && (
               <Group>
-                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 22 + Math.sin(time.value * 5) * 4)} color="#C9A84C" style="stroke" strokeWidth={1} opacity={0.3} />
-                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 18)} y={useDerivedValue(() => selectedStarPos.value.y - 18)} width={36} height={36} color="#C9A84C" style="stroke" strokeWidth={1.2} opacity={useDerivedValue(() => 0.7 + Math.sin(time.value * 8) * 0.2)} />
+                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 22 + Math.sin(time.value * 5) * 4)} color={nightVision ? '#FF4A42' : '#C9A84C'} style="stroke" strokeWidth={1} opacity={0.3} />
+                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 18)} y={useDerivedValue(() => selectedStarPos.value.y - 18)} width={36} height={36} color={nightVision ? '#FF4A42' : '#C9A84C'} style="stroke" strokeWidth={1.2} opacity={useDerivedValue(() => 0.7 + Math.sin(time.value * 8) * 0.2)} />
               </Group>
             )}
           </Canvas>
@@ -442,7 +445,7 @@ export default function StarCanvas({
   );
 }
 
-function HorizonOverlay({ ra, dec, zoom, layout, font }) {
+function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
   const horizonY = useDerivedValue(() => (
     projectDegrees(ra.value, 0, ra.value, dec.value, layout.width, layout.height, zoom.value).y
   ));
@@ -460,12 +463,12 @@ function HorizonOverlay({ ra, dec, zoom, layout, font }) {
         y={horizonY}
         width={layout.width}
         height={useDerivedValue(() => Math.max(0, layout.height - horizonY.value))}
-        color="rgba(2,5,9,0.82)"
+        color={nightVision ? 'rgba(12,0,0,0.88)' : 'rgba(2,5,9,0.82)'}
       />
       <Line
         p1={useDerivedValue(() => vec(0, horizonY.value))}
         p2={useDerivedValue(() => vec(layout.width, horizonY.value))}
-        color="rgba(201,168,76,0.35)"
+        color={nightVision ? 'rgba(255,74,66,0.42)' : 'rgba(201,168,76,0.35)'}
         strokeWidth={1}
       />
       {directions.map((direction) => (
@@ -477,13 +480,14 @@ function HorizonOverlay({ ra, dec, zoom, layout, font }) {
           zoom={zoom}
           layout={layout}
           font={font}
+          nightVision={nightVision}
         />
       ))}
     </Group>
   );
 }
 
-function HorizonDirection({ direction, ra, dec, zoom, layout, font }) {
+function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision }) {
   const pos = useDerivedValue(() => (
     projectDegrees(
       direction.az,
@@ -511,25 +515,25 @@ function HorizonDirection({ direction, ra, dec, zoom, layout, font }) {
         y={useDerivedValue(() => pos.value.y + 4)}
         text={direction.label}
         font={font}
-        color="#C9A84C"
+        color={nightVision ? '#FF4A42' : '#C9A84C'}
       />
     </Group>
   );
 }
 
-function ConstellationFeature({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees }) {
+function ConstellationFeature({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return null;
   return feature.geometry.coordinates.map((path, idx) => (
     <Group key={idx}>
       {path.map((_, i) => {
         if (i === path.length - 1) return null;
-        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />;
+        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />;
       })}
     </Group>
   ));
 }
 
-function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees }) {
+function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const p1 = useDerivedValue(() => project(p1_data[0] / 15, p1_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const p2 = useDerivedValue(() => project(p2_data[0] / 15, p2_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => {
@@ -548,14 +552,14 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
     <Line 
       p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))} 
       p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))} 
-      color="rgba(74,144,226,0.12)" 
+      color={nightVision ? 'rgba(255,74,66,0.2)' : 'rgba(74,144,226,0.12)'}
       strokeWidth={0.8} 
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)} 
     />
   );
 }
 
-function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon }) {
+function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision }) {
   const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
     pos.value.x > -30
@@ -580,7 +584,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
           cx={ownedX}
           cy={ownedY}
           r={star.radius + 6}
-          color="#C9A84C"
+          color={nightVision ? '#FF4A42' : '#C9A84C'}
           style="stroke"
           strokeWidth={1.4}
           opacity={0.85}
@@ -595,7 +599,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
              y={useDerivedValue(() => pos.value.y - star.radius - 4)} 
              text={star.proper.toUpperCase()} 
              font={font} 
-             color="rgba(255,255,255,0.7)" 
+             color={nightVision ? 'rgba(255,74,66,0.76)' : 'rgba(255,255,255,0.7)'}
            />
            {zoom.value > 4 && (
              <SkiaText 
@@ -603,7 +607,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
                y={useDerivedValue(() => pos.value.y - star.radius + 8)} 
                text={`MAG: ${star.mag?.toFixed(2)}`} 
                font={font} 
-               color="rgba(0, 204, 255, 0.4)" 
+               color={nightVision ? 'rgba(255,74,66,0.45)' : 'rgba(0, 204, 255, 0.4)'}
              />
            )}
         </Group>
@@ -612,7 +616,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
   );
 }
 
-function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees }) {
+function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
     pos.value.x > -20
@@ -623,16 +627,16 @@ function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, obs
   ));
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 5 * (zoom.value > 2 ? 1.4 : 1))} color={planet.color} />
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 10 * (zoom.value > 2 ? 1.4 : 1))} color={planet.color} opacity={0.15} style="stroke" strokeWidth={1} />
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 5 * (zoom.value > 2 ? 1.4 : 1))} color={nightVision ? '#FF4A42' : planet.color} />
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 10 * (zoom.value > 2 ? 1.4 : 1))} color={nightVision ? '#FF4A42' : planet.color} opacity={0.15} style="stroke" strokeWidth={1} />
       {font && zoom.value > 1.2 && (
-        <SkiaText x={useDerivedValue(() => pos.value.x + 12)} y={useDerivedValue(() => pos.value.y + 4)} text={planet.name.toUpperCase()} font={font} color="#fff" />
+        <SkiaText x={useDerivedValue(() => pos.value.x + 12)} y={useDerivedValue(() => pos.value.y + 4)} text={planet.name.toUpperCase()} font={font} color={nightVision ? '#FF4A42' : '#fff'} />
       )}
     </Group>
   );
 }
 
-function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees }) {
+function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const pos = useDerivedValue(() => project(dso.ra, dso.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
     pos.value.x > -50
@@ -643,9 +647,9 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
   ));
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 0.7 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={2} color={dso.color} />
+      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={2} color={nightVision ? '#FF4A42' : dso.color} />
       {font && zoom.value > 1.8 && (
-        <SkiaText x={useDerivedValue(() => pos.value.x + 10)} y={useDerivedValue(() => pos.value.y - 10)} text={dso.name} font={font} color={dso.color} />
+        <SkiaText x={useDerivedValue(() => pos.value.x + 10)} y={useDerivedValue(() => pos.value.y - 10)} text={dso.name} font={font} color={nightVision ? '#FF4A42' : dso.color} />
       )}
     </Group>
   );
