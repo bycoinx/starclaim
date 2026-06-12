@@ -162,9 +162,11 @@ function AppShell() {
 
   return (
     <>
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <StarCanvas density={500} />
-      </div>
+      {!isCosmosRoute && (
+        <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+          <StarCanvas density={500} />
+        </div>
+      )}
       <Navbar onOpenClaim={() => openClaim()} />
       <Suspense fallback={<PageLoading />}>
         <div className="relative z-10">
