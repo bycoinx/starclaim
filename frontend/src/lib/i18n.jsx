@@ -1560,8 +1560,8 @@ const DICT = {
     aegis_error_server: "Serverfout",
     aegis_error_connection: "Quantum verbindingsfout, meneer.",
     aegis_no_reply: "Geen antwoord van Aegis ontvangen.",
-    },
-    };
+  },
+  DE_DUP: {
     nav_home: "Startseite",
     nav_pick: "Wähle deinen Stern",
     nav_market: "Marktplatz",
@@ -1717,7 +1717,7 @@ const DICT = {
     aegis_error_connection: "Quantenverbindungsfehler, Sir.",
     aegis_no_reply: "Keine Antwort von Aegis erhalten.",
   },
-  NL: {
+  NL_DUP: {
     nav_home: "Home",
     nav_pick: "Kies je ster",
     nav_market: "Marktplaats",

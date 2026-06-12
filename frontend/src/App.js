@@ -4,7 +4,7 @@ import "@/App.css";
 import { Toaster, toast } from "sonner";
 
 import { AuthProvider } from "./lib/auth";
-import { LanguageProvider } from "./lib/i18n";
+import { LanguageProvider, useT } from "./lib/i18n";
 import { api } from "./lib/api";
 
 import Navbar from "./components/Navbar";

@@ -84,6 +84,7 @@ function Reveal({ children, delay = 0 }) {
 
 export default function Home({ onOpenClaim, stats }) {
   const { t, lang } = useT();
+  const isTR = lang === "TR";
   const [email, setEmail] = useState("");
 
   return (
