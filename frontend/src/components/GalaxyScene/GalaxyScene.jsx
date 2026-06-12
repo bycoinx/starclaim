@@ -6,175 +6,190 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
 import CameraRig from './CameraRig';
 
-// --- DATA & CONSTANTS ---
-const PLANETS = [
-  { name: "Mercury", color: "#A5A5AF", dist: 40, size: 1.2, speed: 0.04, tex: "/tex/mercury.jpg" },
-  { name: "Venus", color: "#E3BB76", dist: 60, size: 2.2, speed: 0.015, tex: "/tex/venus.jpg" },
-  { name: "Earth", color: "#2271B3", dist: 85, size: 2.5, speed: 0.01, tex: "/tex/earth.jpg", hasAtmosphere: true },
-  { name: "Mars", color: "#E27B58", dist: 110, size: 1.8, speed: 0.008, tex: "/tex/mars.jpg" },
-  { name: "Jupiter", color: "#D39C7E", dist: 160, size: 8.5, speed: 0.002, tex: "/tex/jupiter.jpg" },
-  { name: "Saturn", color: "#C5AB6E", dist: 220, size: 7.2, speed: 0.0009, tex: "/tex/saturn.jpg", hasRings: true },
-  { name: "Uranus", color: "#B5E3E3", dist: 280, size: 4.5, speed: 0.0004, tex: "/tex/uranus.jpg" },
-  { name: "Neptune", color: "#6081FF", dist: 330, size: 4.5, speed: 0.0001, tex: "/tex/neptune.jpg" },
-];
+// --- ACCURATE JPL DATA (J2000) ---
+const PLANET_DATA = {
+  mercury: { a: 0.387, e: 0.205, i: 7.0, L: 252.25, wBar: 77.45, Omega: 48.33, color: "#A5A5AF", size: 1.2, speed: 0.5, tex: "/tex/mercury.jpg" },
+  venus: { a: 0.723, e: 0.006, i: 3.39, L: 181.98, wBar: 131.53, Omega: 76.68, color: "#E3BB76", size: 2.2, speed: 0.3, tex: "/tex/venus.jpg" },
+  earth: { a: 1.0, e: 0.016, i: 0.0, L: 100.46, wBar: 102.94, Omega: -11.26, color: "#2271B3", size: 2.5, speed: 0.2, tex: "/tex/earth.jpg", hasAtmosphere: true },
+  mars: { a: 1.524, e: 0.093, i: 1.85, L: 355.45, wBar: 336.04, Omega: 49.58, color: "#E27B58", size: 1.8, speed: 0.15, tex: "/tex/mars.jpg" },
+  jupiter: { a: 5.203, e: 0.048, i: 1.3, L: 34.4, wBar: 14.75, Omega: 100.55, color: "#D39C7E", size: 8.5, speed: 0.08, tex: "/tex/jupiter.jpg" },
+  saturn: { a: 9.537, e: 0.054, i: 2.48, L: 49.94, wBar: 92.43, Omega: 113.71, color: "#C5AB6E", size: 7.2, speed: 0.05, tex: "/tex/saturn.jpg", hasRings: true },
+  uranus: { a: 19.191, e: 0.047, i: 0.77, L: 313.23, wBar: 170.96, Omega: 74.23, color: "#B5E3E3", size: 4.5, speed: 0.03, tex: "/tex/uranus.jpg" },
+  neptune: { a: 30.069, e: 0.008, i: 1.77, L: 304.88, wBar: 44.97, Omega: 131.72, color: "#6081FF", size: 4.5, speed: 0.02, tex: "/tex/neptune.jpg" },
+};
 
-// --- SHADERS ---
-const SUN_FRAGMENT = `
-  varying vec2 vUv;
-  uniform float uTime;
-  void main() {
-    float d = distance(vUv, vec2(0.5));
-    if (d > 0.5) discard;
-    float strength = exp(-5.0 * d);
-    vec3 color = mix(vec3(1.0, 0.9, 0.2), vec3(1.0, 0.4, 0.0), d * 2.0);
-    gl_FragColor = vec4(color * 3.0, strength);
-  }
-`;
+const SCALE = 35; // 1 AU = 35 Three.js units
 
-const ATMOSPHERE_VERTEX = `
-  varying vec3 vNormal;
-  void main() {
-    vNormal = normalize(normalMatrix * normal);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-`;
+// --- MATHEMATICAL CORE ---
 
-const ATMOSPHERE_FRAGMENT = `
-  varying vec3 vNormal;
-  uniform vec3 uColor;
-  void main() {
-    float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 3.0);
-    gl_FragColor = vec4(uColor, intensity);
-  }
-`;
+function calcKeplerPosition(data, time, scale = SCALE) {
+  const { a, e, i: incDeg, L: meanLongDeg, wBar: longPeriDeg, Omega: nodeDeg } = data;
+  
+  const i = THREE.MathUtils.degToRad(incDeg);
+  const Omega = THREE.MathUtils.degToRad(nodeDeg);
+  const wBar = THREE.MathUtils.degToRad(meanLongDeg);
+  const w = THREE.MathUtils.degToRad(longPeriDeg) - Omega;
+
+  // Mean Anomaly (Simplified time progression)
+  const M = wBar + time * data.speed;
+  
+  // Solve Kepler's Equation for Eccentric Anomaly (E)
+  let E = M;
+  for (let n = 0; n < 5; n++) E = E - (E - e * Math.sin(E) - M) / (1 - e * Math.cos(E));
+
+  // Orbital Plane Coordinates
+  const xP = a * (Math.cos(E) - e);
+  const yP = a * Math.sqrt(1 - e * e) * Math.sin(E);
+
+  // Rotate to 3D Ecliptic
+  const x = (Math.cos(Omega) * Math.cos(w) - Math.sin(Omega) * Math.sin(w) * Math.cos(i)) * xP +
+            (-Math.cos(Omega) * Math.sin(w) - Math.sin(Omega) * Math.cos(w) * Math.cos(i)) * yP;
+  const y = (Math.sin(Omega) * Math.cos(w) + Math.cos(Omega) * Math.sin(w) * Math.cos(i)) * xP +
+            (-Math.sin(Omega) * Math.sin(w) + Math.cos(Omega) * Math.cos(w) * Math.cos(i)) * yP;
+  const z = (Math.sin(w) * Math.sin(i)) * xP + (Math.cos(w) * Math.sin(i)) * yP;
+
+  // Map to Three.js (Y-up)
+  return new THREE.Vector3(x * scale, z * scale, -y * scale);
+}
 
 // --- COMPONENTS ---
 
-function Sun() {
-  const meshRef = useRef();
-  useFrame(({ clock }) => {
-    if (meshRef.current) meshRef.current.scale.setScalar(1 + Math.sin(clock.elapsedTime * 2) * 0.02);
-  });
+function OrbitLine({ data }) {
+  const points = useMemo(() => {
+    const pts = [];
+    for (let t = 0; n < 128; n++) {
+        // Use full calculation for 128 points to draw the true 3D elliptical orbit
+    }
+    // Optimization: Generate once
+    const curveArr = [];
+    for(let i=0; i<=128; i++) {
+        const angle = (i/128) * Math.PI * 2;
+        curveArr.push(calcKeplerPosition({...data, L: 0, speed: 0}, angle));
+    }
+    return curveArr;
+  }, [data]);
+
   return (
-    <group>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[15, 32, 32]} />
-        <shaderMaterial
-          vertexShader="varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }"
-          fragmentShader={SUN_FRAGMENT}
-          uniforms={{ uTime: { value: 0 } }}
-          transparent
-        />
-      </mesh>
-      <pointLight intensity={20} color="#FFDD44" distance={1000} />
-    </group>
+    <line>
+      <bufferGeometry attach="geometry">
+        <bufferAttribute attach="attributes-position" count={points.length} array={new Float32Array(points.flatMap(p=>[p.x, p.y, p.z]))} itemSize={3} />
+      </bufferGeometry>
+      <lineBasicMaterial color="white" transparent opacity={0.1} />
+    </line>
   );
 }
 
-function PlanetBody({ planet }) {
+function Planet({ name, data }) {
   const ref = useRef();
-  const tex = useLoader(THREE.TextureLoader, planet.tex);
-  
+  const tex = useLoader(THREE.TextureLoader, data.tex);
+
   useFrame(({ clock }) => {
-    const angle = clock.elapsedTime * planet.speed;
-    ref.current.position.x = Math.cos(angle) * planet.dist;
-    ref.current.position.z = Math.sin(angle) * planet.dist;
+    const pos = calcKeplerPosition(data, clock.elapsedTime * 0.2);
+    ref.current.position.copy(pos);
     ref.current.rotation.y += 0.01;
   });
 
   return (
     <group ref={ref}>
-      <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
+      <Float speed={2} rotationIntensity={0.2}>
         <mesh castShadow receiveShadow>
-          <sphereGeometry args={[planet.size, 32, 32]} />
-          <meshStandardMaterial map={tex} roughness={0.7} metalness={0.2} emissive={planet.color} emissiveIntensity={0.1} />
+          <sphereGeometry args={[data.size, 32, 32]} />
+          <meshStandardMaterial map={tex} roughness={0.8} metalness={0.1} />
         </mesh>
-
-        {planet.hasAtmosphere && (
-          <mesh scale={[1.2, 1.2, 1.2]}>
-            <sphereGeometry args={[planet.size, 32, 32]} />
-            <shaderMaterial
-              vertexShader={ATMOSPHERE_VERTEX}
-              fragmentShader={ATMOSPHERE_FRAGMENT}
-              uniforms={{ uColor: { value: new THREE.Color(planet.color) } }}
-              side={THREE.BackSide}
-              transparent
-            />
+        
+        {data.hasAtmosphere && (
+          <mesh scale={[1.15, 1.15, 1.15]}>
+            <sphereGeometry args={[data.size, 32, 32]} />
+            <meshBasicMaterial color={data.color} transparent opacity={0.15} side={THREE.BackSide} />
           </mesh>
         )}
 
-        {planet.hasRings && (
-           <mesh rotation={[Math.PI / 2.5, 0, 0]}>
-             <ringGeometry args={[planet.size * 1.4, planet.size * 2.2, 64]} />
-             <meshStandardMaterial color={planet.color} transparent opacity={0.4} side={THREE.DoubleSide} />
-           </mesh>
+        {data.hasRings && (
+          <mesh rotation={[Math.PI / 2.5, 0, 0]}>
+            <ringGeometry args={[data.size * 1.5, data.size * 2.5, 64]} />
+            <meshStandardMaterial color={data.color} transparent opacity={0.3} side={THREE.DoubleSide} />
+          </mesh>
         )}
 
-        <Html distanceFactor={40} position={[0, planet.size + 2, 0]}>
-          <div className="px-3 py-1 bg-black/80 border border-white/20 rounded text-[8px] font-bold text-white tracking-[0.2em] whitespace-nowrap uppercase">
-            {planet.name}
+        <Html distanceFactor={50} position={[0, data.size + 2, 0]}>
+          <div className="px-3 py-1 bg-black/60 border border-white/10 rounded backdrop-blur-md">
+            <span className="text-[9px] font-black text-white tracking-widest uppercase">{name}</span>
           </div>
         </Html>
       </Float>
+    </group>
+  );
+}
 
-      {/* Orbit Trace */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[planet.dist - 0.2, planet.dist + 0.2, 128]} />
-        <meshBasicMaterial color="white" transparent opacity={0.05} side={THREE.DoubleSide} />
+function Sun() {
+  return (
+    <group>
+      <mesh>
+        <sphereGeometry args={[12, 32, 32]} />
+        <meshBasicMaterial color="#FFDD44" />
       </mesh>
+      <pointLight intensity={10} color="#FFCC33" distance={2000} decay={2} />
+      {/* Corona Effect */}
+      <Stars radius={50} depth={10} count={100} factor={10} fade speed={5} />
     </group>
   );
 }
 
 function AsteroidBelt() {
-  const count = 400;
+  const count = 1000;
   const pts = useMemo(() => {
     const arr = [];
     for(let i=0; i<count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = 130 + Math.random() * 15;
-      arr.push(Math.cos(angle)*r, (Math.random()-0.5)*5, Math.sin(angle)*r);
+      const r = 160 + Math.random() * 30;
+      const a = Math.random() * Math.PI * 2;
+      arr.push(Math.cos(a)*r, (Math.random()-0.5)*8, Math.sin(a)*r);
     }
     return new Float32Array(arr);
   }, []);
   return (
     <points>
       <bufferGeometry><bufferAttribute attach="attributes-position" count={count} array={pts} itemSize={3} /></bufferGeometry>
-      <pointsMaterial size={0.8} color="#888" transparent opacity={0.4} />
+      <pointsMaterial size={0.5} color="#666" transparent opacity={0.4} />
     </points>
   );
 }
 
 export default function GalaxyScene({ onStarClick }) {
   const [stars, setStars] = useState(null);
-  useEffect(() => { loadHygStars({ limit: 20000 }).then(setStars); }, []);
+  useEffect(() => { loadHygStars({ limit: 15000 }).then(setStars); }, []);
 
   return (
     <div style={{ width: '100%', height: '100vh', background: '#000', position: 'relative' }}>
-      <Canvas shadows camera={{ position: [200, 150, 400], fov: 45, far: 20000 }}>
+      <Canvas shadows camera={{ position: [300, 200, 500], fov: 40, far: 50000 }}>
         <Suspense fallback={null}>
-          <color attach="background" args={["#000002"]} />
-          <ambientLight intensity={0.2} />
+          <color attach="background" args={["#000003"]} />
           
-          <Stars radius={5000} depth={100} count={10000} factor={6} saturation={0} fade speed={1} />
+          <Stars radius={6000} depth={200} count={20000} factor={6} saturation={0} fade speed={0.5} />
           
           <Sun />
           <AsteroidBelt />
-          {PLANETS.map(p => <PlanetBody key={p.name} planet={p} />)}
+          
+          {Object.entries(PLANET_DATA).map(([name, data]) => (
+            <group key={name}>
+              <OrbitLine data={data} />
+              <Planet name={name} data={data} />
+            </group>
+          ))}
 
-          {/* Background Stars (Static) */}
+          {/* Background Starscape (Static) */}
           {stars && (
             <points>
               <bufferGeometry>
-                <bufferAttribute attach="attributes-position" count={stars.length} array={new Float32Array(stars.flatMap(s=>[s.threeX * 10, s.threeY * 10, s.threeZ * 10]))} itemSize={3} />
+                <bufferAttribute attach="attributes-position" count={stars.length} array={new Float32Array(stars.flatMap(s=>[s.threeX * 15, s.threeY * 15, s.threeZ * 15]))} itemSize={3} />
               </bufferGeometry>
-              <pointsMaterial size={1.2} color="#445566" transparent opacity={0.3} />
+              <pointsMaterial size={1.0} color="#556688" transparent opacity={0.2} />
             </points>
           )}
 
-          <OrbitControls enablePan={false} maxDistance={1500} makeDefault />
+          <OrbitControls enablePan={false} maxDistance={3000} makeDefault />
+          
           <EffectComposer>
-            <Bloom intensity={1.5} luminanceThreshold={0.1} radius={0.8} />
+            <Bloom intensity={2.0} luminanceThreshold={0.05} radius={0.8} />
           </EffectComposer>
         </Suspense>
       </Canvas>
