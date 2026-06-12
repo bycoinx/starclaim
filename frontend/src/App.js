@@ -77,6 +77,7 @@ function PageLoading() {
 
 function AppShell() {
   const location = useLocation();
+  const isCosmosRoute = location.pathname === "/cosmos";
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeStar, setActiveStar] = useState(null);
   const [stats, setStats] = useState(null);
@@ -184,8 +185,8 @@ function AppShell() {
           </Routes>
         </div>
       </Suspense>
-      <Footer />
-      <LiveNotifications />
+      {!isCosmosRoute && <Footer />}
+      {!isCosmosRoute && <LiveNotifications />}
       <AegisTerminal />
       <CheckoutModal open={checkoutOpen} onOpenChange={setCheckoutOpen} star={activeStar} />
       <Toaster
