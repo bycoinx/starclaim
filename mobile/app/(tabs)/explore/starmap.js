@@ -154,7 +154,7 @@ export default function StarMapScreen() {
         <Camera style={styles.camera} type={Camera.Constants.Type.back} ratio="16:9" />
       ) : null}
       <View style={styles.overlay} pointerEvents="box-none">
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/')}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)/explore/home')}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
         

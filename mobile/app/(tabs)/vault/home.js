@@ -157,7 +157,7 @@ export default function VaultHomeScreen(){
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => router.replace('/')} style={styles.backBtn}>
+            <TouchableOpacity onPress={() => router.replace('/(tabs)/explore/home')} style={styles.backBtn}>
               <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
             </TouchableOpacity>
             <View>
@@ -165,7 +165,7 @@ export default function VaultHomeScreen(){
               <Text style={styles.subHeader}>SECURE_TIME_CAPSULE_RECORDS</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('./newmessage')}>
+          <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
             <Ionicons name="add" size={24} color="#000" />
           </TouchableOpacity>
         </View>
@@ -174,7 +174,7 @@ export default function VaultHomeScreen(){
           <View style={styles.empty}>
             <Ionicons name="cube-outline" size={48} color="rgba(255,255,255,0.1)" />
             <Text style={styles.emptyText}>BİR MESAJ BIRAKILMADI</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={()=>router.push('./newmessage')}>
+            <TouchableOpacity style={styles.emptyBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
               <Text style={styles.emptyBtnText}>YENİ KAYIT OLUŞTUR</Text>
             </TouchableOpacity>
           </View>
