@@ -1,10 +1,9 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OrbitControls, Stars, Float, Text, Html } from '@react-three/drei';
+import { OrbitControls, Stars, Float, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import loadHygStars from '../../data/hygdata_v3_sample';
-import CameraRig from './CameraRig';
 
 // --- ACCURATE JPL DATA (J2000) ---
 const PLANET_DATA = {
@@ -56,15 +55,10 @@ function calcKeplerPosition(data, time, scale = SCALE) {
 
 function OrbitLine({ data }) {
   const points = useMemo(() => {
-    const pts = [];
-    for (let t = 0; n < 128; n++) {
-        // Use full calculation for 128 points to draw the true 3D elliptical orbit
-    }
-    // Optimization: Generate once
     const curveArr = [];
-    for(let i=0; i<=128; i++) {
-        const angle = (i/128) * Math.PI * 2;
-        curveArr.push(calcKeplerPosition({...data, L: 0, speed: 0}, angle));
+    for (let i = 0; i <= 128; i++) {
+      const angle = (i / 128) * Math.PI * 2;
+      curveArr.push(calcKeplerPosition({ ...data, L: 0, speed: 0 }, angle));
     }
     return curveArr;
   }, [data]);
