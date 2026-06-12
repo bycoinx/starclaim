@@ -5,14 +5,15 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 const PLANETS = [
-  { name: 'MERCURY', orbit: 18, size: 0.65, speed: 0.52, color: '#b9b3aa', tex: '/tex/mercury.jpg' },
-  { name: 'VENUS', orbit: 28, size: 1.0, speed: 0.38, color: '#dfbd7c', tex: '/tex/venus.jpg' },
-  { name: 'EARTH', orbit: 39, size: 1.08, speed: 0.31, color: '#4e9fe6', tex: '/tex/earth.jpg', atmosphere: '#6fb7ff' },
-  { name: 'MARS', orbit: 52, size: 0.82, speed: 0.25, color: '#d56f48', tex: '/tex/mars.jpg' },
-  { name: 'JUPITER', orbit: 92, size: 3.4, speed: 0.13, color: '#d7a77e', tex: '/tex/jupiter.jpg' },
-  { name: 'SATURN', orbit: 128, size: 3.0, speed: 0.09, color: '#d7c186', tex: '/tex/saturn.jpg', rings: true },
-  { name: 'URANUS', orbit: 166, size: 1.75, speed: 0.065, color: '#99dce0', tex: '/tex/uranus.jpg' },
-  { name: 'NEPTUNE', orbit: 202, size: 1.72, speed: 0.048, color: '#5d78ff', tex: '/tex/neptune.jpg' },
+  { name: 'MERCURY', orbit: 18, size: 0.65, speed: 0.085, inclination: 7.0, node: 48.3, color: '#b9b3aa', tex: '/tex/mercury.jpg' },
+  { name: 'VENUS', orbit: 28, size: 1.0, speed: 0.062, inclination: 3.4, node: 76.7, color: '#dfbd7c', tex: '/tex/venus.jpg' },
+  { name: 'EARTH', orbit: 39, size: 1.2, speed: 0.05, inclination: 0.0, node: 0, color: '#ffffff', tex: '/tex/earth.jpg', earth: true },
+  { name: 'MARS', orbit: 52, size: 0.82, speed: 0.041, inclination: 1.8, node: 49.6, color: '#d56f48', tex: '/tex/mars.jpg' },
+  { name: 'JUPITER', orbit: 92, size: 3.4, speed: 0.022, inclination: 1.3, node: 100.5, color: '#ffffff', tex: '/tex/jupiter.jpg' },
+  { name: 'SATURN', orbit: 128, size: 3.0, speed: 0.015, inclination: 2.5, node: 113.7, color: '#ffffff', tex: '/tex/saturn.jpg', rings: true },
+  { name: 'URANUS', orbit: 166, size: 1.75, speed: 0.011, inclination: 0.8, node: 74.0, color: '#ffffff', tex: '/tex/uranus.jpg' },
+  { name: 'NEPTUNE', orbit: 202, size: 1.72, speed: 0.008, inclination: 1.8, node: 131.8, color: '#ffffff', tex: '/tex/neptune.jpg' },
+  { name: 'PLUTO', orbit: 238, size: 0.48, speed: 0.005, inclination: 17.0, node: 110.3, color: '#c6b9a6', tex: '/tex/moon.jpg' },
 ];
 
 const STAR_VERTEX_SHADER = `
@@ -159,6 +160,104 @@ function OrbitLine({ radius }) {
   );
 }
 
+function Atmosphere({ size, color = '#73b8ff' }) {
+  return (
+    <mesh scale={[1.09, 1.09, 1.09]}>
+      <sphereGeometry args={[size, 48, 48]} />
+      <shaderMaterial
+        transparent
+        side={THREE.BackSide}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        uniforms={{ glowColor: { value: new THREE.Color(color) } }}
+        vertexShader={`
+          varying vec3 vNormal;
+          varying vec3 vPositionNormal;
+          void main() {
+            vNormal = normalize(normalMatrix * normal);
+            vPositionNormal = normalize((modelViewMatrix * vec4(position, 1.0)).xyz);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `}
+        fragmentShader={`
+          uniform vec3 glowColor;
+          varying vec3 vNormal;
+          varying vec3 vPositionNormal;
+          void main() {
+            float intensity = pow(0.72 - dot(vNormal, vPositionNormal), 2.4);
+            gl_FragColor = vec4(glowColor, intensity * 0.78);
+          }
+        `}
+      />
+    </mesh>
+  );
+}
+
+function EarthVisual({ size }) {
+  const surfaceRef = useRef();
+  const cloudsRef = useRef();
+  const [earthTexture, cloudsTexture] = useLoader(THREE.TextureLoader, [
+    '/tex/earth.jpg',
+    '/tex/earth_clouds.jpg',
+  ]);
+
+  useFrame(({ clock }) => {
+    if (surfaceRef.current) surfaceRef.current.rotation.y = clock.elapsedTime * 0.018;
+    if (cloudsRef.current) cloudsRef.current.rotation.y = clock.elapsedTime * 0.022;
+  });
+
+  return (
+    <group rotation={[0, 0, THREE.MathUtils.degToRad(23.4)]}>
+      <mesh ref={surfaceRef} castShadow receiveShadow>
+        <sphereGeometry args={[size, 64, 64]} />
+        <meshStandardMaterial
+          map={earthTexture}
+          roughness={0.72}
+          metalness={0.02}
+          emissive="#071326"
+          emissiveMap={earthTexture}
+          emissiveIntensity={0.14}
+        />
+      </mesh>
+      <mesh ref={cloudsRef} scale={[1.012, 1.012, 1.012]}>
+        <sphereGeometry args={[size, 64, 64]} />
+        <meshStandardMaterial
+          map={cloudsTexture}
+          alphaMap={cloudsTexture}
+          color="#dcecff"
+          transparent
+          opacity={0.34}
+          alphaTest={0.08}
+          depthWrite={false}
+          roughness={1}
+        />
+      </mesh>
+      <Atmosphere size={size} />
+    </group>
+  );
+}
+
+function SaturnRings({ size }) {
+  const ringTexture = useLoader(THREE.TextureLoader, '/tex/saturn_ring.png');
+
+  return (
+    <mesh rotation={[Math.PI / 2.65, 0, 0]}>
+      <ringGeometry args={[size * 1.45, size * 2.65, 128]} />
+      <meshStandardMaterial
+        map={ringTexture}
+        alphaMap={ringTexture}
+        color="#e5d6a4"
+        transparent
+        opacity={0.72}
+        alphaTest={0.04}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+        roughness={0.88}
+      />
+    </mesh>
+  );
+}
+
 function Planet({ planet, index }) {
   const groupRef = useRef();
   const texture = useLoader(THREE.TextureLoader, planet.tex);
@@ -168,30 +267,23 @@ function Planet({ planet, index }) {
     const ellipse = 1 - index * 0.012;
     groupRef.current.position.set(
       Math.cos(t) * planet.orbit,
-      Math.sin(t * 0.37) * 1.6,
+      0,
       Math.sin(t) * planet.orbit * ellipse,
     );
-    groupRef.current.rotation.y += 0.006;
+    groupRef.current.rotation.y += 0.0015;
   });
 
   return (
     <group ref={groupRef}>
-      <mesh>
-        <sphereGeometry args={[planet.size, 40, 40]} />
-        <meshStandardMaterial map={texture} color={planet.color} roughness={0.82} metalness={0.05} />
-      </mesh>
-      {planet.atmosphere && (
-        <mesh scale={[1.12, 1.12, 1.12]}>
-          <sphereGeometry args={[planet.size, 32, 32]} />
-          <meshBasicMaterial color={planet.atmosphere} transparent opacity={0.16} side={THREE.BackSide} />
+      {planet.earth ? (
+        <EarthVisual size={planet.size} />
+      ) : (
+        <mesh castShadow receiveShadow>
+          <sphereGeometry args={[planet.size, 48, 48]} />
+          <meshStandardMaterial map={texture} color={planet.color} roughness={0.86} metalness={0.02} />
         </mesh>
       )}
-      {planet.rings && (
-        <mesh rotation={[Math.PI / 2.65, 0, 0]}>
-          <ringGeometry args={[planet.size * 1.55, planet.size * 2.65, 96]} />
-          <meshBasicMaterial color="#d8c891" transparent opacity={0.42} side={THREE.DoubleSide} />
-        </mesh>
-      )}
+      {planet.rings && <SaturnRings size={planet.size} />}
     </group>
   );
 }
@@ -230,22 +322,41 @@ function AsteroidBelt({ count = 1800 }) {
 function Sun() {
   const ref = useRef();
   const texture = useLoader(THREE.TextureLoader, '/tex/sun.jpg');
+  const glowTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(128, 128, 10, 128, 128, 128);
+    gradient.addColorStop(0, 'rgba(255,240,170,1)');
+    gradient.addColorStop(0.22, 'rgba(255,190,55,0.72)');
+    gradient.addColorStop(0.55, 'rgba(255,116,20,0.22)');
+    gradient.addColorStop(1, 'rgba(255,80,0,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(canvas);
+  }, []);
 
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.035;
+    if (ref.current) ref.current.rotation.y = clock.elapsedTime * 0.012;
   });
 
   return (
     <group>
+      <sprite scale={[42, 42, 1]}>
+        <spriteMaterial
+          map={glowTexture}
+          transparent
+          opacity={0.74}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </sprite>
       <mesh ref={ref}>
         <sphereGeometry args={[8.5, 64, 64]} />
-        <meshBasicMaterial map={texture} color="#ffe26a" />
+        <meshBasicMaterial map={texture} color="#fff0a6" />
       </mesh>
-      <mesh>
-        <sphereGeometry args={[14, 48, 48]} />
-        <meshBasicMaterial color="#ffbf37" transparent opacity={0.13} side={THREE.BackSide} />
-      </mesh>
-      <pointLight color="#ffd16a" intensity={7} distance={520} decay={1.8} />
+      <pointLight color="#ffe1a0" intensity={8.5} distance={620} decay={1.65} />
     </group>
   );
 }
@@ -279,7 +390,14 @@ function SceneRig() {
       <Sun />
       <AsteroidBelt />
       {PLANETS.map((planet, index) => (
-        <group key={planet.name}>
+        <group
+          key={planet.name}
+          rotation={[
+            THREE.MathUtils.degToRad(planet.inclination),
+            THREE.MathUtils.degToRad(planet.node),
+            0,
+          ]}
+        >
           <OrbitLine radius={planet.orbit} />
           <Planet planet={planet} index={index} />
         </group>
