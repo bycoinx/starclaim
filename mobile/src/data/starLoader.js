@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@hyg_stars_v2';
-const CSV_URL = 'https://raw.githubusercontent.com/astronexus/HYG-Database/master/hyg/v3/hyg.csv';
+const CSV_URL = 'https://raw.githubusercontent.com/astronexus/HYG-Database/main/hyg/CURRENT/hygdata_v41.csv';
 
 const HEADERS = ['id','hip','hd','hr','gl','bf','proper','ra','dec','dist','mag','absmag','spect','con','x','y','z','vx','vy','vz','rarad','decrad','pmra','pmdec','rv','hab','d'];
 
@@ -34,6 +34,9 @@ export async function ensureStarData() {
     }
 
     const response = await fetch(CSV_URL);
+    if (!response.ok) {
+      throw new Error(`HYG catalog request failed: ${response.status}`);
+    }
     const text = await response.text();
     const lines = text.split('\n');
     const header = lines.shift();

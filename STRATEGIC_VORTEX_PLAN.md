@@ -114,9 +114,9 @@ z = -d * cos(dec) * sin(ra)
 
 ## 2.4 2D Performans
 
-- [ ] Görüş alanı dışındaki yıldızlar çizim listesine alınmayacak.
-- [ ] Zoom seviyesine göre magnitude eşiği uygulanacak.
-- [ ] Dokunma seçimi için tüm kataloğu taramak yerine uzamsal indeks kullanılacak.
+- [x] Görüş alanı dışındaki yıldızlar çizim listesine alınmayacak.
+- [x] Zoom seviyesine göre magnitude eşiği uygulanacak.
+- [x] Dokunma seçimi için tüm kataloğu taramak yerine uzamsal indeks kullanılacak.
 - [ ] Skia draw node sayısı ölçülecek ve cihaz sınıfına göre kalite profili seçilecek.
 - [ ] Hedef: orta sınıf Android cihazda kararlı 60 FPS; düşük cihazda en az 30 FPS.
 

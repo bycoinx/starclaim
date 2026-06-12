@@ -237,8 +237,8 @@ export default function StarMapScreen() {
     };
 
     startHeading();
-    Magnetometer.setUpdateInterval(40);
-    DeviceMotion.setUpdateInterval(40);
+    Magnetometer.setUpdateInterval(66);
+    DeviceMotion.setUpdateInterval(66);
     return () => {
       cancelled = true;
       headingSubscription?.remove();

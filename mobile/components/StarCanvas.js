@@ -37,6 +37,8 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const deg2rad = (deg) => deg * Math.PI / 180;
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
+const TAP_CELL_SIZE = 56;
+const VIEWPORT_PADDING = 140;
 
 const TWINKLE_SHADER = `
 uniform float iTime;
@@ -130,6 +132,17 @@ function project(
   return { x: projected.x, y: projected.y, skyAltitude: null };
 }
 
+function magnitudeLimitForZoom(zoom) {
+  if (zoom < 0.8) return 3.8;
+  if (zoom < 1.5) return 4.7;
+  if (zoom < 3) return 5.5;
+  return 6.5;
+}
+
+function getCellKey(x, y) {
+  return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
+}
+
 export default function StarCanvas({
   stars,
   selectedStar,
@@ -196,11 +209,123 @@ export default function StarCanvas({
       if (onZoomChange) runOnJS(onZoomChange)(zoom.value);
     });
 
-  const tapGesture = Gesture.Tap().onEnd((e) => {
+  const ownedIdSet = useMemo(
+    () => new Set(ownedStarIds.map((id) => String(id))),
+    [ownedStarIds],
+  );
+
+  const renderedStars = useMemo(() => {
+    const magnitudeLimit = magnitudeLimitForZoom(initialZoom);
+    return stars.reduce((visible, star) => {
+      const owned = (
+        ownedIdSet.has(String(star.id))
+        || ownedIdSet.has(String(star.hip))
+      );
+      const important = owned || selectedStar?.id === star.id;
+      if (!important && Number(star.mag) > magnitudeLimit) return visible;
+
+      const position = project(
+        star.ra,
+        star.dec,
+        initialRa,
+        initialDec,
+        layout.width,
+        layout.height,
+        initialZoom,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
+      const insidePaddedViewport = (
+        position.x >= -VIEWPORT_PADDING
+        && position.x <= layout.width + VIEWPORT_PADDING
+        && position.y >= -VIEWPORT_PADDING
+        && position.y <= layout.height + VIEWPORT_PADDING
+      );
+      const aboveHorizon = (
+        !hideBelowHorizon
+        || position.skyAltitude == null
+        || position.skyAltitude >= 0
+      );
+      if (!important && (!insidePaddedViewport || !aboveHorizon)) return visible;
+
+      visible.push({
+        ...star,
+        radius: radiusForMag(star.mag, star.spect),
+        color: colorForSpectrum(star.spect),
+        owned,
+      });
+      return visible;
+    }, []);
+  }, [
+    coordinateMode,
+    hideBelowHorizon,
+    initialDec,
+    initialRa,
+    initialZoom,
+    layout.height,
+    layout.width,
+    lstDegrees,
+    observerLatitude,
+    ownedIdSet,
+    selectedStar?.id,
+    stars,
+  ]);
+
+  const tapIndex = useMemo(() => {
+    const cells = new Map();
+    renderedStars.forEach((star) => {
+      const position = project(
+        star.ra,
+        star.dec,
+        initialRa,
+        initialDec,
+        layout.width,
+        layout.height,
+        initialZoom,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
+      const key = getCellKey(position.x, position.y);
+      const bucket = cells.get(key);
+      if (bucket) bucket.push(star);
+      else cells.set(key, [star]);
+    });
+    return cells;
+  }, [
+    coordinateMode,
+    initialDec,
+    initialRa,
+    initialZoom,
+    layout.height,
+    layout.width,
+    lstDegrees,
+    observerLatitude,
+    renderedStars,
+  ]);
+
+  useEffect(() => {
+    if (__DEV__) {
+      console.debug(`[StarCanvas] render set: ${renderedStars.length}/${stars.length}`);
+    }
+  }, [renderedStars.length, stars.length]);
+
+  const selectNearestStar = (x, y) => {
     if (!onSelect) return;
     let closestStar = null;
     let minDistance = 25;
-    stars.forEach((star) => {
+    const cellX = Math.floor(x / TAP_CELL_SIZE);
+    const cellY = Math.floor(y / TAP_CELL_SIZE);
+    const candidates = [];
+    for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        const bucket = tapIndex.get(`${cellX + xOffset}:${cellY + yOffset}`);
+        if (bucket) candidates.push(...bucket);
+      }
+    }
+
+    candidates.forEach((star) => {
       const p = project(
         star.ra,
         star.dec,
@@ -213,27 +338,20 @@ export default function StarCanvas({
         observerLatitude,
         lstDegrees,
       );
-      const dist = Math.sqrt(Math.pow(p.x - e.x, 2) + Math.pow(p.y - e.y, 2));
+      const dist = Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
       if (dist < minDistance) {
         minDistance = dist;
         closestStar = star;
       }
     });
-    if (closestStar) runOnJS(onSelect)(closestStar);
-  });
+    if (closestStar) onSelect(closestStar);
+  };
+
+  const tapGesture = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd((e) => selectNearestStar(e.x, e.y));
 
   const combinedGesture = Gesture.Simultaneous(panGesture, pinchGesture, tapGesture);
-
-  // OPTIMIZATION: Only render stars within a certain magnitude or proximity for better FPS
-  const starElements = useMemo(() => {
-    const ownedIds = new Set(ownedStarIds.map((id) => String(id)));
-    return stars.map((star) => ({
-      ...star,
-      radius: radiusForMag(star.mag, star.spect),
-      color: colorForSpectrum(star.spect),
-      owned: ownedIds.has(String(star.id)) || ownedIds.has(String(star.hip)),
-    }));
-  }, [ownedStarIds, stars]);
 
   const font = useFont(null, 10);
   const boldFont = useFont(null, 11);
@@ -294,7 +412,7 @@ export default function StarCanvas({
               <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
-            {starElements.map((star) => (
+            {renderedStars.map((star) => (
               <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} />
             ))}
 
