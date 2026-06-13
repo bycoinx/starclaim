@@ -102,7 +102,7 @@ export default function StarMapScreen() {
       setSiderealTime(getLocalSiderealTime(observer.longitude, new Date()));
     };
     updateSiderealTime();
-    const timer = setInterval(updateSiderealTime, 15000);
+    const timer = setInterval(updateSiderealTime, 1000);
     return () => clearInterval(timer);
   }, [coordinateMode, observer]);
 
