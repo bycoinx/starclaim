@@ -511,26 +511,41 @@ function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
     projectDegrees(ra.value, 0, ra.value, dec.value, layout.width, layout.height, zoom.value).y
   ));
   const directions = [
-    { az: 0, label: 'N' },
-    { az: 90, label: 'E' },
-    { az: 180, label: 'S' },
-    { az: 270, label: 'W' },
+    { az: 0, label: 'K' },
+    { az: 90, label: 'D' },
+    { az: 180, label: 'G' },
+    { az: 270, label: 'B' },
   ];
 
   return (
     <Group>
+      {/* Ground Shading */}
       <Rect
         x={0}
         y={horizonY}
         width={layout.width}
         height={useDerivedValue(() => Math.max(0, layout.height - horizonY.value))}
-        color={nightVision ? 'rgba(12,0,0,0.88)' : 'rgba(2,5,9,0.82)'}
+        color={nightVision ? 'rgba(15,0,0,0.92)' : 'rgba(1,3,6,0.85)'}
       />
+      {/* Atmospheric Glow */}
+      <Rect
+        x={0}
+        y={useDerivedValue(() => horizonY.value - 60)}
+        width={layout.width}
+        height={60}
+      >
+        <LinearGradient
+          start={useDerivedValue(() => vec(0, horizonY.value - 60))}
+          end={useDerivedValue(() => vec(0, horizonY.value))}
+          colors={nightVision ? ['rgba(0,0,0,0)', 'rgba(255,45,35,0.08)'] : ['rgba(0,0,0,0)', 'rgba(74,144,226,0.06)']}
+        />
+      </Rect>
+      {/* Horizon Line */}
       <Line
         p1={useDerivedValue(() => vec(0, horizonY.value))}
         p2={useDerivedValue(() => vec(layout.width, horizonY.value))}
-        color={nightVision ? 'rgba(255,74,66,0.42)' : 'rgba(201,168,76,0.35)'}
-        strokeWidth={1}
+        color={nightVision ? 'rgba(255,74,66,0.35)' : 'rgba(201,168,76,0.25)'}
+        strokeWidth={1.5}
       />
       {directions.map((direction) => (
         <HorizonDirection
@@ -645,28 +660,29 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
   const label = feature.properties?.tr || feature.properties?.name || feature.id;
   const rank = Number(feature.properties?.rank || 3);
   const pos = useDerivedValue(() => project(coordinates[0] / 15, coordinates[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  
   const isVisible = useDerivedValue(() => {
-    const rankVisible = rank <= 1 || zoom.value >= 1.2;
+    const rankVisible = rank <= 1 || zoom.value >= 1.5;
     return (
       rankVisible
-      && zoom.value >= 0.7
-      && pos.value.x > 10
-      && pos.value.x < layout.width - 80
-      && pos.value.y > 20
-      && pos.value.y < layout.height - 20
+      && zoom.value >= 0.6
+      && pos.value.x > -50
+      && pos.value.x < layout.width + 50
+      && pos.value.y > -20
+      && pos.value.y < layout.height + 20
       && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
     );
   });
 
   if (!font || !coordinates) return null;
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+    <Group opacity={useDerivedValue(() => isVisible.value ? (zoom.value < 1.0 ? 0.4 : 0.8) : 0)}>
       <SkiaText
-        x={useDerivedValue(() => pos.value.x)}
+        x={useDerivedValue(() => pos.value.x - 40)}
         y={useDerivedValue(() => pos.value.y)}
         text={String(label).toUpperCase()}
         font={font}
-        color={nightVision ? 'rgba(255,74,66,0.58)' : 'rgba(201,168,76,0.55)'}
+        color={nightVision ? '#FF4A42' : '#E6C98C'}
       />
     </Group>
   );
@@ -694,7 +710,7 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
     );
     const aboveHorizon = (
       coordinateMode !== 'horizontal'
-      || (p1.value.skyAltitude >= 0 && p2.value.skyAltitude >= 0)
+      || (p1.value.skyAltitude >= -5 && p2.value.skyAltitude >= -5)
     );
     return onScreen && aboveHorizon;
   });
@@ -703,8 +719,8 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
     <Line
       p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
       p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
-      color={nightVision ? 'rgba(255,74,66,0.2)' : 'rgba(74,144,226,0.12)'}
-      strokeWidth={0.8}
+      color={nightVision ? 'rgba(255,74,66,0.25)' : 'rgba(74,144,226,0.18)'}
+      strokeWidth={useDerivedValue(() => zoom.value > 2 ? 1.2 : 0.8)}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
     />
   );
