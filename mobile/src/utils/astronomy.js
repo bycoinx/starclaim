@@ -120,11 +120,56 @@ export function getApproximateLST(longitudeDegrees = 0, date = new Date()) {
   return getLocalSiderealTime(longitudeDegrees, date);
 }
 
-export function raDecDistToXYZ(ra, dec, dist = 100) {
-  const raRad = deg2rad(ra * 15);
-  const decRad = deg2rad(dec);
-  const x = dist * Math.cos(decRad) * Math.cos(raRad);
-  const y = dist * Math.cos(decRad) * Math.sin(raRad);
-  const z = dist * Math.sin(decRad);
-  return { x, y, z };
+export function getStarDistanceParsec(star) {
+  if (Number.isFinite(star?.distanceParsec)) return star.distanceParsec;
+  if (Number.isFinite(star?.dist)) return star.dist;
+  if (Number.isFinite(star?.distance)) return star.distance;
+  return 100; // Default distance if unknown
+}
+
+/**
+ * Converts RA/Dec/Distance to Cartesian coordinates (Y-up for Three.js).
+ * Formula:
+ * x = d * cos(dec) * cos(ra)
+ * y = d * sin(dec)
+ * z = -d * cos(dec) * sin(ra)
+ *
+ * @param {number} raHours - RA in decimal hours
+ * @param {number} decDegrees - Dec in decimal degrees
+ * @param {number} distParsec - Distance in parsecs
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function raDecDistToXYZ(raHours, decDegrees, distParsec = 100) {
+  const raRad = deg2rad(raHours * 15);
+  const decRad = deg2rad(decDegrees);
+  const cosDec = Math.cos(decRad);
+
+  return {
+    x: distParsec * cosDec * Math.cos(raRad),
+    y: distParsec * Math.sin(decRad),
+    z: -distParsec * cosDec * Math.sin(raRad),
+  };
+}
+
+/**
+ * Gets 3D Cartesian coordinates for a star object.
+ * @param {Object} star - Star record
+ * @returns {{x: number, y: number, z: number}}
+ */
+export function getStarXYZ(star) {
+  const ra = getStarRaHours(star);
+  const dec = getStarDecDegrees(star);
+  const dist = getStarDistanceParsec(star);
+  return raDecDistToXYZ(ra, dec, dist);
+}
+
+/**
+ * Calculates Euclidean distance between two 3D points.
+ */
+export function getDistance3D(p1, p2) {
+  return Math.sqrt(
+    Math.pow(p2.x - p1.x, 2) +
+    Math.pow(p2.y - p1.y, 2) +
+    Math.pow(p2.z - p1.z, 2)
+  );
 }
