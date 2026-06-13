@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { GLView } from 'expo-gl';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
-import { colorForSpectrum, raDecDistToXYZ } from '../src/utils/astronomy';
+import { colorForSpectrum, getStarXYZ } from '../src/utils/astronomy';
 import { THEME } from '../constants/Theme';
 import { SpaceAudio } from '../src/utils/audioEngine';
 
@@ -83,11 +83,12 @@ export default function StarSystem3D({ stars = [] }) {
     const sizes = [];
 
     stars.forEach((star) => {
-      const { x, y, z } = raDecDistToXYZ(star.ra, star.dec, 200 + Math.random() * 300);
+      const { x, y, z } = getStarXYZ(star);
       positions.push(x, y, z);
-      const color = new THREE.Color(colorForSpectrum(star.spect));
+      const color = new THREE.Color(colorForSpectrum(star.spect || star.spectralType));
       colors.push(color.r, color.g, color.b);
-      sizes.push(Math.max(1.0, 7.0 - (star.mag || 5)));
+      // Size based on magnitude: brighter stars are larger
+      sizes.push(Math.max(0.5, 6.0 - (star.mag || 5)));
     });
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
