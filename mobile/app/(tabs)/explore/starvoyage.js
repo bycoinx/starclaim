@@ -7,10 +7,15 @@ import { resolveStarTarget } from '../../../src/utils/starIdentity';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+
 export default function StarVoyage3D() {
   const [stars, setStars] = useState([]);
   const [targetStar, setTargetStar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [arrivalVisible, setArrivalVisible] = useState(false);
+  const [ownershipData, setOwnershipData] = useState(null);
   const params = useLocalSearchParams();
   const router = useRouter();
 
@@ -19,11 +24,27 @@ export default function StarVoyage3D() {
       setStars(list);
       if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
         const found = resolveStarTarget(list, params);
-        if (found) setTargetStar(found);
+        if (found) {
+          setTargetStar(found);
+          checkOwnership(found);
+        }
       }
       setLoading(false);
     });
   }, [params.starId, params.hip, params.hd, params.starClaimCode, params.name]);
+
+  const checkOwnership = async (star) => {
+    try {
+      const raw = await AsyncStorage.getItem('@purchases');
+      const list = raw ? JSON.parse(raw) : [];
+      const found = list.find(p => p.starId === star.id || p.hip === star.hip || p.starClaimCode === star.starClaimCode);
+      if (found) setOwnershipData(found);
+    } catch (e) { console.warn('Ownership check error', e); }
+  };
+
+  const handleArrival = (star) => {
+    if (star) setArrivalVisible(true);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -44,7 +65,57 @@ export default function StarVoyage3D() {
             <Text style={styles.loadingText}>CALIBRATING_QUANTUM_VIEW...</Text>
           </View>
         ) : (
-          <StarSystem3D stars={stars.slice(0, 2000)} targetStar={targetStar} />
+          <StarSystem3D stars={stars.slice(0, 2000)} targetStar={targetStar} onArrival={handleArrival} />
+        )}
+
+        {arrivalVisible && targetStar && (
+          <View style={styles.arrivalOverlay} pointerEvents="box-none">
+            <LinearGradient
+              colors={['rgba(0,0,0,0)', 'rgba(0,10,25,0.95)', 'rgba(0,5,15,1)']}
+              style={styles.arrivalPanel}
+            >
+              <View style={styles.panelHeader}>
+                <Ionicons name="shield-checkmark" size={20} color={THEME.colors.accent} />
+                <Text style={styles.panelTitle}>PROXIMITY_ESTABLISHED</Text>
+                <TouchableOpacity onPress={() => setArrivalVisible(false)}>
+                  <Ionicons name="close" size={24} color="rgba(255,255,255,0.5)" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.telemetryGrid}>
+                <View style={styles.telemetryItem}>
+                  <Text style={styles.telLabel}>DISTANCE</Text>
+                  <Text style={styles.telValue}>{Number(targetStar.dist || targetStar.distanceParsec).toFixed(2)} LY</Text>
+                </View>
+                <View style={styles.telemetryItem}>
+                  <Text style={styles.telLabel}>MAGNITUDE</Text>
+                  <Text style={styles.telValue}>{Number(targetStar.mag).toFixed(2)}</Text>
+                </View>
+                <View style={styles.telemetryItem}>
+                  <Text style={styles.telLabel}>SPECTRUM</Text>
+                  <Text style={styles.telValue}>{targetStar.spect || targetStar.spectralType || 'N/A'}</Text>
+                </View>
+              </View>
+
+              {ownershipData ? (
+                <View style={styles.messageBox}>
+                  <Text style={styles.messageLabel}>EBEDİ MESAJ // {ownershipData.starClaimCode || 'CERTIFIED'}</Text>
+                  <Text style={styles.messageText}>"{ownershipData.message || 'Bu yıldız insanlık adına mühürlenmiştir.'}"</Text>
+                  <View style={styles.signatureRow}>
+                    <Text style={styles.signatureLabel}>OWNER_SIG:</Text>
+                    <Text style={styles.signatureValue}>BLOCKCHAIN_VERIFIED</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.unownedBox}>
+                  <Text style={styles.unownedText}>BU YILDIZ HENÜZ SAHİPLENİLMEMİŞTİR.</Text>
+                  <TouchableOpacity style={styles.claimBtn} onPress={() => router.push({ pathname: '/(tabs)/explore/stardetail', params: { starId: targetStar.id } })}>
+                    <Text style={styles.claimBtnText}>MÜHÜRLE</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </LinearGradient>
+          </View>
         )}
       </View>
 
@@ -90,5 +161,23 @@ const styles = StyleSheet.create({
     right: 0, 
     alignItems: 'center' 
   },
-  footerText: { color: 'rgba(255,255,255,0.3)', fontSize: 7, fontWeight: 'bold', letterSpacing: 1 }
+  footerText: { color: 'rgba(255,255,255,0.3)', fontSize: 7, fontWeight: 'bold', letterSpacing: 1 },
+  arrivalOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-end', zIndex: 20 },
+  arrivalPanel: { padding: 30, paddingBottom: 60, borderTopWidth: 1, borderTopColor: 'rgba(201,168,76,0.3)' },
+  panelHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 25 },
+  panelTitle: { color: THEME.colors.accent, fontSize: 11, fontWeight: '900', letterSpacing: 2, flex: 1, marginLeft: 10 },
+  telemetryGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+  telemetryItem: { flex: 1 },
+  telLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: 'bold', letterSpacing: 1, marginBottom: 5 },
+  telValue: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  messageBox: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: 'rgba(201,168,76,0.2)' },
+  messageLabel: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1, marginBottom: 12 },
+  messageText: { color: '#fff', fontSize: 16, lineHeight: 24, fontStyle: 'italic', marginBottom: 20 },
+  signatureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, opacity: 0.6 },
+  signatureLabel: { color: 'rgba(255,255,255,0.5)', fontSize: 8, fontWeight: 'bold' },
+  signatureValue: { color: THEME.colors.accent, fontSize: 8, fontWeight: 'bold', letterSpacing: 1 },
+  unownedBox: { alignItems: 'center', paddingVertical: 10 },
+  unownedText: { color: 'rgba(255,255,255,0.5)', fontSize: 10, fontWeight: 'bold', marginBottom: 15 },
+  claimBtn: { paddingVertical: 12, paddingHorizontal: 30, backgroundColor: THEME.colors.primary, borderRadius: 6 },
+  claimBtnText: { color: '#000', fontSize: 11, fontWeight: '900', letterSpacing: 2 }
 });

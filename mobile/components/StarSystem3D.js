@@ -54,9 +54,14 @@ const warpFragmentShader = `
   }
 `;
 
-export default function StarSystem3D({ stars = [], targetStar = null }) {
+export default function StarSystem3D({ stars = [], targetStar = null, onArrival = null }) {
   const timeoutRef = useRef();
+  const onArrivalRef = useRef(onArrival);
   const warpActive = useRef(false);
+
+  useEffect(() => {
+    onArrivalRef.current = onArrival;
+  }, [onArrival]);
   const warpStartTime = useRef(0);
   const warpDuration = 3000; // 3 seconds
   const cameraRef = useRef();
@@ -196,6 +201,7 @@ export default function StarSystem3D({ stars = [], targetStar = null }) {
               camera.updateProjectionMatrix();
               warpGroup.visible = false;
               points.scale.setScalar(1.0);
+              if (onArrivalRef.current) onArrivalRef.current(targetStar);
           }
       } else {
           // Normal Idle / Orbit
