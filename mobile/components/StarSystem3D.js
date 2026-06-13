@@ -53,7 +53,7 @@ const warpFragmentShader = `
   }
 `;
 
-export default function StarSystem3D({ stars = [] }) {
+export default function StarSystem3D({ stars = [], targetStar = null }) {
   const timeoutRef = useRef();
   const warpActive = useRef(false);
   const cameraRef = useRef();
@@ -68,9 +68,17 @@ export default function StarSystem3D({ stars = [] }) {
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
-    const camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 5000);
-    camera.position.z = 20;
+    const camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 10000);
     cameraRef.current = camera;
+
+    // Set initial camera position based on target
+    if (targetStar) {
+      const targetPos = getStarXYZ(targetStar);
+      camera.position.set(targetPos.x, targetPos.y, targetPos.z + 15);
+      camera.lookAt(targetPos.x, targetPos.y, targetPos.z);
+    } else {
+      camera.position.z = 20;
+    }
 
     const renderer = new Renderer({ gl });
     renderer.setSize(width, height);

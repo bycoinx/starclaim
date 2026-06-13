@@ -471,6 +471,9 @@ export default function StarMapScreen() {
                 <TouchableOpacity style={styles.selectionIconButton} onPress={handleCenterOnSelected}>
                   <Ionicons name="locate" size={20} color={nightVision ? '#FF4A42' : THEME.colors.primary} />
                 </TouchableOpacity>
+                <TouchableOpacity style={styles.selectionIconButton} onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { starId: selectedStar.id, hip: selectedStar.hip, name: selectedStar.properName || selectedStar.proper } })}>
+                  <Ionicons name="rocket-outline" size={20} color={THEME.colors.accent} />
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.selectionIconButton} onPress={() => setPopupVisible(true)}>
                   <Ionicons name="information-circle-outline" size={21} color="#fff" />
                 </TouchableOpacity>

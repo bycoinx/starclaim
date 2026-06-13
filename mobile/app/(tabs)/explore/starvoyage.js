@@ -1,22 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
+import { resolveStarTarget } from '../../../src/utils/starIdentity';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 
 export default function StarVoyage3D() {
   const [stars, setStars] = useState([]);
+  const [targetStar, setTargetStar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const params = useLocalSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     ensureStarData().then((list) => {
       setStars(list);
+      if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
+        const found = resolveStarTarget(list, params);
+        if (found) setTargetStar(found);
+      }
       setLoading(false);
     });
-  }, []);
+  }, [params.starId, params.hip, params.hd, params.starClaimCode, params.name]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -25,8 +32,8 @@ export default function StarVoyage3D() {
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
         <View>
-          <Text style={styles.title}>STAR_VOYAGE_3D</Text>
-          <Text style={styles.subtitle}>HYPER_SPACE_EXPLORATION</Text>
+          <Text style={styles.title}>{targetStar ? (targetStar.properName || targetStar.proper || `HIP ${targetStar.hip}`).toUpperCase() : 'STAR_VOYAGE_3D'}</Text>
+          <Text style={styles.subtitle}>{targetStar ? 'TARGET_LOCKED' : 'HYPER_SPACE_EXPLORATION'}</Text>
         </View>
       </View>
 
@@ -37,7 +44,7 @@ export default function StarVoyage3D() {
             <Text style={styles.loadingText}>CALIBRATING_QUANTUM_VIEW...</Text>
           </View>
         ) : (
-          <StarSystem3D stars={stars.slice(0, 1500)} />
+          <StarSystem3D stars={stars.slice(0, 2000)} targetStar={targetStar} />
         )}
       </View>
 

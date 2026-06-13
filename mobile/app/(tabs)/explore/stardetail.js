@@ -145,12 +145,22 @@ export default function StarDetailScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={styles.actionBtn} 
-            onPress={() => router.push({ pathname: '/(tabs)/explore/starmap', params: { starId } })}
+            onPress={() => router.push({ pathname: '/(tabs)/explore/starmap', params: { starId, name: purchase?.name || initialName } })}
           >
-            <Ionicons name="map" size={20} color={THEME.colors.primary} />
+            <Ionicons name="map-outline" size={20} color={THEME.colors.primary} />
             <Text style={styles.actionBtnText}>HARİTADA GÖR</Text>
           </TouchableOpacity>
-          
+
+          <TouchableOpacity 
+            style={[styles.actionBtn, styles.voyageBtn]} 
+            onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { starId, name: purchase?.name || initialName } })}
+          >
+            <Ionicons name="rocket-outline" size={20} color={THEME.colors.accent} />
+            <Text style={[styles.actionBtnText, { color: THEME.colors.accent }]}>3D YOLCULUK</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.actionBtn, styles.certBtn]}>
             <Ionicons name="ribbon-outline" size={20} color="#fff" />
             <Text style={[styles.actionBtnText, { color: '#fff' }]}>SERTİFİKA</Text>
@@ -226,6 +236,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
   },
   certBtn: { backgroundColor: 'rgba(201, 168, 76, 0.1)', borderColor: 'rgba(201, 168, 76, 0.3)' },
+  voyageBtn: { backgroundColor: 'rgba(0, 204, 255, 0.05)', borderColor: 'rgba(0, 204, 255, 0.2)' },
   actionBtnText: { color: THEME.colors.primary, fontWeight: '900', fontSize: 11, letterSpacing: 1 },
   footerNote: { alignItems: 'center', marginTop: 30, opacity: 0.4 },
   footerText: { color: '#fff', fontSize: 8, fontWeight: 'bold', letterSpacing: 1, textAlign: 'center' },
