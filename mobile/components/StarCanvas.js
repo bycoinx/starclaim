@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Dimensions, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
 import { 
   Canvas, 
   Circle, 
@@ -169,17 +169,27 @@ export default function StarCanvas({
   nightVision = false,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
-  
+
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
   const zoom = useSharedValue(initialZoom);
   const time = useSharedValue(0);
+  const fpsShared = useSharedValue(0);
+  const frameCountRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
   const planetData = useMemo(() => getPlanetPositions(), []);
   const dsoData = useMemo(() => DSO_CATALOG, []);
 
   useFrameCallback((info) => {
-    time.value = info.timestamp / 1000;
+    const now = info.timestamp;
+    frameCountRef.current++;
+    if (now - lastTimeRef.current >= 1000) {
+      fpsShared.current = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
+      frameCountRef.current = 0;
+      lastTimeRef.current = now;
+    }
+    time.value = now / 1000;
   });
   
   useEffect(() => {
@@ -275,6 +285,21 @@ export default function StarCanvas({
     selectedStar?.id,
     stars,
   ]);
+
+  const qualityLevel = useMemo(() => {
+    const devicePixelRatio = PixelRatio.get();
+    let level = 'high';
+    if (devicePixelRatio < 1.5) level = 'medium';
+    if (devicePixelRatio < 1) level = 'low';
+    const starCount = renderedStars.length;
+    if (starCount > 1500) {
+      if (level === 'high') level = 'medium';
+      else if (level === 'medium') level = 'low';
+    } else if (starCount > 800) {
+      if (level === 'high') level = 'medium';
+    }
+    return level;
+  }, [renderedStars.length]);
 
   const tapIndex = useMemo(() => {
     const cells = new Map();
@@ -383,6 +408,8 @@ export default function StarCanvas({
            (!hideBelowHorizon || selectedStarPos.value.skyAltitude == null || selectedStarPos.value.skyAltitude >= 0);
   });
 
+  const fpsDisplay = useDerivedValue(() => `${fpsShared.value} FPS`);
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <GestureDetector gesture={combinedGesture}>
@@ -405,7 +432,7 @@ export default function StarCanvas({
               />
             )}
 
-            {showMythology && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
+            {showMythology && qualityLevel === 'high' && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
               <MythologyFigure key={key} data={MYTHOLOGY_ASSETS[key]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
@@ -436,7 +463,7 @@ export default function StarCanvas({
               <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
             ))}
 
-            {showConstellationLabels && constellations.labels?.features?.map((feature) => (
+            {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature) => (
               <ConstellationLabel
                 key={feature.id}
                 feature={feature}
@@ -471,6 +498,7 @@ export default function StarCanvas({
             <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.max(0.2, zoom.value - 1); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
               <Text style={styles.zoomText}>-</Text>
             </TouchableOpacity>
+            <Text style={styles.fpsText}>{fpsDisplay}</Text>
           </View>
         </View>
       </GestureDetector>
@@ -590,8 +618,8 @@ function ConstellationBoundaryLine({ p1Data, p2Data, ra, dec, zoom, layout, coor
   const p2 = useDerivedValue(() => project(p2Data[0] / 15, p2Data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => {
     const onScreen = (
-      (p1.value.x > -60 && p1.value.x < layout.width + 60)
-      || (p2.value.x > -60 && p2.value.x < layout.width + 60)
+      (p1.value.x > -60 && p1.value.x < layout.width + 60 && p1.value.y > -60 && p1.value.y < layout.height + 60)
+      || (p2.value.x > -60 && p2.value.x < layout.width + 60 && p2.value.y > -60 && p2.value.y < layout.height + 60)
     );
     const aboveHorizon = (
       coordinateMode !== 'horizontal'
@@ -661,8 +689,8 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
   const p2 = useDerivedValue(() => project(p2_data[0] / 15, p2_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => {
     const onScreen = (
-      (p1.value.x > -100 && p1.value.x < layout.width + 100)
-      || (p2.value.x > -100 && p2.value.x < layout.width + 100)
+      (p1.value.x > -100 && p1.value.x < layout.width + 100 && p1.value.y > -100 && p1.value.y < layout.height + 100)
+      || (p2.value.x > -100 && p2.value.x < layout.width + 100 && p2.value.y > -100 && p2.value.y < layout.height + 100)
     );
     const aboveHorizon = (
       coordinateMode !== 'horizontal'
@@ -670,14 +698,14 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
     );
     return onScreen && aboveHorizon;
   });
-  
+
   return (
-    <Line 
-      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))} 
-      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))} 
+    <Line
+      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
+      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
       color={nightVision ? 'rgba(255,74,66,0.2)' : 'rgba(74,144,226,0.12)'}
-      strokeWidth={0.8} 
-      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)} 
+      strokeWidth={0.8}
+      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
     />
   );
 }
@@ -794,7 +822,16 @@ function MythologyFigure({ data, ra, dec, zoom, layout, coordinateMode, observer
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   canvas: { flex: 1 },
-  controls: { position: 'absolute', right: 12, bottom: 20, width: 44, alignItems: 'center' },
+  controls: {
+    position: 'absolute',
+    right: 12,
+    bottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: 120
+  },
   zoomButton: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.06)', marginBottom: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  zoomText: { color: '#fff', fontSize: 20, fontWeight: '300' }
+  zoomText: { color: '#fff', fontSize: 20, fontWeight: '300' },
+  fpsText: { color: '#fff', fontSize: 14, fontWeight: '600' }
 });
