@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
-import { Linking } from 'expo';
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { Cinzel_400Regular, Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { ensureStarData } from '../src/data/starLoader';
@@ -20,7 +20,7 @@ export default function RootLayout() {
     });
 
     // Listen for incoming links while app is foregrounded
-    const subscription = Linking.addListener(({ url }) => {
+    const subscription = Linking.addEventListener('url', ({ url }) => {
       if (url) handleDeepLink(url);
     });
 
@@ -31,9 +31,12 @@ export default function RootLayout() {
 
   const handleDeepLink = (url) => {
     try {
-      const { url: linkUrl } = new URL(url);
+      const { hostname, path } = Linking.parse(url);
       // Expecting starclaim://star/{starClaimCode} or starclaim://hip/{hipId}
-      const [, type, identifier] = linkUrl.pathname.split('/').filter(Boolean);
+      // hostname is 'star' or 'hip', path is the identifier
+      const type = hostname;
+      const identifier = path;
+
       if (!type || !identifier) return;
 
       // Ensure star data is loaded
@@ -51,21 +54,23 @@ export default function RootLayout() {
         if (foundStar) {
           const starTarget = createStarTargetFromStar(foundStar);
           // Navigate to 2D map screen with starTarget as params
-          // We'll pass via query string; expo-router supports params
-          router.replace('/(tabs)/explore/starmap', {
-            starId: starTarget.id,
-            hip: starTarget.hip,
-            hd: starTarget.hd,
-            properName: starTarget.properName,
-            name: starTarget.name,
-            starClaimCode: starTarget.starClaimCode,
-            raHours: starTarget.raHours,
-            raDegrees: starTarget.raDegrees,
-            decDegrees: starTarget.decDegrees,
-            distanceParsec: starTarget.distanceParsec,
-            magnitude: starTarget.magnitude,
-            spectralType: starTarget.spectralType,
-            constellation: starTarget.constellation,
+          router.replace({
+            pathname: '/(tabs)/explore/starmap',
+            params: {
+              starId: starTarget.id,
+              hip: starTarget.hip,
+              hd: starTarget.hd,
+              properName: starTarget.properName,
+              name: starTarget.name,
+              starClaimCode: starTarget.starClaimCode,
+              raHours: starTarget.raHours,
+              raDegrees: starTarget.raDegrees,
+              decDegrees: starTarget.decDegrees,
+              distanceParsec: starTarget.distanceParsec,
+              magnitude: starTarget.magnitude,
+              spectralType: starTarget.spectralType,
+              constellation: starTarget.constellation,
+            }
           });
         }
       });
