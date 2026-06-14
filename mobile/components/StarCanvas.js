@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
 import { 
   Canvas, 
