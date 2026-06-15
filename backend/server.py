@@ -289,6 +289,23 @@ class NewsletterRequest(BaseModel):
     email: EmailStr
 
 
+class NewsItem(BaseModel):
+    news_id: str
+    title: str
+    content: str
+    image_url: Optional[str] = None
+    category: str = "announcement"  # announcement | discovery | update
+    is_published: bool = True
+    created_at: datetime
+
+
+class SystemConfig(BaseModel):
+    key: str
+    value: str
+    description: Optional[str] = None
+    updated_at: datetime
+
+
 # -------------------- Auth helpers --------------------
 async def get_session_token(request: Request) -> Optional[str]:
     tok = request.cookies.get("session_token")
@@ -369,6 +386,69 @@ async def admin_update_star(star_id: str, updates: dict, _: User = Depends(requi
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Star not found")
     return {"ok": True}
+
+
+# --- News & Config (Nexus Phase 1) ---
+
+@api.get("/news")
+async def list_news(limit: int = 10, offset: int = 0):
+    """Public endpoint to list news."""
+    cur = db.news.find({"is_published": True}, {"_id": 0}).sort([("created_at", -1)]).skip(offset).limit(limit)
+    return await cur.to_list(limit)
+
+
+@api.get("/admin/news")
+async def admin_list_news(limit: int = 50, offset: int = 0, _: User = Depends(require_admin)):
+    cur = db.news.find({}, {"_id": 0}).sort([("created_at", -1)]).skip(offset).limit(limit)
+    return await cur.to_list(limit)
+
+
+@api.post("/admin/news")
+async def admin_create_news(item: NewsItem, _: User = Depends(require_admin)):
+    doc = item.model_dump()
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    doc["news_id"] = f"news_{uuid.uuid4().hex[:10]}"
+    await db.news.insert_one(doc)
+    return {"ok": True, "news_id": doc["news_id"]}
+
+
+@api.put("/admin/news/{news_id}")
+async def admin_update_news(news_id: str, updates: dict, _: User = Depends(require_admin)):
+    await db.news.update_one({"news_id": news_id}, {"$set": updates})
+    return {"ok": True}
+
+
+@api.delete("/admin/news/{news_id}")
+async def admin_delete_news(news_id: str, _: User = Depends(require_admin)):
+    await db.news.delete_one({"news_id": news_id})
+    return {"ok": True}
+
+
+@api.get("/admin/config")
+async def admin_list_config(_: User = Depends(require_admin)):
+    cur = db.system_configs.find({}, {"_id": 0})
+    return await cur.to_list(100)
+
+
+@api.post("/admin/config")
+async def admin_upsert_config(cfg: SystemConfig, _: User = Depends(require_admin)):
+    doc = cfg.model_dump()
+    doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.system_configs.update_one(
+        {"key": cfg.key},
+        {"$set": doc},
+        upsert=True
+    )
+    return {"ok": True}
+
+
+@api.get("/config/{key}")
+async def get_config(key: str):
+    """Public endpoint to get a specific config value (e.g. maintenance mode, announcements)."""
+    cfg = await db.system_configs.find_one({"key": key}, {"_id": 0})
+    if not cfg:
+        raise HTTPException(status_code=404, detail="Config not found")
+    return cfg
 
 
 # -------------------- Seed --------------------

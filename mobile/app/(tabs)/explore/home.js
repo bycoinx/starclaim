@@ -1,222 +1,534 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { 
+  SafeAreaView, 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Dimensions, 
+  Platform,
+  StatusBar,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import SpaceBackground from '../../../components/SpaceBackground';
-import { THEME } from '../../../constants/Theme';
-import { CONFIG } from '../../../constants/Config';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CONFIG } from '../../../constants/Config';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-export default function DiscoveryScreen() {
-  const [featuredStars, setFeaturedStars] = useState([]);
-  const [loading, setLoading] = useState(true);
+// Design Palette
+const COLORS = {
+  space_black: '#000000',
+  neon_cyan: '#00f2fe',
+  neon_gold: '#f39c12',
+  space_purple: '#8e44ad',
+  glass_bg: 'rgba(25, 25, 35, 0.6)',
+  text_muted: 'rgba(255, 255, 255, 0.6)',
+};
+
+export default function HomeScreen() {
+  const [balance, setBalance] = useState('42.069');
+  const [news, setNews] = useState([]);
+  const [loadingNews, setLoadingNews] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    fetchFeatured();
+    loadNews();
   }, []);
 
-  const fetchFeatured = async () => {
+  const loadNews = async () => {
     try {
-      setLoading(true);
-      const response = await fetch(`${CONFIG.API_URL}/api/stars?limit=5&tier=supernova`);
-      if (!response.ok) throw new Error('API Error');
-      const data = await response.json();
-      setFeaturedStars(data);
+      const baseUrl = await CONFIG.getAPIUrl();
+      const res = await fetch(`${baseUrl}/api/news`);
+      const data = await res.json();
+      setNews(data);
     } catch (e) {
-      console.warn('Featured stars fetch failed, using mock data');
-      setFeaturedStars([
-        { id: 'HIP123', name: 'Sirius', tier: 'Supernova', price: 500, spect: 'A1V' },
-        { id: 'HIP456', name: 'Canopus', tier: 'Supernova', price: 450, spect: 'F0II' },
-        { id: 'HIP789', name: 'Rigel', tier: 'Supernova', price: 600, spect: 'B8Ia' },
-      ]);
+      console.error('News load failed:', e);
     } finally {
-      setLoading(false);
+      setLoadingNews(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <SpaceBackground />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>KEŞFET</Text>
-          <Text style={styles.subtitle}>EVRENİN DERİNLİKLERİ</Text>
+    <View style={styles.container}>
+      <StatusBar hidden />
+      
+      {/* BACKGROUND: Deep Space Gradient */}
+      <LinearGradient
+        colors={['#000000', '#05071e', '#000000']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <SafeAreaView style={styles.safeArea}>
+        {/* HUD CORNERS */}
+        <View style={styles.hudOverlay} pointerEvents="none">
+          <View style={[styles.hudLine, { top: 20, left: 20, width: 60, borderTopWidth: 1, borderColor: COLORS.neon_cyan }]} />
+          <View style={[styles.hudLine, { top: 20, left: 20, height: 60, borderLeftWidth: 1, borderColor: COLORS.neon_cyan }]} />
+          <View style={[styles.hudLine, { top: 20, right: 20, width: 60, borderTopWidth: 1, borderColor: COLORS.neon_cyan }]} />
+          <View style={[styles.hudLine, { top: 20, right: 20, height: 60, borderRightWidth: 1, borderColor: COLORS.neon_cyan }]} />
+          
+          <View style={[styles.hudLine, { bottom: 80, left: 20, width: 60, borderBottomWidth: 1, borderColor: COLORS.neon_gold }]} />
+          <View style={[styles.hudLine, { bottom: 80, left: 20, height: 60, borderLeftWidth: 1, borderColor: COLORS.neon_gold }]} />
+          <View style={[styles.hudLine, { bottom: 80, right: 20, width: 60, borderBottomWidth: 1, borderColor: COLORS.neon_gold }]} />
+          <View style={[styles.hudLine, { bottom: 80, right: 20, height: 60, borderRightWidth: 1, borderColor: COLORS.neon_gold }]} />
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>ÖNE ÇIKAN YILDIZLAR</Text>
-            <TouchableOpacity onPress={() => router.push('/stars')}>
-              <Text style={styles.viewAll}>TÜMÜNÜ GÖR</Text>
-            </TouchableOpacity>
+        {/* TOP HEADER */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.brandText}>STARCLAIM</Text>
+            <View style={styles.levelContainer}>
+              <Text style={styles.levelText}>LVL 42 | COMMANDER</Text>
+            </View>
           </View>
           
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.featuredList}>
-            {loading ? (
-              <ActivityIndicator color={THEME.colors.primary} style={{ marginLeft: 20 }} />
-            ) : featuredStars.map(star => (
-              <TouchableOpacity 
-                key={star.id} 
-                style={styles.starCard}
-                onPress={() => router.push({ pathname: '/(tabs)/explore/stardetail', params: { starId: star.id, name: star.name } })}
-              >
-                <LinearGradient 
-                  colors={['rgba(0, 204, 255, 0.15)', 'transparent']}
-                  style={styles.starGradient}
-                >
-                  <Ionicons name="star" size={32} color={THEME.colors.secondary} style={styles.starIcon} />
-                  <Text style={styles.starName}>{star.name}</Text>
-                  <Text style={styles.starTier}>{star.tier.toUpperCase()}</Text>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.starPrice}>${star.price}</Text>
-                    <Ionicons name="chevron-forward" size={14} color={THEME.colors.primary} />
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          <TouchableOpacity 
+            style={styles.aiButton} 
+            onPress={() => router.push('/neural-link')}
+          >
+            <LinearGradient
+              colors={[COLORS.neon_cyan, COLORS.space_purple]}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}
+              style={styles.aiGradient}
+            >
+              <MaterialCommunityIcons name="sparkles" size={18} color="#000" />
+              <Text style={styles.aiButtonText}>YILDIZ AI</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>KATEGORİLER</Text>
-          <View style={styles.categoryGrid}>
-            <CategoryCard 
-              title="Katalog" 
-              icon="telescope-outline" 
-              onPress={() => router.push('/stars')} 
-              color="#4A90E2"
-            />
-            <CategoryCard 
-              title="Harita (2D)" 
-              icon="map-outline" 
-              onPress={() => router.push('/(tabs)/explore/starmap')} 
-              color="#50E3C2"
-            />
-            <CategoryCard 
-              title="Keşif (3D)" 
-              icon="rocket-outline" 
-              onPress={() => router.push('/(tabs)/explore/starvoyage')} 
-              color="#A569BD"
-            />
-            <CategoryCard 
-              title="Pazar" 
-              icon="stats-chart-outline" 
-              onPress={() => router.push('/marketplace')} 
-              color="#F5A623"
-            />
-            <CategoryCard 
-              title="Vault" 
-              icon="lock-closed-outline" 
-              onPress={() => router.push('/(tabs)/vault/home')} 
-              color="#B8E986"
-            />
+        {/* MAIN COCKPIT CONTENT (Landscape Optimized) */}
+        <View style={styles.content}>
+          <View style={styles.mainGrid}>
+            
+            {/* LEFT SECTION: WALLET CARD */}
+            <View style={styles.leftCol}>
+              <View style={styles.glassCard}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardLabel}>SOLANA_NETWORK</Text>
+                  <View style={styles.pulseDot} />
+                </View>
+                
+                <View style={styles.balanceContainer}>
+                  <Text style={styles.balanceValue}>{balance}</Text>
+                  <Text style={styles.balanceUnit}>SOL</Text>
+                </View>
+                
+                <View style={styles.cardFooter}>
+                  <Text style={styles.addressText}>0x71C...4f2e</Text>
+                  <TouchableOpacity style={styles.vaultBtn}>
+                    <Text style={styles.vaultBtnText}>VAULT ACCESS</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Neon Border Accents */}
+                <View style={[styles.cornerAccent, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: COLORS.neon_cyan }]} />
+                <View style={[styles.cornerAccent, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: COLORS.neon_gold }]} />
+              </View>
+            </View>
+
+            {/* RIGHT SECTION: TELEMETRY & NAV */}
+            <View style={styles.rightCol}>
+              <View style={styles.telemetryGrid}>
+                <View style={styles.telemetryBox}>
+                  <Text style={styles.telLabel}>SYNC_STATUS</Text>
+                  <Text style={[styles.telValue, { color: COLORS.neon_cyan }]}>OPTIMAL</Text>
+                </View>
+                <View style={styles.telemetryBox}>
+                  <Text style={styles.telLabel}>OWNED_STARS</Text>
+                  <Text style={[styles.telValue, { color: COLORS.neon_gold }]}>12</Text>
+                </View>
+              </View>
+
+              {/* GALACTIC FEED (NEWS) */}
+              <View style={styles.feedBox}>
+                <View style={styles.feedHeader}>
+                  <Text style={styles.feedTitle}>GALACTIC_FEED</Text>
+                  <MaterialCommunityIcons name="broadcast" size={12} color={COLORS.neon_cyan} />
+                </View>
+                
+                <ScrollView 
+                  style={styles.feedScroll} 
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
+                >
+                  {loadingNews ? (
+                    <ActivityIndicator size="small" color={COLORS.neon_cyan} />
+                  ) : news.length > 0 ? (
+                    news.map((item, index) => (
+                      <View key={item.news_id || index} style={styles.newsItem}>
+                        <Text style={styles.newsCategory}>[{item.category.toUpperCase()}]</Text>
+                        <Text style={styles.newsText}>{item.title}</Text>
+                        <Text style={styles.newsDate}>{new Date(item.created_at).toLocaleDateString()}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.emptyFeedText}>NO_ACTIVE_TRANSMISSIONS</Text>
+                  )}
+                </ScrollView>
+              </View>
+
+              <TouchableOpacity 
+                style={styles.navPanel}
+                onPress={() => router.push('/(tabs)/explore/starmap')}
+              >
+                <LinearGradient
+                  colors={['rgba(0, 242, 254, 0.1)', 'transparent']}
+                  style={styles.navGradient}
+                >
+                  <MaterialCommunityIcons name="navigation" size={32} color={COLORS.neon_cyan} />
+                  <View>
+                    <Text style={styles.navTitle}>NAVİGASYON_SİSTEMİ</Text>
+                    <Text style={styles.navDesc}>2D GÖKYÜZÜ HARİTASINI BAŞLAT</Text>
+                  </View>
+                </LinearGradient>
+                <View style={[styles.cornerAccent, { top: -1, right: -1, borderTopWidth: 2, borderRightWidth: 2, borderColor: COLORS.neon_cyan }]} />
+              </TouchableOpacity>
+            </View>
+
           </View>
         </View>
 
-        <TouchableOpacity style={styles.neuralBanner} onPress={() => router.push('/neural-link')}>
-          <LinearGradient 
-            colors={['rgba(201, 168, 76, 0.15)', 'rgba(0, 0, 0, 0.6)']}
-            style={styles.neuralGradient}
-          >
-            <View style={styles.neuralContent}>
-               <View style={styles.neuralIconCircle}>
-                 <Ionicons name="flash-outline" size={30} color="#C9A84C" />
-               </View>
-               <View style={styles.neuralTextSide}>
-                 <Text style={styles.neuralTitle}>NEURAL_LINK</Text>
-                 <Text style={styles.neuralDesc}>Aegis AI ile kuantum bağlantısı kurun. Yıldızlarınız hakkında konuşun.</Text>
-               </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+        {/* BOTTOM COCKPIT MENU */}
+        <View style={styles.bottomNav}>
+          <CockpitButton 
+            label="MAP" 
+            icon="compass-outline" 
+            active 
+            onPress={() => router.push('/(tabs)/explore/starmap')} 
+          />
+          <CockpitButton 
+            label="3D VOYAGE" 
+            icon="rocket-launch" 
+            onPress={() => router.push('/(tabs)/explore/starvoyage')} 
+          />
+          <CockpitButton 
+            label="VAULT" 
+            icon="shield-key" 
+            onPress={() => router.push('/(tabs)/vault/home')} 
+          />
+          <CockpitButton 
+            label="MARKET" 
+            icon="shopping" 
+            onPress={() => router.push('/marketplace')} 
+          />
+        </View>
 
-        <TouchableOpacity style={styles.arBanner} onPress={() => router.push('/stars')}>
-          <LinearGradient 
-            colors={['rgba(0, 204, 255, 0.2)', 'rgba(0, 0, 0, 0.4)']}
-            style={styles.arGradient}
-          >
-            <View style={styles.arContent}>
-              <View style={styles.arTextSide}>
-                <Text style={styles.arTitle}>GÖKYÜZÜNE DOKUN</Text>
-                <Text style={styles.arDesc}>AR modu ile kameranı gökyüzüne tut ve yıldızları anında tanı.</Text>
-              </View>
-              <View style={styles.arIconCircle}>
-                <Ionicons name="camera" size={32} color="#000" />
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
-function CategoryCard({ title, icon, onPress, color }) {
+function CockpitButton({ label, icon, onPress, active = false }) {
   return (
-    <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
-      <View style={[styles.categoryIcon, { backgroundColor: color + '20' }]}>
-        <Ionicons name={icon} size={24} color={color} />
-      </View>
-      <Text style={styles.categoryName}>{title}</Text>
+    <TouchableOpacity 
+      style={[styles.cockpitBtn, active && styles.cockpitBtnActive]} 
+      onPress={onPress}
+    >
+      <MaterialCommunityIcons 
+        name={icon} 
+        size={24} 
+        color={active ? COLORS.neon_cyan : COLORS.text_muted} 
+      />
+      <Text style={[styles.cockpitBtnLabel, active && { color: COLORS.neon_cyan }]}>
+        {label}
+      </Text>
+      {active && <View style={styles.activeIndicator} />}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-  scrollContent: { paddingBottom: 40 },
-  header: { padding: 24, alignItems: 'center', marginTop: 10 },
-  title: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 4 },
-  subtitle: { fontSize: 10, color: THEME.colors.primary, fontWeight: '700', letterSpacing: 2, opacity: 0.8 },
-  section: { marginTop: 32, paddingHorizontal: 20 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sectionTitle: { fontSize: 10, color: THEME.colors.textMuted, fontWeight: '900', letterSpacing: 2 },
-  viewAll: { fontSize: 10, color: THEME.colors.primary, fontWeight: 'bold' },
-  featuredList: { flexDirection: 'row', paddingLeft: 0 },
-  starCard: {
-    borderRadius: 24,
-    marginRight: 16,
-    width: 180,
+  container: { flex: 1, backgroundColor: COLORS.space_black },
+  safeArea: { flex: 1 },
+  hudOverlay: { ...StyleSheet.absoluteFillObject },
+  hudLine: { position: 'absolute' },
+  
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 20,
+  },
+  headerLeft: { gap: 4 },
+  brandText: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 6,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  },
+  levelContainer: {
+    backgroundColor: 'rgba(0, 242, 254, 0.1)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderLeftWidth: 2,
+    borderColor: COLORS.neon_cyan,
+  },
+  levelText: {
+    color: COLORS.neon_cyan,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  aiButton: {
+    borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(0, 242, 254, 0.5)',
   },
-  starGradient: { padding: 20 },
-  starIcon: { marginBottom: 15, opacity: 0.8 },
-  starName: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: 4 },
-  starTier: { color: THEME.colors.secondary, fontSize: 9, fontWeight: 'bold', marginBottom: 12, letterSpacing: 1 },
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  starPrice: { color: THEME.colors.primary, fontSize: 18, fontWeight: '900' },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  categoryCard: {
-    width: '48%',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderRadius: 20,
-    padding: 16,
+  aiGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
   },
-  categoryIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  categoryName: { color: '#fff', fontSize: 13, fontWeight: '700' },
-  neuralBanner: { margin: 20, marginTop: 32, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: '#C9A84C40' },
-  neuralGradient: { padding: 20 },
-  neuralContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  neuralIconCircle: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(201, 168, 76, 0.1)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#C9A84C40' },
-  neuralTextSide: { flex: 1 },
-  neuralTitle: { color: '#C9A84C', fontSize: 18, fontWeight: '900', letterSpacing: 2 },
-  neuralDesc: { color: '#fff', fontSize: 11, opacity: 0.6, marginTop: 2 },
-  arBanner: { margin: 20, marginTop: 12, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: THEME.colors.primary + '40' },
-  arGradient: { padding: 24 },
-  arContent: { flexDirection: 'row', alignItems: 'center', gap: 20 },
-  arTextSide: { flex: 1 },
-  arTitle: { color: THEME.colors.primary, fontSize: 20, fontWeight: '900', marginBottom: 6, letterSpacing: 1 },
-  arDesc: { color: '#fff', fontSize: 12, lineHeight: 18, opacity: 0.7 },
-  arIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: THEME.colors.primary, justifyContent: 'center', alignItems: 'center' }
+  aiButtonText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+
+  content: {
+    flex: 1,
+    paddingHorizontal: 40,
+    justifyContent: 'center',
+  },
+  mainGrid: {
+    flexDirection: 'row',
+    gap: 24,
+  },
+  leftCol: { flex: 1.2 },
+  rightCol: { flex: 1, gap: 16 },
+
+  glassCard: {
+    backgroundColor: COLORS.glass_bg,
+    borderRadius: 12,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+    minHeight: 180,
+    justifyContent: 'center',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cardLabel: {
+    color: COLORS.text_muted,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#00ff00',
+    shadowColor: '#00ff00',
+    shadowOpacity: 1,
+    shadowRadius: 4,
+  },
+  balanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 12,
+    marginBottom: 20,
+  },
+  balanceValue: {
+    color: '#fff',
+    fontSize: 48,
+    fontWeight: '900',
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    textShadowColor: COLORS.neon_cyan,
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  balanceUnit: {
+    color: COLORS.neon_gold,
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  addressText: {
+    color: COLORS.text_muted,
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  vaultBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  vaultBtnText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+  cornerAccent: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+  },
+
+  telemetryGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  telemetryBox: {
+    flex: 1,
+    backgroundColor: COLORS.glass_bg,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  telLabel: {
+    color: COLORS.text_muted,
+    fontSize: 8,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+  telValue: {
+    fontSize: 14,
+    fontWeight: '900',
+    fontFamily: 'monospace',
+  },
+
+  feedBox: {
+    backgroundColor: COLORS.glass_bg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 12,
+    flex: 1,
+    maxHeight: 140,
+  },
+  feedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    paddingBottom: 4,
+  },
+  feedTitle: {
+    color: COLORS.neon_cyan,
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  feedScroll: {
+    flex: 1,
+  },
+  newsItem: {
+    marginBottom: 10,
+    borderLeftWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.2)',
+    paddingLeft: 8,
+  },
+  newsCategory: {
+    color: COLORS.neon_cyan,
+    fontSize: 7,
+    fontWeight: '900',
+    marginBottom: 2,
+  },
+  newsText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 14,
+  },
+  newsDate: {
+    color: COLORS.text_muted,
+    fontSize: 7,
+    marginTop: 2,
+  },
+  emptyFeedText: {
+    color: COLORS.text_muted,
+    fontSize: 9,
+    textAlign: 'center',
+    marginTop: 20,
+    fontFamily: 'monospace',
+  },
+
+  navPanel: {
+    backgroundColor: COLORS.glass_bg,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+  },
+  navGradient: {
+    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  navTitle: {
+    color: COLORS.neon_cyan,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  navDesc: {
+    color: '#fff',
+    fontSize: 9,
+    opacity: 0.5,
+  },
+
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingBottom: 20,
+    paddingHorizontal: 40,
+    gap: 10,
+  },
+  cockpitBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    gap: 4,
+  },
+  cockpitBtnActive: {
+    backgroundColor: 'rgba(0, 242, 254, 0.05)',
+    borderColor: COLORS.neon_cyan,
+  },
+  cockpitBtnLabel: {
+    color: COLORS.text_muted,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    width: '40%',
+    height: 2,
+    backgroundColor: COLORS.neon_cyan,
+    shadowColor: COLORS.neon_cyan,
+    shadowOpacity: 1,
+    shadowRadius: 4,
+  }
 });
 

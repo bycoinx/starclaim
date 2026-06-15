@@ -156,6 +156,7 @@ export default function StarCanvas({
   showConstellations = false,
   showConstellationLabels = true,
   showConstellationBoundaries = false,
+  showGrid = true,
   constellations = [],
   showMythology = false,
   showLabels = false,
@@ -432,12 +433,26 @@ export default function StarCanvas({
               />
             )}
 
+            {showGrid && (
+              <CelestialGrid
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                font={font}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                nightVision={nightVision}
+              />
+            )}
+
             {showMythology && qualityLevel === 'high' && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
               <MythologyFigure key={key} data={MYTHOLOGY_ASSETS[key]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
             ))}
 
             {showDSOs && dsoData.map((dso) => (
-              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
+              <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
             {showConstellationBoundaries && constellations.boundaries?.features?.map((feature) => (
@@ -480,13 +495,13 @@ export default function StarCanvas({
             ))}
 
             {showPlanets && planetData.map((planet) => (
-              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
+              <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
             {selectedStarPos.value && isSelectedVisible.value && (
               <Group>
-                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 22 + Math.sin(time.value * 5) * 4)} color={nightVision ? '#FF4A42' : '#C9A84C'} style="stroke" strokeWidth={1} opacity={0.3} />
-                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 18)} y={useDerivedValue(() => selectedStarPos.value.y - 18)} width={36} height={36} color={nightVision ? '#FF4A42' : '#C9A84C'} style="stroke" strokeWidth={1.2} opacity={useDerivedValue(() => 0.7 + Math.sin(time.value * 8) * 0.2)} />
+                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 22 + Math.sin(time.value * 5) * 4)} color={nightVision ? '#FF4A42' : '#00f2fe'} style="stroke" strokeWidth={1} opacity={0.3} />
+                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 18)} y={useDerivedValue(() => selectedStarPos.value.y - 18)} width={36} height={36} color={nightVision ? '#FF4A42' : '#00f2fe'} style="stroke" strokeWidth={1.2} opacity={useDerivedValue(() => 0.7 + Math.sin(time.value * 8) * 0.2)} />
               </Group>
             )}
           </Canvas>
@@ -506,6 +521,110 @@ export default function StarCanvas({
   );
 }
 
+function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const raSteps = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+  const decSteps = [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
+
+  return (
+    <Group>
+      {raSteps.map((raStep) => (
+        <CelestialGridLine
+          key={`ra-${raStep}`}
+          type="ra"
+          value={raStep}
+          ra={ra}
+          dec={dec}
+          zoom={zoom}
+          layout={layout}
+          font={font}
+          coordinateMode={coordinateMode}
+          observerLatitude={observerLatitude}
+          lstDegrees={lstDegrees}
+          nightVision={nightVision}
+        />
+      ))}
+      {decSteps.map((decStep) => (
+        <CelestialGridLine
+          key={`dec-${decStep}`}
+          type="dec"
+          value={decStep}
+          ra={ra}
+          dec={dec}
+          zoom={zoom}
+          layout={layout}
+          font={font}
+          coordinateMode={coordinateMode}
+          observerLatitude={observerLatitude}
+          lstDegrees={lstDegrees}
+          nightVision={nightVision}
+        />
+      ))}
+    </Group>
+  );
+}
+
+function CelestialGridLine({ type, value, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const points = useMemo(() => {
+    const p = [];
+    if (type === 'ra') {
+      for (let d = -85; d <= 85; d += 5) p.push({ ra: value, dec: d });
+    } else {
+      for (let r = 0; r <= 24; r += 1) p.push({ ra: r, dec: value });
+    }
+    return p;
+  }, [type, value]);
+
+  return (
+    <Group>
+      {points.map((_, i) => {
+        if (i === points.length - 1) return null;
+        return (
+          <CelestialGridSegment
+            key={i}
+            p1Data={points[i]}
+            p2Data={points[i + 1]}
+            ra={ra}
+            dec={dec}
+            zoom={zoom}
+            layout={layout}
+            coordinateMode={coordinateMode}
+            observerLatitude={observerLatitude}
+            lstDegrees={lstDegrees}
+            nightVision={nightVision}
+          />
+        );
+      })}
+    </Group>
+  );
+}
+
+function CelestialGridSegment({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const p1 = useDerivedValue(() => project(p1Data.ra, p1Data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+  const p2 = useDerivedValue(() => project(p2Data.ra, p2Data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
+
+  const isVisible = useDerivedValue(() => {
+    const onScreen = (
+      (p1.value.x > -100 && p1.value.x < layout.width + 100 && p1.value.y > -100 && p1.value.y < layout.height + 100)
+      || (p2.value.x > -100 && p2.value.x < layout.width + 100 && p2.value.y > -100 && p2.value.y < layout.height + 100)
+    );
+    const aboveHorizon = (
+      coordinateMode !== 'horizontal'
+      || (p1.value.skyAltitude >= -2 && p2.value.skyAltitude >= -2)
+    );
+    return onScreen && aboveHorizon;
+  });
+
+  return (
+    <Line
+      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
+      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
+      color={nightVision ? 'rgba(255,74,66,0.1)' : 'rgba(0, 242, 254, 0.08)'}
+      strokeWidth={0.5}
+      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
+    />
+  );
+}
+
 function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
   const horizonY = useDerivedValue(() => (
     projectDegrees(ra.value, 0, ra.value, dec.value, layout.width, layout.height, zoom.value).y
@@ -519,33 +638,40 @@ function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
 
   return (
     <Group>
-      {/* Ground Shading */}
+      {/* Ground Shading with Gradient */}
       <Rect
         x={0}
         y={horizonY}
         width={layout.width}
         height={useDerivedValue(() => Math.max(0, layout.height - horizonY.value))}
-        color={nightVision ? 'rgba(15,0,0,0.92)' : 'rgba(1,3,6,0.85)'}
-      />
+      >
+        <LinearGradient
+          start={useDerivedValue(() => vec(0, horizonY.value))}
+          end={useDerivedValue(() => vec(0, layout.height))}
+          colors={nightVision ? ['rgba(25,0,0,0.95)', '#000000'] : ['rgba(10,15,30,0.92)', '#000000']}
+        />
+      </Rect>
+      
       {/* Atmospheric Glow */}
       <Rect
         x={0}
-        y={useDerivedValue(() => horizonY.value - 60)}
+        y={useDerivedValue(() => horizonY.value - 80)}
         width={layout.width}
-        height={60}
+        height={80}
       >
         <LinearGradient
-          start={useDerivedValue(() => vec(0, horizonY.value - 60))}
+          start={useDerivedValue(() => vec(0, horizonY.value - 80))}
           end={useDerivedValue(() => vec(0, horizonY.value))}
-          colors={nightVision ? ['rgba(0,0,0,0)', 'rgba(255,45,35,0.08)'] : ['rgba(0,0,0,0)', 'rgba(74,144,226,0.06)']}
+          colors={nightVision ? ['rgba(0,0,0,0)', 'rgba(255,45,35,0.12)'] : ['rgba(0,0,0,0)', 'rgba(0,242,254,0.1)']}
         />
       </Rect>
+
       {/* Horizon Line */}
       <Line
         p1={useDerivedValue(() => vec(0, horizonY.value))}
         p2={useDerivedValue(() => vec(layout.width, horizonY.value))}
-        color={nightVision ? 'rgba(255,74,66,0.35)' : 'rgba(201,168,76,0.25)'}
-        strokeWidth={1.5}
+        color={nightVision ? 'rgba(255,74,66,0.4)' : 'rgba(0,242,254,0.3)'}
+        strokeWidth={1}
       />
       {directions.map((direction) => (
         <HorizonDirection
@@ -783,40 +909,151 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
   );
 }
 
-function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision, time }) {
   const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
-    pos.value.x > -20
-    && pos.value.x < layout.width + 20
-    && pos.value.y > -20
-    && pos.value.y < layout.height + 20
+    pos.value.x > -40
+    && pos.value.x < layout.width + 40
+    && pos.value.y > -40
+    && pos.value.y < layout.height + 40
     && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
   ));
+
+  const pulse = useDerivedValue(() => 1 + Math.sin(time.value * 2) * 0.15);
+  const accent = nightVision ? '#FF4A42' : planet.color;
+
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 5 * (zoom.value > 2 ? 1.4 : 1))} color={nightVision ? '#FF4A42' : planet.color} />
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 10 * (zoom.value > 2 ? 1.4 : 1))} color={nightVision ? '#FF4A42' : planet.color} opacity={0.15} style="stroke" strokeWidth={1} />
-      {font && zoom.value > 1.2 && (
-        <SkiaText x={useDerivedValue(() => pos.value.x + 12)} y={useDerivedValue(() => pos.value.y + 4)} text={planet.name.toUpperCase()} font={font} color={nightVision ? '#FF4A42' : '#fff'} />
+      {/* Outer Glow / Pulse */}
+      <Circle 
+        cx={useDerivedValue(() => pos.value.x)} 
+        cy={useDerivedValue(() => pos.value.y)} 
+        r={useDerivedValue(() => 14 * pulse.value * (zoom.value > 2 ? 1.4 : 1))} 
+        color={accent} 
+        opacity={0.15} 
+      />
+      
+      {/* Target Ring */}
+      <Circle 
+        cx={useDerivedValue(() => pos.value.x)} 
+        cy={useDerivedValue(() => pos.value.y)} 
+        r={useDerivedValue(() => 8 * (zoom.value > 2 ? 1.4 : 1))} 
+        color={accent} 
+        style="stroke" 
+        strokeWidth={1} 
+        opacity={0.6} 
+      />
+
+      {/* Solid Core */}
+      <Circle 
+        cx={useDerivedValue(() => pos.value.x)} 
+        cy={useDerivedValue(() => pos.value.y)} 
+        r={useDerivedValue(() => 4 * (zoom.value > 2 ? 1.4 : 1))} 
+        color={accent} 
+      />
+
+      {/* Planet Label with High Visibility */}
+      {font && (
+        <Group opacity={useDerivedValue(() => zoom.value > 0.8 ? 1 : 0)}>
+          <SkiaText 
+            x={useDerivedValue(() => pos.value.x + 16)} 
+            y={useDerivedValue(() => pos.value.y + 4)} 
+            text={planet.name} 
+            font={font} 
+            color="#fff" 
+          />
+          {zoom.value > 2.5 && (
+            <SkiaText 
+              x={useDerivedValue(() => pos.value.x + 16)} 
+              y={useDerivedValue(() => pos.value.y + 16)} 
+              text="SYSTEM_OBJECT" 
+              font={font} 
+              color={accent} 
+              opacity={0.5}
+            />
+          )}
+        </Group>
       )}
     </Group>
   );
 }
 
-function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision, time }) {
   const pos = useDerivedValue(() => project(dso.ra, dso.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
-    pos.value.x > -50
-    && pos.value.x < layout.width + 50
-    && pos.value.y > -50
-    && pos.value.y < layout.height + 50
+    pos.value.x > -60
+    && pos.value.x < layout.width + 60
+    && pos.value.y > -60
+    && pos.value.y < layout.height + 60
     && (coordinateMode !== 'horizontal' || pos.value.skyAltitude >= 0)
   ));
+
+  const accent = nightVision ? '#FF4A42' : dso.color;
+  const pulse = useDerivedValue(() => 0.6 + Math.sin(time.value * 1.5) * 0.2);
+
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 0.7 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={2} color={nightVision ? '#FF4A42' : dso.color} />
+    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      {dso.type === 'galaxy' && (
+        <Group>
+          <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 10 * (zoom.value / 2))} color={accent} opacity={0.1} />
+          <Rect 
+            x={useDerivedValue(() => pos.value.x - 12 * (zoom.value / 2))} 
+            y={useDerivedValue(() => pos.value.y - 4 * (zoom.value / 2))} 
+            width={useDerivedValue(() => 24 * (zoom.value / 2))} 
+            height={useDerivedValue(() => 8 * (zoom.value / 2))} 
+            color={accent} 
+            opacity={0.4} 
+            style="stroke" 
+            strokeWidth={1} 
+          />
+        </Group>
+      )}
+
+      {dso.type === 'nebula' && (
+        <Rect 
+          x={useDerivedValue(() => pos.value.x - 8)} 
+          y={useDerivedValue(() => pos.value.y - 8)} 
+          width={16} 
+          height={16} 
+          color={accent} 
+          style="stroke" 
+          strokeWidth={1} 
+          opacity={pulse}
+        />
+      )}
+
+      {dso.type === 'cluster' && (
+        <Circle 
+          cx={useDerivedValue(() => pos.value.x)} 
+          cy={useDerivedValue(() => pos.value.y)} 
+          r={10} 
+          color={accent} 
+          style="stroke" 
+          strokeWidth={1} 
+          strokeCap="round"
+          opacity={0.5}
+        />
+      )}
+
+      {/* Identity Label */}
       {font && zoom.value > 1.8 && (
-        <SkiaText x={useDerivedValue(() => pos.value.x + 10)} y={useDerivedValue(() => pos.value.y - 10)} text={dso.name} font={font} color={nightVision ? '#FF4A42' : dso.color} />
+        <Group>
+          <SkiaText 
+            x={useDerivedValue(() => pos.value.x + 14)} 
+            y={useDerivedValue(() => pos.value.y - 4)} 
+            text={dso.name.toUpperCase()} 
+            font={font} 
+            color="#fff" 
+          />
+          <SkiaText 
+            x={useDerivedValue(() => pos.value.x + 14)} 
+            y={useDerivedValue(() => pos.value.y + 8)} 
+            text={dso.type.toUpperCase()} 
+            font={font} 
+            color={accent} 
+            opacity={0.6}
+          />
+        </Group>
       )}
     </Group>
   );

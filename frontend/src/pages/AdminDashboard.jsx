@@ -11,7 +11,14 @@ import {
   Activity, 
   Package, 
   Clock, 
-  ExternalLink 
+  ExternalLink,
+  Newspaper,
+  Settings,
+  Plus,
+  Trash2,
+  Save,
+  Globe,
+  Database
 } from "lucide-react";
 import { toast } from "sonner";
 import "./Console.css";
@@ -21,25 +28,75 @@ export default function AdminDashboard() {
   const { lang } = useT();
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [news, setNews] = useState([]);
+  const [configs, setConfigs] = useState([]);
   const [fetching, setFetching] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview"); // overview | orders | stars
+  const [activeTab, setActiveTab] = useState("overview"); // overview | orders | news | config
+
+  const [newNews, setNewNews] = useState({ title: "", content: "", image_url: "", category: "announcement" });
+  const [newConfig, setNewConfig] = useState({ key: "", value: "", description: "" });
+
+  const fetchData = async () => {
+    setFetching(true);
+    try {
+      const [statsRes, ordersRes, newsRes, configsRes] = await Promise.all([
+        api.get("/admin/stats"),
+        api.get("/admin/orders"),
+        api.get("/admin/news"),
+        api.get("/admin/config")
+      ]);
+      setStats(statsRes.data);
+      setOrders(ordersRes.data);
+      setNews(newsRes.data);
+      setConfigs(configsRes.data);
+    } catch (err) {
+      console.error("Admin fetch error:", err);
+      toast.error(lang === "TR" ? "Yönetim verileri yüklenemedi." : "Admin data could not be loaded.");
+    } finally {
+      setFetching(false);
+    }
+  };
 
   useEffect(() => {
     if (loading) return;
     if (!user?.is_admin) return;
-
-    setFetching(true);
-    Promise.all([
-      api.get("/admin/stats"),
-      api.get("/admin/orders")
-    ]).then(([{ data: statsData }, { data: ordersData }]) => {
-      setStats(statsData);
-      setOrders(ordersData);
-    }).catch(err => {
-      console.error("Admin fetch error:", err);
-      toast.error(lang === "TR" ? "Yönetim verileri yüklenemedi." : "Admin data could not be loaded.");
-    }).finally(() => setFetching(false));
+    fetchData();
   }, [user, loading, lang]);
+
+  const handleCreateNews = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/admin/news", { ...newNews, created_at: new Date().toISOString(), news_id: "temp", is_published: true });
+      toast.success(lang === "TR" ? "Haber başarıyla eklendi." : "News added successfully.");
+      setNewNews({ title: "", content: "", image_url: "", category: "announcement" });
+      fetchData();
+    } catch (err) {
+      toast.error("Error creating news");
+    }
+  };
+
+  const handleDeleteNews = async (id) => {
+    if (!window.confirm(lang === "TR" ? "Silmek istediğinize emin misiniz?" : "Are you sure?")) return;
+    try {
+      await api.delete(`/admin/news/${id}`);
+      toast.success("News deleted");
+      fetchData();
+    } catch (err) {
+      toast.error("Error deleting news");
+    }
+  };
+
+  const handleUpsertConfig = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post("/admin/config", { ...newConfig, updated_at: new Date().toISOString() });
+      toast.success(lang === "TR" ? "Ayar güncellendi." : "Config updated.");
+      setNewConfig({ key: "", value: "", description: "" });
+      fetchData();
+    } catch (err) {
+      toast.error("Error updating config");
+    }
+  };
 
   if (loading || fetching) {
     return (
@@ -84,13 +141,13 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="glass px-4 py-2 rounded-lg border-sc-gold/20">
+            <button onClick={fetchData} className="glass px-4 py-2 rounded-lg border-sc-gold/20 hover:border-sc-gold transition-colors">
               <div className="text-[8px] text-sc-gold/60 uppercase tracking-widest mb-1">System Status</div>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-mono uppercase">Operational</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -103,19 +160,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1 mb-8 border-b border-white/5 p-1 bg-white/[0.02] rounded-t-xl w-fit">
-          <button 
-            onClick={() => setActiveTab("overview")}
-            className={`px-6 py-3 rounded-lg text-xs font-bold tracking-widest uppercase transition-all flex items-center gap-2 ${activeTab === 'overview' ? 'bg-sc-gold text-sc-deep shadow-lg shadow-sc-gold/20' : 'text-sc-text-muted hover:text-sc-text hover:bg-white/5'}`}
-          >
-            <Activity size={14} /> Overview
-          </button>
-          <button 
-            onClick={() => setActiveTab("orders")}
-            className={`px-6 py-3 rounded-lg text-xs font-bold tracking-widest uppercase transition-all flex items-center gap-2 ${activeTab === 'orders' ? 'bg-sc-gold text-sc-deep shadow-lg shadow-sc-gold/20' : 'text-sc-text-muted hover:text-sc-text hover:bg-white/5'}`}
-          >
-            <Package size={14} /> Recent Orders
-          </button>
+        <div className="flex flex-wrap items-center gap-1 mb-8 border-b border-white/5 p-1 bg-white/[0.02] rounded-t-xl w-fit">
+          <TabButton active={activeTab === "overview"} onClick={() => setActiveTab("overview")} icon={<Activity size={14} />} label="Overview" />
+          <TabButton active={activeTab === "orders"} onClick={() => setActiveTab("orders")} icon={<Package size={14} />} label="Orders" />
+          <TabButton active={activeTab === "news"} onClick={() => setActiveTab("news")} icon={<Newspaper size={14} />} label="News Feed" />
+          <TabButton active={activeTab === "config"} onClick={() => setActiveTab("config")} icon={<Settings size={14} />} label="System Config" />
         </div>
 
         {/* Tab Content */}
@@ -123,18 +172,23 @@ export default function AdminDashboard() {
           {activeTab === "overview" && (
             <motion.div 
               key="overview"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               className="grid lg:grid-cols-3 gap-8"
             >
               <div className="lg:col-span-2 space-y-8">
                 <div className="glass p-8 rounded-2xl border-white/5">
-                  <h3 className="text-lg font-display mb-6 flex items-center gap-3">
-                    <Activity size={18} className="text-sc-gold" /> System Telemetry
+                  <h3 className="text-lg font-display mb-6 flex items-center gap-3 italic">
+                    <Globe size={18} className="text-sc-gold" /> Nexus Connection Status
                   </h3>
-                  <div className="h-64 flex items-center justify-center border border-white/5 rounded-xl bg-black/20">
-                    <p className="text-sc-text-muted font-mono text-xs italic">Visualization module offline. Direct data feed active.</p>
+                  <div className="grid grid-cols-2 gap-4">
+                     <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div className="text-[10px] text-sc-text-muted uppercase mb-1">Web Distribution</div>
+                        <div className="text-sm font-mono text-green-400">VERCEL_ACTIVE</div>
+                     </div>
+                     <div className="p-4 rounded-xl bg-white/[0.03] border border-white/5">
+                        <div className="text-[10px] text-sc-text-muted uppercase mb-1">Mobile Bridge</div>
+                        <div className="text-sm font-mono text-cyan-400">EXPO_SYNC_READY</div>
+                     </div>
                   </div>
                 </div>
               </div>
@@ -165,9 +219,7 @@ export default function AdminDashboard() {
           {activeTab === "orders" && (
             <motion.div 
               key="orders"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               className="glass rounded-2xl border-white/5 overflow-hidden"
             >
               <div className="overflow-x-auto">
@@ -202,11 +254,138 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4 text-[10px] text-sc-text-muted">{new Date(order.created_at).toLocaleDateString()}</td>
                       </tr>
                     ))}
-                    {orders.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="px-6 py-12 text-center text-sc-text-muted italic">No mission records found in the archive.</td>
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "news" && (
+            <motion.div 
+              key="news"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              {/* Add News Form */}
+              <div className="glass p-8 rounded-2xl border-white/5">
+                <h3 className="text-lg font-display mb-6 flex items-center gap-3">
+                  <Plus size={18} className="text-sc-gold" /> Broadcast New Transmission
+                </h3>
+                <form onSubmit={handleCreateNews} className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <input 
+                      type="text" placeholder="Headline" required
+                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:border-sc-gold outline-none"
+                      value={newNews.title} onChange={e => setNewNews({...newNews, title: e.target.value})}
+                    />
+                    <textarea 
+                      placeholder="Transmission Content" required rows={4}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:border-sc-gold outline-none"
+                      value={newNews.content} onChange={e => setNewNews({...newNews, content: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-4">
+                    <input 
+                      type="text" placeholder="Image URL (Nexus Asset)"
+                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:border-sc-gold outline-none"
+                      value={newNews.image_url} onChange={e => setNewNews({...newNews, image_url: e.target.value})}
+                    />
+                    <select 
+                      className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm focus:border-sc-gold outline-none"
+                      value={newNews.category} onChange={e => setNewNews({...newNews, category: e.target.value})}
+                    >
+                      <option value="announcement">Announcement</option>
+                      <option value="discovery">Discovery</option>
+                      <option value="update">System Update</option>
+                    </select>
+                    <button type="submit" className="btn-gold w-full py-3 flex items-center justify-center gap-2">
+                      <Globe size={16} /> Deploy Broadcast
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* News List */}
+              <div className="glass rounded-2xl border-white/5 overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-white/[0.03] border-b border-white/5">
+                    <tr>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Category</th>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Headline</th>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Status</th>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {news.map(item => (
+                      <tr key={item.news_id} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="px-6 py-4">
+                           <span className="text-[9px] uppercase px-2 py-0.5 border border-white/10 rounded bg-white/5 text-sc-text-muted">{item.category}</span>
+                        </td>
+                        <td className="px-6 py-4 text-xs font-bold">{item.title}</td>
+                        <td className="px-6 py-4">
+                           <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              <span className="text-[10px] uppercase font-mono">Live</span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <button onClick={() => handleDeleteNews(item.news_id)} className="text-red-500/50 hover:text-red-500 transition-colors">
+                              <Trash2 size={16} />
+                           </button>
+                        </td>
                       </tr>
-                    )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          )}
+
+          {activeTab === "config" && (
+            <motion.div 
+              key="config"
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="space-y-8"
+            >
+              <div className="glass p-8 rounded-2xl border-white/5">
+                <h3 className="text-lg font-display mb-6 flex items-center gap-3 italic">
+                  <Database size={18} className="text-sc-gold" /> System Core Configurator
+                </h3>
+                <form onSubmit={handleUpsertConfig} className="grid md:grid-cols-3 gap-4">
+                  <input 
+                    type="text" placeholder="Key (e.g. MAINTENANCE_MODE)" required
+                    className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs font-mono focus:border-sc-gold outline-none"
+                    value={newConfig.key} onChange={e => setNewConfig({...newConfig, key: e.target.value.toUpperCase()})}
+                  />
+                  <input 
+                    type="text" placeholder="Value (e.g. 1 or Hello World)" required
+                    className="bg-black/40 border border-white/10 rounded-lg p-3 text-xs font-mono focus:border-sc-gold outline-none"
+                    value={newConfig.value} onChange={e => setNewConfig({...newConfig, value: e.target.value})}
+                  />
+                  <button type="submit" className="btn-gold py-3 flex items-center justify-center gap-2">
+                    <Save size={16} /> Sync Config
+                  </button>
+                </form>
+              </div>
+
+              <div className="glass rounded-2xl border-white/5 overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-white/[0.03] border-b border-white/5">
+                    <tr>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Config Key</th>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Value</th>
+                      <th className="px-6 py-4 text-[10px] uppercase tracking-widest text-sc-gold font-bold">Last Update</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {configs.map(cfg => (
+                      <tr key={cfg.key} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="px-6 py-4 text-xs font-mono text-sc-gold">{cfg.key}</td>
+                        <td className="px-6 py-4 text-xs font-mono text-white/80">{cfg.value}</td>
+                        <td className="px-6 py-4 text-[10px] text-sc-text-muted">{new Date(cfg.updated_at).toLocaleString()}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -234,5 +413,16 @@ function StatBox({ icon, label, value, color }) {
       <div className="text-[10px] uppercase tracking-widest text-sc-text-muted mb-1 font-bold">{label}</div>
       <div className="text-2xl font-display group-hover:text-sc-gold transition-colors">{value}</div>
     </div>
+  );
+}
+
+function TabButton({ active, onClick, icon, label }) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`px-6 py-3 rounded-lg text-xs font-bold tracking-widest uppercase transition-all flex items-center gap-2 ${active ? 'bg-sc-gold text-sc-deep shadow-lg shadow-sc-gold/20' : 'text-sc-text-muted hover:text-sc-text hover:bg-white/5'}`}
+    >
+      {icon} {label}
+    </button>
   );
 }

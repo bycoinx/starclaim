@@ -1,8 +1,12 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import CockpitLayout from '../components/CockpitLayout';
 import { THEME } from '../constants/Theme';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import SpaceBackground from '../components/SpaceBackground';
+
+const { width } = Dimensions.get('window');
 
 export default function Marketplace() {
   const router = useRouter();
@@ -15,62 +19,140 @@ export default function Marketplace() {
   ];
 
   return (
-    <CockpitLayout>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <SpaceBackground />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.8)', 'transparent', 'rgba(0,0,0,0.9)']}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      <View style={styles.content}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <Text style={styles.backBtnText}>← GERİ</Text>
+            <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.title}>MARKETPLACE</Text>
-          <Text style={styles.subtitle}>İKİNCİL PAZAR</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>STELLAR_EXCHANGE</Text>
+            <View style={styles.statusRow}>
+              <View style={styles.statusDot} />
+              <Text style={styles.subtitle}>SECURE_P2P_MARKETPLACE</Text>
+            </View>
+          </View>
         </View>
 
-        <ScrollView style={styles.scroll}>
-          {mockItems.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.tierText}>{item.tier.toUpperCase()}</Text>
-                <Text style={styles.priceText}>${item.price}</Text>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          numColumns={2} // We'll simulate columns in the scrollview or just layout cards differently
+        >
+          <View style={styles.grid}>
+            {mockItems.map((item) => (
+              <View key={item.id} style={styles.cardWrapper}>
+                <LinearGradient 
+                  colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} 
+                  style={styles.card}
+                >
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.tierText}>{item.tier.toUpperCase()}</Text>
+                    <View style={styles.priceBadge}>
+                      <Text style={styles.priceText}>${item.price}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.nameText}>{item.name.toUpperCase()}</Text>
+                  <View style={styles.metaRow}>
+                    <MaterialCommunityIcons name="constellation-star" size={12} color={THEME.colors.textMuted} />
+                    <Text style={styles.constellationText}>{item.constellation.toUpperCase()}</Text>
+                  </View>
+                  
+                  <TouchableOpacity style={styles.buyBtn}>
+                    <LinearGradient
+                      colors={[THEME.colors.primary, THEME.colors.primary + '80']}
+                      style={styles.buyGradient}
+                    >
+                      <Text style={styles.buyBtnText}>ACQUIRE</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Card corners */}
+                  <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '60' }]} />
+                  <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: THEME.colors.secondary + '60' }]} />
+                </LinearGradient>
               </View>
-              <Text style={styles.nameText}>{item.name}</Text>
-              <Text style={styles.constellationText}>{item.constellation}</Text>
-              <TouchableOpacity style={styles.buyBtn}>
-                <Text style={styles.buyBtnText}>SATIN AL</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+            ))}
+          </View>
         </ScrollView>
       </View>
-    </CockpitLayout>
+
+      {/* Screen HUD Overlay */}
+      <View style={styles.screenHud} pointerEvents="none">
+        <View style={[styles.hudCorner, { top: 40, left: 20, borderTopWidth: 1, borderLeftWidth: 1 }]} />
+        <View style={[styles.hudCorner, { top: 40, right: 20, borderTopWidth: 1, borderRightWidth: 1 }]} />
+        <View style={[styles.hudCorner, { bottom: 40, left: 20, borderBottomWidth: 1, borderLeftWidth: 1 }]} />
+        <View style={[styles.hudCorner, { bottom: 40, right: 20, borderBottomWidth: 1, borderRightWidth: 1 }]} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: { marginBottom: 30, alignItems: 'center' },
-  backBtn: { position: 'absolute', left: 0, top: 0 },
-  backBtnText: { color: THEME.colors.primary, fontWeight: '700' },
-  title: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: 2 },
-  subtitle: { fontSize: 12, color: THEME.colors.primary, fontWeight: '700', letterSpacing: 2 },
-  scroll: { flex: 1 },
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+  container: { flex: 1, backgroundColor: '#000' },
+  content: { flex: 1, padding: 24 },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 32, 
+    marginTop: 10,
+    gap: 20
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
-  tierText: { color: THEME.colors.secondary, fontSize: 10, fontWeight: 'bold' },
-  priceText: { color: THEME.colors.primary, fontSize: 18, fontWeight: '900' },
-  nameText: { color: '#fff', fontSize: 24, fontWeight: '900', marginBottom: 4 },
-  constellationText: { color: THEME.colors.textMuted, fontSize: 14, marginBottom: 16 },
-  buyBtn: {
-    backgroundColor: THEME.colors.primary,
-    paddingVertical: 12,
-    borderRadius: 10,
+  backBtn: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 12, 
+    backgroundColor: 'rgba(25, 25, 35, 0.7)', 
+    justifyContent: 'center', 
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)'
   },
-  buyBtnText: { color: '#000', fontWeight: '900' },
+  titleContainer: { flex: 1 },
+  title: { 
+    fontSize: 26, 
+    fontWeight: '900', 
+    color: '#fff', 
+    letterSpacing: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.colors.primary },
+  subtitle: { fontSize: 9, color: THEME.colors.primary, fontWeight: '900', letterSpacing: 1.5 },
+  scrollContent: { paddingBottom: 100 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
+  cardWrapper: { width: '50%', padding: 8 },
+  card: {
+    borderRadius: 12,
+    padding: 20,
+    minHeight: 180,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  tierText: { color: THEME.colors.secondary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  priceBadge: { backgroundColor: 'rgba(0, 242, 254, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  priceText: { color: THEME.colors.primary, fontSize: 16, fontWeight: '900', fontFamily: 'monospace' },
+  nameText: { 
+    color: '#fff', 
+    fontSize: 20, 
+    fontWeight: '900', 
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    marginBottom: 6
+  },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 },
+  constellationText: { color: THEME.colors.textMuted, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  buyBtn: { borderRadius: 8, overflow: 'hidden', marginTop: 'auto' },
+  buyGradient: { paddingVertical: 12, alignItems: 'center' },
+  buyBtnText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 2 },
+  cardCorner: { position: 'absolute', width: 10, height: 10 },
+  screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
+  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' }
 });

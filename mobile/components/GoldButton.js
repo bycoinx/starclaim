@@ -1,32 +1,46 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { THEME } from '../constants/Theme';
 
 export default function GoldButton({title, onPress, outline}){
   return (
-    <TouchableOpacity onPress={onPress} style={[styles.btn, outline && styles.outline]}>
-      <Text style={[styles.txt, outline && styles.outlineTxt]}>{title}</Text>
+    <TouchableOpacity onPress={onPress} style={[styles.btn, outline ? styles.outline : styles.solid]}>
+      <Text style={[styles.txt, outline ? styles.outlineTxt : styles.solidTxt]}>{title.toUpperCase()}</Text>
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
-  btn:{
-    backgroundColor:'#C9A84C',
-    paddingVertical:12,
-    paddingHorizontal:20,
-    borderRadius:10,
-    marginHorizontal:8
+  btn: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginHorizontal: 8,
+    borderWidth: 1.5,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
   },
-  txt:{
-    color:'#000',
-    fontWeight:'700'
+  solid: {
+    backgroundColor: THEME.colors.secondary,
+    borderColor: THEME.colors.secondary,
+    shadowColor: THEME.colors.secondary,
   },
-  outline:{
-    backgroundColor:'transparent',
-    borderWidth:1,
-    borderColor:'#C9A84C'
+  outline: {
+    backgroundColor: 'rgba(243, 156, 18, 0.1)',
+    borderColor: THEME.colors.secondary,
+    shadowColor: THEME.colors.secondary,
   },
-  outlineTxt:{
-    color:'#C9A84C'
+  txt: {
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  solidTxt: {
+    color: '#000',
+  },
+  outlineTxt: {
+    color: THEME.colors.secondary,
   }
 })

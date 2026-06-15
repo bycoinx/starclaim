@@ -12,7 +12,7 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
       <View style={styles.background}>
          <WarpBackground />
          <LinearGradient
-            colors={['#000000', '#0a0a20', '#000000']}
+            colors={['#000000', '#020617', '#000000']} // Deep Space Slate/Black
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFillObject}
@@ -23,7 +23,7 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
         <View style={styles.topStatus}>
           <View style={styles.statusGroup}>
             <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />
-            <Text style={styles.statusLabel}>AEGIS MOBILE</Text>
+            <Text style={styles.statusLabel}>STARCLAIM AEGIS v2.0</Text>
           </View>
           <View style={styles.statusGroup}>
             <Text style={styles.statusLabel}>{new Date().toLocaleTimeString()}</Text>
@@ -57,10 +57,12 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
 
       {showHUD && (
         <View style={styles.hudOverlay} pointerEvents="none">
-          <View style={[styles.hudCorner, styles.hudTopL]} />
-          <View style={[styles.hudCorner, styles.hudTopR]} />
-          <View style={[styles.hudCorner, styles.hudBottomL]} />
-          <View style={[styles.hudCorner, styles.hudBottomR]} />
+          <View style={[styles.hudCorner, styles.hudTopL, { borderColor: THEME.colors.primary + '4D' }]} />
+          <View style={[styles.hudCorner, styles.hudTopR, { borderColor: THEME.colors.primary + '4D' }]} />
+          <View style={[styles.hudCorner, styles.hudBottomL, { borderColor: THEME.colors.primary + '4D' }]} />
+          <View style={[styles.hudCorner, styles.hudBottomR, { borderColor: THEME.colors.primary + '4D' }]} />
+          
+          <View style={styles.globalScanline} />
         </View>
       )}
     </View>
@@ -83,9 +85,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.25)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.08)',
+    borderBottomColor: 'rgba(0, 242, 254, 0.2)', // Cyan border
   },
   statusGroup: {
     flexDirection: 'row',
@@ -96,12 +98,16 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
+    shadowColor: '#00f2fe',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
   },
   statusLabel: {
     color: THEME.colors.textMuted,
     fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontWeight: '800',
+    letterSpacing: 1.5,
   },
   contentWrapper: {
     flex: 1,
@@ -130,10 +136,10 @@ const styles = StyleSheet.create({
   },
   glassPanel: {
     flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: THEME.colors.glass,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: THEME.colors.glassBorder,
     overflow: 'hidden',
     padding: THEME.spacing.md,
   },
@@ -143,8 +149,13 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: 'rgba(0, 204, 255, 0.1)',
+    backgroundColor: 'rgba(0, 242, 254, 0.15)',
     zIndex: 10,
+  },
+  globalScanline: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 242, 254, 0.02)',
+    opacity: 0.5,
   },
   hudOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -153,7 +164,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 60,
     height: 60,
-    borderColor: 'rgba(0, 204, 255, 0.3)',
   },
   hudTopL: { top: 12, left: 12, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 28 },
   hudTopR: { top: 12, right: 12, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 28 },

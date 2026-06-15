@@ -1,12 +1,11 @@
 import React, {useEffect, useState, useRef} from 'react';
-import { SafeAreaView, Text, StyleSheet, View, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { SafeAreaView, Text, StyleSheet, View, TouchableOpacity, FlatList, Alert, Platform } from 'react-native';
 import SpaceBackground from '../../../components/SpaceBackground';
-import LanguagePicker from '../../../components/LanguagePicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -102,115 +101,210 @@ export default function VaultHomeScreen(){
     }catch(e){ console.warn(e); Alert.alert('SİSTEM HATASI', String(e)); }
   }
 
-  const renderItem = ({item}) => (
-    <LinearGradient 
-      colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']} 
-      style={styles.card}
-    >
-      <View style={styles.cardHeader}>
-        <Ionicons 
-          name={item.type === 'audio' ? "mic-outline" : "document-text-outline"} 
-          size={18} 
-          color={THEME.colors.primary} 
-        />
-        <Text style={styles.cardType}>{item.type === 'audio' ? 'VOICE_LOG' : 'TEXT_ENTRY'}</Text>
-        <View style={[styles.statusTag, { backgroundColor: isUnlocked(item) ? THEME.colors.accent + '20' : THEME.colors.danger + '20' }]}>
-          <Text style={[styles.statusTagText, { color: isUnlocked(item) ? THEME.colors.accent : THEME.colors.danger }]}>
-            {isUnlocked(item) ? 'DECRYPTED' : 'LOCKED'}
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.cardTitle}>
-        {isUnlocked(item) ? (item.type === 'text' ? item.text : 'Audio Broadcast Active') : '••••••••••••••••'}
-      </Text>
-      
-      <View style={styles.cardFooter}>
-        <View style={styles.metaBox}>
-          <Ionicons name="lock-closed-outline" size={10} color={THEME.colors.textMuted} />
-          <Text style={styles.metaText}>{item.lockType.toUpperCase()}</Text>
-        </View>
-        
-        {isUnlocked(item) ? (
-          item.type === 'audio' && (
-            <TouchableOpacity 
-              style={styles.actionBtn} 
-              onPress={playingId === item.id ? stopAndUnload : () => playAudio(item)}
-            >
-              <Ionicons name={playingId === item.id ? "stop" : "play"} size={16} color="#000" />
-              <Text style={styles.actionBtnText}>{playingId === item.id ? 'STOP' : 'PLAY'}</Text>
-            </TouchableOpacity>
-          )
-        ) : (
-          <TouchableOpacity style={styles.actionBtn} onPress={()=>tryUnlock(item)}>
-            <Ionicons name="key-outline" size={16} color="#000" />
-            <Text style={styles.actionBtnText}>UNLOCK</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </LinearGradient>
-  )
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <SpaceBackground />
-      <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <TouchableOpacity onPress={() => router.replace('/(tabs)/explore/home')} style={styles.backBtn}>
-              <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
-            </TouchableOpacity>
-            <View>
-              <Text style={styles.header}>STAR_VAULT</Text>
-              <Text style={styles.subHeader}>SECURE_TIME_CAPSULE_RECORDS</Text>
+  const renderItem = ({item}) => {
+    const unlockedState = isUnlocked(item);
+    const borderColor = unlockedState ? THEME.colors.primary + '40' : THEME.colors.secondary + '40';
+    
+    return (
+      <View style={[styles.cardContainer, { borderColor }]}>
+        <LinearGradient 
+          colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} 
+          style={styles.card}
+        >
+          <View style={styles.cardHeader}>
+            <View style={[styles.iconBox, { backgroundColor: unlockedState ? THEME.colors.primary + '15' : THEME.colors.secondary + '15' }]}>
+              <MaterialCommunityIcons 
+                name={item.type === 'audio' ? "waveform" : "text-box-outline"} 
+                size={20} 
+                color={unlockedState ? THEME.colors.primary : THEME.colors.secondary} 
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardType}>{item.type === 'audio' ? 'VOICE_LOG' : 'DATA_ENTRY'}</Text>
+              <Text style={styles.cardId}>ENTRY_ID: {item.id.slice(0, 8).toUpperCase()}</Text>
+            </View>
+            <View style={[styles.statusTag, { borderColor: unlockedState ? THEME.colors.primary + '60' : THEME.colors.danger + '60' }]}>
+              <View style={[styles.statusDot, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.danger }]} />
+              <Text style={[styles.statusTagText, { color: unlockedState ? THEME.colors.primary : THEME.colors.danger }]}>
+                {unlockedState ? 'DECRYPTED' : 'LOCKED'}
+              </Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
-            <Ionicons name="add" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
 
-        {messages.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="cube-outline" size={48} color="rgba(255,255,255,0.1)" />
-            <Text style={styles.emptyText}>BİR MESAJ BIRAKILMADI</Text>
-            <TouchableOpacity style={styles.emptyBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
-              <Text style={styles.emptyBtnText}>YENİ KAYIT OLUŞTUR</Text>
+          <Text style={[styles.cardTitle, !unlockedState && styles.lockedText]}>
+            {unlockedState ? (item.type === 'text' ? item.text : 'ACTIVE_AUDIO_BROADCAST') : 'ENCRYPTED_DATA_BLOCK_PROTECTED'}
+          </Text>
+          
+          <View style={styles.cardFooter}>
+            <View style={styles.metaRow}>
+              <MaterialCommunityIcons name="security" size={12} color={THEME.colors.textMuted} />
+              <Text style={styles.metaText}>PROTOCOL: {item.lockType.toUpperCase()}</Text>
+            </View>
+            
+            {unlockedState ? (
+              item.type === 'audio' && (
+                <TouchableOpacity 
+                  style={[styles.actionBtn, { backgroundColor: THEME.colors.primary }]} 
+                  onPress={playingId === item.id ? stopAndUnload : () => playAudio(item)}
+                >
+                  <Ionicons name={playingId === item.id ? "square" : "play"} size={14} color="#000" />
+                  <Text style={styles.actionBtnText}>{playingId === item.id ? 'STOP' : 'ACCESS_LOG'}</Text>
+                </TouchableOpacity>
+              )
+            ) : (
+              <TouchableOpacity 
+                style={[styles.actionBtn, { backgroundColor: THEME.colors.secondary }]} 
+                onPress={()=>tryUnlock(item)}
+              >
+                <MaterialCommunityIcons name="key-variant" size={16} color="#000" />
+                <Text style={styles.actionBtnText}>DECRYPT</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Card corners */}
+          <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]} />
+          <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]} />
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <SpaceBackground />
+      <LinearGradient
+        colors={['rgba(0,0,0,0.8)', 'transparent', 'rgba(0,0,0,0.9)']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <View style={styles.headerRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+              <TouchableOpacity onPress={() => router.replace('/(tabs)/explore/home')} style={styles.backBtn}>
+                <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.header}>STAR_VAULT</Text>
+                <View style={styles.statusRow}>
+                  <View style={styles.onlineDot} />
+                  <Text style={styles.subHeader}>SECURE_STORAGE_CONNECTED</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
+              <MaterialCommunityIcons name="plus" size={28} color="#000" />
             </TouchableOpacity>
           </View>
-        ) : (
-          <FlatList 
-            data={messages} 
-            keyExtractor={m=>m.id} 
-            renderItem={renderItem} 
-            contentContainerStyle={{paddingBottom: 40}} 
-          />
-        )}
+
+          {messages.length === 0 ? (
+            <View style={styles.empty}>
+              <View style={styles.emptyIconCircle}>
+                <MaterialCommunityIcons name="database-off-outline" size={48} color={THEME.colors.primary + '40'} />
+              </View>
+              <Text style={styles.emptyText}>BİR MESAJ BIRAKILMADI</Text>
+              <Text style={styles.emptySubText}>Geleceğe bir zaman kapsülü mühürlemek için butona dokun.</Text>
+              <TouchableOpacity style={styles.emptyBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
+                <Text style={styles.emptyBtnText}>YENİ KAYIT OLUŞTUR</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <FlatList 
+              data={messages} 
+              keyExtractor={m=>m.id} 
+              renderItem={renderItem} 
+              contentContainerStyle={{paddingBottom: 120}} 
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+      </SafeAreaView>
+
+      {/* Screen HUD Overlay */}
+      <View style={styles.screenHud} pointerEvents="none">
+        <View style={[styles.hudCorner, { top: 40, left: 20, borderTopWidth: 1, borderLeftWidth: 1 }]} />
+        <View style={[styles.hudCorner, { top: 40, right: 20, borderTopWidth: 1, borderRightWidth: 1 }]} />
+        <View style={[styles.hudCorner, { bottom: 40, left: 20, borderBottomWidth: 1, borderLeftWidth: 1 }]} />
+        <View style={[styles.hudCorner, { bottom: 40, right: 20, borderBottomWidth: 1, borderRightWidth: 1 }]} />
       </View>
-    </SafeAreaView>
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  content: { flex: 1, padding: 20 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, marginTop: 20 },
-  header: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: 2 },
-  subHeader: { color: THEME.colors.primary, fontSize: 8, fontWeight: '700', letterSpacing: 2, opacity: 0.8 },
-  newBtn: { backgroundColor: THEME.colors.primary, width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  card: { padding: 16, borderRadius: 16, marginBottom: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  cardType: { color: THEME.colors.textMuted, fontSize: 8, fontWeight: '700', letterSpacing: 1, marginLeft: 6, flex: 1 },
-  statusTag: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  statusTagText: { fontSize: 8, fontWeight: '900' },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 16 },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  metaBox: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: 'bold' },
-  actionBtn: { backgroundColor: THEME.colors.primary, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  actionBtnText: { color: '#000', fontSize: 10, fontWeight: '900' },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', opacity: 0.5 },
-  emptyText: { color: '#fff', fontSize: 12, fontWeight: '700', marginTop: 16, letterSpacing: 2 },
-  emptyBtn: { marginTop: 20, borderWidth: 1, borderColor: THEME.colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
-  emptyBtnText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900' }
+  safeArea: { flex: 1 },
+  content: { flex: 1, padding: 24 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32, marginTop: 10 },
+  header: { 
+    color: '#fff', 
+    fontSize: 26, 
+    fontWeight: '900', 
+    letterSpacing: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+  },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.colors.success },
+  subHeader: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+  backBtn: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 12, 
+    backgroundColor: 'rgba(25, 25, 35, 0.7)', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)'
+  },
+  newBtn: { 
+    backgroundColor: THEME.colors.primary, 
+    width: 48, 
+    height: 48, 
+    borderRadius: 12, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    shadowColor: THEME.colors.primary,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+  },
+  cardContainer: {
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  card: { padding: 20, minHeight: 140 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
+  iconBox: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  cardType: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
+  cardId: { color: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: 'monospace', marginTop: 2 },
+  statusTag: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 6, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    borderRadius: 6,
+    borderWidth: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)'
+  },
+  statusDot: { width: 4, height: 4, borderRadius: 2 },
+  statusTagText: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
+  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 20, lineHeight: 22 },
+  lockedText: { color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaText: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+  actionBtnText: { color: '#000', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  cardCorner: { position: 'absolute', width: 10, height: 10 },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 100 },
+  emptyIconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: 'rgba(25, 25, 35, 0.5)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  emptyText: { color: '#fff', fontSize: 14, fontWeight: '900', marginTop: 24, letterSpacing: 3 },
+  emptySubText: { color: THEME.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 8, paddingHorizontal: 40, lineHeight: 18 },
+  emptyBtn: { marginTop: 32, backgroundColor: 'rgba(0, 242, 254, 0.1)', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: THEME.colors.primary },
+  emptyBtnText: { color: THEME.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
+  screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
+  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' }
 })

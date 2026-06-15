@@ -24,36 +24,41 @@ export default function TabsLayout() {
         tabBarStyle: immersive
           ? { display: 'none' }
           : {
-              backgroundColor: '#05070d',
-              borderTopColor: 'rgba(255,255,255,0.08)',
-              borderTopWidth: 1,
-              height: 66,
-              paddingBottom: 8,
-              paddingTop: 7,
+              backgroundColor: 'rgba(5, 7, 13, 0.9)', // Glassy Dark
+              borderTopColor: 'rgba(0, 242, 254, 0.2)', // Cyan border
+              borderTopWidth: 1.5,
+              height: 70,
+              paddingBottom: 12,
+              paddingTop: 8,
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              elevation: 0,
             },
-        tabBarActiveTintColor: THEME.colors.secondary,
-        tabBarInactiveTintColor: 'rgba(255,255,255,0.42)',
+        tabBarActiveTintColor: THEME.colors.primary,
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.4)',
         tabBarLabelStyle: {
           fontSize: 9,
-          fontWeight: '800',
+          fontWeight: '900',
           textTransform: 'uppercase',
-          letterSpacing: 0,
+          letterSpacing: 1.5,
         },
       }}
     >
       <Tabs.Screen
         name="explore"
         options={{
-          title: 'Kesfet',
+          title: 'KEŞFET',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'planet' : 'planet-outline'} size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="mystars"
         options={{
-          title: 'Yildizlarim',
+          title: 'YILDIZLARIM',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons name={focused ? 'star' : 'star-outline'} size={size} color={color} />
           ),
@@ -62,9 +67,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="vault"
         options={{
-          title: 'Vault',
+          title: 'KASA',
           tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons name={focused ? 'shield' : 'shield-outline'} size={size} color={color} />
+            <Ionicons name={focused ? 'lock-closed' : 'lock-open-outline'} size={size} color={color} />
           ),
         }}
       />

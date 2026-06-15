@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
+    "orientation": "landscape",
     "scheme": "starclaim",
     "splash": {
       "image": "./assets/splash-icon.png",
