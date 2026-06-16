@@ -54,20 +54,53 @@ const warpFragmentShader = `
   }
 `;
 
+function getScaledStarPosition({ x, y, z }, scale = 0.24) {
+  return new THREE.Vector3(x * scale, y * scale, z * scale);
+}
+
+function createTargetRing(material) {
+  const ringGeom = new THREE.RingGeometry(1.1, 1.8, 32);
+  const ring = new THREE.LineLoop(ringGeom, material);
+  ring.rotation.x = Math.PI / 2;
+  return ring;
+}
+
 export default function StarSystem3D({ stars = [], targetStar = null, onArrival = null }) {
   const timeoutRef = useRef();
   const onArrivalRef = useRef(onArrival);
   const warpActive = useRef(false);
+  const warpOffset = useRef(0);
+  const targetStarRef = useRef(targetStar);
+  const orbitAngle = useRef(0);
 
   useEffect(() => {
     onArrivalRef.current = onArrival;
   }, [onArrival]);
+
+  useEffect(() => {
+    targetStarRef.current = targetStar;
+  }, [targetStar]);
+
+  useEffect(() => {
+    if (!cameraRef.current || !targetStar) return;
+    const worldPos = getScaledStarPosition(getStarXYZ(targetStar));
+    startPos.current.copy(worldPos).add(new THREE.Vector3(0, 0, 80));
+    endPos.current.copy(worldPos);
+    cameraRef.current.position.copy(startPos.current);
+    cameraRef.current.lookAt(worldPos);
+    if (targetMarkerRef.current) {
+      targetMarkerRef.current.position.copy(worldPos);
+      targetMarkerRef.current.visible = true;
+    }
+  }, [targetStar]);
+
   const warpStartTime = useRef(0);
   const warpDuration = 3000; // 3 seconds
   const cameraRef = useRef();
   const sceneRef = useRef();
   const warpGroupRef = useRef();
-  const startPos = useRef(new THREE.Vector3(0, 0, 20));
+  const targetMarkerRef = useRef();
+  const startPos = useRef(new THREE.Vector3(0, 0, 120));
   const endPos = useRef(new THREE.Vector3(0, 0, 0));
 
   const onContextCreate = async (gl) => {
@@ -81,17 +114,6 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     const camera = new THREE.PerspectiveCamera(70, width / height, 0.1, 20000);
     cameraRef.current = camera;
 
-    // Set initial camera position based on target
-    if (targetStar) {
-      const targetPos = getStarXYZ(targetStar);
-      endPos.current.set(targetPos.x, targetPos.y, targetPos.z);
-      // Start further away for warp effect if coming from catalog/home
-      camera.position.set(targetPos.x, targetPos.y, targetPos.z + 200);
-      camera.lookAt(targetPos.x, targetPos.y, targetPos.z);
-    } else {
-      camera.position.z = 20;
-    }
-
     const renderer = new Renderer({ gl });
     renderer.setSize(width, height);
     renderer.setClearColor(0x000105, 1);
@@ -104,10 +126,11 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
 
     stars.forEach((star) => {
       const { x, y, z } = getStarXYZ(star);
-      positions.push(x, y, z);
+      const scaled = getScaledStarPosition({ x, y, z });
+      positions.push(scaled.x, scaled.y, scaled.z);
       const color = new THREE.Color(colorForSpectrum(star.spect || star.spectralType));
       colors.push(color.r, color.g, color.b);
-      sizes.push(Math.max(0.5, 6.0 - (star.mag || 5)));
+      sizes.push(Math.max(0.8, Math.min(4.5, 5.5 - (star.mag || 3))));
     });
 
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
@@ -127,35 +150,65 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     const points = new THREE.Points(geometry, shaderMaterial);
     scene.add(points);
 
-    // 2. Warp Streaks Setup (Improved for 3D Travel)
+    // 2. Target Marker
+    const ringMaterial = new THREE.LineBasicMaterial({ color: 0x00f2fe, transparent: true, opacity: 0.85 });
+    const targetMarker = createTargetRing(ringMaterial);
+    targetMarkerRef.current = targetMarker;
+    targetMarker.visible = false;
+    scene.add(targetMarker);
+
+    const resetCamera = (star) => {
+      if (!star || !camera) {
+        camera.position.set(0, 0, 120);
+        camera.lookAt(0, 0, 0);
+        return;
+      }
+
+      const worldPos = getScaledStarPosition(getStarXYZ(star));
+      endPos.current.copy(worldPos);
+      startPos.current.copy(worldPos).add(new THREE.Vector3(0, 0, 80));
+      camera.position.copy(startPos.current);
+      camera.lookAt(worldPos);
+      targetMarker.position.copy(worldPos);
+      targetMarker.visible = true;
+    };
+
+    if (targetStar) {
+      resetCamera(targetStar);
+    } else {
+      camera.position.set(0, 0, 120);
+      camera.lookAt(0, 0, 0);
+    }
+
+    // 3. Warp Streaks Setup (Improved for 3D Travel)
     const warpGroup = new THREE.Group();
     warpGroupRef.current = warpGroup;
-    const warpLines = 150;
+    const warpLines = 160;
     const lineGeom = new THREE.BufferGeometry();
     const linePositions = [];
     const lineAlphas = [];
     
-    for(let i=0; i<warpLines; i++) {
-        const r = 5 + Math.random() * 20;
-        const theta = Math.random() * Math.PI * 2;
-        const x = r * Math.cos(theta);
-        const y = r * Math.sin(theta);
-        const zStart = Math.random() * -400;
-        const zEnd = zStart + 50 + Math.random() * 50;
-        
-        linePositions.push(x, y, zStart, x, y, zEnd);
-        lineAlphas.push(0, 1);
+    for (let i = 0; i < warpLines; i += 1) {
+      const r = 6 + Math.random() * 24;
+      const theta = Math.random() * Math.PI * 2;
+      const x = r * Math.cos(theta);
+      const y = r * Math.sin(theta);
+      const zStart = Math.random() * -420;
+      const zEnd = zStart + 80 + Math.random() * 80;
+      
+      linePositions.push(x, y, zStart, x, y, zEnd);
+      lineAlphas.push(0, 1);
     }
     
     lineGeom.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
     lineGeom.setAttribute('alpha', new THREE.Float32BufferAttribute(lineAlphas, 1));
     
     const lineMat = new THREE.ShaderMaterial({
-        vertexShader: warpVertexShader,
-        fragmentShader: warpFragmentShader,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthTest: false
+      vertexShader: warpVertexShader,
+      fragmentShader: warpFragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthTest: false,
     });
     
     const warpSystem = new THREE.LineSegments(lineGeom, lineMat);
@@ -172,57 +225,68 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       uniforms.time.value = elapsed;
 
       if (warpActive.current) {
-          const warpElapsed = now - warpStartTime.current;
-          const t = Math.min(1.0, warpElapsed / warpDuration);
-          
-          // Smoothstep for acceleration/deceleration
-          const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          
-          // Update camera position
-          camera.position.lerpVectors(startPos.current, new THREE.Vector3(endPos.current.x, endPos.current.y, endPos.current.z + 10), ease);
-          camera.lookAt(endPos.current);
-          
-          // FOV Distortion
-          camera.fov = 70 + Math.sin(t * Math.PI) * 45;
-          camera.updateProjectionMatrix();
-          
-          // Warp Visuals
-          warpGroup.visible = true;
-          warpGroup.position.copy(camera.position);
-          warpGroup.quaternion.copy(camera.quaternion);
-          warpGroup.children[0].position.z += 20;
-          if(warpGroup.children[0].position.z > 400) warpGroup.children[0].position.z = 0;
-          
-          points.scale.setScalar(1.0 + Math.sin(t * Math.PI) * 1.5);
+        const warpElapsed = now - warpStartTime.current;
+        const t = Math.min(1.0, warpElapsed / warpDuration);
+        const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
-          if (t >= 1.0) {
-              warpActive.current = false;
-              camera.fov = 70;
-              camera.updateProjectionMatrix();
-              warpGroup.visible = false;
-              points.scale.setScalar(1.0);
-              if (onArrivalRef.current) onArrivalRef.current(targetStar);
-          }
-      } else {
-          // Normal Idle / Orbit
-          camera.fov = THREE.MathUtils.lerp(camera.fov, 70, 0.05);
+        const destination = new THREE.Vector3(endPos.current.x, endPos.current.y, endPos.current.z + 10);
+        camera.position.lerpVectors(startPos.current, destination, ease);
+        camera.lookAt(endPos.current);
+        camera.fov = 70 + Math.sin(t * Math.PI) * 45;
+        camera.updateProjectionMatrix();
+
+        warpGroup.visible = true;
+        warpGroup.position.copy(camera.position);
+        warpGroup.quaternion.copy(camera.quaternion);
+        warpSystem.position.z += 26;
+        if (warpSystem.position.z > 520) warpSystem.position.z = -120;
+
+        points.scale.setScalar(1.0 + Math.sin(t * Math.PI) * 1.5);
+
+        if (t >= 1.0) {
+          warpActive.current = false;
+          camera.fov = 70;
           camera.updateProjectionMatrix();
           warpGroup.visible = false;
-          points.rotation.y += 0.0002;
+          points.scale.setScalar(1.0);
+          if (onArrivalRef.current) onArrivalRef.current(targetStarRef.current);
+        }
+      } else {
+        camera.fov = THREE.MathUtils.lerp(camera.fov, 70, 0.05);
+        camera.updateProjectionMatrix();
+        warpGroup.visible = false;
+
+        if (targetStarRef.current) {
+          orbitAngle.current += 0.0004;
+          const worldPos = getScaledStarPosition(getStarXYZ(targetStarRef.current));
+          const orbitRadius = 64;
+          camera.position.set(
+            worldPos.x + Math.cos(orbitAngle.current) * orbitRadius,
+            worldPos.y + Math.sin(orbitAngle.current) * orbitRadius * 0.45,
+            worldPos.z + 48,
+          );
+          camera.lookAt(worldPos);
+        } else {
+          points.rotation.y += 0.00025;
+          camera.position.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.00008);
+          camera.lookAt(0, 0, 0);
+        }
       }
 
       renderer.render(scene, camera);
       gl.endFrameEXP();
     };
+
     render();
   };
 
   const triggerWarp = () => {
-      if (!targetStar || warpActive.current) return;
+      const target = targetStarRef.current;
+      if (!target || warpActive.current || !cameraRef.current) return;
       
-      const targetPos = getStarXYZ(targetStar);
+      const worldPos = getScaledStarPosition(getStarXYZ(target));
       startPos.current.copy(cameraRef.current.position);
-      endPos.current.set(targetPos.x, targetPos.y, targetPos.z);
+      endPos.current.copy(worldPos);
       
       SpaceAudio.playWarp();
       warpStartTime.current = Date.now();
