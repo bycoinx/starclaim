@@ -21,8 +21,8 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
       const html = `
         <html>
         <body style="background:#050505; color:#fff; font-family:sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; text-align:center; padding: 40px;">
-          <div style="border: 10px double #C9A84C; padding: 40px; border-radius: 20px;">
-            <h1 style="color:#C9A84C; font-size: 42px; margin-bottom: 0;">StarClaim</h1>
+            <div style="border: 10px double #C9A84C; padding: 40px; border-radius: 20px;">
+            <h1 style="color:#C9A84C; font-size: 42px; margin-bottom: 0;">StarCalimX</h1>
             <p style="color:#C9A84C; letter-spacing: 4px; font-size: 14px; margin-top: 5px;">ETERNAL COVENANT CERTIFICATE</p>
             <div style="margin: 50px 0;">
               <p style="font-size: 18px; opacity: 0.8;">This document confirms that the star</p>

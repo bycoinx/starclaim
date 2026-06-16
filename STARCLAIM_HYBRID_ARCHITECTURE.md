@@ -1,4 +1,4 @@
-# 🌌 StarClaim: Sovereign Architecture & Security Protocol (V1.0)
+# 🌌 StarCalimX: Sovereign Architecture & Security Protocol (V1.0)
 
 Bu döküman, StarClaim ekosisteminin teknik mimarisini, siber güvenlik protokollerini ve ekonomik modelini tanımlayan resmi "Anayasa"dır. Proje, "Iron Man" (J.A.R.V.I.S.) estetiğini, askeri seviye şifreleme ve merkeziyetsiz finans (DeFi) ile birleştirir.
 
@@ -88,4 +88,4 @@ Bu döküman, StarClaim ekosisteminin teknik mimarisini, siber güvenlik protoko
 
 ---
 
-**StarClaim: Sadece bir yıldız değil, evrendeki en güvenli ve en teknolojik limanınız.**
+**StarCalimX: Sadece bir yıldız değil, evrendeki en güvenli ve en teknolojik limanınız.**

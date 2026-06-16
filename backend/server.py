@@ -1,5 +1,5 @@
 """
-StarClaim backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
+StarCalimX backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
 + Stripe checkout + Resend email + ReportLab PDF certificate.
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
@@ -89,11 +89,11 @@ _transfer_lock = asyncio.Lock()
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
 
-app = FastAPI(title="StarClaim API")
+app = FastAPI(title="StarCalimX API")
 api = APIRouter(prefix="/api")
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("starclaim")
+logger = logging.getLogger("starcalimx")
 
 TIER_IMPORTANCE = {
     "legendary": 5,
@@ -684,8 +684,8 @@ async def auth_qr_verify(body: QRVerifyRequest, response: Response):
     if not verify_solana_signature(body.public_key, body.signature, body.message):
         raise HTTPException(status_code=401, detail="Invalid signature")
     
-    # Message should be: "StarClaim Entanglement Login: {auth_session_id}"
-    expected_msg = f"StarClaim Entanglement Login: {body.auth_session_id}"
+    # Message should be: "StarCalimX Entanglement Login: {auth_session_id}"
+    expected_msg = f"StarCalimX Entanglement Login: {body.auth_session_id}"
     if body.message != expected_msg:
         raise HTTPException(status_code=401, detail="Invalid message payload")
 
@@ -837,7 +837,7 @@ async def stars_health():
     total_stars = await db.stars.count_documents({})
     available_stars = await db.stars.count_documents({"owner_id": None})
     return {
-        "service": "StarClaim Star Catalog",
+        "service": "StarCalimX Star Catalog",
         "ok": total_stars > 0,
         "total_stars": total_stars,
         "available_stars": available_stars,
@@ -1160,7 +1160,7 @@ async def _process_paid_marketplace_purchase(transaction: dict) -> None:
         return
 
     buyer_id = transaction.get("user_id")
-    buyer_name = transaction.get("user_name") or "StarClaim Owner"
+    buyer_name = transaction.get("user_name") or "StarCalimX Owner"
     amount = float(transaction["amount"])
     commission = round(amount * 0.10, 2)
     seller_amount = round(amount - commission, 2)
@@ -1255,7 +1255,7 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
                 "price_data": {
                     "currency": "usd",
                     "product_data": {
-                        "name": f"StarClaim Marketplace · {listing['star_name']}",
+                        "name": f"StarCalimX Marketplace · {listing['star_name']}",
                         "description": f"{listing['constellation']} · resale listing",
                     },
                     "unit_amount": int(round(amount * 100)),
@@ -1325,7 +1325,7 @@ async def ai_story(body: StoryRequest):
 
     if lang == "TR":
         system = (
-            "Sen StarClaim'in 'Aegis Quantum Narrator' (AQN-1) ünitesisin. "
+            "Sen StarCalimX'in 'Aegis Quantum Narrator' (AQN-1) ünitesisin. "
             "Görevin: Gözlemcinin (kullanıcı) bakış açısıyla çökerek maddeselleşen bir yıldızın hikayesini, bilimsel hassasiyet ve kuantum şiirselliği ile oluşturmak. "
             "Sistem Notu: Proje 'The Observer Protocol' üzerine kuruludur; yıldızlar sadece gözlemlendiklerinde tam formlarına kavuşurlar. "
             "Üslup: Iron Man (J.A.R.V.I.S.) sofistikeliği + Carl Sagan ilhamı + Kuantum fiziği metaforları. "
@@ -1345,7 +1345,7 @@ async def ai_story(body: StoryRequest):
         )
     else:
         system = (
-            "You are StarClaim's 'Aegis Quantum Narrator' (AQN-1) unit. "
+            "You are StarCalimX's 'Aegis Quantum Narrator' (AQN-1) unit. "
             "Task: Transform the user's star into a unique narrative by blending scientific precision with quantum poetry, focusing on how the star 'collapses' into reality through the eye of the Observer. "
             "System Note: The project is based on 'The Observer Protocol'; stars only reach their full form when observed. "
             "Style: J.A.R.V.I.S. sophistication + Carl Sagan inspiration + Quantum physics metaphors. "
@@ -1428,7 +1428,7 @@ async def _process_paid_claim(transaction: dict) -> None:
 
     user_id = transaction.get("user_id")
     user_email = transaction.get("user_email") or ""
-    user_name = transaction.get("user_name") or transaction.get("custom_name") or "StarClaim Owner"
+    user_name = transaction.get("user_name") or transaction.get("custom_name") or "StarCalimX Owner"
 
     update = {
         "owner_id": user_id,
@@ -1556,7 +1556,7 @@ async def create_checkout_session(body: CheckoutSessionRequest, request: Request
                 "price_data": {
                     "currency": "usd",
                     "product_data": {
-                        "name": f"StarClaim · {body.custom_name}",
+                        "name": f"StarCalimX · {body.custom_name}",
                         "description": f"{star['name']} ({star['constellation']}) — {body.package} package",
                     },
                     "unit_amount": int(round(amount * 100)),
@@ -1739,7 +1739,7 @@ async def get_certificate(order_id: str, user: User = Depends(get_current_user))
     return FResponse(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="StarClaim-{star["code"]}-Certificate.pdf"'},
+        headers={"Content-Disposition": f'attachment; filename="StarCalimX-{star["code"]}-Certificate.pdf"'},
     )
 
 
@@ -1848,7 +1848,7 @@ async def subscribe(body: NewsletterRequest):
 
 @api.get("/")
 async def root():
-    return {"service": "StarClaim API", "status": "ok"}
+    return {"service": "StarCalimX API", "status": "ok"}
 
 
 class SupportRequest(BaseModel):
@@ -1864,7 +1864,7 @@ async def ai_support(body: SupportRequest):
             return {
                 "reply": (
                     "Aegis destek sistemi şu anda AI anahtarlarıyla bağlı değil, Sir. "
-                    "Yine de StarClaim bilgilerini sorgulayabilir ve proje hakkında temel bir rehber sunabilirim. "
+                    "Yine de StarCalimX bilgilerini sorgulayabilir ve proje hakkında temel bir rehber sunabilirim. "
                     "Lütfen `GOOGLE_API_KEY`, `OPENAI_API_KEY` veya `ANTHROPIC_API_KEY` değerini ayarlayın."
                 )
             }
@@ -1878,7 +1878,7 @@ async def ai_support(body: SupportRequest):
 
     lang = body.language.upper()
     system = (
-        "Sen StarClaim'in 'Aegis Support Sentinel' (v3.0) ünitesisin. "
+        "Sen StarCalimX'in 'Aegis Support Sentinel' (v3.0) ünitesisin. "
         "Kişiliğin: Sophisticated, havalı, zeki (J.A.R.V.I.S. / F.R.I.D.A.Y. karışımı). "
         "Kullanıcılara 'Sir' veya 'Explorer' diye hitap et. "
         "Konuşmalarında kesinlikle teknik, güven odaklı ve vizyoner ol. "

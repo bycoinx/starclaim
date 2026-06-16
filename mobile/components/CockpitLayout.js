@@ -23,7 +23,7 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
         <View style={styles.topStatus}>
           <View style={styles.statusGroup}>
             <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />
-            <Text style={styles.statusLabel}>STARCLAIM AEGIS v2.0</Text>
+            <Text style={styles.statusLabel}>STARCALIMX AEGIS v2.0</Text>
           </View>
           <View style={styles.statusGroup}>
             <Text style={styles.statusLabel}>{new Date().toLocaleTimeString()}</Text>

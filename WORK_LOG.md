@@ -1,4 +1,4 @@
-# StarClaim - Work Log & Deployment Fixes
+# StarCalimX - Work Log & Deployment Fixes
 
 ## Tarih: 2 Haziran 2026 (Phase 6.5 Hardening)
 
@@ -37,7 +37,7 @@
 
 ### 4. Genel Kontrol
 - Backend ve Frontend arasındaki bağlantılar (Stripe, Arweave, Solana) kontrol edildi.
-- `vercel.json` üzerindeki proxy ayarları Render API'sine (`https://starclaim.onrender.com`) yönlendirilecek şekilde doğrulandı.
+- `vercel.json` üzerindeki proxy ayarları Render API'sine (`https://starcalimx.onrender.com`) yönlendirilecek şekilde doğrulandı.
 
 ---
 ## 🗓️ Tarih: 28 Mayıs 2026 (Surgical Completion - Phase 5)

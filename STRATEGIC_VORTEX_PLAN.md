@@ -1,6 +1,6 @@
-# StarClaim Strategic Vortex Plan
+# StarCalimX Strategic Vortex Plan
 
-Bu belge StarClaim'in mevcut kod tabanına göre hazırlanmış uygulama planıdır. Öncelik, mobil uygulamada önce güvenilir bir 2D gökyüzü haritası, ardından aynı astronomik veri motorunu kullanan Celestia tarzı 3D yıldız yolculuğu geliştirmektir.
+Bu belge StarCalimX'in mevcut kod tabanına göre hazırlanmış uygulama planıdır. Öncelik, mobil uygulamada önce güvenilir bir 2D gökyüzü haritası, ardından aynı astronomik veri motorunu kullanan Celestia tarzı 3D yıldız yolculuğu geliştirmektir.
 
 ## Ürün Kararı
 
@@ -60,7 +60,7 @@ constellation
 ```
 
 - [x] HYG loader bu sözleşmeye göre normalize edilecek.
-- [ ] HIP, HD, isim ve StarClaim kodu ile ortak arama indeksi kurulacak.
+	- [ ] HIP, HD, isim ve StarCalimX kodu ile ortak arama indeksi kurulacak.
 - [ ] 2D ve 3D arasında yıldız aktarımı sadece bu kimlik üzerinden yapılacak.
 - [ ] Cache sürümü eklenecek; veri formatı değişince eski AsyncStorage kaydı temizlenecek.
 
@@ -138,8 +138,8 @@ z = -d * cos(dec) * sin(ra)
 - [ ] Deep link formatı belirlenecek:
 
 ```text
-starclaim://star/{starClaimCode}
-starclaim://hip/{hipId}
+starcalimx://star/{starClaimCode}
+starcalimx://hip/{hipId}
 ```
 
 - [ ] Yıldız detayı ekranına `2D Haritada Aç` ve `3D Yolculuk` eylemleri eklenecek.

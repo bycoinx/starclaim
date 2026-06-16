@@ -1,1 +1,1 @@
-"""StarClaim backend package."""
+"""StarCalimX backend package."""

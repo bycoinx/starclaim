@@ -1,4 +1,4 @@
-# 🛰️ StarClaim: Mission Plan (Infinite Voyage Edition)
+# 🛰️ StarCalimX: Mission Plan (Infinite Voyage Edition)
 
 Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana yol haritasıdır. Yeni vizyonumuzla birlikte Web tarafı sinematik bir "Gözlemci", Mobil tarafı ise yüksek kaliteli bir "3D Kokpit" olarak konumlandırılmıştır.
 

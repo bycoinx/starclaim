@@ -1,4 +1,4 @@
-# StarClaim — Production Deployment Guide
+# StarCalimX — Production Deployment Guide
 
 ## Architecture
 - **Frontend**: React (Netlify) — `https://fascinating-florentine-5aace3.netlify.app`
@@ -15,10 +15,10 @@
 
 1. Go to **https://www.mongodb.com/atlas/database** → **Try Free**
 2. Create a free account (Google login is fastest)
-3. Create a new project → name it `StarClaim`
+3. Create a new project → name it `StarCalimX`
 4. Click **Build a Database** → choose **M0 FREE** tier
 5. Provider: **AWS**, Region: closest to your users (e.g. `eu-central-1` Frankfurt for Turkey)
-6. Cluster name: `starclaim-prod` → **Create**
+6. Cluster name: `starcalimx-prod` → **Create**
 7. Wait ~2 min for cluster to provision
 
 ### Create database user
@@ -38,7 +38,7 @@
 2. Driver: Python, version: 3.12 or later
 3. Copy the connection string. It looks like:
    ```
-   mongodb+srv://starclaim_app:<password>@starclaim-prod.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=starclaim-prod
+   mongodb+srv://starclaim_app:<password>@starcalimx-prod.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=starcalimx-prod
    ```
 4. **Replace `<password>`** with the password you saved
 5. Save this whole string — you'll paste it into Render env var
@@ -49,13 +49,13 @@
 
 ### Anthropic (AI stories)
 1. https://console.anthropic.com → Sign up / Sign in
-2. **API Keys** → **Create Key** → name `StarClaim`
+2. **API Keys** → **Create Key** → name `StarCalimX`
 3. Copy the key (starts with `sk-ant-...`) — save it
 4. Add billing/credits: minimum $5 buys ~5000 stories
 
 ### Resend (email delivery)
 1. https://resend.com → Sign up (Google login OK)
-2. **API Keys** → **Create API Key** → name `StarClaim`
+2. **API Keys** → **Create API Key** → name `StarCalimX`
 3. Copy the key (starts with `re_...`) — save it
 4. **Optional but recommended**: Add your custom domain at **Domains** for `from: noreply@yourdomain.com` instead of `onboarding@resend.dev`. For now, the default `onboarding@resend.dev` works but **only sends to verified addresses you own** until domain is verified.
 
@@ -89,14 +89,14 @@
 4. Click **Advanced** → **Environment Variables** → add ALL of these:
    ```
    MONGO_URL          = mongodb+srv://starclaim_app:PASSWORD@starclaim-prod.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=starclaim-prod
-   DB_NAME            = starclaim
+   DB_NAME            = starcalimx
    CORS_ORIGINS       = https://fascinating-florentine-5aace3.netlify.app
    GOOGLE_API_KEY     = your_google_api_key_here
    ANTHROPIC_API_KEY  = sk-ant-...
    STRIPE_API_KEY     = sk_test_...
    STRIPE_WEBHOOK_SECRET = whsec_...
    RESEND_API_KEY     = re_...
-   SENDER_EMAIL       = StarClaim <onboarding@resend.dev>
+   SENDER_EMAIL       = StarCalimX <onboarding@resend.dev>
    ```
    If your frontend is on Vercel, replace `CORS_ORIGINS` with your Vercel domain, for example:
    `https://your-vercel-project.vercel.app`
@@ -119,7 +119,7 @@ If your frontend is deployed on Netlify, use the Netlify dashboard. If it is dep
 1. **Netlify dashboard** → your site → **Site configuration → Environment variables**
 2. Add:
    ```
-   REACT_APP_BACKEND_URL = https://starclaim.onrender.com
+   REACT_APP_BACKEND_URL = https://starcalimx.onrender.com
    ```
    (No trailing slash. No quotes.)
 

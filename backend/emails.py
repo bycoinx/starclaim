@@ -12,10 +12,10 @@ from typing import Optional
 
 import resend
 
-logger = logging.getLogger("starclaim.email")
+logger = logging.getLogger("starcalimx.email")
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "StarClaim <onboarding@resend.dev>")
+SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "StarCalimX <onboarding@resend.dev>")
 
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
@@ -30,14 +30,14 @@ def _build_html(*, custom_name: str, star_name: str, constellation: str,
         msg_label = "Personal message:"
         cert_note = "Your gold-bordered certificate is attached as a PDF."
         sign = "With light from the cosmos,"
-        team = "The StarClaim Team"
+        team = "The StarCalimX Team"
     else:
         greeting = f"Sevgili {owner_name}," if not is_gift else f"Sevgili {owner_name}, {sender_name} sana bir yıldız hediye etti!"
         intro = "Bir yıldız artık senin. Sonsuza kadar."
         msg_label = "Kişisel mesaj:"
         cert_note = "Altın kenarlıklı sertifikan PDF olarak ektedir."
         sign = "Kozmostan ışıkla,"
-        team = "StarClaim Ekibi"
+        team = "StarCalimX Ekibi"
 
     msg_block = ""
     if personal_message:
@@ -85,7 +85,7 @@ def _build_html(*, custom_name: str, star_name: str, constellation: str,
         </td>
       </tr>
     </table>
-    <div style="margin-top:14px;color:#5A6A8A;font-size:11px;">© 2026 StarClaim · Yıldızlar sonsuz, anılar da öyle.</div>
+    <div style="margin-top:14px;color:#5A6A8A;font-size:11px;">© 2026 StarCalimX · Yıldızlar sonsuz, anılar da öyle.</div>
   </td></tr>
 </table>
 </body></html>"""
@@ -132,10 +132,10 @@ async def send_certificate_email(
         "subject": subject,
         "html": html,
         "attachments": [
-            {
-                "filename": f"StarClaim-{custom_name.replace(' ', '_')}-Certificate.pdf",
-                "content": base64.b64encode(pdf_bytes).decode("ascii"),
-            }
+          {
+            "filename": f"StarCalimX-{custom_name.replace(' ', '_')}-Certificate.pdf",
+            "content": base64.b64encode(pdf_bytes).decode("ascii"),
+          }
         ],
     }
     try:

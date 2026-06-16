@@ -1,9 +1,9 @@
-# StarClaim — Product Requirements Document
+# StarCalimX — Product Requirements Document
 
 ## Original Problem Statement
 Premium e-commerce website for selling and trading named stars. Turkish primary, English secondary. Luxury cosmic aesthetic (deep space black + gold + Cinzel typography). Animated starfield hero, 5-tier pricing, zodiac picker, AI-generated personal stories, marketplace for reselling owned stars, Google-based authentication, gift mode, live social ticker.
 
-URL: starclaim.net
+URL: starcalimx.net
 Tagline: "Gökyüzündeki Yerinizi Talep Edin"
 
 ## User Personas

@@ -32,7 +32,7 @@ export default function RootLayout() {
   const handleDeepLink = (url) => {
     try {
       const { hostname, path } = Linking.parse(url);
-      // Expecting starclaim://star/{starClaimCode} or starclaim://hip/{hipId}
+      // Expecting starcalimx://star/{starClaimCode} or starcalimx://hip/{hipId}
       // hostname is 'star' or 'hip', path is the identifier
       const type = hostname;
       const identifier = path;

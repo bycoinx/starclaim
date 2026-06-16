@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "StarClaim Mobile",
-    "slug": "starclaim-mobile",
+    "name": "StarCalimX Mobile",
+    "slug": "starcalimx-mobile",
     "version": "1.0.0",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/starcalimx-logo.png",
     "userInterfaceStyle": "dark",
     "orientation": "landscape",
-    "scheme": "starclaim",
+    "scheme": "starcalimx",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/starcalimx-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -17,14 +17,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/starcalimx-logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.mobile"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/starcalimx-logo.png"
     },
     "plugins": [
       "expo-router",
@@ -35,7 +35,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "StarClaim, bulundugunuz yerden gorunen gercek gokyuzunu hesaplamak icin konumunuzu kullanir."
+          "locationWhenInUsePermission": "StarCalimX, bulundugunuz yerden gorunen gercek gokyuzunu hesaplamak icin konumunuzu kullanir."
         }
       ]
     ]
