@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { Loader2, Telescope, Activity, Star, Info, ArrowUpDown } from "lucide-react";
@@ -22,7 +22,7 @@ export default function StarPicker({ onClaim }) {
   const [filter, setFilter] = useState("all");
   const [sortBy, setSortBy] = useState("default"); // default, price-high, price-low, name-az, name-za
 
-  const loadStars = () => {
+  const loadStars = useCallback(() => {
     setLoading(true);
     setError("");
     // Request only available (for-sale) stars by default
@@ -37,11 +37,11 @@ export default function StarPicker({ onClaim }) {
         setError(t("error_star_load") || (lang === "TR" ? "Yıldız kataloğu şu anda yüklenemedi." : "Star catalog could not be loaded."));
       })
       .finally(() => setLoading(false));
-  };
+  }, [t, lang]);
 
   useEffect(() => {
     loadStars();
-  }, [lang]);
+  }, [loadStars]);
 
   const sortedStars = [...stars].sort((a, b) => {
     if (sortBy === "price-high") return (b.price || 0) - (a.price || 0);
