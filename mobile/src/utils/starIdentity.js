@@ -24,6 +24,12 @@ export function getStarSearchTokens(star) {
     star?.hip ? `HIP ${star.hip}` : null,
     star?.hd,
     star?.hd ? `HD ${star.hd}` : null,
+    star?.id,
+    star?.star_id,
+    star?.hip,
+    star?.hip ? `HIP ${star.hip}` : null,
+    star?.hd,
+    star?.hd ? `HD ${star.hd}` : null,
     star?.proper,
     star?.properName,
     star?.name,
@@ -35,9 +41,35 @@ export function getStarSearchTokens(star) {
 }
 
 /**
- * Checks if a star matches a text query (used for search).
- * @param {Object} star - Star record
- * @param {string} query - User input
+ * Checks if a purchase record corresponds to the selected star.
+ * @param {Object} purchase - Purchase record from storage
+ * @param {Object} star - Star record from catalog
+ * @returns {boolean}
+ */
+export function purchaseMatchesStar(purchase, star) {
+  if (!purchase || !star) return false;
+
+  const purchaseTokens = [
+    purchase.starId,
+    purchase.hip,
+    purchase.hd,
+    purchase.starClaimCode,
+    purchase.code,
+    purchase.name,
+  ]
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .map(normalizeText);
+
+  if (purchaseTokens.length === 0) return false;
+
+  const starTokens = new Set(getStarSearchTokens(star));
+  return purchaseTokens.some((token) => starTokens.has(token));
+}
+
+/**
+ * Checks if a star matches a target identifier (used for linking/navigation).
+ * @param {Object} star - Star record from catalog
+ * @param {Object} target - StarTarget or partial identifier (may include starId, id, hip, hd, starClaimCode, code, name)
  * @returns {boolean}
  */
 export function starMatchesQuery(star, query) {

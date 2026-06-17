@@ -429,7 +429,7 @@ export default function StarMapScreen() {
                 nightVision={nightVision}
                 onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
                 onZoomChange={setZoom}
-                onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
+                onSelect={(star) => { setSelectedStar(star); setPopupVisible(true); }}
                 ownedStarIds={ownedStarIds}
               />
             )}
