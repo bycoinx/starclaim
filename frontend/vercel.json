@@ -21,11 +21,11 @@
   "rewrites": [
     {
       "source": "/api/vault/:path*",
-      "destination": "/api/vault/:path*"
+      "destination": "https://starclaim.onrender.com/api/vault/:path*"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://starcalimx.onrender.com/api/:path*"
+      "destination": "https://starclaim.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

@@ -119,7 +119,7 @@ If your frontend is deployed on Netlify, use the Netlify dashboard. If it is dep
 1. **Netlify dashboard** → your site → **Site configuration → Environment variables**
 2. Add:
    ```
-   REACT_APP_BACKEND_URL = https://starcalimx.onrender.com
+   REACT_APP_BACKEND_URL = https://starclaim.onrender.com
    ```
    (No trailing slash. No quotes.)
 
