@@ -22,7 +22,18 @@ export default function StarVoyage3D() {
   useEffect(() => {
     ensureStarData().then((list) => {
       setStars(list);
-      if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
+      if (params.target) {
+        try {
+          const parsed = JSON.parse(params.target);
+          const resolved = resolveStarTarget(list, parsed) || parsed;
+          if (resolved) {
+            setTargetStar(resolved);
+            checkOwnership(resolved);
+          }
+        } catch (e) {
+          console.warn('Failed to parse target param', e);
+        }
+      } else if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
         const found = resolveStarTarget(list, params);
         if (found) {
           setTargetStar(found);

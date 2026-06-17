@@ -28,6 +28,7 @@ import {
   resolveStarTarget,
   starMatchesQuery,
 } from '../../../src/utils/starIdentity';
+import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export default function StarMapScreen() {
@@ -455,7 +456,7 @@ export default function StarMapScreen() {
                 </View>
                 <View style={styles.selectionActions}>
                   <ActionButton icon="target" onPress={handleCenterOnSelected} color={THEME.colors.primary} />
-                  <ActionButton icon="rocket-launch-outline" onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { starId: selectedStar.id, hip: selectedStar.hip, name: selectedStar.properName || selectedStar.proper } })} color={THEME.colors.purple} />
+                  <ActionButton icon="rocket-launch-outline" onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })} color={THEME.colors.purple} />
                   <ActionButton icon="information-variant" onPress={() => setPopupVisible(true)} color="#fff" />
                   <ActionButton icon="close-circle-outline" onPress={() => setSelectedStar(null)} color="rgba(255,255,255,0.4)" />
                 </View>

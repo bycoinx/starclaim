@@ -7,6 +7,7 @@ import { THEME } from '../../../constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
+import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 
 const { width } = Dimensions.get('window');
 
@@ -153,7 +154,7 @@ export default function StarDetailScreen() {
 
           <TouchableOpacity 
             style={[styles.actionBtn, styles.voyageBtn]} 
-            onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { starId, name: purchase?.name || initialName } })}
+            onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(purchase || { id: starId, properName: initialName, name: initialName })) } })}
           >
             <Ionicons name="rocket-outline" size={20} color={THEME.colors.accent} />
             <Text style={[styles.actionBtnText, { color: THEME.colors.accent }]}>3D YOLCULUK</Text>
