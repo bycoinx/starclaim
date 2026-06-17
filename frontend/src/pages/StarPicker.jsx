@@ -25,7 +25,8 @@ export default function StarPicker({ onClaim }) {
   const loadStars = () => {
     setLoading(true);
     setError("");
-    api.get("/stars", { params: { limit: 100 } })
+    // Request only available (for-sale) stars by default
+    api.get("/stars", { params: { limit: 100, available: true } })
       .then(({ data }) => {
         if (Array.isArray(data)) setStars(data);
         else setStars([]);
