@@ -3,7 +3,9 @@ import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { GLView } from 'expo-gl';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
-import { colorForSpectrum, getStarXYZ } from '../src/utils/astronomy';
+import { colorForSpectrum, getStarXYZ, getStarDistanceParsec } from '../src/utils/astronomy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useState } from 'react';
 import { THEME } from '../constants/Theme';
 import { SpaceAudio } from '../src/utils/audioEngine';
 
@@ -293,6 +295,29 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       warpActive.current = true;
   };
 
+  const [ownershipData, setOwnershipData] = useState(null);
+
+  useEffect(() => {
+    async function checkOwnershipLocal(star) {
+      if (!star) { setOwnershipData(null); return; }
+      try {
+        const raw = await AsyncStorage.getItem('@purchases');
+        const list = raw ? JSON.parse(raw) : [];
+        const found = list.find(p => p.starId === star.id || p.hip === star.hip || p.starClaimCode === star.starClaimCode || p.code === star.starClaimCode || p.starId?.toString() === String(star.id));
+        if (found) setOwnershipData(found); else setOwnershipData(null);
+      } catch (e) { console.warn('Ownership check error', e); setOwnershipData(null); }
+    }
+    checkOwnershipLocal(targetStar);
+  }, [targetStar]);
+
+  const getDistanceDisplay = (star) => {
+    try {
+      const parsec = getStarDistanceParsec(star);
+      const ly = parsec * 3.26156;
+      return `${Number(ly || 0).toFixed(2)} LY`;
+    } catch (e) { return 'N/A'; }
+  };
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) cancelAnimationFrame(timeoutRef.current);
@@ -302,6 +327,12 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   return (
     <View style={styles.container}>
       <GLView style={styles.glView} onContextCreate={onContextCreate} />
+      <View style={styles.telemetry} pointerEvents="none">
+        <Text style={styles.telemetryName}>{targetStar ? (targetStar.properName || targetStar.proper || `HIP ${targetStar?.hip || targetStar?.id}`) : 'NO TARGET'}</Text>
+        <Text style={styles.telemetryLine}>DISTANCE: <Text style={styles.telemetryValue}>{targetStar ? getDistanceDisplay(targetStar) : 'N/A'}</Text></Text>
+        <Text style={styles.telemetryLine}>MAG: <Text style={styles.telemetryValue}>{targetStar ? Number(targetStar.mag || targetStar.magnitude || 0).toFixed(2) : 'N/A'}</Text></Text>
+        <Text style={styles.telemetryLine}>OWNER: <Text style={[styles.telemetryValue, ownershipData ? { color: THEME.colors.secondary } : { color: THEME.colors.primary }]}>{ownershipData ? (ownershipData.starClaimCode || ownershipData.code || 'CERTIFIED') : 'UNOWNED'}</Text></Text>
+      </View>
       <View style={styles.ui}>
           <TouchableOpacity 
             style={[styles.warpBtn, !targetStar && styles.warpBtnDisabled]} 
@@ -333,3 +364,24 @@ const styles = StyleSheet.create({
   },
   warpText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 4 }
 });
+
+// Telemetry styles
+const telemetryStyles = StyleSheet.create({
+  telemetry: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    backgroundColor: 'rgba(10,10,18,0.6)',
+    borderRadius: 12,
+    padding: 12,
+    zIndex: 40,
+    borderWidth: 1,
+    borderColor: 'rgba(0,242,254,0.12)'
+  },
+  telemetryName: { color: '#fff', fontWeight: '900', fontSize: 12, marginBottom: 6, letterSpacing: 1 },
+  telemetryLine: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '900', marginBottom: 4 },
+  telemetryValue: { color: THEME.colors.primary }
+});
+
+// Merge telemetry styles into existing styles object for export
+Object.assign(styles, telemetryStyles);
