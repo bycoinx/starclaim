@@ -44,8 +44,8 @@ export function normalizeRaDelta(delta) {
 }
 
 export function projectRaDec(star, centerRa, centerDec, width, height, zoom) {
-  const raDiff = normalizeRaDelta(star.ra - centerRa);
-  const decDiff = star.dec - centerDec;
+  const raDiff = normalizeRaDelta(getStarRaDegrees(star) - centerRa);
+  const decDiff = getStarDecDegrees(star) - centerDec;
   const field = 90 / Math.max(0.8, zoom);
   const scale = width / field;
   const x = width / 2 + raDiff * scale * Math.cos(deg2rad(centerDec));

@@ -77,7 +77,7 @@ y = d * sin(dec)
 z = -d * cos(dec) * sin(ra)
 ```
 
-- [ ] Birim testleri Sirius, Vega ve Polaris gibi bilinen yıldızlarla yapılacak.
+- [x] Birim testleri Sirius, Vega, Polaris ve Achernar gibi bilinen yıldızlarla yapılıyor.
 
 ---
 
@@ -281,8 +281,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 #### P0 - Doğruluk ve Hata Güvenliği
 
-- [ ] Sirius, Vega, Polaris ve Güney yarımküre örnekleriyle RA/Dec → Alt/Az regresyon testleri yazılacak.
-- [ ] Tarih değişimi, saat dilimi, gün dönümü ve kutup enlemleri test edilecek.
+- [x] Sirius, Vega, Polaris ve Güney yarımküre örnekleriyle RA/Dec → Alt/Az regresyon testleri yazıldı.
+- [x] Tarih değişimi, saat dilimi, gün dönümü ve kutup enlemleri test edildi.
 - [ ] Takımyıldızı çizgileri ve IAU sınırlarının RA `0/24h` geçişinde kopmaması doğrulanacak.
 - [ ] Kamera yönü ile yıldız projeksiyonu arasındaki cihaz rotasyonu/ekran yönü ofseti kalibre edilecek.
 - [ ] Konum, kamera veya sensör izni reddedildiğinde eksiksiz fallback akışı doğrulanacak.
