@@ -363,12 +363,18 @@ function applyNebulaQuality(group, quality) {
   });
 }
 
-export default function StarSystem3D({ stars = [], targetStar = null, onArrival = null }) {
+export default function StarSystem3D({
+  stars = [],
+  targetStar = null,
+  onArrival = null,
+  onTargetChange = null,
+}) {
   const animationFrameRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
   const pointsRef = useRef(null);
+  const renderedStarsRef = useRef([]);
   const galaxyPointsRef = useRef(null);
   const nebulaGroupRef = useRef(null);
   const targetMarkerRef = useRef(null);
@@ -383,6 +389,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const cameraFocusRef = useRef(new THREE.Vector3());
   const targetStarRef = useRef(targetStar);
   const onArrivalRef = useRef(onArrival);
+  const onTargetChangeRef = useRef(onTargetChange);
   const arrivedRef = useRef(false);
   const arrivalRevealStartedAtRef = useRef(0);
   const sceneModeRef = useRef(targetStar ? SCENE_MODES.sector : SCENE_MODES.galaxy);
@@ -400,7 +407,9 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const orbitYawRef = useRef(0.55);
   const orbitPitchRef = useRef(0.18);
   const orbitRadiusRef = useRef(targetStar ? DEFAULT_ORBIT_RADIUS : 112);
-  const gestureRef = useRef({ x: 0, y: 0, pinchDistance: 0 });
+  const gestureRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, pinchDistance: 0, moved: false });
+  const viewportRef = useRef({ width: 1, height: 1 });
+  const raycasterRef = useRef(new THREE.Raycaster());
   const qualityRef = useRef(getInitialQuality());
   const qualityRecoveryRef = useRef(0);
   const mountedRef = useRef(true);
@@ -408,9 +417,11 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const [fps, setFps] = useState(0);
   const [warpActive, setWarpActive] = useState(false);
   const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
+  const [lockedTarget, setLockedTarget] = useState(targetStar);
 
   useEffect(() => {
     targetStarRef.current = targetStar;
+    setLockedTarget(targetStar || null);
     arrivedRef.current = false;
     if (sceneModeRef.current === SCENE_MODES.target) {
       sceneModeRef.current = SCENE_MODES.sector;
@@ -435,6 +446,10 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   useEffect(() => {
     onArrivalRef.current = onArrival;
   }, [onArrival]);
+
+  useEffect(() => {
+    onTargetChangeRef.current = onTargetChange;
+  }, [onTargetChange]);
 
   const updateQuality = useCallback((next) => {
     if (next === qualityRef.current) return;
@@ -470,6 +485,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     const validStars = stars
       .filter((star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0)
       .slice(0, QUALITY_LIMITS.high);
+    renderedStarsRef.current = validStars;
     const positions = new Float32Array(validStars.length * 3);
     const colors = new Float32Array(validStars.length * 3);
     const sizes = new Float32Array(validStars.length);
@@ -818,11 +834,15 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       const dx = touches[0].pageX - touches[1].pageX;
       const dy = touches[0].pageY - touches[1].pageY;
       gestureRef.current.pinchDistance = Math.hypot(dx, dy);
+      gestureRef.current.moved = true;
       return;
     }
     if (touches[0]) {
       gestureRef.current.x = touches[0].pageX;
       gestureRef.current.y = touches[0].pageY;
+      gestureRef.current.startX = touches[0].pageX;
+      gestureRef.current.startY = touches[0].pageY;
+      gestureRef.current.moved = false;
     }
   };
 
@@ -845,6 +865,9 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     if (!touches[0]) return;
     const deltaX = touches[0].pageX - gestureRef.current.x;
     const deltaY = touches[0].pageY - gestureRef.current.y;
+    const totalX = touches[0].pageX - gestureRef.current.startX;
+    const totalY = touches[0].pageY - gestureRef.current.startY;
+    if (Math.hypot(totalX, totalY) > 6) gestureRef.current.moved = true;
     orbitYawRef.current -= deltaX * 0.006;
     orbitPitchRef.current = THREE.MathUtils.clamp(
       orbitPitchRef.current + deltaY * 0.006,
@@ -855,17 +878,57 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     gestureRef.current.y = touches[0].pageY;
   };
 
-  const targetDistance = targetStar ? getDistanceLightYears(targetStar) : null;
+  const pickSectorStar = (x, y) => {
+    if (
+      sceneModeRef.current !== SCENE_MODES.sector
+      || sceneTransitionRef.current.active
+      || warpActiveRef.current
+      || !cameraRef.current
+      || !pointsRef.current
+    ) return;
+
+    const { width, height } = viewportRef.current;
+    const pointer = new THREE.Vector2((x / width) * 2 - 1, -(y / height) * 2 + 1);
+    const raycaster = raycasterRef.current;
+    raycaster.params.Points.threshold = THREE.MathUtils.clamp(orbitRadiusRef.current * 0.018, 0.75, 3.2);
+    raycaster.setFromCamera(pointer, cameraRef.current);
+    const intersection = raycaster.intersectObject(pointsRef.current, false)[0];
+    const star = intersection ? renderedStarsRef.current[intersection.index] : null;
+    if (!star) return;
+
+    targetStarRef.current = star;
+    targetPositionRef.current.copy(toWorldPosition(star));
+    arrivedRef.current = false;
+    arrivalRevealStartedAtRef.current = 0;
+    if (targetMarkerRef.current) {
+      targetMarkerRef.current.position.copy(targetPositionRef.current);
+      targetMarkerRef.current.visible = true;
+    }
+    setLockedTarget(star);
+    onTargetChangeRef.current?.(star);
+    SpaceAudio.triggerImpact();
+  };
+
+  const handleTouchEnd = (event) => {
+    if (!gestureRef.current.moved && gestureRef.current.pinchDistance === 0) {
+      pickSectorStar(event.nativeEvent.locationX, event.nativeEvent.locationY);
+    }
+    gestureRef.current.pinchDistance = 0;
+    gestureRef.current.moved = false;
+  };
+
+  const targetDistance = lockedTarget ? getDistanceLightYears(lockedTarget) : null;
 
   return (
     <View style={styles.container}>
       <View
         style={styles.glView}
+        onLayout={(event) => { viewportRef.current = event.nativeEvent.layout; }}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderGrant={handleTouchStart}
         onResponderMove={handleTouchMove}
-        onResponderRelease={() => { gestureRef.current.pinchDistance = 0; }}
+        onResponderRelease={handleTouchEnd}
         onResponderTerminate={() => { gestureRef.current.pinchDistance = 0; }}
       >
         <GLView style={StyleSheet.absoluteFill} onContextCreate={onContextCreate} />
@@ -873,11 +936,17 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
 
       <View style={styles.telemetry} pointerEvents="none">
         <Text style={styles.telemetryName} numberOfLines={1}>
-          {targetStar ? (targetStar.properName || targetStar.proper || `HIP ${targetStar.hip || targetStar.id}`) : 'LOCAL_SECTOR'}
+          {lockedTarget ? (lockedTarget.properName || lockedTarget.proper || `HIP ${lockedTarget.hip || lockedTarget.id}`) : 'LOCAL_SECTOR'}
         </Text>
         <Text style={styles.telemetryLine}>FPS <Text style={styles.telemetryValue}>{fps || '--'}</Text></Text>
         <Text style={styles.telemetryLine}>QUALITY <Text style={styles.telemetryValue}>{quality.toUpperCase()}</Text></Text>
         <Text style={styles.telemetryLine}>VIEW <Text style={styles.telemetryValue}>{sceneMode.toUpperCase()}</Text></Text>
+        {lockedTarget && (
+          <>
+            <Text style={styles.telemetryLine}>MAG <Text style={styles.telemetryValue}>{Number(lockedTarget.mag).toFixed(2)}</Text></Text>
+            <Text style={styles.telemetryLine}>SPECTRUM <Text style={styles.telemetryValue}>{lockedTarget.spect || lockedTarget.spectralType || 'N/A'}</Text></Text>
+          </>
+        )}
         <Text style={styles.telemetryLine}>
           DISTANCE <Text style={styles.telemetryValue}>{Number.isFinite(targetDistance) ? `${targetDistance.toFixed(2)} LY` : 'UNKNOWN'}</Text>
         </Text>
@@ -887,16 +956,16 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         <View style={styles.sceneTabs}>
           <SceneTab label="GALAXY" active={sceneMode === SCENE_MODES.galaxy} onPress={() => changeSceneMode(SCENE_MODES.galaxy)} />
           <SceneTab label="SECTOR" active={sceneMode === SCENE_MODES.sector} onPress={() => changeSceneMode(SCENE_MODES.sector)} />
-          <SceneTab label="TARGET" active={sceneMode === SCENE_MODES.target} disabled={!targetStar} onPress={() => changeSceneMode(SCENE_MODES.target)} />
+          <SceneTab label="TARGET" active={sceneMode === SCENE_MODES.target} disabled={!lockedTarget} onPress={() => changeSceneMode(SCENE_MODES.target)} />
         </View>
         {sceneMode === SCENE_MODES.sector && (
           <TouchableOpacity
-            style={[styles.warpButton, (!targetStar || warpActive) && styles.warpButtonDisabled]}
-            disabled={!targetStar || warpActive}
+            style={[styles.warpButton, (!lockedTarget || warpActive) && styles.warpButtonDisabled]}
+            disabled={!lockedTarget || warpActive}
             onPress={beginWarp}
           >
             <Text style={styles.warpButtonText}>
-              {warpActive ? 'WARP_IN_PROGRESS' : targetStar ? 'ENGAGE_WARP' : 'SELECT_A_TARGET'}
+              {warpActive ? 'WARP_IN_PROGRESS' : lockedTarget ? 'ENGAGE_WARP' : 'SELECT_A_TARGET'}
             </Text>
           </TouchableOpacity>
         )}

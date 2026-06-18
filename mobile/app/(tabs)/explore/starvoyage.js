@@ -49,12 +49,20 @@ export default function StarVoyage3D() {
       const raw = await AsyncStorage.getItem('@purchases');
       const list = raw ? JSON.parse(raw) : [];
       const found = list.find(p => p.starId === star.id || p.hip === star.hip || p.starClaimCode === star.starClaimCode);
-      if (found) setOwnershipData(found);
+      setOwnershipData(found || null);
     } catch (e) { console.warn('Ownership check error', e); }
   };
 
   const handleArrival = (star) => {
     if (star) setArrivalVisible(true);
+  };
+
+  const handleTargetChange = (star) => {
+    if (!star) return;
+    setTargetStar(star);
+    setArrivalVisible(false);
+    setOwnershipData(null);
+    checkOwnership(star);
   };
 
   return (
@@ -88,7 +96,12 @@ export default function StarVoyage3D() {
               <Text style={styles.loadingText}>CALIBRATING_QUANTUM_VIEW...</Text>
             </View>
           ) : (
-            <StarSystem3D stars={stars.slice(0, 10000)} targetStar={targetStar} onArrival={handleArrival} />
+            <StarSystem3D
+              stars={stars.slice(0, 10000)}
+              targetStar={targetStar}
+              onArrival={handleArrival}
+              onTargetChange={handleTargetChange}
+            />
           )}
 
           {arrivalVisible && targetStar && (
