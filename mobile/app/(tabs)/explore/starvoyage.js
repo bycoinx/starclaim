@@ -76,6 +76,11 @@ export default function StarVoyage3D() {
     }, []);
   }, [purchases, stars]);
 
+  const ownedStarCatalog = useMemo(
+    () => ownedStars.map(({ star }) => star),
+    [ownedStars],
+  );
+
   const recentStars = useMemo(() => recentTargetIds
     .map((id) => stars.find((star) => String(star.id) === String(id)))
     .filter(Boolean), [recentTargetIds, stars]);
@@ -219,6 +224,7 @@ export default function StarVoyage3D() {
             <StarSystem3D
               stars={stars.slice(0, 10000)}
               targetStar={targetStar}
+              ownedStars={ownedStarCatalog}
               onArrival={handleArrival}
               onTargetChange={handleTargetChange}
             />

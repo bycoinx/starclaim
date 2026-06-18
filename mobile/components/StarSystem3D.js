@@ -367,6 +367,55 @@ function getStarLabel(star) {
   return star?.properName || star?.proper || null;
 }
 
+function buildLabelCandidates(stars, ownedStarIds) {
+  const seen = new Set();
+  const candidates = [];
+  const addCandidate = (star) => {
+    const id = String(star.id);
+    if (seen.has(id)) return;
+    seen.add(id);
+    candidates.push({ star, position: toWorldPosition(star) });
+  };
+
+  stars
+    .filter((star) => getStarLabel(star) && Number(star.mag) <= 4)
+    .slice(0, 48)
+    .forEach(addCandidate);
+  stars.filter((star) => ownedStarIds.has(String(star.id))).forEach(addCandidate);
+  return candidates;
+}
+
+function syncOwnedMarkers(group, ownedStars) {
+  if (!group) return;
+  group.clear();
+  group.userData.geometry?.dispose();
+  group.userData.material?.dispose();
+
+  const validOwnedStars = ownedStars.filter(
+    (star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0,
+  );
+  if (validOwnedStars.length === 0) return;
+
+  const geometry = new THREE.TorusGeometry(1.15, 0.075, 8, 40);
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffcf57,
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  group.userData.geometry = geometry;
+  group.userData.material = material;
+
+  validOwnedStars.forEach((star) => {
+    const marker = new THREE.Mesh(geometry, material);
+    marker.position.copy(toWorldPosition(star));
+    marker.userData.starId = String(star.id);
+    marker.renderOrder = 5;
+    group.add(marker);
+  });
+}
+
 function buildProjectedLabels({
   candidates,
   targetStar,
@@ -375,6 +424,7 @@ function buildProjectedLabels({
   viewport,
   quality,
   orbitRadius,
+  ownedStarIds,
 }) {
   const budget = quality === 'low' ? 5 : quality === 'medium' ? 10 : 16;
   const magnitudeLimit = orbitRadius > 140
@@ -401,9 +451,11 @@ function buildProjectedLabels({
 
   candidates.forEach((candidate) => {
     const magnitude = Number(candidate.star.mag);
-    if (seenStars.has(String(candidate.star.id)) || magnitude > magnitudeLimit) return;
-    queue.push({ ...candidate, target: false, magnitude });
-    seenStars.add(String(candidate.star.id));
+    const id = String(candidate.star.id);
+    const owned = ownedStarIds.has(id);
+    if (seenStars.has(id) || (!owned && magnitude > magnitudeLimit)) return;
+    queue.push({ ...candidate, target: false, magnitude: owned ? -9 : magnitude });
+    seenStars.add(id);
   });
 
   const occupiedCells = new Set();
@@ -428,6 +480,7 @@ function buildProjectedLabels({
       x: THREE.MathUtils.clamp(screenX + 8, 8, viewport.width - 128),
       y: THREE.MathUtils.clamp(screenY - 11, 48, viewport.height - 76),
       target: candidate.target,
+      owned: ownedStarIds.has(String(candidate.star.id)),
     });
   }
 
@@ -437,6 +490,7 @@ function buildProjectedLabels({
 export default function StarSystem3D({
   stars = [],
   targetStar = null,
+  ownedStars = [],
   onArrival = null,
   onTargetChange = null,
 }) {
@@ -453,6 +507,7 @@ export default function StarSystem3D({
   const targetMarkerRef = useRef(null);
   const targetBodyRef = useRef(null);
   const targetGlowRef = useRef(null);
+  const ownedMarkersRef = useRef(null);
   const warpGroupRef = useRef(null);
   const warpActiveRef = useRef(false);
   const warpStartedAtRef = useRef(0);
@@ -463,6 +518,8 @@ export default function StarSystem3D({
   const sectorFocusRef = useRef(targetStar ? toWorldPosition(targetStar) : new THREE.Vector3());
   const targetLockStartedAtRef = useRef(0);
   const targetStarRef = useRef(targetStar);
+  const ownedStarsRef = useRef(ownedStars);
+  const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
   const arrivedRef = useRef(false);
@@ -494,6 +551,16 @@ export default function StarSystem3D({
   const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
   const [lockedTarget, setLockedTarget] = useState(targetStar);
   const [visibleLabels, setVisibleLabels] = useState([]);
+
+  useEffect(() => {
+    ownedStarsRef.current = ownedStars;
+    ownedStarIdsRef.current = new Set(ownedStars.map((star) => String(star.id)));
+    labelCandidatesRef.current = buildLabelCandidates(
+      renderedStarsRef.current,
+      ownedStarIdsRef.current,
+    );
+    syncOwnedMarkers(ownedMarkersRef.current, ownedStars);
+  }, [ownedStars]);
 
   useEffect(() => {
     const previousMode = sceneModeRef.current;
@@ -593,10 +660,7 @@ export default function StarSystem3D({
       .filter((star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0)
       .slice(0, QUALITY_LIMITS.high);
     renderedStarsRef.current = validStars;
-    labelCandidatesRef.current = validStars
-      .filter((star) => getStarLabel(star) && Number(star.mag) <= 4)
-      .slice(0, 48)
-      .map((star) => ({ star, position: toWorldPosition(star) }));
+    labelCandidatesRef.current = buildLabelCandidates(validStars, ownedStarIdsRef.current);
     const positions = new Float32Array(validStars.length * 3);
     const colors = new Float32Array(validStars.length * 3);
     const sizes = new Float32Array(validStars.length);
@@ -627,6 +691,12 @@ export default function StarSystem3D({
     const points = new THREE.Points(starGeometry, starMaterial);
     pointsRef.current = points;
     scene.add(points);
+
+    const ownedMarkers = new THREE.Group();
+    ownedMarkers.visible = false;
+    ownedMarkersRef.current = ownedMarkers;
+    syncOwnedMarkers(ownedMarkers, ownedStarsRef.current);
+    scene.add(ownedMarkers);
 
     const galaxyGeometry = createGalaxyGeometry();
     galaxyGeometry.setDrawRange(0, GALAXY_LIMITS[qualityRef.current]);
@@ -755,6 +825,18 @@ export default function StarSystem3D({
       starUniforms.layerOpacity.value = sectorOpacity;
       galaxyPoints.visible = galaxyOpacity > 0.01;
       points.visible = sectorOpacity > 0.01;
+      ownedMarkers.visible = activeMode === SCENE_MODES.sector
+        && sectorOpacity > 0.1
+        && !warpActiveRef.current;
+      if (ownedMarkers.visible) {
+        const markerPulse = 1 + Math.sin(elapsed * 1.8) * 0.08;
+        ownedMarkers.children.forEach((marker) => {
+          marker.quaternion.copy(camera.quaternion);
+          marker.rotateZ(elapsed * 0.22);
+          const markerDistance = camera.position.distanceTo(marker.position);
+          marker.scale.setScalar(THREE.MathUtils.clamp(markerDistance / 58, 0.55, 12) * markerPulse);
+        });
+      }
       galaxyPoints.rotation.y += 0.00016;
       nebulaGroup.visible = galaxyOpacity > 0.01;
       nebulaGroup.rotation.y = galaxyPoints.rotation.y;
@@ -864,6 +946,7 @@ export default function StarSystem3D({
             viewport: viewportRef.current,
             quality: qualityRef.current,
             orbitRadius: orbitRadiusRef.current,
+            ownedStarIds: ownedStarIdsRef.current,
           });
           labelsVisibleRef.current = labels.length > 0;
           if (mountedRef.current) setVisibleLabels(labels);
@@ -1087,11 +1170,20 @@ export default function StarSystem3D({
             style={[
               styles.starLabel,
               { left: label.x, top: label.y },
+              label.owned && styles.starLabelOwned,
               label.target && styles.starLabelTarget,
             ]}
           >
-            <View style={[styles.starLabelDot, label.target && styles.starLabelDotTarget]} />
-            <Text style={[styles.starLabelText, label.target && styles.starLabelTextTarget]} numberOfLines={1}>
+            <View style={[
+              styles.starLabelDot,
+              label.owned && styles.starLabelDotOwned,
+              label.target && styles.starLabelDotTarget,
+            ]} />
+            <Text style={[
+              styles.starLabelText,
+              label.owned && styles.starLabelTextOwned,
+              label.target && styles.starLabelTextTarget,
+            ]} numberOfLines={1}>
               {label.name.toUpperCase()}
             </Text>
           </View>
@@ -1164,9 +1256,12 @@ const styles = StyleSheet.create({
     opacity: 0.72,
   },
   starLabelTarget: { opacity: 1 },
+  starLabelOwned: { opacity: 1 },
   starLabelDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: 'rgba(180,205,255,0.82)' },
+  starLabelDotOwned: { width: 5, height: 5, backgroundColor: '#ffcf57' },
   starLabelDotTarget: { width: 5, height: 5, backgroundColor: THEME.colors.primary },
   starLabelText: { flex: 1, color: 'rgba(215,228,255,0.76)', fontSize: 8, fontWeight: '800' },
+  starLabelTextOwned: { color: '#ffcf57', fontSize: 9, fontWeight: '900' },
   starLabelTextTarget: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900' },
   telemetry: {
     position: 'absolute',
