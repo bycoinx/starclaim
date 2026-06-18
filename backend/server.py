@@ -3,7 +3,7 @@ StarCalimX backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
 + Stripe checkout + Resend email + ReportLab PDF certificate.
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -23,6 +23,11 @@ from openai import AsyncOpenAI
 from nacl.signing import VerifyKey
 import base58
 import sys
+
+try:
+    from backend.star_tile_catalog import resolve_catalog_root, resolve_tile_path
+except ModuleNotFoundError:
+    from star_tile_catalog import resolve_catalog_root, resolve_tile_path
 
 try:
     from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
@@ -56,6 +61,9 @@ except Exception:
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
+
+STAR_TILE_ROOT = Path(os.environ.get("STAR_TILE_ROOT", ROOT_DIR / "data" / "star_tiles")).resolve()
+STAR_TILE_VERSION = os.environ.get("STAR_TILE_VERSION", "hyg-v4.1-sector-v1")
 
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
@@ -755,6 +763,40 @@ async def websocket_auth(websocket: WebSocket, auth_session_id: str):
 
 
 # -------------------- Stars --------------------
+@api.get("/catalog/3d/manifest")
+async def get_3d_catalog_manifest():
+    try:
+        manifest_path = resolve_catalog_root(STAR_TILE_ROOT, STAR_TILE_VERSION) / "manifest.json"
+    except ValueError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=503, detail="3D catalog tiles are not built")
+    return FileResponse(
+        manifest_path,
+        media_type="application/json",
+        headers={"Cache-Control": "public, max-age=300"},
+    )
+
+
+@api.get("/catalog/3d/tiles/{sector_id}")
+async def get_3d_catalog_tile(sector_id: str):
+    try:
+        tile_path = resolve_tile_path(STAR_TILE_ROOT, STAR_TILE_VERSION, sector_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if not tile_path.is_file():
+        raise HTTPException(status_code=404, detail="3D catalog tile not found")
+    return FileResponse(
+        tile_path,
+        media_type="application/json",
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Encoding": "gzip",
+            "Vary": "Accept-Encoding",
+        },
+    )
+
+
 @api.get("/stars")
 async def list_stars(
     tier: Optional[str] = None,

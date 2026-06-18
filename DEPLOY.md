@@ -82,9 +82,11 @@
    - **Branch**: `main`
    - **Root Directory**: `backend`
    - **Runtime**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
+   - **Build Command**: `pip install -r requirements.txt && python ../scripts/build_star_tiles.py --output data/star_tiles`
    - **Start Command**: `uvicorn server:app --host 0.0.0.0 --port $PORT`
    - **Instance Type**: Free (or Starter $7/mo for no cold starts)
+
+   Bu build adımı HYG v4.1 kataloğunu yaklaşık 3.000 sıkıştırılmış 3D sektör tile'ına dönüştürür. Aynı katalog sürümü zaten mevcutsa build aracının bilinçli olarak durması beklenir; Render her deploy'da temiz çalışma alanı kullandığı için normal deploy akışında çakışma oluşmaz.
 
 4. Click **Advanced** → **Environment Variables** → add ALL of these:
    ```

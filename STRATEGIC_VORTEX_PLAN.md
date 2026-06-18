@@ -345,11 +345,12 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 - [x] Loader içindeki erken `10.000` sınırı kaldırıldı; tüm geçerli HYG satırları normalize edilip en parlak `10.000` çekirdek katalog olarak seçiliyor.
 - [x] HYG kayıtlarına RA/Dec/logaritmik mesafe kabuğu tabanlı sektör kimliği veriliyor ve sürümlü sektör manifesti üretiliyor.
-- [ ] Sektör içerikleri sıkıştırılmış, ayrı indirilebilir tile dosyalarına dönüştürülecek.
+- [x] Tam HYG sektör içeriklerini gzip tile dosyalarına ve SHA-256 manifestine dönüştüren build aracı eklendi (`119.626` yıldız / `3.155` tile / `7,59 MB`).
 - [x] Çekirdek katalogda hedef sektör ve komşularını seçen; eski GPU geometrisini dispose edip aktif pencereyi yükleyen LOD sistemi kuruldu.
-- [ ] Tam HYG tile'ları için kamera/hedef tabanlı uzak indirme, bellek önbelleği ve tahliye politikası eklenecek.
+- [x] Tam HYG tile'ları için hedef tabanlı uzak indirme, 24 tile bellek cache'i ve 96 tile kalıcı LRU cache/tahliye politikası eklendi.
 - [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
-- [ ] Katalog manifesti, cache sürümü, indirme ilerlemesi ve çevrimdışı fallback eklenecek.
+- [x] Sürümlü uzak manifest, kalıcı manifest fallback'i ve tile endpoint'i eklendi.
+- [ ] Kullanıcıya katalog indirme ilerlemesi, cache boyutu ve çevrimdışı katalog yönetimi gösterilecek.
 - [ ] İlk ölçek hedefi tam HYG; Gaia için parlaklık/mesafe tabanlı kontrollü alt küme kullanılacak.
 
 #### P1 - Büyük Uzay Hassasiyeti ve Navigasyon
@@ -405,4 +406,4 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**Tam HYG tile dağıtımı:** Manifestteki sektörleri sıkıştırılmış ayrı katalog dosyalarına üretecek backend/build aracı, tile endpoint'i ve mobil disk/bellek cache'i. Mevcut çekirdek LOD deposu bu uzak tile sağlayıcısıyla genişletilecek.
+**Global yıldız çözümleme indeksi:** Çekirdek `10.000` dışında kalan HYG yıldızlarını ad/HIP/HD/StarClaim koduyla bulacak backend endpoint'i; sonuçla ilgili sektör tile'ını indirip 3D hedef kilidine aktaracak mobil arama akışı.

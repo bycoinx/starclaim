@@ -17,6 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
 import { createStarSectorTileStore } from '../../../src/data/starSectorTileStore';
+import { loadRemoteStarSectorWindow } from '../../../src/data/remoteStarTileProvider';
 import {
   purchaseMatchesStar,
   resolveStarTarget,
@@ -41,6 +42,7 @@ export default function StarVoyage3D() {
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [recentTargetIds, setRecentTargetIds] = useState([]);
+  const [remoteSectorWindow, setRemoteSectorWindow] = useState({ stars: [], sectorIds: [] });
   const params = useLocalSearchParams();
   const router = useRouter();
 
@@ -89,9 +91,48 @@ export default function StarVoyage3D() {
       : sectorTileStore.getBrightest(3500),
     [sectorTileStore, targetStar],
   );
+  useEffect(() => {
+    let cancelled = false;
+    if (!targetStar) {
+      setRemoteSectorWindow({ stars: [], sectorIds: [] });
+      return undefined;
+    }
+    setRemoteSectorWindow({ stars: [], sectorIds: [] });
+    loadRemoteStarSectorWindow(targetStar, { minStars: 700, maxStars: 10000, maxRadius: 2 })
+      .then((window) => {
+        if (!cancelled) setRemoteSectorWindow(window);
+      })
+      .catch((error) => {
+        console.warn('Remote sector window load failed', error);
+        if (!cancelled) setRemoteSectorWindow({ stars: [], sectorIds: [] });
+      });
+    return () => { cancelled = true; };
+  }, [targetStar]);
+
+  const renderedSectorWindow = useMemo(() => {
+    const seen = new Set();
+    const combinedStars = [];
+    [targetStar, ...activeSectorWindow.stars, ...remoteSectorWindow.stars]
+      .filter(Boolean)
+      .forEach((star) => {
+        const id = String(star.id);
+        if (seen.has(id)) return;
+        seen.add(id);
+        combinedStars.push(star);
+      });
+    const [target, ...rest] = combinedStars;
+    rest.sort((left, right) => Number(left.magnitude ?? left.mag) - Number(right.magnitude ?? right.mag));
+    return {
+      stars: target ? [target, ...rest].slice(0, 10000) : rest.slice(0, 10000),
+      sectorIds: [...new Set([
+        ...activeSectorWindow.sectorIds,
+        ...remoteSectorWindow.sectorIds,
+      ])],
+    };
+  }, [activeSectorWindow, remoteSectorWindow, targetStar]);
   const activeStarIds = useMemo(
-    () => new Set(activeSectorWindow.stars.map((star) => String(star.id))),
-    [activeSectorWindow.stars],
+    () => new Set(renderedSectorWindow.stars.map((star) => String(star.id))),
+    [renderedSectorWindow.stars],
   );
   const activeOwnedStars = useMemo(
     () => ownedStarCatalog.filter((star) => activeStarIds.has(String(star.id))),
@@ -251,10 +292,10 @@ export default function StarVoyage3D() {
             </View>
           ) : (
             <StarSystem3D
-              stars={activeSectorWindow.stars}
+              stars={renderedSectorWindow.stars}
               targetStar={targetStar}
               ownedStars={activeOwnedStars}
-              loadedSectorCount={activeSectorWindow.sectorIds.length}
+              loadedSectorCount={renderedSectorWindow.sectorIds.length}
               onArrival={handleArrival}
               onTargetChange={handleTargetChange}
               onOwnedStarPress={openOwnedStarCertificate}
