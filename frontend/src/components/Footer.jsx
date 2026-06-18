@@ -22,9 +22,9 @@ export default function Footer() {
               {lang === "TR" ? "\"Yıldızlar sonsuz, anılar da öyle.\"" : "\"Stars are eternal, so are memories.\""}
             </p>
             <div className="flex gap-4 mt-6">
-              <a href="https://www.instagram.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
-              <a href="https://twitter.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
-              <a href="https://www.youtube.com/starclaim" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="YouTube"><Youtube className="w-5 h-5" /></a>
+              <a href="https://www.instagram.com/starclaimx/" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Instagram"><Instagram className="w-5 h-5" /></a>
+              <a href="https://x.com/StarClaimX" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="Twitter"><Twitter className="w-5 h-5" /></a>
+              <a href="https://www.youtube.com/@StarClaimX" target="_blank" rel="noreferrer" className="text-sc-text-muted hover:text-sc-gold transition-colors" aria-label="YouTube"><Youtube className="w-5 h-5" /></a>
             </div>
           </div>
           <div>

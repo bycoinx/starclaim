@@ -62,8 +62,13 @@ export default function CheckoutModal({ open, onOpenChange, star }) {
 
   if (!star) return null;
 
+  const getPackagePrice = () => {
+    if (pkg === "constellation") return Math.round(star.price * 1.2);
+    if (pkg === "legendary") return Math.round(star.price * 1.6);
+    return star.price;
+  };
   const addOns = 0;
-  const total = star.price + addOns;
+  const total = getPackagePrice() + addOns;
 
   const next = async () => {
     if (step === 0) {
@@ -232,10 +237,13 @@ export default function CheckoutModal({ open, onOpenChange, star }) {
               ].map((p) => (
                 <button
                   key={p.id}
+                  type="button"
                   onClick={() => setPkg(p.id)}
                   data-testid={`pkg-${p.id}`}
-                  className={`w-full text-left glass rounded-xl p-5 border transition-all ${
-                    pkg === p.id ? "border-sc-gold/70 bg-sc-gold/5" : "border-white/10"
+                  className={`w-full text-left rounded-xl p-5 transition-all duration-300 ${
+                    pkg === p.id 
+                      ? "glass-gold scale-[1.02] ring-1 ring-sc-gold/20" 
+                      : "glass opacity-70 hover:opacity-100 hover:scale-[1.01]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
