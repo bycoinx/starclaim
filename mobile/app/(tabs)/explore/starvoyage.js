@@ -187,6 +187,18 @@ export default function StarVoyage3D() {
     Keyboard.dismiss();
   };
 
+  const openOwnedStarCertificate = (star) => {
+    const purchase = purchases.find((item) => purchaseMatchesStar(item, star));
+    if (!purchase) return;
+    router.push({
+      pathname: '/(tabs)/explore/stardetail',
+      params: {
+        starId: String(purchase.starId ?? star.id),
+        name: purchase.name || star.properName || star.proper || `HIP ${star.hip || star.id}`,
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* HUD OVERLAY LAYER */}
@@ -227,6 +239,7 @@ export default function StarVoyage3D() {
               ownedStars={ownedStarCatalog}
               onArrival={handleArrival}
               onTargetChange={handleTargetChange}
+              onOwnedStarPress={openOwnedStarCertificate}
             />
           )}
 

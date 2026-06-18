@@ -390,6 +390,8 @@ function syncOwnedMarkers(group, ownedStars) {
   group.clear();
   group.userData.geometry?.dispose();
   group.userData.material?.dispose();
+  group.userData.hitGeometry?.dispose();
+  group.userData.hitMaterial?.dispose();
 
   const validOwnedStars = ownedStars.filter(
     (star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0,
@@ -404,14 +406,26 @@ function syncOwnedMarkers(group, ownedStars) {
     blending: THREE.AdditiveBlending,
     depthWrite: false,
   });
+  const hitGeometry = new THREE.CircleGeometry(2.35, 24);
+  const hitMaterial = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
   group.userData.geometry = geometry;
   group.userData.material = material;
+  group.userData.hitGeometry = hitGeometry;
+  group.userData.hitMaterial = hitMaterial;
 
   validOwnedStars.forEach((star) => {
     const marker = new THREE.Mesh(geometry, material);
     marker.position.copy(toWorldPosition(star));
     marker.userData.starId = String(star.id);
     marker.renderOrder = 5;
+    const hitTarget = new THREE.Mesh(hitGeometry, hitMaterial);
+    hitTarget.userData.starId = String(star.id);
+    marker.add(hitTarget);
     group.add(marker);
   });
 }
@@ -493,6 +507,7 @@ export default function StarSystem3D({
   ownedStars = [],
   onArrival = null,
   onTargetChange = null,
+  onOwnedStarPress = null,
 }) {
   const animationFrameRef = useRef(null);
   const rendererRef = useRef(null);
@@ -522,6 +537,7 @@ export default function StarSystem3D({
   const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
+  const onOwnedStarPressRef = useRef(onOwnedStarPress);
   const arrivedRef = useRef(false);
   const arrivalRevealStartedAtRef = useRef(0);
   const sceneModeRef = useRef(targetStar ? SCENE_MODES.sector : SCENE_MODES.galaxy);
@@ -624,6 +640,10 @@ export default function StarSystem3D({
   useEffect(() => {
     onTargetChangeRef.current = onTargetChange;
   }, [onTargetChange]);
+
+  useEffect(() => {
+    onOwnedStarPressRef.current = onOwnedStarPress;
+  }, [onOwnedStarPress]);
 
   const updateQuality = useCallback((next) => {
     if (next === qualityRef.current) return;
@@ -1119,6 +1139,21 @@ export default function StarSystem3D({
     const raycaster = raycasterRef.current;
     raycaster.params.Points.threshold = THREE.MathUtils.clamp(orbitRadiusRef.current * 0.018, 0.75, 3.2);
     raycaster.setFromCamera(pointer, cameraRef.current);
+
+    if (ownedMarkersRef.current?.visible) {
+      const ownedIntersection = raycaster.intersectObject(ownedMarkersRef.current, true)[0];
+      const ownedId = ownedIntersection?.object?.userData?.starId
+        || ownedIntersection?.object?.parent?.userData?.starId;
+      const ownedStar = ownedId
+        ? ownedStarsRef.current.find((candidate) => String(candidate.id) === String(ownedId))
+        : null;
+      if (ownedStar) {
+        onOwnedStarPressRef.current?.(ownedStar);
+        SpaceAudio.triggerImpact();
+        return;
+      }
+    }
+
     const intersection = raycaster.intersectObject(pointsRef.current, false)[0];
     const star = intersection ? renderedStarsRef.current[intersection.index] : null;
     if (!star) return;
