@@ -437,6 +437,26 @@ export default function StarSystem3D({
 
     const position = toWorldPosition(targetStar);
     targetPositionRef.current.copy(position);
+    if (sceneModeRef.current === SCENE_MODES.galaxy && cameraRef.current) {
+      const transition = sceneTransitionRef.current;
+      transition.active = true;
+      transition.startedAt = Date.now();
+      transition.fromMode = SCENE_MODES.galaxy;
+      transition.toMode = SCENE_MODES.sector;
+      transition.fromPosition.copy(cameraRef.current.position);
+      transition.toPosition.copy(getOrbitPosition(
+        new THREE.Vector3(),
+        DEFAULT_ORBIT_RADIUS,
+        orbitYawRef.current,
+        0.18,
+      ));
+      transition.fromFocus.copy(cameraFocusRef.current);
+      transition.toFocus.set(0, 0, 0);
+      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+      orbitPitchRef.current = 0.18;
+      sceneModeRef.current = SCENE_MODES.sector;
+      setSceneMode(SCENE_MODES.sector);
+    }
     if (targetMarkerRef.current) {
       targetMarkerRef.current.position.copy(position);
       targetMarkerRef.current.visible = true;

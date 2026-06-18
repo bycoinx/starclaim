@@ -1,9 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
-import { resolveStarTarget } from '../../../src/utils/starIdentity';
+import {
+  purchaseMatchesStar,
+  resolveStarTarget,
+  starMatchesQuery,
+} from '../../../src/utils/starIdentity';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 
@@ -16,8 +33,45 @@ export default function StarVoyage3D() {
   const [loading, setLoading] = useState(true);
   const [arrivalVisible, setArrivalVisible] = useState(false);
   const [ownershipData, setOwnershipData] = useState(null);
+  const [purchases, setPurchases] = useState([]);
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const params = useLocalSearchParams();
   const router = useRouter();
+
+  useEffect(() => {
+    AsyncStorage.getItem('@purchases')
+      .then((raw) => setPurchases(raw ? JSON.parse(raw) : []))
+      .catch(() => setPurchases([]));
+  }, []);
+
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim();
+    if (query.length < 2) return [];
+
+    const results = [];
+    const seen = new Set();
+    const addStar = (star) => {
+      if (!star || seen.has(String(star.id))) return;
+      seen.add(String(star.id));
+      results.push(star);
+    };
+
+    stars.forEach((star) => {
+      if (results.length < 8 && starMatchesQuery(star, query)) addStar(star);
+    });
+
+    const normalizedQuery = query.toLocaleLowerCase('en-US').replace(/[^a-z0-9]+/g, '');
+    purchases.forEach((purchase) => {
+      const purchaseTokens = [purchase.starClaimCode, purchase.code]
+        .filter(Boolean)
+        .map((value) => String(value).toLocaleLowerCase('en-US').replace(/[^a-z0-9]+/g, ''));
+      if (!purchaseTokens.some((token) => token.includes(normalizedQuery))) return;
+      addStar(stars.find((star) => purchaseMatchesStar(purchase, star)));
+    });
+
+    return results.slice(0, 8);
+  }, [purchases, searchQuery, stars]);
 
   useEffect(() => {
     ensureStarData().then((list) => {
@@ -48,7 +102,7 @@ export default function StarVoyage3D() {
     try {
       const raw = await AsyncStorage.getItem('@purchases');
       const list = raw ? JSON.parse(raw) : [];
-      const found = list.find(p => p.starId === star.id || p.hip === star.hip || p.starClaimCode === star.starClaimCode);
+      const found = list.find((purchase) => purchaseMatchesStar(purchase, star));
       setOwnershipData(found || null);
     } catch (e) { console.warn('Ownership check error', e); }
   };
@@ -63,6 +117,13 @@ export default function StarVoyage3D() {
     setArrivalVisible(false);
     setOwnershipData(null);
     checkOwnership(star);
+  };
+
+  const selectSearchResult = (star) => {
+    handleTargetChange(star);
+    setSearchVisible(false);
+    setSearchQuery('');
+    Keyboard.dismiss();
   };
 
   return (
@@ -81,12 +142,15 @@ export default function StarVoyage3D() {
             <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
           </TouchableOpacity>
           <View style={styles.titleContainer}>
-            <Text style={styles.title}>{targetStar ? (targetStar.properName || targetStar.proper || `HIP ${targetStar.hip}`).toUpperCase() : 'STAR_VOYAGE_3D'}</Text>
+            <Text style={styles.title} numberOfLines={1}>{targetStar ? (targetStar.properName || targetStar.proper || `HIP ${targetStar.hip}`).toUpperCase() : 'STAR_VOYAGE_3D'}</Text>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, { backgroundColor: targetStar ? THEME.colors.primary : THEME.colors.purple }]} />
               <Text style={styles.subtitle}>{targetStar ? 'TARGET_LOCKED' : 'HYPER_SPACE_EXPLORATION'}</Text>
             </View>
           </View>
+          <TouchableOpacity style={styles.searchButton} onPress={() => setSearchVisible(true)}>
+            <Ionicons name="search" size={22} color={THEME.colors.primary} />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.viewport}>
@@ -174,6 +238,81 @@ export default function StarVoyage3D() {
           <View style={styles.footerLine} />
           <Text style={styles.footerText}>GYROSCOPE_STABILIZED // 3D_RENDER_ENGINE_v2.0 // AEGIS_OS</Text>
         </View>
+
+        <Modal
+          visible={searchVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setSearchVisible(false)}
+        >
+          <KeyboardAvoidingView
+            style={styles.searchBackdrop}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              style={StyleSheet.absoluteFill}
+              onPress={() => { setSearchVisible(false); Keyboard.dismiss(); }}
+            />
+            <SafeAreaView style={styles.searchSafeArea} pointerEvents="box-none">
+              <View style={styles.searchPanel}>
+                <View style={styles.searchInputRow}>
+                  <Ionicons name="search" size={20} color={THEME.colors.primary} />
+                  <TextInput
+                    autoFocus
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onSubmitEditing={() => searchResults[0] && selectSearchResult(searchResults[0])}
+                    placeholder="STAR NAME / HIP / HD / STARCLAIM CODE"
+                    placeholderTextColor="rgba(255,255,255,0.32)"
+                    returnKeyType="search"
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    style={styles.searchInput}
+                  />
+                  {!!searchQuery && (
+                    <TouchableOpacity style={styles.searchIconButton} onPress={() => setSearchQuery('')}>
+                      <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.55)" />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={styles.searchIconButton} onPress={() => setSearchVisible(false)}>
+                    <Ionicons name="close" size={22} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+
+                {searchQuery.trim().length < 2 ? (
+                  <Text style={styles.searchHint}>ENTER_AT_LEAST_2_CHARACTERS</Text>
+                ) : searchResults.length === 0 ? (
+                  <Text style={styles.searchHint}>NO_TARGET_FOUND</Text>
+                ) : (
+                  <ScrollView style={styles.searchResults} keyboardShouldPersistTaps="handled">
+                    {searchResults.map((star) => {
+                      const purchase = purchases.find((item) => purchaseMatchesStar(item, star));
+                      return (
+                        <TouchableOpacity key={star.id} style={styles.searchResult} onPress={() => selectSearchResult(star)}>
+                          <View style={styles.searchResultIdentity}>
+                            <Text style={styles.searchResultName} numberOfLines={1}>
+                              {(star.properName || star.proper || `HIP ${star.hip || star.id}`).toUpperCase()}
+                            </Text>
+                            <Text style={styles.searchResultMeta} numberOfLines={1}>
+                              HIP {star.hip || 'N/A'}  //  HD {star.hd || 'N/A'}  //  MAG {Number(star.mag).toFixed(2)}
+                            </Text>
+                            {purchase && (
+                              <Text style={styles.searchResultClaim} numberOfLines={1}>
+                                {purchase.starClaimCode || purchase.code || 'CERTIFIED_STAR'}
+                              </Text>
+                            )}
+                          </View>
+                          <Ionicons name="locate" size={20} color={purchase ? THEME.colors.secondary : THEME.colors.primary} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </View>
+            </SafeAreaView>
+          </KeyboardAvoidingView>
+        </Modal>
       </SafeAreaView>
     </View>
   );
@@ -206,7 +345,7 @@ const styles = StyleSheet.create({
     zIndex: 20,
     gap: 20
   },
-  titleContainer: { flex: 1 },
+  titleContainer: { flex: 1, minWidth: 0 },
   backBtn: { 
     width: 48, 
     height: 48, 
@@ -216,6 +355,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(0, 242, 254, 0.3)'
+  },
+  searchButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.3)',
+    backgroundColor: 'rgba(25, 25, 35, 0.7)',
   },
   title: { 
     color: '#fff', 
@@ -281,5 +430,50 @@ const styles = StyleSheet.create({
   claimBtn: { borderRadius: 10, overflow: 'hidden', width: '100%' },
   claimGradient: { paddingVertical: 14, alignItems: 'center' },
   claimBtnText: { color: '#000', fontSize: 13, fontWeight: '900', letterSpacing: 3 },
-  panelCorner: { position: 'absolute', width: 12, height: 12 }
+  panelCorner: { position: 'absolute', width: 12, height: 12 },
+  searchBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)' },
+  searchSafeArea: { width: '100%', paddingHorizontal: 16, paddingTop: 12 },
+  searchPanel: {
+    width: '100%',
+    maxWidth: 620,
+    alignSelf: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.32)',
+    backgroundColor: 'rgba(5, 11, 22, 0.98)',
+    overflow: 'hidden',
+  },
+  searchInputRow: {
+    minHeight: 54,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.08)',
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '800',
+    paddingVertical: 12,
+  },
+  searchIconButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
+  searchHint: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '800', padding: 18 },
+  searchResults: { width: '100%', maxHeight: 360 },
+  searchResult: {
+    minHeight: 66,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  searchResultIdentity: { flex: 1, minWidth: 0, paddingRight: 12 },
+  searchResultName: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  searchResultMeta: { color: 'rgba(255,255,255,0.45)', fontSize: 9, fontWeight: '700', marginTop: 4 },
+  searchResultClaim: { color: THEME.colors.secondary, fontSize: 9, fontWeight: '900', marginTop: 4 },
 });
