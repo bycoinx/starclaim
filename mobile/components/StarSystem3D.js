@@ -20,7 +20,9 @@ const MIN_ORBIT_RADIUS = 10;
 const MAX_ORBIT_RADIUS = 260;
 const WARP_DURATION_MS = 3600;
 const QUALITY_LIMITS = { low: 3500, medium: 7000, high: 10000 };
+const GALAXY_LIMITS = { low: 2400, medium: 4800, high: 8000 };
 const QUALITY_ORDER = ['low', 'medium', 'high'];
+const SCENE_MODES = { galaxy: 'galaxy', sector: 'sector', target: 'target' };
 
 const starVertexShader = `
   attribute float size;
@@ -189,12 +191,58 @@ function createWarpSystem(lineCount) {
   return new THREE.LineSegments(geometry, material);
 }
 
+function createSeededRandom(seed = 9417) {
+  let value = seed >>> 0;
+  return () => {
+    value = (value * 1664525 + 1013904223) >>> 0;
+    return value / 4294967296;
+  };
+}
+
+function createGalaxyGeometry(count = GALAXY_LIMITS.high) {
+  const random = createSeededRandom();
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  const warmCore = new THREE.Color(0xffd38a);
+  const coolArm = new THREE.Color(0x79a8ff);
+  const violetDust = new THREE.Color(0xa47cff);
+
+  for (let index = 0; index < count; index += 1) {
+    const inCore = random() < 0.18;
+    const radius = inCore
+      ? Math.pow(random(), 1.8) * 13
+      : Math.pow(random(), 0.68) * 52;
+    const arm = Math.floor(random() * 4);
+    const armAngle = arm * Math.PI * 0.5;
+    const angle = armAngle + radius * 0.19 + (random() - 0.5) * (inCore ? 1.9 : 0.62);
+    const thickness = inCore ? 8 * (1 - radius / 16) : 2.8 * (1 - radius / 58);
+    const offset = index * 3;
+    positions[offset] = Math.cos(angle) * radius + (random() - 0.5) * 1.8;
+    positions[offset + 1] = (random() - 0.5) * Math.max(0.35, thickness);
+    positions[offset + 2] = Math.sin(angle) * radius + (random() - 0.5) * 1.8;
+
+    const radialMix = THREE.MathUtils.clamp(radius / 52, 0, 1);
+    const color = warmCore.clone().lerp(coolArm, radialMix);
+    if (!inCore && random() < 0.28) color.lerp(violetDust, 0.45);
+    colors.set([color.r, color.g, color.b], offset);
+    sizes[index] = inCore ? 2.2 + random() * 1.8 : 0.8 + random() * 1.7;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  return geometry;
+}
+
 export default function StarSystem3D({ stars = [], targetStar = null, onArrival = null }) {
   const animationFrameRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
   const pointsRef = useRef(null);
+  const galaxyPointsRef = useRef(null);
   const targetMarkerRef = useRef(null);
   const targetBodyRef = useRef(null);
   const targetGlowRef = useRef(null);
@@ -207,9 +255,10 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const targetStarRef = useRef(targetStar);
   const onArrivalRef = useRef(onArrival);
   const arrivedRef = useRef(false);
+  const sceneModeRef = useRef(targetStar ? SCENE_MODES.sector : SCENE_MODES.galaxy);
   const orbitYawRef = useRef(0.55);
   const orbitPitchRef = useRef(0.18);
-  const orbitRadiusRef = useRef(DEFAULT_ORBIT_RADIUS);
+  const orbitRadiusRef = useRef(targetStar ? DEFAULT_ORBIT_RADIUS : 112);
   const gestureRef = useRef({ x: 0, y: 0, pinchDistance: 0 });
   const qualityRef = useRef(getInitialQuality());
   const qualityRecoveryRef = useRef(0);
@@ -217,10 +266,16 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const [quality, setQuality] = useState(qualityRef.current);
   const [fps, setFps] = useState(0);
   const [warpActive, setWarpActive] = useState(false);
+  const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
 
   useEffect(() => {
     targetStarRef.current = targetStar;
     arrivedRef.current = false;
+    if (sceneModeRef.current === SCENE_MODES.target) {
+      sceneModeRef.current = SCENE_MODES.sector;
+      setSceneMode(SCENE_MODES.sector);
+      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+    }
     if (!targetStar) {
       targetMarkerRef.current && (targetMarkerRef.current.visible = false);
       targetBodyRef.current && (targetBodyRef.current.visible = false);
@@ -246,6 +301,10 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     pointsRef.current?.geometry.setDrawRange(
       0,
       Math.min(pointsRef.current.geometry.attributes.position.count, QUALITY_LIMITS[next]),
+    );
+    galaxyPointsRef.current?.geometry.setDrawRange(
+      0,
+      Math.min(galaxyPointsRef.current.geometry.attributes.position.count, GALAXY_LIMITS[next]),
     );
     if (mountedRef.current) setQuality(next);
   }, []);
@@ -299,6 +358,22 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     const points = new THREE.Points(starGeometry, starMaterial);
     pointsRef.current = points;
     scene.add(points);
+
+    const galaxyGeometry = createGalaxyGeometry();
+    galaxyGeometry.setDrawRange(0, GALAXY_LIMITS[qualityRef.current]);
+    const galaxyUniforms = { time: { value: 0 } };
+    const galaxyMaterial = new THREE.ShaderMaterial({
+      uniforms: galaxyUniforms,
+      vertexShader: starVertexShader,
+      fragmentShader: starFragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const galaxyPoints = new THREE.Points(galaxyGeometry, galaxyMaterial);
+    galaxyPoints.rotation.x = -0.12;
+    galaxyPointsRef.current = galaxyPoints;
+    scene.add(galaxyPoints);
 
     const markerMaterial = new THREE.MeshBasicMaterial({
       color: 0x00d9ff,
@@ -369,7 +444,12 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       const elapsed = (now - startedAt) / 1000;
       frameCount += 1;
       starUniforms.time.value = elapsed;
+      galaxyUniforms.time.value = elapsed * 0.42;
       targetUniforms.time.value = elapsed;
+      const activeMode = sceneModeRef.current;
+      galaxyPoints.visible = activeMode === SCENE_MODES.galaxy;
+      points.visible = activeMode !== SCENE_MODES.galaxy;
+      galaxyPoints.rotation.y += 0.00016;
 
       if (warpActiveRef.current && targetStarRef.current) {
         const progress = Math.min(1, (now - warpStartedAtRef.current) / WARP_DURATION_MS);
@@ -389,6 +469,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         if (progress >= 1) {
           warpActiveRef.current = false;
           arrivedRef.current = true;
+          sceneModeRef.current = SCENE_MODES.target;
           const arrivalOffset = camera.position.clone().sub(targetPositionRef.current);
           const arrivalRadius = Math.max(MIN_ORBIT_RADIUS, arrivalOffset.length());
           orbitRadiusRef.current = arrivalRadius;
@@ -397,11 +478,14 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
           camera.fov = 67;
           camera.updateProjectionMatrix();
           warpGroup.visible = false;
-          if (mountedRef.current) setWarpActive(false);
+          if (mountedRef.current) {
+            setWarpActive(false);
+            setSceneMode(SCENE_MODES.target);
+          }
           onArrivalRef.current?.(targetStarRef.current);
         }
       } else {
-        const focus = arrivedRef.current && targetStarRef.current
+        const focus = activeMode === SCENE_MODES.target && arrivedRef.current && targetStarRef.current
           ? targetPositionRef.current
           : new THREE.Vector3(0, 0, 0);
         const radius = orbitRadiusRef.current;
@@ -415,13 +499,14 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       }
 
       if (targetStarRef.current) {
+        targetMarker.visible = activeMode !== SCENE_MODES.galaxy;
         targetMarker.position.copy(targetPositionRef.current);
         targetMarker.quaternion.copy(camera.quaternion);
         targetMarker.rotation.z += 0.005;
         const distanceToTarget = camera.position.distanceTo(targetPositionRef.current);
         const markerScale = THREE.MathUtils.clamp(distanceToTarget / 45, 0.7, 18);
         targetMarker.scale.setScalar(markerScale);
-        const showSurface = arrivedRef.current && distanceToTarget < 45;
+        const showSurface = activeMode === SCENE_MODES.target && arrivedRef.current && distanceToTarget < 45;
         targetBody.visible = showSurface;
         glow.visible = showSurface;
         if (showSurface) {
@@ -488,8 +573,30 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     warpStartedAtRef.current = Date.now();
     warpActiveRef.current = true;
     arrivedRef.current = false;
+    sceneModeRef.current = SCENE_MODES.sector;
+    setSceneMode(SCENE_MODES.sector);
     setWarpActive(true);
     SpaceAudio.playWarp();
+  };
+
+  const changeSceneMode = (nextMode) => {
+    if (warpActiveRef.current || nextMode === sceneModeRef.current) return;
+    if (nextMode === SCENE_MODES.target) {
+      if (!targetStarRef.current) return;
+      if (!arrivedRef.current) {
+        beginWarp();
+        return;
+      }
+      orbitRadiusRef.current = Math.min(orbitRadiusRef.current, 24);
+    } else if (nextMode === SCENE_MODES.galaxy) {
+      orbitRadiusRef.current = 112;
+      orbitPitchRef.current = 0.34;
+    } else {
+      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+      orbitPitchRef.current = 0.18;
+    }
+    sceneModeRef.current = nextMode;
+    setSceneMode(nextMode);
   };
 
   const handleTouchStart = (event) => {
@@ -538,16 +645,18 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const targetDistance = targetStar ? getDistanceLightYears(targetStar) : null;
 
   return (
-    <View
-      style={styles.container}
-      onStartShouldSetResponder={() => true}
-      onMoveShouldSetResponder={() => true}
-      onResponderGrant={handleTouchStart}
-      onResponderMove={handleTouchMove}
-      onResponderRelease={() => { gestureRef.current.pinchDistance = 0; }}
-      onResponderTerminate={() => { gestureRef.current.pinchDistance = 0; }}
-    >
-      <GLView style={styles.glView} onContextCreate={onContextCreate} />
+    <View style={styles.container}>
+      <View
+        style={styles.glView}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={handleTouchStart}
+        onResponderMove={handleTouchMove}
+        onResponderRelease={() => { gestureRef.current.pinchDistance = 0; }}
+        onResponderTerminate={() => { gestureRef.current.pinchDistance = 0; }}
+      >
+        <GLView style={StyleSheet.absoluteFill} onContextCreate={onContextCreate} />
+      </View>
 
       <View style={styles.telemetry} pointerEvents="none">
         <Text style={styles.telemetryName} numberOfLines={1}>
@@ -555,23 +664,43 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         </Text>
         <Text style={styles.telemetryLine}>FPS <Text style={styles.telemetryValue}>{fps || '--'}</Text></Text>
         <Text style={styles.telemetryLine}>QUALITY <Text style={styles.telemetryValue}>{quality.toUpperCase()}</Text></Text>
+        <Text style={styles.telemetryLine}>VIEW <Text style={styles.telemetryValue}>{sceneMode.toUpperCase()}</Text></Text>
         <Text style={styles.telemetryLine}>
           DISTANCE <Text style={styles.telemetryValue}>{Number.isFinite(targetDistance) ? `${targetDistance.toFixed(2)} LY` : 'UNKNOWN'}</Text>
         </Text>
       </View>
 
       <View style={styles.controls} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[styles.warpButton, (!targetStar || warpActive) && styles.warpButtonDisabled]}
-          disabled={!targetStar || warpActive}
-          onPress={beginWarp}
-        >
-          <Text style={styles.warpButtonText}>
-            {warpActive ? 'WARP_IN_PROGRESS' : targetStar ? 'ENGAGE_WARP' : 'SELECT_A_TARGET'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.sceneTabs}>
+          <SceneTab label="GALAXY" active={sceneMode === SCENE_MODES.galaxy} onPress={() => changeSceneMode(SCENE_MODES.galaxy)} />
+          <SceneTab label="SECTOR" active={sceneMode === SCENE_MODES.sector} onPress={() => changeSceneMode(SCENE_MODES.sector)} />
+          <SceneTab label="TARGET" active={sceneMode === SCENE_MODES.target} disabled={!targetStar} onPress={() => changeSceneMode(SCENE_MODES.target)} />
+        </View>
+        {sceneMode === SCENE_MODES.sector && (
+          <TouchableOpacity
+            style={[styles.warpButton, (!targetStar || warpActive) && styles.warpButtonDisabled]}
+            disabled={!targetStar || warpActive}
+            onPress={beginWarp}
+          >
+            <Text style={styles.warpButtonText}>
+              {warpActive ? 'WARP_IN_PROGRESS' : targetStar ? 'ENGAGE_WARP' : 'SELECT_A_TARGET'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
+  );
+}
+
+function SceneTab({ label, active, disabled = false, onPress }) {
+  return (
+    <TouchableOpacity
+      style={[styles.sceneTab, active && styles.sceneTabActive, disabled && styles.sceneTabDisabled]}
+      disabled={disabled}
+      onPress={onPress}
+    >
+      <Text style={[styles.sceneTabText, active && styles.sceneTabTextActive]}>{label}</Text>
+    </TouchableOpacity>
   );
 }
 
@@ -592,7 +721,22 @@ const styles = StyleSheet.create({
   telemetryName: { color: '#fff', fontSize: 11, fontWeight: '800', marginBottom: 8 },
   telemetryLine: { color: 'rgba(255,255,255,0.48)', fontSize: 9, fontWeight: '700', marginTop: 3 },
   telemetryValue: { color: THEME.colors.primary },
-  controls: { position: 'absolute', left: 0, right: 0, bottom: 32, alignItems: 'center' },
+  controls: { position: 'absolute', left: 0, right: 0, bottom: 24, alignItems: 'center', gap: 10 },
+  sceneTabs: {
+    width: 276,
+    height: 38,
+    padding: 3,
+    flexDirection: 'row',
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(3, 9, 18, 0.82)',
+  },
+  sceneTab: { flex: 1, alignItems: 'center', justifyContent: 'center', borderRadius: 4 },
+  sceneTabActive: { backgroundColor: 'rgba(0, 217, 255, 0.14)' },
+  sceneTabDisabled: { opacity: 0.3 },
+  sceneTabText: { color: 'rgba(255,255,255,0.42)', fontSize: 9, fontWeight: '900' },
+  sceneTabTextActive: { color: THEME.colors.primary },
   warpButton: {
     minWidth: 190,
     minHeight: 46,
