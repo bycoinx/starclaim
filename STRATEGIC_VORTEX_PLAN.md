@@ -247,3 +247,159 @@ Bu aşama 2D ve 3D haritalar tamamlanmadan başlamaz.
 - **AI:** Gemini, yalnızca hedef yıldız bağlamıyla
 
 Bu planın temel ilkesi şudur: **Önce doğru ve hızlı 2D gökyüzü, sonra aynı motor üzerinde gerçek 3D yolculuk.**
+
+---
+
+# 18 Haziran 2026 Harita Durum Raporu ve Güncel İş Listesi
+
+Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yukarıdaki eski durum kutularından daha günceldir. Yüzdeler yaklaşık ilerleme göstergesidir; fiziksel cihaz kabul testleri yapılmadan hiçbir harita "tamamlandı" sayılmaz.
+
+## 2D Sky Map Durumu
+
+**İşlevsel MVP:** yaklaşık `%80`
+
+**Üretim ve cihaz güveni:** yaklaşık `%60`
+
+### 2D Tamamlananlar
+
+- [x] Skia tabanlı yıldız çizim motoru, pan, pinch zoom ve dokunarak seçim.
+- [x] HYG kataloğundan normalize edilen yıldız kimliği, RA/Dec, magnitude ve spektral renk kullanımı.
+- [x] Ekvatoryal harita ile konum, tarih ve saate bağlı yatay Alt/Az görünümü.
+- [x] Local Sidereal Time hesabı ve ufuk altındaki nesnelerin gizlenmesi.
+- [x] Kamera üstü gözlem modu; kamera izninin yalnızca ihtiyaç anında istenmesi.
+- [x] Magnetometre/heading ve DeviceMotion takibi; uygulama arka plana geçtiğinde aboneliklerin kaldırılması.
+- [x] Sensör kalibrasyon durumu ve gerçek/manyetik/fallback heading ayrımı.
+- [x] Takımyıldızı çizgileri, isimleri, IAU sınırları, koordinat ızgarası ve yön/ufuk katmanı.
+- [x] Gezegen, DSO, mitoloji, nebula ve gece görüşü katmanları.
+- [x] Zoom seviyesine göre magnitude filtresi ve görüş alanı dışında çizim eleme.
+- [x] Dokunma seçiminde ekran hücreli uzamsal indeks.
+- [x] Basit cihaz/yıldız yoğunluğu kalite profili ve ekranda FPS ölçümü.
+- [x] HIP/HD/ad/StarClaim kimliğiyle hedef bulma ve haritaya merkezleme.
+- [x] Sahip olunan yıldız için altın işaret, sahiplik kodu ve 2D/3D geçişi.
+
+### 2D Yapılacaklar
+
+#### P0 - Doğruluk ve Hata Güvenliği
+
+- [ ] Sirius, Vega, Polaris ve Güney yarımküre örnekleriyle RA/Dec → Alt/Az regresyon testleri yazılacak.
+- [ ] Tarih değişimi, saat dilimi, gün dönümü ve kutup enlemleri test edilecek.
+- [ ] Takımyıldızı çizgileri ve IAU sınırlarının RA `0/24h` geçişinde kopmaması doğrulanacak.
+- [ ] Kamera yönü ile yıldız projeksiyonu arasındaki cihaz rotasyonu/ekran yönü ofseti kalibre edilecek.
+- [ ] Konum, kamera veya sensör izni reddedildiğinde eksiksiz fallback akışı doğrulanacak.
+
+#### P1 - Performans ve Cihaz Profili
+
+- [ ] Skia draw-node sayısı katman bazında ölçülecek ve geliştirici telemetrisine eklenecek.
+- [ ] Kalite profili yalnızca PixelRatio/yıldız sayısına değil, ölçülen FPS ve cihaz belleğine bağlanacak.
+- [ ] Takımyıldızı, sınır, DSO ve mitoloji katmanları için görünür alan elemesi genişletilecek.
+- [ ] Düşük/orta/yüksek Android cihazlarda 10 dakikalık ısı, bellek, FPS ve crash testi yapılacak.
+- [ ] Kabul hedefi: orta sınıf Android'de `55-60 FPS`, düşük sınıfta kararlı `30 FPS`.
+
+#### P2 - Görsel ve Kullanım Kalitesi
+
+- [ ] Yıldız parlaklığı, halo ve etiket yoğunluğu fiziksel cihaz ekranında ayarlanacak.
+- [ ] Takımyıldızı çizgileri için seçili/seçili olmayan görsel hiyerarşi iyileştirilecek.
+- [ ] Arama, katman paneli ve seçili yıldız paneli küçük ekranlarda taşma testinden geçirilecek.
+- [ ] Gözlem konumu ve zamanını elle değiştirme/zaman simülasyonu eklenecek.
+- [ ] Erişilebilirlik etiketleri, dokunma alanları ve gece görüşü kontrastı tamamlanacak.
+
+### 2D Tamamlanma Kriteri
+
+- [ ] Astronomik regresyon testleri yeşil.
+- [ ] En az bir düşük, bir orta ve bir yüksek Android cihaz profili ölçülmüş.
+- [ ] 10 dakikalık kamera/sensör kullanımında abonelik, GL/Skia veya bellek sızıntısı yok.
+- [ ] Takımyıldızı çizgileri pan, zoom, yatay görünüm ve RA sınırında doğru.
+- [ ] İzin reddi ve çevrimdışı katalog senaryoları kullanılabilir durumda.
+
+## 3D Voyage Durumu
+
+**İşlevsel MVP:** yaklaşık `%70`
+
+**Tam katalog + hedef görsel kalite:** yaklaşık `%45`
+
+### 3D Tamamlananlar
+
+- [x] Expo GL + Three.js + custom GLSL tabanlı temiz 3D motor.
+- [x] `Galaxy → Sector → Target` sahne hiyerarşisi ve animasyonlu geçişler.
+- [x] HYG parsec mesafelerinden Kartezyen yıldız konumları.
+- [x] `THREE.Points`, `BufferGeometry`, spektral renk, magnitude boyutu ve adaptif kalite.
+- [x] Prosedürel spiral galaksi ve kaliteye göre 1-3 katmanlı nebula atmosferi.
+- [x] Orbit, pan, pinch zoom, sektör yıldızı seçimi ve hedefe odaklanan kamera.
+- [x] Ad, HIP, HD ve StarClaim koduyla arama.
+- [x] Hedefe gerçek kamera hareketi yapan warp ve varış görünümü.
+- [x] Adaptif yıldız etiketleri ve hedef kilidi.
+- [x] `Yıldızlarım`, son hedefler ve kalıcı yerel hedef geçmişi.
+- [x] Sahip olunan yıldızlarda altın işaret, sertifikaya dokunma ve altın-beyaz certified warp.
+- [x] GL kaynaklarının ekran kapanırken dispose edilmesi ve FPS tabanlı kalite düşürme/yükseltme.
+
+### 3D Katalog Gerçeği
+
+- Mevcut loader HYG v4.1 indiriyor, `magnitude < 6.5` filtresi uyguluyor ve `10.000` kayıtta duruyor.
+- 3D ekran en fazla `10.000` yıldız alıyor.
+- Cihaz kalite profilleri aynı sahnede `3.500 / 7.000 / 10.000` yıldız çiziyor.
+- Bu nedenle tüm HYG kataloğu veya Gaia yıldızları henüz 3D haritada değildir.
+
+### 3D Yapılacaklar
+
+#### P0 - Katalog ve Uzamsal Akış
+
+- [ ] Loader içindeki erken `10.000` sınırı kaldırılacak; katalog önce tamamen normalize edilecek.
+- [ ] HYG kataloğu uzamsal sektörlere/tile'lara ayrılacak.
+- [ ] Kamera konumuna göre yakın sektörleri yükleyen ve uzak sektörleri boşaltan LOD sistemi kurulacak.
+- [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
+- [ ] Katalog manifesti, cache sürümü, indirme ilerlemesi ve çevrimdışı fallback eklenecek.
+- [ ] İlk ölçek hedefi tam HYG; Gaia için parlaklık/mesafe tabanlı kontrollü alt küme kullanılacak.
+
+#### P1 - Büyük Uzay Hassasiyeti ve Navigasyon
+
+- [ ] Büyük mesafelerde precision jitter'ı önlemek için floating-origin uygulanacak.
+- [ ] Sektör geçişleri gerçek uzamsal komşuluk ve mesafe ölçeğine bağlanacak.
+- [ ] Warp iptali, başlangıç noktasına dönüş ve yolculuk ilerleme durumu eklenecek.
+- [ ] Hedef seçim/raycast sistemi yüklü sektörlerle çalışacak şekilde güncellenecek.
+- [ ] Yıldız kodu bulunup sektörü cihazda yoksa ilgili tile otomatik indirilecek.
+
+#### P2 - Görsel Kalite
+
+- [ ] Yıldız core/halo/outer-halo/diffraction görünümü cihaz profiline göre iyileştirilecek.
+- [ ] Bloom benzeri kontrollü post-process, tone mapping ve pozlama sistemi değerlendirilecek.
+- [ ] Nebula katmanları derinlik/parallax veya düşük maliyetli volumetrik yaklaşım ile geliştirilecek.
+- [ ] Yakın hedef yıldızlarında spektral sınıfa göre farklı yüzey hareketi ve korona eklenecek.
+- [ ] Galaksi görünümünde çekirdek, kollar, toz şeritleri ve uzak galaksi çeşitliliği artırılacak.
+- [ ] Efektler düşük cihazlarda otomatik kapanacak; okunabilirlik efekt yoğunluğuna tercih edilecek.
+
+#### P3 - Yıldız Sistemi ve Gezegenler
+
+- [ ] Hedef yıldız için `Star System` alt sahnesi kurulacak.
+- [ ] Bilinen exoplanet verisi varsa gerçek sistem; yoksa açıkça etiketlenmiş prosedürel sistem politikası uygulanacak.
+- [ ] Gezegen LOD, atmosfer, halka, gece tarafı ve yörünge çizgileri geliştirilecek.
+- [ ] `Universe/Galaxy/Sector/Star System/Planet` ölçek geçişleri tamamlanacak.
+
+#### P4 - Üretim Doğrulaması
+
+- [ ] Düşük/orta/yüksek cihazlarda yıldız sayısı, shader kalitesi, ısı ve bellek ölçülecek.
+- [ ] GL context kaybı, uygulama arka planı ve ekran geçişleri stres testinden geçirilecek.
+- [ ] Android ve iOS dokunma/pinch/orbit davranışları karşılaştırılacak.
+- [ ] En az 10 dakikalık 3D kullanımda crash olmaması ve orta cihazda kararlı `30+ FPS` doğrulanacak.
+
+### 3D Tamamlanma Kriteri
+
+- [ ] Tam HYG katalog sektörlerden akıyor; tek seferde tüm katalog RAM/GL belleğine yüklenmiyor.
+- [ ] StarClaim kodu cihazda olmayan sektörü bulup indiriyor ve doğru yıldıza götürüyor.
+- [ ] Galaxy, Sector, Target ve Star System geçişleri aynı koordinat sistemini koruyor.
+- [ ] Orta sınıf Android cihazda kararlı `30+ FPS`, kabul edilebilir ısı ve bellek kullanımı var.
+- [ ] Fiziksel cihaz ekran görüntüleri ve ölçümleriyle görsel kalite onaylanmış.
+
+## Güncel Uygulama Sırası
+
+1. 3D katalog normalizasyonu ve sektör/tile veri formatı.
+2. 3D kamera tabanlı LOD yükleme/boşaltma.
+3. 2D astronomik regresyon testleri ve RA sınırı düzeltmeleri.
+4. 2D/3D fiziksel cihaz performans profilleri.
+5. 3D floating-origin ve uzun mesafe navigasyonu.
+6. 3D görsel kalite geçişi: yıldız, nebula, pozlama ve galaksi.
+7. Star System/Planet alt sahnesi.
+8. Backend sahiplik senkronizasyonu, çevrimdışı katalog ve mağaza kabul testleri.
+
+## Bir Sonraki Cerrahi Paket
+
+**3D katalog sektörleme temeli:** HYG verisini tam okuyacak, yıldızları uzamsal sektör kimliğiyle gruplayacak, sürümlü katalog manifesti oluşturacak ve mevcut `10.000` yıldızlık görünümü bozmadan kademeli LOD geçişine hazırlayacak veri katmanı.
