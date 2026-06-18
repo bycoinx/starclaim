@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, Modal, SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { Alert, AppState, Modal, SafeAreaView, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -51,6 +51,7 @@ export default function StarMapScreen() {
   const [showLabels, setShowLabels] = useState(false);
   const [showPlanets, setShowPlanets] = useState(true);
   const [showDSOs, setShowDSOs] = useState(true);
+  const [showNebula, setShowNebula] = useState(true);
   const [constellations, setConstellations] = useState({
     lines: { features: [] },
     labels: { features: [] },
@@ -427,6 +428,7 @@ export default function StarMapScreen() {
                 hideBelowHorizon
                 transparentBackground={mode === 'camera'}
                 nightVision={nightVision}
+                showNebula={showNebula}
                 onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
                 onZoomChange={setZoom}
                 onSelect={(star) => { setSelectedStar(star); setPopupVisible(true); }}
@@ -481,6 +483,7 @@ export default function StarMapScreen() {
                   </TouchableOpacity>
                 </View>
                 <ScrollView>
+                  <LayerToggle icon="image-filter-hdr" label="NEBULA_ATMOSPHERE" active={showNebula} onPress={() => setShowNebula(!showNebula)} nightVision={nightVision} />
                   <LayerToggle icon="format-line-spacing" label="CONSTELLATION_LINES" active={showConstellations} onPress={() => setShowConstellations(!showConstellations)} nightVision={nightVision} />
                   <LayerToggle icon="text-recognition" label="CONSTELLATION_NAMES" active={showConstellationLabels} onPress={() => setShowConstellationLabels(!showConstellationLabels)} nightVision={nightVision} />
                   <LayerToggle icon="border-all-variant" label="IAU_BOUNDARIES" active={showConstellationBoundaries} onPress={() => setShowConstellationBoundaries(!showConstellationBoundaries)} nightVision={nightVision} />
@@ -718,18 +721,3 @@ const styles = StyleSheet.create({
   calibrationClose: { backgroundColor: THEME.colors.primary, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 8 },
   calibrationCloseText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 2 }
 });
-
-function LayerToggle({ icon, label, active, onPress, nightVision }) {
-  const accent = nightVision ? '#FF4A42' : THEME.colors.primary;
-  return (
-    <TouchableOpacity style={styles.layerRow} onPress={onPress}>
-      <View style={styles.layerIdentity}>
-        <Ionicons name={icon} size={19} color={active ? accent : 'rgba(255,255,255,0.45)'} />
-        <Text style={[styles.layerLabel, nightVision && styles.nightText]}>{label}</Text>
-      </View>
-      <View style={[styles.layerSwitch, active && { borderColor: accent, backgroundColor: `${accent}25` }]}>
-        <View style={[styles.layerSwitchKnob, active && { backgroundColor: accent, transform: [{ translateX: 16 }] }]} />
-      </View>
-    </TouchableOpacity>
-  );
-}

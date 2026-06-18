@@ -143,6 +143,38 @@ function getCellKey(x, y) {
   return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
 }
 
+function NebulaBackground({ ra, dec, layout, qualityLevel }) {
+  const image = useImage(require('../assets/sky-nebula-premium.jpg'));
+  const imageHeight = layout.height * 1.18;
+  const imageWidth = Math.max(layout.width * 1.4, imageHeight * 2);
+  const horizontalTravel = Math.max(0, (imageWidth - layout.width) * 0.34);
+  const verticalTravel = Math.max(0, (imageHeight - layout.height) * 0.42);
+  const x = useDerivedValue(() => (
+    (layout.width - imageWidth) / 2
+    - Math.sin(deg2rad(ra.value)) * horizontalTravel
+  ));
+  const y = useDerivedValue(() => (
+    (layout.height - imageHeight) / 2
+    + Math.max(-1, Math.min(1, dec.value / 90)) * verticalTravel
+  ));
+
+  if (!image) return null;
+
+  const opacity = qualityLevel === 'low' ? 0.22 : qualityLevel === 'medium' ? 0.3 : 0.38;
+  return (
+    <Group opacity={opacity}>
+      <SkiaImage
+        image={image}
+        x={x}
+        y={y}
+        width={imageWidth}
+        height={imageHeight}
+        fit="cover"
+      />
+    </Group>
+  );
+}
+
 export default function StarCanvas({
   stars,
   selectedStar,
@@ -168,6 +200,7 @@ export default function StarCanvas({
   hideBelowHorizon = true,
   transparentBackground = false,
   nightVision = false,
+  showNebula = true,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
 
@@ -420,6 +453,15 @@ export default function StarCanvas({
               <Rect x={0} y={0} width={layout.width} height={layout.height}>
                 <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={nightVision ? ['#160000', '#000000'] : ['#050B1A', '#000000']} />
               </Rect>
+            )}
+
+            {showNebula && !transparentBackground && !nightVision && (
+              <NebulaBackground
+                ra={ra}
+                dec={dec}
+                layout={layout}
+                qualityLevel={qualityLevel}
+              />
             )}
 
             {coordinateMode === 'horizontal' && (
