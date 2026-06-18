@@ -376,6 +376,33 @@ function getStarLabel(star) {
   return star?.properName || star?.proper || null;
 }
 
+function createSectorStarGeometry(stars) {
+  const positions = new Float32Array(stars.length * 3);
+  const colors = new Float32Array(stars.length * 3);
+  const sizes = new Float32Array(stars.length);
+
+  stars.forEach((star, index) => {
+    const position = toWorldPosition(star);
+    const color = new THREE.Color(colorForSpectrum(star.spect || star.spectralType));
+    const magnitude = Number.isFinite(Number(star.mag)) ? Number(star.mag) : 5;
+    positions.set([position.x, position.y, position.z], index * 3);
+    colors.set([color.r, color.g, color.b], index * 3);
+    sizes[index] = THREE.MathUtils.clamp(1.15 + Math.sqrt(Math.max(0, 6.6 - magnitude)) * 1.45, 1, 6);
+  });
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+  return geometry;
+}
+
+function getRenderableSectorStars(stars) {
+  return stars
+    .filter((star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0)
+    .slice(0, QUALITY_LIMITS.high);
+}
+
 function buildLabelCandidates(stars, ownedStarIds) {
   const seen = new Set();
   const candidates = [];
@@ -517,6 +544,7 @@ export default function StarSystem3D({
   onArrival = null,
   onTargetChange = null,
   onOwnedStarPress = null,
+  loadedSectorCount = 0,
 }) {
   const animationFrameRef = useRef(null);
   const rendererRef = useRef(null);
@@ -587,6 +615,19 @@ export default function StarSystem3D({
     );
     syncOwnedMarkers(ownedMarkersRef.current, ownedStars);
   }, [ownedStars]);
+
+  useEffect(() => {
+    const points = pointsRef.current;
+    if (!points) return;
+    const validStars = getRenderableSectorStars(stars);
+    const nextGeometry = createSectorStarGeometry(validStars);
+    nextGeometry.setDrawRange(0, Math.min(validStars.length, QUALITY_LIMITS[qualityRef.current]));
+    const previousGeometry = points.geometry;
+    points.geometry = nextGeometry;
+    previousGeometry?.dispose();
+    renderedStarsRef.current = validStars;
+    labelCandidatesRef.current = buildLabelCandidates(validStars, ownedStarIdsRef.current);
+  }, [stars]);
 
   useEffect(() => {
     const previousMode = sceneModeRef.current;
@@ -686,28 +727,10 @@ export default function StarSystem3D({
     cameraRef.current = camera;
     rendererRef.current = renderer;
 
-    const validStars = stars
-      .filter((star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0)
-      .slice(0, QUALITY_LIMITS.high);
+    const validStars = getRenderableSectorStars(stars);
     renderedStarsRef.current = validStars;
     labelCandidatesRef.current = buildLabelCandidates(validStars, ownedStarIdsRef.current);
-    const positions = new Float32Array(validStars.length * 3);
-    const colors = new Float32Array(validStars.length * 3);
-    const sizes = new Float32Array(validStars.length);
-
-    validStars.forEach((star, index) => {
-      const position = toWorldPosition(star);
-      const color = new THREE.Color(colorForSpectrum(star.spect || star.spectralType));
-      const magnitude = Number.isFinite(Number(star.mag)) ? Number(star.mag) : 5;
-      positions.set([position.x, position.y, position.z], index * 3);
-      colors.set([color.r, color.g, color.b], index * 3);
-      sizes[index] = THREE.MathUtils.clamp(1.15 + Math.sqrt(Math.max(0, 6.6 - magnitude)) * 1.45, 1, 6);
-    });
-
-    const starGeometry = new THREE.BufferGeometry();
-    starGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    starGeometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
-    starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const starGeometry = createSectorStarGeometry(validStars);
     starGeometry.setDrawRange(0, Math.min(validStars.length, QUALITY_LIMITS[qualityRef.current]));
     const starUniforms = { time: { value: 0 }, layerOpacity: { value: 1 } };
     const starMaterial = new THREE.ShaderMaterial({
@@ -1250,6 +1273,8 @@ export default function StarSystem3D({
         <Text style={styles.telemetryLine}>FPS <Text style={styles.telemetryValue}>{fps || '--'}</Text></Text>
         <Text style={styles.telemetryLine}>QUALITY <Text style={styles.telemetryValue}>{quality.toUpperCase()}</Text></Text>
         <Text style={styles.telemetryLine}>VIEW <Text style={styles.telemetryValue}>{sceneMode.toUpperCase()}</Text></Text>
+        <Text style={styles.telemetryLine}>TILES <Text style={styles.telemetryValue}>{loadedSectorCount || '--'}</Text></Text>
+        <Text style={styles.telemetryLine}>STARS <Text style={styles.telemetryValue}>{stars.length}</Text></Text>
         {lockedTarget && (
           <>
             <Text style={styles.telemetryLine}>MAG <Text style={styles.telemetryValue}>{Number(lockedTarget.mag).toFixed(2)}</Text></Text>

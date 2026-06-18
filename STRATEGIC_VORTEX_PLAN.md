@@ -346,7 +346,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 - [x] Loader içindeki erken `10.000` sınırı kaldırıldı; tüm geçerli HYG satırları normalize edilip en parlak `10.000` çekirdek katalog olarak seçiliyor.
 - [x] HYG kayıtlarına RA/Dec/logaritmik mesafe kabuğu tabanlı sektör kimliği veriliyor ve sürümlü sektör manifesti üretiliyor.
 - [ ] Sektör içerikleri sıkıştırılmış, ayrı indirilebilir tile dosyalarına dönüştürülecek.
-- [ ] Kamera konumuna göre yakın sektörleri yükleyen ve uzak sektörleri boşaltan LOD sistemi kurulacak.
+- [x] Çekirdek katalogda hedef sektör ve komşularını seçen; eski GPU geometrisini dispose edip aktif pencereyi yükleyen LOD sistemi kuruldu.
+- [ ] Tam HYG tile'ları için kamera/hedef tabanlı uzak indirme, bellek önbelleği ve tahliye politikası eklenecek.
 - [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
 - [ ] Katalog manifesti, cache sürümü, indirme ilerlemesi ve çevrimdışı fallback eklenecek.
 - [ ] İlk ölçek hedefi tam HYG; Gaia için parlaklık/mesafe tabanlı kontrollü alt küme kullanılacak.
@@ -356,7 +357,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 - [ ] Büyük mesafelerde precision jitter'ı önlemek için floating-origin uygulanacak.
 - [ ] Sektör geçişleri gerçek uzamsal komşuluk ve mesafe ölçeğine bağlanacak.
 - [ ] Warp iptali, başlangıç noktasına dönüş ve yolculuk ilerleme durumu eklenecek.
-- [ ] Hedef seçim/raycast sistemi yüklü sektörlerle çalışacak şekilde güncellenecek.
+- [x] Hedef seçim/raycast sistemi çekirdek katalogdaki aktif sektör geometrisiyle çalışacak şekilde güncellendi.
+- [ ] Raycast ve seçim sistemi uzaktan yüklenen tam HYG tile'larıyla doğrulanacak.
 - [ ] Yıldız kodu bulunup sektörü cihazda yoksa ilgili tile otomatik indirilecek.
 
 #### P2 - Görsel Kalite
@@ -403,4 +405,4 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**3D sektör içeriği ve LOD yükleyici:** Manifestteki sektörleri ayrı katalog tile'larına dönüştürecek; kamera ve hedef sektörüne göre gerekli tile'ları yükleyip artık görünmeyenleri bellekten çıkaracak veri akışı.
+**Tam HYG tile dağıtımı:** Manifestteki sektörleri sıkıştırılmış ayrı katalog dosyalarına üretecek backend/build aracı, tile endpoint'i ve mobil disk/bellek cache'i. Mevcut çekirdek LOD deposu bu uzak tile sağlayıcısıyla genişletilecek.

@@ -26,6 +26,44 @@ export function getStarSectorId(star) {
   return `r${raIndex}-d${decIndex}-s${shellIndex}`;
 }
 
+export function parseStarSectorId(sectorId) {
+  const match = /^r(\d+)-d(\d+)-s(\d+|u)$/.exec(String(sectorId || ''));
+  if (!match) return null;
+  return {
+    raIndex: Number(match[1]),
+    decIndex: Number(match[2]),
+    shellIndex: match[3] === 'u' ? 'u' : Number(match[3]),
+  };
+}
+
+export function getNeighborSectorIds(star, radius = 1) {
+  const centerId = star?.sectorId || getStarSectorId(star);
+  const center = parseStarSectorId(centerId);
+  if (!center) return [centerId];
+
+  const safeRadius = Math.max(0, Math.floor(radius));
+  const raSectorCount = Math.ceil(360 / RA_SECTOR_SIZE_DEGREES);
+  const decSectorCount = Math.ceil(180 / DEC_SECTOR_SIZE_DEGREES);
+  const ids = [];
+  for (let raOffset = -safeRadius; raOffset <= safeRadius; raOffset += 1) {
+    const raIndex = (center.raIndex + raOffset + raSectorCount) % raSectorCount;
+    for (let decOffset = -safeRadius; decOffset <= safeRadius; decOffset += 1) {
+      const decIndex = center.decIndex + decOffset;
+      if (decIndex < 0 || decIndex >= decSectorCount) continue;
+      if (center.shellIndex === 'u') {
+        ids.push(`r${raIndex}-d${decIndex}-su`);
+        continue;
+      }
+      for (let shellOffset = -safeRadius; shellOffset <= safeRadius; shellOffset += 1) {
+        const shellIndex = center.shellIndex + shellOffset;
+        if (shellIndex < 0 || shellIndex > DISTANCE_SHELLS_PARSEC.length) continue;
+        ids.push(`r${raIndex}-d${decIndex}-s${shellIndex}`);
+      }
+    }
+  }
+  return ids;
+}
+
 export function createSectorAccumulator() {
   return new Map();
 }

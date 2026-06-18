@@ -16,6 +16,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
+import { createStarSectorTileStore } from '../../../src/data/starSectorTileStore';
 import {
   purchaseMatchesStar,
   resolveStarTarget,
@@ -79,6 +80,22 @@ export default function StarVoyage3D() {
   const ownedStarCatalog = useMemo(
     () => ownedStars.map(({ star }) => star),
     [ownedStars],
+  );
+
+  const sectorTileStore = useMemo(() => createStarSectorTileStore(stars), [stars]);
+  const activeSectorWindow = useMemo(
+    () => targetStar
+      ? sectorTileStore.getWindow(targetStar, { minStars: 500, maxStars: 10000, maxRadius: 3 })
+      : sectorTileStore.getBrightest(3500),
+    [sectorTileStore, targetStar],
+  );
+  const activeStarIds = useMemo(
+    () => new Set(activeSectorWindow.stars.map((star) => String(star.id))),
+    [activeSectorWindow.stars],
+  );
+  const activeOwnedStars = useMemo(
+    () => ownedStarCatalog.filter((star) => activeStarIds.has(String(star.id))),
+    [activeStarIds, ownedStarCatalog],
   );
 
   const recentStars = useMemo(() => recentTargetIds
@@ -234,9 +251,10 @@ export default function StarVoyage3D() {
             </View>
           ) : (
             <StarSystem3D
-              stars={stars.slice(0, 10000)}
+              stars={activeSectorWindow.stars}
               targetStar={targetStar}
-              ownedStars={ownedStarCatalog}
+              ownedStars={activeOwnedStars}
+              loadedSectorCount={activeSectorWindow.sectorIds.length}
               onArrival={handleArrival}
               onTargetChange={handleTargetChange}
               onOwnedStarPress={openOwnedStarCertificate}
