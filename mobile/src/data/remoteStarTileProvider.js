@@ -4,6 +4,7 @@ import { getNeighborSectorIds } from './starSectorCatalog';
 
 const MANIFEST_CACHE_KEY = '@star_tile_manifest_v1';
 const DISK_LRU_KEY = '@star_tile_disk_lru_v1';
+const OFFLINE_MODE_KEY = '@star_tile_offline_mode_v1';
 const TILE_CACHE_PREFIX = '@star_tile_v1:';
 const MEMORY_TILE_LIMIT = 24;
 const DISK_TILE_LIMIT = 96;
@@ -35,7 +36,8 @@ async function readCachedManifest() {
   return raw ? JSON.parse(raw) : null;
 }
 
-async function loadManifest() {
+async function loadManifest(cacheOnly = false) {
+  if (cacheOnly) return readCachedManifest();
   if (Date.now() < failureCooldownUntil) return readCachedManifest();
   const baseUrl = await resolveApiUrl();
   try {
@@ -58,8 +60,13 @@ async function loadManifest() {
   }
 }
 
-async function getManifest() {
+async function getManifest(cacheOnly = false) {
   if (manifestValue) return manifestValue;
+  if (cacheOnly) {
+    const cached = await readCachedManifest();
+    if (cached) manifestValue = cached;
+    return cached;
+  }
   if (!manifestPromise) {
     manifestPromise = loadManifest()
       .then((manifest) => {
@@ -93,7 +100,7 @@ function touchDiskTile(cacheKey) {
   return diskLruPromise;
 }
 
-async function loadTile(baseUrl, manifest, sectorId) {
+async function loadTile(baseUrl, manifest, sectorId, cacheOnly = false) {
   const cacheKey = getTileCacheKey(manifest.catalogVersion, sectorId);
   if (memoryTiles.has(cacheKey)) {
     const stars = memoryTiles.get(cacheKey);
@@ -114,6 +121,8 @@ async function loadTile(baseUrl, manifest, sectorId) {
   } catch (error) {
     console.warn(`Star tile cache read failed: ${sectorId}`, error);
   }
+
+  if (cacheOnly) return null;
 
   const response = await fetch(`${baseUrl}/api/catalog/3d/tiles/${encodeURIComponent(sectorId)}`);
   if (!response.ok) throw new Error(`Star tile request failed (${sectorId}): ${response.status}`);
@@ -150,7 +159,8 @@ async function mapWithConcurrency(items, mapper, concurrency = REQUEST_CONCURREN
 
 export async function loadRemoteStarSectorWindow(targetStar, options = {}) {
   if (!targetStar) return { stars: [], sectorIds: [], catalogVersion: null };
-  const manifest = await getManifest();
+  const cacheOnly = options.cacheOnly ?? await getStarTileOfflineMode();
+  const manifest = await getManifest(cacheOnly);
   if (!manifest) return { stars: [], sectorIds: [], catalogVersion: null };
 
   const minimumStars = options.minStars ?? 700;
@@ -167,10 +177,10 @@ export async function loadRemoteStarSectorWindow(targetStar, options = {}) {
     if (estimatedCount >= minimumStars || radius === maximumRadius) break;
   }
 
-  const baseUrl = await resolveApiUrl();
+  const baseUrl = cacheOnly ? null : await resolveApiUrl();
   const tiles = await mapWithConcurrency(
     sectorIds,
-    (sectorId) => loadTile(baseUrl, manifest, sectorId),
+    (sectorId) => loadTile(baseUrl, manifest, sectorId, cacheOnly),
   );
   const seen = new Set();
   const stars = [];
@@ -190,6 +200,53 @@ export async function loadRemoteStarSectorWindow(targetStar, options = {}) {
     sectorIds: sectorIds.filter((_, index) => Array.isArray(tiles[index])),
     catalogVersion: manifest.catalogVersion,
   };
+}
+
+export async function getStarTileOfflineMode() {
+  try {
+    return await AsyncStorage.getItem(OFFLINE_MODE_KEY) === 'true';
+  } catch (error) {
+    console.warn('Offline mode preference read failed', error);
+    return false;
+  }
+}
+
+export async function setStarTileOfflineMode(enabled) {
+  await AsyncStorage.setItem(OFFLINE_MODE_KEY, enabled ? 'true' : 'false');
+  return enabled;
+}
+
+export async function getRemoteStarTileCacheStats() {
+  try {
+    const [lruRaw, manifest] = await Promise.all([
+      AsyncStorage.getItem(DISK_LRU_KEY),
+      readCachedManifest(),
+    ]);
+    const cacheKeys = lruRaw ? JSON.parse(lruRaw) : [];
+    const validKeys = Array.isArray(cacheKeys) ? cacheKeys : [];
+    const values = validKeys.length ? await AsyncStorage.multiGet(validKeys) : [];
+    const byteSize = values.reduce(
+      (total, [, value]) => total + (value ? value.length * 2 : 0),
+      0,
+    );
+    return {
+      tileCount: values.filter(([, value]) => Boolean(value)).length,
+      byteSize,
+      catalogVersion: manifest?.catalogVersion || null,
+    };
+  } catch (error) {
+    console.warn('Star tile cache stats read failed', error);
+    return { tileCount: 0, byteSize: 0, catalogVersion: null };
+  }
+}
+
+export async function clearRemoteStarTileDiskCache() {
+  const raw = await AsyncStorage.getItem(DISK_LRU_KEY);
+  const cacheKeys = raw ? JSON.parse(raw) : [];
+  const keysToRemove = Array.isArray(cacheKeys) ? cacheKeys : [];
+  if (keysToRemove.length) await AsyncStorage.multiRemove(keysToRemove);
+  await AsyncStorage.removeItem(DISK_LRU_KEY);
+  memoryTiles.clear();
 }
 
 export function clearRemoteStarTileMemoryCache() {

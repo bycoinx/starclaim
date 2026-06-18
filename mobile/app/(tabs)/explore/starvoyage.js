@@ -17,7 +17,13 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
 import { createStarSectorTileStore } from '../../../src/data/starSectorTileStore';
-import { loadRemoteStarSectorWindow } from '../../../src/data/remoteStarTileProvider';
+import {
+  clearRemoteStarTileDiskCache,
+  getRemoteStarTileCacheStats,
+  getStarTileOfflineMode,
+  loadRemoteStarSectorWindow,
+  setStarTileOfflineMode,
+} from '../../../src/data/remoteStarTileProvider';
 import {
   purchaseMatchesStar,
   resolveStarTarget,
@@ -40,6 +46,9 @@ export default function StarVoyage3D() {
   const [ownershipData, setOwnershipData] = useState(null);
   const [purchases, setPurchases] = useState([]);
   const [searchVisible, setSearchVisible] = useState(false);
+  const [offlineVisible, setOfflineVisible] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineStats, setOfflineStats] = useState({ tileCount: 0, byteSize: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [recentTargetIds, setRecentTargetIds] = useState([]);
   const [remoteSectorWindow, setRemoteSectorWindow] = useState({ stars: [], sectorIds: [] });
@@ -65,6 +74,19 @@ export default function StarVoyage3D() {
         setPurchases([]);
         setRecentTargetIds([]);
       });
+  }, []);
+
+  const refreshOfflineState = async () => {
+    const [enabled, stats] = await Promise.all([
+      getStarTileOfflineMode(),
+      getRemoteStarTileCacheStats(),
+    ]);
+    setOfflineMode(enabled);
+    setOfflineStats(stats);
+  };
+
+  useEffect(() => {
+    refreshOfflineState().catch((error) => console.warn('Offline state load failed', error));
   }, []);
 
   const ownedStars = useMemo(() => {
@@ -98,16 +120,36 @@ export default function StarVoyage3D() {
       return undefined;
     }
     setRemoteSectorWindow({ stars: [], sectorIds: [] });
-    loadRemoteStarSectorWindow(targetStar, { minStars: 700, maxStars: 10000, maxRadius: 2 })
+    loadRemoteStarSectorWindow(targetStar, {
+      minStars: 700,
+      maxStars: 10000,
+      maxRadius: 2,
+      cacheOnly: offlineMode,
+    })
       .then((window) => {
-        if (!cancelled) setRemoteSectorWindow(window);
+        if (!cancelled) {
+          setRemoteSectorWindow(window);
+          refreshOfflineState().catch(() => {});
+        }
       })
       .catch((error) => {
         console.warn('Remote sector window load failed', error);
         if (!cancelled) setRemoteSectorWindow({ stars: [], sectorIds: [] });
       });
     return () => { cancelled = true; };
-  }, [targetStar]);
+  }, [targetStar, offlineMode]);
+
+  const toggleOfflineMode = async () => {
+    const next = !offlineMode;
+    await setStarTileOfflineMode(next);
+    setOfflineMode(next);
+  };
+
+  const clearOfflineCache = async () => {
+    await clearRemoteStarTileDiskCache();
+    setRemoteSectorWindow({ stars: [], sectorIds: [] });
+    await refreshOfflineState();
+  };
 
   const renderedSectorWindow = useMemo(() => {
     const seen = new Set();
@@ -282,6 +324,17 @@ export default function StarVoyage3D() {
           <TouchableOpacity style={styles.searchButton} onPress={() => setSearchVisible(true)}>
             <Ionicons name="search" size={22} color={THEME.colors.primary} />
           </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityLabel="Çevrimdışı katalog yönetimi"
+            style={[styles.searchButton, offlineMode && styles.offlineButtonActive]}
+            onPress={() => { refreshOfflineState(); setOfflineVisible(true); }}
+          >
+            <Ionicons
+              name={offlineMode ? 'cloud-offline' : 'cloud-done-outline'}
+              size={21}
+              color={offlineMode ? THEME.colors.secondary : THEME.colors.primary}
+            />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.viewport}>
@@ -372,6 +425,62 @@ export default function StarVoyage3D() {
           <View style={styles.footerLine} />
           <Text style={styles.footerText}>GYROSCOPE_STABILIZED // 3D_RENDER_ENGINE_v2.0 // AEGIS_OS</Text>
         </View>
+
+        <Modal
+          visible={offlineVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setOfflineVisible(false)}
+        >
+          <View style={styles.offlineBackdrop}>
+            <TouchableOpacity
+              activeOpacity={1}
+              style={StyleSheet.absoluteFill}
+              onPress={() => setOfflineVisible(false)}
+            />
+            <View style={styles.offlinePanel}>
+              <View style={styles.offlineHeader}>
+                <Ionicons name="cloud-offline-outline" size={22} color={THEME.colors.primary} />
+                <Text style={styles.offlineTitle}>ÇEVRİMDIŞI GÖZLEM</Text>
+                <TouchableOpacity style={styles.searchIconButton} onPress={() => setOfflineVisible(false)}>
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.offlineDescription}>
+                Açıkken ağ kullanılmaz. Temel yıldız kataloğu ve daha önce ziyaret edilen 3D sektörler cihazdan yüklenir.
+              </Text>
+              <View style={styles.offlineStatsRow}>
+                <View style={styles.offlineStat}>
+                  <Text style={styles.offlineStatValue}>{offlineStats.tileCount}</Text>
+                  <Text style={styles.offlineStatLabel}>HAZIR SEKTÖR</Text>
+                </View>
+                <View style={styles.offlineStat}>
+                  <Text style={styles.offlineStatValue}>{formatCacheSize(offlineStats.byteSize)}</Text>
+                  <Text style={styles.offlineStatLabel}>YEREL VERİ</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.offlineToggle} onPress={toggleOfflineMode}>
+                <View>
+                  <Text style={styles.offlineToggleTitle}>Çevrimdışı mod</Text>
+                  <Text style={styles.offlineToggleMeta}>{offlineMode ? 'Yalnızca cihaz verisi' : 'Sektörleri otomatik indir'}</Text>
+                </View>
+                <Ionicons
+                  name={offlineMode ? 'toggle' : 'toggle-outline'}
+                  size={36}
+                  color={offlineMode ? THEME.colors.secondary : THEME.colors.textMuted}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                disabled={offlineStats.tileCount === 0}
+                style={[styles.clearCacheButton, offlineStats.tileCount === 0 && styles.clearCacheButtonDisabled]}
+                onPress={clearOfflineCache}
+              >
+                <Ionicons name="trash-outline" size={18} color="#fff" />
+                <Text style={styles.clearCacheText}>İNDİRİLEN SEKTÖRLERİ TEMİZLE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           visible={searchVisible}
@@ -497,6 +606,12 @@ function TelemetryItem({ label, value, color }) {
   );
 }
 
+function formatCacheSize(bytes) {
+  if (!bytes) return '0 KB';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function TargetResultRow({ star, purchase, onPress }) {
   const magnitude = Number(star.mag);
   return (
@@ -558,6 +673,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 242, 254, 0.3)',
     backgroundColor: 'rgba(25, 25, 35, 0.7)',
   },
+  offlineButtonActive: { borderColor: THEME.colors.secondary, backgroundColor: 'rgba(255, 216, 77, 0.08)' },
   title: { 
     color: '#fff', 
     fontSize: 20, 
@@ -624,6 +740,30 @@ const styles = StyleSheet.create({
   claimBtnText: { color: '#000', fontSize: 13, fontWeight: '900', letterSpacing: 3 },
   panelCorner: { position: 'absolute', width: 12, height: 12 },
   searchBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)' },
+  offlineBackdrop: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'rgba(0,0,0,0.82)' },
+  offlinePanel: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    padding: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 242, 254, 0.32)',
+    backgroundColor: '#050b16',
+  },
+  offlineHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  offlineTitle: { flex: 1, color: '#fff', fontSize: 13, fontWeight: '900' },
+  offlineDescription: { color: 'rgba(255,255,255,0.58)', fontSize: 12, lineHeight: 19, marginTop: 14 },
+  offlineStatsRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
+  offlineStat: { flex: 1, padding: 14, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.025)' },
+  offlineStatValue: { color: THEME.colors.primary, fontSize: 18, fontWeight: '900' },
+  offlineStatLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 8, fontWeight: '900', marginTop: 5 },
+  offlineToggle: { minHeight: 64, marginTop: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  offlineToggleTitle: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  offlineToggleMeta: { color: 'rgba(255,255,255,0.4)', fontSize: 9, marginTop: 4 },
+  clearCacheButton: { minHeight: 46, marginTop: 12, flexDirection: 'row', gap: 9, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' },
+  clearCacheButtonDisabled: { opacity: 0.35 },
+  clearCacheText: { color: '#fff', fontSize: 9, fontWeight: '900' },
   searchSafeArea: { width: '100%', paddingHorizontal: 16, paddingTop: 12 },
   searchPanel: {
     width: '100%',

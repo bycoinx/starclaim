@@ -350,7 +350,7 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 - [x] Tam HYG tile'ları için hedef tabanlı uzak indirme, 24 tile bellek cache'i ve 96 tile kalıcı LRU cache/tahliye politikası eklendi.
 - [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
 - [x] Sürümlü uzak manifest, kalıcı manifest fallback'i ve tile endpoint'i eklendi.
-- [ ] Kullanıcıya katalog indirme ilerlemesi, cache boyutu ve çevrimdışı katalog yönetimi gösterilecek.
+- [x] Kullanıcıya kalıcı çevrimdışı mod, hazır tile sayısı, cache boyutu ve cache temizleme yönetimi gösteriliyor.
 - [ ] İlk ölçek hedefi tam HYG; Gaia için parlaklık/mesafe tabanlı kontrollü alt küme kullanılacak.
 
 #### P1 - Büyük Uzay Hassasiyeti ve Navigasyon
@@ -406,4 +406,4 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**Global yıldız çözümleme indeksi:** Çekirdek `10.000` dışında kalan HYG yıldızlarını ad/HIP/HD/StarClaim koduyla bulacak backend endpoint'i; sonuçla ilgili sektör tile'ını indirip 3D hedef kilidine aktaracak mobil arama akışı.
+**Çevrimdışı sahiplik paketi:** Kullanıcının satın aldığı yıldızları ve sertifikaları backend ile doğruladıktan sonra imzalı yerel snapshot olarak saklamak; ağ yokken 2D/3D hedef ve sertifika görüntülemeyi güvenli şekilde sürdürmek.
