@@ -387,6 +387,8 @@ export default function StarSystem3D({
   const warpDestinationRef = useRef(new THREE.Vector3());
   const targetPositionRef = useRef(new THREE.Vector3());
   const cameraFocusRef = useRef(new THREE.Vector3());
+  const sectorFocusRef = useRef(targetStar ? toWorldPosition(targetStar) : new THREE.Vector3());
+  const targetLockStartedAtRef = useRef(0);
   const targetStarRef = useRef(targetStar);
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
@@ -420,6 +422,7 @@ export default function StarSystem3D({
   const [lockedTarget, setLockedTarget] = useState(targetStar);
 
   useEffect(() => {
+    const previousMode = sceneModeRef.current;
     targetStarRef.current = targetStar;
     setLockedTarget(targetStar || null);
     arrivedRef.current = false;
@@ -429,6 +432,7 @@ export default function StarSystem3D({
       orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
     }
     if (!targetStar) {
+      sectorFocusRef.current.set(0, 0, 0);
       targetMarkerRef.current && (targetMarkerRef.current.visible = false);
       targetBodyRef.current && (targetBodyRef.current.visible = false);
       targetGlowRef.current && (targetGlowRef.current.visible = false);
@@ -437,25 +441,34 @@ export default function StarSystem3D({
 
     const position = toWorldPosition(targetStar);
     targetPositionRef.current.copy(position);
-    if (sceneModeRef.current === SCENE_MODES.galaxy && cameraRef.current) {
+    sectorFocusRef.current.copy(position);
+    targetLockStartedAtRef.current = Date.now();
+    if (cameraRef.current) {
       const transition = sceneTransitionRef.current;
       transition.active = true;
       transition.startedAt = Date.now();
-      transition.fromMode = SCENE_MODES.galaxy;
+      transition.duration = previousMode === SCENE_MODES.galaxy ? 1150 : 850;
+      transition.fromMode = previousMode;
       transition.toMode = SCENE_MODES.sector;
       transition.fromPosition.copy(cameraRef.current.position);
-      transition.toPosition.copy(getOrbitPosition(
-        new THREE.Vector3(),
-        DEFAULT_ORBIT_RADIUS,
-        orbitYawRef.current,
-        0.18,
-      ));
+      transition.toPosition.copy(previousMode === SCENE_MODES.sector
+        ? cameraRef.current.position
+        : getOrbitPosition(
+          new THREE.Vector3(),
+          DEFAULT_ORBIT_RADIUS,
+          orbitYawRef.current,
+          0.18,
+        ));
       transition.fromFocus.copy(cameraFocusRef.current);
-      transition.toFocus.set(0, 0, 0);
-      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
-      orbitPitchRef.current = 0.18;
-      sceneModeRef.current = SCENE_MODES.sector;
-      setSceneMode(SCENE_MODES.sector);
+      transition.toFocus.copy(position);
+      if (previousMode !== SCENE_MODES.sector) {
+        orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+        orbitPitchRef.current = 0.18;
+      }
+      if (previousMode !== SCENE_MODES.sector) {
+        sceneModeRef.current = SCENE_MODES.sector;
+        setSceneMode(SCENE_MODES.sector);
+      }
     }
     if (targetMarkerRef.current) {
       targetMarkerRef.current.position.copy(position);
@@ -707,11 +720,14 @@ export default function StarSystem3D({
           onArrivalRef.current?.(targetStarRef.current);
         }
       } else if (!transitionControlsCamera) {
-        const focus = activeMode === SCENE_MODES.target && arrivedRef.current && targetStarRef.current
+        const orbitCenter = activeMode === SCENE_MODES.target && arrivedRef.current && targetStarRef.current
           ? targetPositionRef.current
           : new THREE.Vector3(0, 0, 0);
+        const focus = activeMode === SCENE_MODES.sector && targetStarRef.current
+          ? sectorFocusRef.current
+          : orbitCenter;
         camera.position.copy(getOrbitPosition(
-          focus,
+          orbitCenter,
           orbitRadiusRef.current,
           orbitYawRef.current,
           orbitPitchRef.current,
@@ -727,7 +743,10 @@ export default function StarSystem3D({
         targetMarker.rotation.z += 0.005;
         const distanceToTarget = camera.position.distanceTo(targetPositionRef.current);
         const markerScale = THREE.MathUtils.clamp(distanceToTarget / 45, 0.7, 18);
-        targetMarker.scale.setScalar(markerScale);
+        const lockElapsed = Math.max(0, now - targetLockStartedAtRef.current);
+        const lockDecay = 1 - THREE.MathUtils.clamp(lockElapsed / 950, 0, 1);
+        const lockPulse = 1 + Math.sin(lockElapsed * 0.045) * 0.2 * lockDecay;
+        targetMarker.scale.setScalar(markerScale * lockPulse);
         const showSurface = activeMode === SCENE_MODES.target && arrivedRef.current && distanceToTarget < 45;
         targetBody.visible = showSurface;
         glow.visible = showSurface;
@@ -819,7 +838,9 @@ export default function StarSystem3D({
     ) return;
     let nextRadius = DEFAULT_ORBIT_RADIUS;
     let nextPitch = 0.18;
-    let nextFocus = new THREE.Vector3();
+    let nextFocus = nextMode === SCENE_MODES.sector && targetStarRef.current
+      ? sectorFocusRef.current.clone()
+      : new THREE.Vector3();
     if (nextMode === SCENE_MODES.target) {
       if (!targetStarRef.current) return;
       if (!arrivedRef.current) {
@@ -836,6 +857,7 @@ export default function StarSystem3D({
     const transition = sceneTransitionRef.current;
     transition.active = true;
     transition.startedAt = Date.now();
+    transition.duration = 1150;
     transition.fromMode = sceneModeRef.current;
     transition.toMode = nextMode;
     transition.fromPosition.copy(cameraRef.current?.position || new THREE.Vector3(0, 18, 92));
@@ -918,6 +940,8 @@ export default function StarSystem3D({
 
     targetStarRef.current = star;
     targetPositionRef.current.copy(toWorldPosition(star));
+    sectorFocusRef.current.copy(targetPositionRef.current);
+    targetLockStartedAtRef.current = Date.now();
     arrivedRef.current = false;
     arrivalRevealStartedAtRef.current = 0;
     if (targetMarkerRef.current) {
