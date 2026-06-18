@@ -110,10 +110,15 @@ const warpVertexShader = `
 `;
 
 const warpFragmentShader = `
+  uniform vec3 warpColor;
+  uniform float certified;
   varying float vAlpha;
 
   void main() {
-    gl_FragColor = vec4(0.25, 0.78, 1.0, vAlpha * 0.72);
+    vec3 certifiedHighlight = vec3(1.0, 0.94, 0.72);
+    vec3 color = mix(warpColor, certifiedHighlight, vAlpha * certified * 0.42);
+    float intensity = 0.72 + certified * 0.16;
+    gl_FragColor = vec4(color, vAlpha * intensity);
   }
 `;
 
@@ -258,6 +263,10 @@ function createWarpSystem(lineCount) {
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
   const material = new THREE.ShaderMaterial({
+    uniforms: {
+      warpColor: { value: new THREE.Color(0x40c7ff) },
+      certified: { value: 0 },
+    },
     vertexShader: warpVertexShader,
     fragmentShader: warpFragmentShader,
     transparent: true,
@@ -564,6 +573,7 @@ export default function StarSystem3D({
   const [quality, setQuality] = useState(qualityRef.current);
   const [fps, setFps] = useState(0);
   const [warpActive, setWarpActive] = useState(false);
+  const [warpOwned, setWarpOwned] = useState(false);
   const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
   const [lockedTarget, setLockedTarget] = useState(targetStar);
   const [visibleLabels, setVisibleLabels] = useState([]);
@@ -1018,6 +1028,14 @@ export default function StarSystem3D({
     const star = targetStarRef.current;
     if (!camera || !star || warpActiveRef.current) return;
 
+    const certifiedWarp = ownedStarIdsRef.current.has(String(star.id));
+    const warpMaterial = warpGroupRef.current?.children?.[0]?.material;
+    if (warpMaterial?.uniforms) {
+      warpMaterial.uniforms.warpColor.value.set(certifiedWarp ? 0xffc94d : 0x40c7ff);
+      warpMaterial.uniforms.certified.value = certifiedWarp ? 1 : 0;
+    }
+    setWarpOwned(certifiedWarp);
+
     const targetPosition = toWorldPosition(star);
     const approachDirection = targetPosition.clone().sub(camera.position);
     if (approachDirection.lengthSq() < 0.001) approachDirection.set(0, 0, -1);
@@ -1251,12 +1269,23 @@ export default function StarSystem3D({
         </View>
         {sceneMode === SCENE_MODES.sector && (
           <TouchableOpacity
-            style={[styles.warpButton, (!lockedTarget || warpActive) && styles.warpButtonDisabled]}
+            style={[
+              styles.warpButton,
+              lockedTarget && ownedStarIdsRef.current.has(String(lockedTarget.id)) && styles.warpButtonOwned,
+              (!lockedTarget || warpActive) && styles.warpButtonDisabled,
+            ]}
             disabled={!lockedTarget || warpActive}
             onPress={beginWarp}
           >
-            <Text style={styles.warpButtonText}>
-              {warpActive ? 'WARP_IN_PROGRESS' : lockedTarget ? 'ENGAGE_WARP' : 'SELECT_A_TARGET'}
+            <Text style={[
+              styles.warpButtonText,
+              lockedTarget && ownedStarIdsRef.current.has(String(lockedTarget.id)) && styles.warpButtonTextOwned,
+            ]}>
+              {warpActive
+                ? warpOwned ? 'CERTIFIED_WARP_ACTIVE' : 'WARP_IN_PROGRESS'
+                : lockedTarget
+                  ? ownedStarIdsRef.current.has(String(lockedTarget.id)) ? 'ENGAGE_CERTIFIED_WARP' : 'ENGAGE_WARP'
+                  : 'SELECT_A_TARGET'}
             </Text>
           </TouchableOpacity>
         )}
@@ -1340,5 +1369,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 217, 255, 0.1)',
   },
   warpButtonDisabled: { opacity: 0.42 },
+  warpButtonOwned: { borderColor: '#ffcf57', backgroundColor: 'rgba(255, 207, 87, 0.1)' },
   warpButtonText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900' },
+  warpButtonTextOwned: { color: '#ffcf57' },
 });
