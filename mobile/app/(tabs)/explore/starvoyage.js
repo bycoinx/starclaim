@@ -42,7 +42,7 @@ export default function StarVoyage3D() {
       }
       setLoading(false);
     });
-  }, [params.starId, params.hip, params.hd, params.starClaimCode, params.name]);
+  }, [params.target, params.starId, params.hip, params.hd, params.starClaimCode, params.name]);
 
   const checkOwnership = async (star) => {
     try {
@@ -88,7 +88,7 @@ export default function StarVoyage3D() {
               <Text style={styles.loadingText}>CALIBRATING_QUANTUM_VIEW...</Text>
             </View>
           ) : (
-            <StarSystem3D stars={stars.slice(0, 2000)} targetStar={targetStar} onArrival={handleArrival} />
+            <StarSystem3D stars={stars.slice(0, 10000)} targetStar={targetStar} onArrival={handleArrival} />
           )}
 
           {arrivalVisible && targetStar && (
@@ -109,7 +109,13 @@ export default function StarVoyage3D() {
                   </View>
 
                   <View style={styles.telemetryGrid}>
-                    <TelemetryItem label="DISTANCE" value={`${Number(targetStar.dist || targetStar.distanceParsec).toFixed(2)} LY`} color={THEME.colors.primary} />
+                    <TelemetryItem
+                      label="DISTANCE"
+                      value={Number(targetStar.dist || targetStar.distanceParsec) > 0
+                        ? `${(Number(targetStar.dist || targetStar.distanceParsec) * 3.26156).toFixed(2)} LY`
+                        : 'UNKNOWN'}
+                      color={THEME.colors.primary}
+                    />
                     <TelemetryItem label="MAGNITUDE" value={Number(targetStar.mag).toFixed(2)} color={THEME.colors.secondary} />
                     <TelemetryItem label="SPECTRUM" value={targetStar.spect || targetStar.spectralType || 'N/A'} color={THEME.colors.purple} />
                   </View>
