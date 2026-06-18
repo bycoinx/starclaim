@@ -27,6 +27,9 @@ import { THEME } from '../../../constants/Theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const RECENT_TARGETS_KEY = '@starvoyage_recent_targets_v1';
+const MAX_RECENT_TARGETS = 6;
+
 export default function StarVoyage3D() {
   const [stars, setStars] = useState([]);
   const [targetStar, setTargetStar] = useState(null);
@@ -36,14 +39,46 @@ export default function StarVoyage3D() {
   const [purchases, setPurchases] = useState([]);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [recentTargetIds, setRecentTargetIds] = useState([]);
   const params = useLocalSearchParams();
   const router = useRouter();
 
   useEffect(() => {
-    AsyncStorage.getItem('@purchases')
-      .then((raw) => setPurchases(raw ? JSON.parse(raw) : []))
-      .catch(() => setPurchases([]));
+    Promise.all([
+      AsyncStorage.getItem('@purchases'),
+      AsyncStorage.getItem(RECENT_TARGETS_KEY),
+    ])
+      .then(([purchaseRaw, recentRaw]) => {
+        const storedPurchases = purchaseRaw ? JSON.parse(purchaseRaw) : [];
+        const storedRecentIds = recentRaw ? JSON.parse(recentRaw) : [];
+        setPurchases(Array.isArray(storedPurchases) ? storedPurchases : []);
+        setRecentTargetIds((currentIds) => {
+          const hydratedIds = Array.isArray(storedRecentIds) ? storedRecentIds : [];
+          return [...new Set([...currentIds, ...hydratedIds].map(String))]
+            .slice(0, MAX_RECENT_TARGETS);
+        });
+      })
+      .catch(() => {
+        setPurchases([]);
+        setRecentTargetIds([]);
+      });
   }, []);
+
+  const ownedStars = useMemo(() => {
+    const seen = new Set();
+    return purchases.reduce((results, purchase) => {
+      const star = stars.find((candidate) => purchaseMatchesStar(purchase, candidate));
+      const id = star ? String(star.id) : null;
+      if (!star || seen.has(id)) return results;
+      seen.add(id);
+      results.push({ star, purchase });
+      return results;
+    }, []);
+  }, [purchases, stars]);
+
+  const recentStars = useMemo(() => recentTargetIds
+    .map((id) => stars.find((star) => String(star.id) === String(id)))
+    .filter(Boolean), [recentTargetIds, stars]);
 
   const searchResults = useMemo(() => {
     const query = searchQuery.trim();
@@ -73,6 +108,24 @@ export default function StarVoyage3D() {
     return results.slice(0, 8);
   }, [purchases, searchQuery, stars]);
 
+  function rememberTarget(star) {
+    if (!star?.id) return;
+    setRecentTargetIds((currentIds) => {
+      const id = String(star.id);
+      const nextIds = [id, ...currentIds.filter((currentId) => String(currentId) !== id)]
+        .slice(0, MAX_RECENT_TARGETS);
+      AsyncStorage.setItem(RECENT_TARGETS_KEY, JSON.stringify(nextIds))
+        .catch((error) => console.warn('Recent target save error', error));
+      return nextIds;
+    });
+  }
+
+  function clearRecentTargets() {
+    setRecentTargetIds([]);
+    AsyncStorage.removeItem(RECENT_TARGETS_KEY)
+      .catch((error) => console.warn('Recent target clear error', error));
+  }
+
   useEffect(() => {
     ensureStarData().then((list) => {
       setStars(list);
@@ -82,6 +135,7 @@ export default function StarVoyage3D() {
           const resolved = resolveStarTarget(list, parsed) || parsed;
           if (resolved) {
             setTargetStar(resolved);
+            rememberTarget(resolved);
             checkOwnership(resolved);
           }
         } catch (e) {
@@ -91,6 +145,7 @@ export default function StarVoyage3D() {
         const found = resolveStarTarget(list, params);
         if (found) {
           setTargetStar(found);
+          rememberTarget(found);
           checkOwnership(found);
         }
       }
@@ -114,6 +169,7 @@ export default function StarVoyage3D() {
   const handleTargetChange = (star) => {
     if (!star) return;
     setTargetStar(star);
+    rememberTarget(star);
     setArrivalVisible(false);
     setOwnershipData(null);
     checkOwnership(star);
@@ -259,7 +315,6 @@ export default function StarVoyage3D() {
                 <View style={styles.searchInputRow}>
                   <Ionicons name="search" size={20} color={THEME.colors.primary} />
                   <TextInput
-                    autoFocus
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     onSubmitEditing={() => searchResults[0] && selectSearchResult(searchResults[0])}
@@ -281,7 +336,54 @@ export default function StarVoyage3D() {
                 </View>
 
                 {searchQuery.trim().length < 2 ? (
-                  <Text style={styles.searchHint}>ENTER_AT_LEAST_2_CHARACTERS</Text>
+                  <ScrollView style={styles.quickAccess} keyboardShouldPersistTaps="handled">
+                    {ownedStars.length > 0 && (
+                      <View>
+                        <View style={styles.quickSectionHeader}>
+                          <MaterialCommunityIcons name="shield-star-outline" size={16} color={THEME.colors.secondary} />
+                          <Text style={styles.quickSectionTitle}>YILDIZLARIM</Text>
+                          <Text style={styles.quickSectionCount}>{ownedStars.length}</Text>
+                        </View>
+                        {ownedStars.map(({ star, purchase }) => (
+                          <TargetResultRow
+                            key={`owned-${star.id}`}
+                            star={star}
+                            purchase={purchase}
+                            onPress={() => selectSearchResult(star)}
+                          />
+                        ))}
+                      </View>
+                    )}
+
+                    {recentStars.length > 0 && (
+                      <View>
+                        <View style={styles.quickSectionHeader}>
+                          <Ionicons name="time-outline" size={16} color={THEME.colors.primary} />
+                          <Text style={styles.quickSectionTitle}>SON_HEDEFLER</Text>
+                          <Text style={styles.quickSectionCount}>{recentStars.length}</Text>
+                          <TouchableOpacity
+                            accessibilityLabel="Son hedefleri temizle"
+                            style={styles.quickSectionAction}
+                            onPress={clearRecentTargets}
+                          >
+                            <Ionicons name="trash-outline" size={16} color="rgba(255,255,255,0.55)" />
+                          </TouchableOpacity>
+                        </View>
+                        {recentStars.map((star) => (
+                          <TargetResultRow
+                            key={`recent-${star.id}`}
+                            star={star}
+                            purchase={purchases.find((item) => purchaseMatchesStar(item, star))}
+                            onPress={() => selectSearchResult(star)}
+                          />
+                        ))}
+                      </View>
+                    )}
+
+                    {ownedStars.length === 0 && recentStars.length === 0 && (
+                      <Text style={styles.searchHint}>SEARCH_NAME_HIP_HD_OR_CODE</Text>
+                    )}
+                  </ScrollView>
                 ) : searchResults.length === 0 ? (
                   <Text style={styles.searchHint}>NO_TARGET_FOUND</Text>
                 ) : (
@@ -289,22 +391,12 @@ export default function StarVoyage3D() {
                     {searchResults.map((star) => {
                       const purchase = purchases.find((item) => purchaseMatchesStar(item, star));
                       return (
-                        <TouchableOpacity key={star.id} style={styles.searchResult} onPress={() => selectSearchResult(star)}>
-                          <View style={styles.searchResultIdentity}>
-                            <Text style={styles.searchResultName} numberOfLines={1}>
-                              {(star.properName || star.proper || `HIP ${star.hip || star.id}`).toUpperCase()}
-                            </Text>
-                            <Text style={styles.searchResultMeta} numberOfLines={1}>
-                              HIP {star.hip || 'N/A'}  //  HD {star.hd || 'N/A'}  //  MAG {Number(star.mag).toFixed(2)}
-                            </Text>
-                            {purchase && (
-                              <Text style={styles.searchResultClaim} numberOfLines={1}>
-                                {purchase.starClaimCode || purchase.code || 'CERTIFIED_STAR'}
-                              </Text>
-                            )}
-                          </View>
-                          <Ionicons name="locate" size={20} color={purchase ? THEME.colors.secondary : THEME.colors.primary} />
-                        </TouchableOpacity>
+                        <TargetResultRow
+                          key={star.id}
+                          star={star}
+                          purchase={purchase}
+                          onPress={() => selectSearchResult(star)}
+                        />
                       );
                     })}
                   </ScrollView>
@@ -324,6 +416,28 @@ function TelemetryItem({ label, value, color }) {
       <Text style={styles.telLabel}>{label}</Text>
       <Text style={[styles.telValue, { color }]}>{value}</Text>
     </View>
+  );
+}
+
+function TargetResultRow({ star, purchase, onPress }) {
+  const magnitude = Number(star.mag);
+  return (
+    <TouchableOpacity style={styles.searchResult} onPress={onPress}>
+      <View style={styles.searchResultIdentity}>
+        <Text style={styles.searchResultName} numberOfLines={1}>
+          {(star.properName || star.proper || `HIP ${star.hip || star.id}`).toUpperCase()}
+        </Text>
+        <Text style={styles.searchResultMeta} numberOfLines={1}>
+          HIP {star.hip || 'N/A'}  //  HD {star.hd || 'N/A'}  //  MAG {Number.isFinite(magnitude) ? magnitude.toFixed(2) : 'N/A'}
+        </Text>
+        {purchase && (
+          <Text style={styles.searchResultClaim} numberOfLines={1}>
+            {purchase.starClaimCode || purchase.code || 'CERTIFIED_STAR'}
+          </Text>
+        )}
+      </View>
+      <Ionicons name="locate" size={20} color={purchase ? THEME.colors.secondary : THEME.colors.primary} />
+    </TouchableOpacity>
   );
 }
 
@@ -462,6 +576,20 @@ const styles = StyleSheet.create({
   },
   searchIconButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   searchHint: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '800', padding: 18 },
+  quickAccess: { width: '100%', maxHeight: 420 },
+  quickSectionHeader: {
+    minHeight: 38,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: 'rgba(255,255,255,0.025)',
+  },
+  quickSectionTitle: { flex: 1, color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '900' },
+  quickSectionCount: { color: 'rgba(255,255,255,0.38)', fontSize: 9, fontWeight: '900' },
+  quickSectionAction: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   searchResults: { width: '100%', maxHeight: 360 },
   searchResult: {
     minHeight: 66,
