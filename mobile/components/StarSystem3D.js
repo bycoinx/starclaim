@@ -117,6 +117,66 @@ const warpFragmentShader = `
   }
 `;
 
+const nebulaVertexShader = `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const nebulaFragmentShader = `
+  uniform float time;
+  uniform float opacity;
+  uniform float seed;
+  uniform vec3 tint;
+  varying vec2 vUv;
+
+  float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+  }
+
+  float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+      mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x),
+      u.y
+    );
+  }
+
+  float fbm(vec2 p) {
+    float value = 0.0;
+    value += noise(p) * 0.52;
+    p = p * 2.03 + 13.7;
+    value += noise(p) * 0.27;
+    p = p * 2.01 + 7.1;
+    value += noise(p) * 0.14;
+    p = p * 2.04 + 3.9;
+    value += noise(p) * 0.07;
+    return value;
+  }
+
+  void main() {
+    vec2 p = (vUv - 0.5) * 2.0;
+    float radius = length(p);
+    float angle = atan(p.y, p.x);
+    float spiral = sin(angle * 4.0 - radius * 13.0 + seed) * 0.5 + 0.5;
+    vec2 drift = vec2(time * 0.0025, -time * 0.0018);
+    float cloud = fbm(p * (2.6 + seed * 0.08) + drift + seed * 4.1);
+    float detail = fbm(p * 5.4 - drift * 1.7 + seed * 8.3);
+    float density = cloud * 0.62 + detail * 0.18 + spiral * 0.2;
+    float radialMask = 1.0 - smoothstep(0.42, 1.0, radius);
+    float coreCut = smoothstep(0.03, 0.24, radius);
+    float alpha = smoothstep(0.49, 0.82, density) * radialMask * coreCut * opacity;
+    vec3 color = tint * (0.68 + detail * 0.62);
+    gl_FragColor = vec4(color, alpha);
+  }
+`;
+
 function toWorldPosition(star) {
   const { x, y, z } = getStarXYZ(star);
   return new THREE.Vector3(x * STAR_SCALE, y * STAR_SCALE, z * STAR_SCALE);
@@ -253,6 +313,56 @@ function createGalaxyGeometry(count = GALAXY_LIMITS.high) {
   return geometry;
 }
 
+function createNebulaGroup(quality) {
+  const group = new THREE.Group();
+  const layerSpecs = [
+    { color: 0x315fa8, opacity: 0.2, seed: 0.8, y: -0.8, rotation: 0.1, scale: 1 },
+    { color: 0x70448f, opacity: 0.145, seed: 2.4, y: 0.35, rotation: 0.68, scale: 0.92 },
+    { color: 0xc39a52, opacity: 0.075, seed: 4.7, y: 1.15, rotation: 1.18, scale: 0.72 },
+  ];
+  const visibleLayers = quality === 'low' ? 1 : quality === 'medium' ? 2 : 3;
+
+  layerSpecs.forEach((spec, index) => {
+    const uniforms = {
+      time: { value: 0 },
+      opacity: { value: spec.opacity },
+      seed: { value: spec.seed },
+      tint: { value: new THREE.Color(spec.color) },
+    };
+    const material = new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader: nebulaVertexShader,
+      fragmentShader: nebulaFragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: false,
+      side: THREE.DoubleSide,
+    });
+    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(116, 116, 1, 1), material);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.rotation.z = spec.rotation;
+    mesh.position.y = spec.y;
+    mesh.scale.setScalar(spec.scale);
+    mesh.visible = index < visibleLayers;
+    mesh.renderOrder = -2 + index * 0.01;
+    mesh.userData.baseOpacity = spec.opacity;
+    mesh.userData.layerIndex = index;
+    group.add(mesh);
+  });
+
+  group.rotation.x = -0.12;
+  return group;
+}
+
+function applyNebulaQuality(group, quality) {
+  if (!group) return;
+  const visibleLayers = quality === 'low' ? 1 : quality === 'medium' ? 2 : 3;
+  group.children.forEach((layer) => {
+    layer.visible = layer.userData.layerIndex < visibleLayers;
+  });
+}
+
 export default function StarSystem3D({ stars = [], targetStar = null, onArrival = null }) {
   const animationFrameRef = useRef(null);
   const rendererRef = useRef(null);
@@ -260,6 +370,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const cameraRef = useRef(null);
   const pointsRef = useRef(null);
   const galaxyPointsRef = useRef(null);
+  const nebulaGroupRef = useRef(null);
   const targetMarkerRef = useRef(null);
   const targetBodyRef = useRef(null);
   const targetGlowRef = useRef(null);
@@ -336,6 +447,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       0,
       Math.min(galaxyPointsRef.current.geometry.attributes.position.count, GALAXY_LIMITS[next]),
     );
+    applyNebulaQuality(nebulaGroupRef.current, next);
     if (mountedRef.current) setQuality(next);
   }, []);
 
@@ -403,7 +515,12 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     const galaxyPoints = new THREE.Points(galaxyGeometry, galaxyMaterial);
     galaxyPoints.rotation.x = -0.12;
     galaxyPointsRef.current = galaxyPoints;
+    galaxyPoints.renderOrder = 1;
     scene.add(galaxyPoints);
+
+    const nebulaGroup = createNebulaGroup(qualityRef.current);
+    nebulaGroupRef.current = nebulaGroup;
+    scene.add(nebulaGroup);
 
     const markerMaterial = new THREE.MeshBasicMaterial({
       color: 0x00d9ff,
@@ -511,6 +628,13 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       galaxyPoints.visible = galaxyOpacity > 0.01;
       points.visible = sectorOpacity > 0.01;
       galaxyPoints.rotation.y += 0.00016;
+      nebulaGroup.visible = galaxyOpacity > 0.01;
+      nebulaGroup.rotation.y = galaxyPoints.rotation.y;
+      const qualityOpacity = qualityRef.current === 'low' ? 0.58 : qualityRef.current === 'medium' ? 0.82 : 1;
+      nebulaGroup.children.forEach((layer) => {
+        layer.material.uniforms.time.value = elapsed * 0.34;
+        layer.material.uniforms.opacity.value = layer.userData.baseOpacity * galaxyOpacity * qualityOpacity;
+      });
 
       if (warpActiveRef.current && targetStarRef.current) {
         const progress = Math.min(1, (now - warpStartedAtRef.current) / WARP_DURATION_MS);
