@@ -363,6 +363,77 @@ function applyNebulaQuality(group, quality) {
   });
 }
 
+function getStarLabel(star) {
+  return star?.properName || star?.proper || null;
+}
+
+function buildProjectedLabels({
+  candidates,
+  targetStar,
+  targetPosition,
+  camera,
+  viewport,
+  quality,
+  orbitRadius,
+}) {
+  const budget = quality === 'low' ? 5 : quality === 'medium' ? 10 : 16;
+  const magnitudeLimit = orbitRadius > 140
+    ? 0.7
+    : orbitRadius > 90
+      ? 1.3
+      : orbitRadius > 55
+        ? 2.1
+        : orbitRadius > 30
+          ? 3
+          : 4;
+  const queue = [];
+  const seenStars = new Set();
+
+  if (targetStar) {
+    queue.push({
+      star: targetStar,
+      position: targetPosition.clone(),
+      target: true,
+      magnitude: -10,
+    });
+    seenStars.add(String(targetStar.id));
+  }
+
+  candidates.forEach((candidate) => {
+    const magnitude = Number(candidate.star.mag);
+    if (seenStars.has(String(candidate.star.id)) || magnitude > magnitudeLimit) return;
+    queue.push({ ...candidate, target: false, magnitude });
+    seenStars.add(String(candidate.star.id));
+  });
+
+  const occupiedCells = new Set();
+  const labels = [];
+  queue.sort((a, b) => a.magnitude - b.magnitude);
+  camera.updateMatrixWorld();
+
+  for (const candidate of queue) {
+    if (labels.length >= budget) break;
+    const projected = candidate.position.clone().project(camera);
+    if (projected.z < -1 || projected.z > 1 || Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1) continue;
+    const screenX = (projected.x * 0.5 + 0.5) * viewport.width;
+    const screenY = (-projected.y * 0.5 + 0.5) * viewport.height;
+    if (screenX < 16 || screenX > viewport.width - 16 || screenY < 54 || screenY > viewport.height - 128) continue;
+    if (screenX > viewport.width - 178 && screenY < 148) continue;
+    const cell = `${Math.floor(screenX / 104)}:${Math.floor(screenY / 34)}`;
+    if (occupiedCells.has(cell)) continue;
+    occupiedCells.add(cell);
+    labels.push({
+      id: String(candidate.star.id),
+      name: getStarLabel(candidate.star) || `HIP ${candidate.star.hip || candidate.star.id}`,
+      x: THREE.MathUtils.clamp(screenX + 8, 8, viewport.width - 128),
+      y: THREE.MathUtils.clamp(screenY - 11, 48, viewport.height - 76),
+      target: candidate.target,
+    });
+  }
+
+  return labels;
+}
+
 export default function StarSystem3D({
   stars = [],
   targetStar = null,
@@ -375,6 +446,8 @@ export default function StarSystem3D({
   const cameraRef = useRef(null);
   const pointsRef = useRef(null);
   const renderedStarsRef = useRef([]);
+  const labelCandidatesRef = useRef([]);
+  const labelsVisibleRef = useRef(false);
   const galaxyPointsRef = useRef(null);
   const nebulaGroupRef = useRef(null);
   const targetMarkerRef = useRef(null);
@@ -420,6 +493,7 @@ export default function StarSystem3D({
   const [warpActive, setWarpActive] = useState(false);
   const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
   const [lockedTarget, setLockedTarget] = useState(targetStar);
+  const [visibleLabels, setVisibleLabels] = useState([]);
 
   useEffect(() => {
     const previousMode = sceneModeRef.current;
@@ -519,6 +593,10 @@ export default function StarSystem3D({
       .filter((star) => Number.isFinite(getStarDistanceParsec(star)) && getStarDistanceParsec(star) > 0)
       .slice(0, QUALITY_LIMITS.high);
     renderedStarsRef.current = validStars;
+    labelCandidatesRef.current = validStars
+      .filter((star) => getStarLabel(star) && Number(star.mag) <= 4)
+      .slice(0, 48)
+      .map((star) => ({ star, position: toWorldPosition(star) }));
     const positions = new Float32Array(validStars.length * 3);
     const colors = new Float32Array(validStars.length * 3);
     const sizes = new Float32Array(validStars.length);
@@ -634,6 +712,7 @@ export default function StarSystem3D({
     SpaceAudio.initialize();
     let startedAt = Date.now();
     let fpsWindowAt = startedAt;
+    let labelsUpdatedAt = 0;
     let frameCount = 0;
 
     const render = () => {
@@ -768,6 +847,29 @@ export default function StarSystem3D({
         } else {
           targetUniforms.reveal.value = 0;
           targetMarker.material.opacity = 0.72;
+        }
+      }
+
+      if (now - labelsUpdatedAt >= 250) {
+        labelsUpdatedAt = now;
+        const canShowLabels = activeMode === SCENE_MODES.sector
+          && !sceneTransition.active
+          && !warpActiveRef.current;
+        if (canShowLabels) {
+          const labels = buildProjectedLabels({
+            candidates: labelCandidatesRef.current,
+            targetStar: targetStarRef.current,
+            targetPosition: targetPositionRef.current,
+            camera,
+            viewport: viewportRef.current,
+            quality: qualityRef.current,
+            orbitRadius: orbitRadiusRef.current,
+          });
+          labelsVisibleRef.current = labels.length > 0;
+          if (mountedRef.current) setVisibleLabels(labels);
+        } else if (labelsVisibleRef.current) {
+          labelsVisibleRef.current = false;
+          if (mountedRef.current) setVisibleLabels([]);
         }
       }
 
@@ -978,6 +1080,24 @@ export default function StarSystem3D({
         <GLView style={StyleSheet.absoluteFill} onContextCreate={onContextCreate} />
       </View>
 
+      <View style={styles.labelLayer} pointerEvents="none">
+        {visibleLabels.map((label) => (
+          <View
+            key={label.id}
+            style={[
+              styles.starLabel,
+              { left: label.x, top: label.y },
+              label.target && styles.starLabelTarget,
+            ]}
+          >
+            <View style={[styles.starLabelDot, label.target && styles.starLabelDotTarget]} />
+            <Text style={[styles.starLabelText, label.target && styles.starLabelTextTarget]} numberOfLines={1}>
+              {label.name.toUpperCase()}
+            </Text>
+          </View>
+        ))}
+      </View>
+
       <View style={styles.telemetry} pointerEvents="none">
         <Text style={styles.telemetryName} numberOfLines={1}>
           {lockedTarget ? (lockedTarget.properName || lockedTarget.proper || `HIP ${lockedTarget.hip || lockedTarget.id}`) : 'LOCAL_SECTOR'}
@@ -1033,6 +1153,21 @@ function SceneTab({ label, active, disabled = false, onPress }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000106' },
   glView: { flex: 1 },
+  labelLayer: { ...StyleSheet.absoluteFillObject },
+  starLabel: {
+    position: 'absolute',
+    width: 120,
+    height: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    opacity: 0.72,
+  },
+  starLabelTarget: { opacity: 1 },
+  starLabelDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: 'rgba(180,205,255,0.82)' },
+  starLabelDotTarget: { width: 5, height: 5, backgroundColor: THEME.colors.primary },
+  starLabelText: { flex: 1, color: 'rgba(215,228,255,0.76)', fontSize: 8, fontWeight: '800' },
+  starLabelTextTarget: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900' },
   telemetry: {
     position: 'absolute',
     top: 18,
