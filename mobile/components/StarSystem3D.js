@@ -43,6 +43,7 @@ const starVertexShader = `
 
 const starFragmentShader = `
   uniform float time;
+  uniform float layerOpacity;
   varying vec3 vColor;
   varying float vSeed;
 
@@ -61,7 +62,7 @@ const starFragmentShader = `
     float pulse = 0.94 + 0.06 * sin(time * 1.7 + vSeed * 2.3);
     float alpha = min(1.0, (core + halo + outerHalo + diffraction) * pulse);
     vec3 color = vColor * (0.82 + core * 1.25 + diffraction * 0.7);
-    gl_FragColor = vec4(color, alpha);
+    gl_FragColor = vec4(color, alpha * layerOpacity);
   }
 `;
 
@@ -78,6 +79,7 @@ const targetVertexShader = `
 
 const targetFragmentShader = `
   uniform float time;
+  uniform float reveal;
   uniform vec3 starColor;
   varying vec3 vNormal;
   varying vec3 vPosition;
@@ -93,7 +95,7 @@ const targetFragmentShader = `
     float facing = max(0.0, dot(normalize(vNormal), vec3(0.0, 0.0, 1.0)));
     float rim = pow(1.0 - facing, 2.2);
     vec3 surface = starColor * (0.82 + grain * 0.45);
-    gl_FragColor = vec4(surface + starColor * rim * 0.75, 1.0);
+    gl_FragColor = vec4(surface + starColor * rim * 0.75, reveal);
   }
 `;
 
@@ -123,6 +125,21 @@ function toWorldPosition(star) {
 function getDistanceLightYears(star) {
   const parsecs = getStarDistanceParsec(star);
   return Number.isFinite(parsecs) && parsecs > 0 ? parsecs * PARSEC_TO_LIGHT_YEARS : null;
+}
+
+function easeInOutCubic(value) {
+  return value < 0.5
+    ? 4 * value * value * value
+    : 1 - Math.pow(-2 * value + 2, 3) / 2;
+}
+
+function getOrbitPosition(focus, radius, yaw, pitch) {
+  const cosPitch = Math.cos(pitch);
+  return new THREE.Vector3(
+    focus.x + radius * cosPitch * Math.sin(yaw),
+    focus.y + radius * Math.sin(pitch),
+    focus.z + radius * cosPitch * Math.cos(yaw),
+  );
 }
 
 function getInitialQuality() {
@@ -252,10 +269,23 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   const warpStartRef = useRef(new THREE.Vector3());
   const warpDestinationRef = useRef(new THREE.Vector3());
   const targetPositionRef = useRef(new THREE.Vector3());
+  const cameraFocusRef = useRef(new THREE.Vector3());
   const targetStarRef = useRef(targetStar);
   const onArrivalRef = useRef(onArrival);
   const arrivedRef = useRef(false);
+  const arrivalRevealStartedAtRef = useRef(0);
   const sceneModeRef = useRef(targetStar ? SCENE_MODES.sector : SCENE_MODES.galaxy);
+  const sceneTransitionRef = useRef({
+    active: false,
+    startedAt: 0,
+    duration: 1150,
+    fromMode: sceneModeRef.current,
+    toMode: sceneModeRef.current,
+    fromPosition: new THREE.Vector3(),
+    toPosition: new THREE.Vector3(),
+    fromFocus: new THREE.Vector3(),
+    toFocus: new THREE.Vector3(),
+  });
   const orbitYawRef = useRef(0.55);
   const orbitPitchRef = useRef(0.18);
   const orbitRadiusRef = useRef(targetStar ? DEFAULT_ORBIT_RADIUS : 112);
@@ -346,7 +376,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     starGeometry.setAttribute('customColor', new THREE.BufferAttribute(colors, 3));
     starGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
     starGeometry.setDrawRange(0, Math.min(validStars.length, QUALITY_LIMITS[qualityRef.current]));
-    const starUniforms = { time: { value: 0 } };
+    const starUniforms = { time: { value: 0 }, layerOpacity: { value: 1 } };
     const starMaterial = new THREE.ShaderMaterial({
       uniforms: starUniforms,
       vertexShader: starVertexShader,
@@ -361,7 +391,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
 
     const galaxyGeometry = createGalaxyGeometry();
     galaxyGeometry.setDrawRange(0, GALAXY_LIMITS[qualityRef.current]);
-    const galaxyUniforms = { time: { value: 0 } };
+    const galaxyUniforms = { time: { value: 0 }, layerOpacity: { value: 1 } };
     const galaxyMaterial = new THREE.ShaderMaterial({
       uniforms: galaxyUniforms,
       vertexShader: starVertexShader,
@@ -389,6 +419,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
 
     const targetUniforms = {
       time: { value: 0 },
+      reveal: { value: 0 },
       starColor: { value: new THREE.Color(0xffdf80) },
     };
     const targetBody = new THREE.Mesh(
@@ -397,6 +428,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         uniforms: targetUniforms,
         vertexShader: targetVertexShader,
         fragmentShader: targetFragmentShader,
+        transparent: true,
       }),
     );
     targetBody.visible = false;
@@ -447,8 +479,37 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
       galaxyUniforms.time.value = elapsed * 0.42;
       targetUniforms.time.value = elapsed;
       const activeMode = sceneModeRef.current;
-      galaxyPoints.visible = activeMode === SCENE_MODES.galaxy;
-      points.visible = activeMode !== SCENE_MODES.galaxy;
+      const sceneTransition = sceneTransitionRef.current;
+      let galaxyOpacity = activeMode === SCENE_MODES.galaxy ? 1 : 0;
+      let sectorOpacity = activeMode === SCENE_MODES.galaxy ? 0 : 1;
+      let transitionControlsCamera = false;
+
+      if (sceneTransition.active && !warpActiveRef.current) {
+        const rawProgress = Math.min(1, (now - sceneTransition.startedAt) / sceneTransition.duration);
+        const transitionProgress = easeInOutCubic(rawProgress);
+        const fromGalaxy = sceneTransition.fromMode === SCENE_MODES.galaxy ? 1 : 0;
+        const toGalaxy = sceneTransition.toMode === SCENE_MODES.galaxy ? 1 : 0;
+        galaxyOpacity = THREE.MathUtils.lerp(fromGalaxy, toGalaxy, transitionProgress);
+        sectorOpacity = 1 - galaxyOpacity;
+        camera.position.lerpVectors(
+          sceneTransition.fromPosition,
+          sceneTransition.toPosition,
+          transitionProgress,
+        );
+        cameraFocusRef.current.lerpVectors(
+          sceneTransition.fromFocus,
+          sceneTransition.toFocus,
+          transitionProgress,
+        );
+        camera.lookAt(cameraFocusRef.current);
+        transitionControlsCamera = true;
+        if (rawProgress >= 1) sceneTransition.active = false;
+      }
+
+      galaxyUniforms.layerOpacity.value = galaxyOpacity;
+      starUniforms.layerOpacity.value = sectorOpacity;
+      galaxyPoints.visible = galaxyOpacity > 0.01;
+      points.visible = sectorOpacity > 0.01;
       galaxyPoints.rotation.y += 0.00016;
 
       if (warpActiveRef.current && targetStarRef.current) {
@@ -469,6 +530,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         if (progress >= 1) {
           warpActiveRef.current = false;
           arrivedRef.current = true;
+          arrivalRevealStartedAtRef.current = now;
           sceneModeRef.current = SCENE_MODES.target;
           const arrivalOffset = camera.position.clone().sub(targetPositionRef.current);
           const arrivalRadius = Math.max(MIN_ORBIT_RADIUS, arrivalOffset.length());
@@ -484,17 +546,17 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
           }
           onArrivalRef.current?.(targetStarRef.current);
         }
-      } else {
+      } else if (!transitionControlsCamera) {
         const focus = activeMode === SCENE_MODES.target && arrivedRef.current && targetStarRef.current
           ? targetPositionRef.current
           : new THREE.Vector3(0, 0, 0);
-        const radius = orbitRadiusRef.current;
-        const cosPitch = Math.cos(orbitPitchRef.current);
-        camera.position.set(
-          focus.x + radius * cosPitch * Math.sin(orbitYawRef.current),
-          focus.y + radius * Math.sin(orbitPitchRef.current),
-          focus.z + radius * cosPitch * Math.cos(orbitYawRef.current),
-        );
+        camera.position.copy(getOrbitPosition(
+          focus,
+          orbitRadiusRef.current,
+          orbitYawRef.current,
+          orbitPitchRef.current,
+        ));
+        cameraFocusRef.current.copy(focus);
         camera.lookAt(focus);
       }
 
@@ -510,14 +572,23 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
         targetBody.visible = showSurface;
         glow.visible = showSurface;
         if (showSurface) {
+          const reveal = THREE.MathUtils.clamp((now - arrivalRevealStartedAtRef.current) / 900, 0, 1);
+          const easedReveal = easeInOutCubic(reveal);
+          targetUniforms.reveal.value = easedReveal;
           targetBody.position.copy(targetPositionRef.current);
+          targetBody.scale.setScalar(0.72 + easedReveal * 0.28);
           glow.position.copy(targetPositionRef.current);
           const spectralColor = colorForSpectrum(
             targetStarRef.current.spect || targetStarRef.current.spectralType,
           );
           targetUniforms.starColor.value.set(spectralColor);
           glow.material.color.set(spectralColor);
+          glow.material.opacity = 0.14 * easedReveal;
           glow.scale.setScalar(1 + Math.sin(elapsed * 1.4) * 0.025);
+          targetMarker.material.opacity = 0.72 * (1 - easedReveal * 0.76);
+        } else {
+          targetUniforms.reveal.value = 0;
+          targetMarker.material.opacity = 0.72;
         }
       }
 
@@ -572,6 +643,7 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
     warpDestinationRef.current.copy(targetPosition).addScaledVector(approachDirection, -18);
     warpStartedAtRef.current = Date.now();
     warpActiveRef.current = true;
+    sceneTransitionRef.current.active = false;
     arrivedRef.current = false;
     sceneModeRef.current = SCENE_MODES.sector;
     setSceneMode(SCENE_MODES.sector);
@@ -580,21 +652,38 @@ export default function StarSystem3D({ stars = [], targetStar = null, onArrival 
   };
 
   const changeSceneMode = (nextMode) => {
-    if (warpActiveRef.current || nextMode === sceneModeRef.current) return;
+    if (
+      warpActiveRef.current
+      || sceneTransitionRef.current.active
+      || nextMode === sceneModeRef.current
+    ) return;
+    let nextRadius = DEFAULT_ORBIT_RADIUS;
+    let nextPitch = 0.18;
+    let nextFocus = new THREE.Vector3();
     if (nextMode === SCENE_MODES.target) {
       if (!targetStarRef.current) return;
       if (!arrivedRef.current) {
         beginWarp();
         return;
       }
-      orbitRadiusRef.current = Math.min(orbitRadiusRef.current, 24);
+      nextRadius = Math.min(orbitRadiusRef.current, 24);
+      nextPitch = orbitPitchRef.current;
+      nextFocus = targetPositionRef.current.clone();
     } else if (nextMode === SCENE_MODES.galaxy) {
-      orbitRadiusRef.current = 112;
-      orbitPitchRef.current = 0.34;
-    } else {
-      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
-      orbitPitchRef.current = 0.18;
+      nextRadius = 112;
+      nextPitch = 0.34;
     }
+    const transition = sceneTransitionRef.current;
+    transition.active = true;
+    transition.startedAt = Date.now();
+    transition.fromMode = sceneModeRef.current;
+    transition.toMode = nextMode;
+    transition.fromPosition.copy(cameraRef.current?.position || new THREE.Vector3(0, 18, 92));
+    transition.toPosition.copy(getOrbitPosition(nextFocus, nextRadius, orbitYawRef.current, nextPitch));
+    transition.fromFocus.copy(cameraFocusRef.current);
+    transition.toFocus.copy(nextFocus);
+    orbitRadiusRef.current = nextRadius;
+    orbitPitchRef.current = nextPitch;
     sceneModeRef.current = nextMode;
     setSceneMode(nextMode);
   };
