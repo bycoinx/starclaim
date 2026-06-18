@@ -343,8 +343,9 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 #### P0 - Katalog ve Uzamsal Akış
 
-- [ ] Loader içindeki erken `10.000` sınırı kaldırılacak; katalog önce tamamen normalize edilecek.
-- [ ] HYG kataloğu uzamsal sektörlere/tile'lara ayrılacak.
+- [x] Loader içindeki erken `10.000` sınırı kaldırıldı; tüm geçerli HYG satırları normalize edilip en parlak `10.000` çekirdek katalog olarak seçiliyor.
+- [x] HYG kayıtlarına RA/Dec/logaritmik mesafe kabuğu tabanlı sektör kimliği veriliyor ve sürümlü sektör manifesti üretiliyor.
+- [ ] Sektör içerikleri sıkıştırılmış, ayrı indirilebilir tile dosyalarına dönüştürülecek.
 - [ ] Kamera konumuna göre yakın sektörleri yükleyen ve uzak sektörleri boşaltan LOD sistemi kurulacak.
 - [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
 - [ ] Katalog manifesti, cache sürümü, indirme ilerlemesi ve çevrimdışı fallback eklenecek.
@@ -402,4 +403,4 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**3D katalog sektörleme temeli:** HYG verisini tam okuyacak, yıldızları uzamsal sektör kimliğiyle gruplayacak, sürümlü katalog manifesti oluşturacak ve mevcut `10.000` yıldızlık görünümü bozmadan kademeli LOD geçişine hazırlayacak veri katmanı.
+**3D sektör içeriği ve LOD yükleyici:** Manifestteki sektörleri ayrı katalog tile'larına dönüştürecek; kamera ve hedef sektörüne göre gerekli tile'ları yükleyip artık görünmeyenleri bellekten çıkaracak veri akışı.
