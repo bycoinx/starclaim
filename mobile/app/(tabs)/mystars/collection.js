@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
 import { SafeAreaView, View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform, Dimensions } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import SpaceBackground from '../../../components/SpaceBackground';
 import { THEME } from '../../../constants/Theme';
@@ -8,6 +7,7 @@ import { THEME } from '../../../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getPurchaseMapParams } from '../../../src/utils/starIdentity';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 const { width } = Dimensions.get('window');
 
@@ -22,8 +22,7 @@ export default function CollectionScreen() {
 
   const loadPurchases = async () => {
     try {
-      const raw = await AsyncStorage.getItem('@purchases');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getOwnershipPurchases();
       setPurchases(list);
     } catch (error) {
       console.warn('Purchase load error', error);
@@ -45,9 +44,9 @@ export default function CollectionScreen() {
             </Text>
             <Text style={styles.cardName}>{item.name.toUpperCase()}</Text>
           </View>
-          <View style={styles.badge}>
-            <MaterialCommunityIcons name="shield-check" size={12} color={THEME.colors.secondary} />
-            <Text style={styles.badgeText}>VERIFIED</Text>
+          <View style={[styles.badge, !item.verified && styles.localBadge]}>
+            <MaterialCommunityIcons name={item.verified ? 'shield-check' : 'clock-outline'} size={12} color={THEME.colors.secondary} />
+            <Text style={styles.badgeText}>{item.verified ? 'VERIFIED' : 'LOCAL'}</Text>
           </View>
         </View>
 
@@ -215,6 +214,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(243, 156, 18, 0.3)' 
   },
   badgeText: { color: THEME.colors.secondary, fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
+  localBadge: { opacity: 0.65 },
   cardMetaRow: { flexDirection: 'row', gap: 12, marginBottom: 20 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   metaText: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900' },

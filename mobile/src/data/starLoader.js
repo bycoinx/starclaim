@@ -6,6 +6,7 @@ import {
   getSectorScheme,
   getStarSectorId,
 } from './starSectorCatalog';
+import embeddedCoreRows from '../../assets/catalog/hyg-core-v1.json';
 
 const CORE_STORAGE_KEY = '@hyg_core_stars_v3';
 const MANIFEST_STORAGE_KEY = '@hyg_sector_manifest_v1';
@@ -17,6 +18,37 @@ const CORE_COMPACTION_THRESHOLD = CORE_CATALOG_LIMIT * 2;
 const PARSE_YIELD_INTERVAL = 2500;
 
 let catalogLoadPromise = null;
+
+function hydrateEmbeddedStar(row) {
+  const [id, hip, hd, properName, raHours, decDegrees, distanceParsec, magnitude, spectralType, constellation, sectorId] = row;
+  return {
+    id: String(id),
+    hip: hip || '',
+    hd: hd || '',
+    proper: properName || '',
+    properName: properName || '',
+    ra: raHours,
+    raHours,
+    raDegrees: raHours * 15,
+    dec: decDegrees,
+    decDegrees,
+    dist: distanceParsec,
+    distanceParsec,
+    mag: magnitude,
+    magnitude,
+    spect: spectralType || '',
+    spectralType: spectralType || '',
+    con: constellation || '',
+    constellation: constellation || '',
+    sectorId,
+    starClaimCode: '',
+    type: 'star',
+  };
+}
+
+function getEmbeddedCoreCatalog() {
+  return embeddedCoreRows.map(hydrateEmbeddedStar);
+}
 
 function csvLineToFields(line) {
   const values = [];
@@ -162,6 +194,12 @@ async function loadStarData() {
   try {
     const cachedCore = await readStoredArray(CORE_STORAGE_KEY);
     if (cachedCore?.length) return cachedCore;
+
+    const embeddedCore = getEmbeddedCoreCatalog();
+    if (embeddedCore.length) {
+      await AsyncStorage.setItem(CORE_STORAGE_KEY, JSON.stringify(embeddedCore));
+      return embeddedCore;
+    }
 
     const response = await fetch(CSV_URL);
     if (!response.ok) throw new Error(`HYG catalog request failed: ${response.status}`);

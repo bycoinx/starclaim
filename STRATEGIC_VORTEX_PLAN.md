@@ -351,6 +351,9 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 - [ ] Mobil için sürümlü, sıkıştırılmış binary katalog (`Float32Array`) üretilecek.
 - [x] Sürümlü uzak manifest, kalıcı manifest fallback'i ve tile endpoint'i eklendi.
 - [x] Kullanıcıya kalıcı çevrimdışı mod, hazır tile sayısı, cache boyutu ve cache temizleme yönetimi gösteriliyor.
+- [x] En parlak `10.000` HYG yıldızı kompakt katalog olarak uygulamaya gömüldü; ilk açılış ağ olmadan çalışıyor.
+- [x] Backend doğrulamalı sahiplik/sertifika snapshot'ı SHA-256 bütünlük kontrolüyle yerelde saklanıyor.
+- [x] Snapshot uygulama açılışında, öne dönüşte ve bağlantı yeniden kurulabildiğinde otomatik eşitleniyor.
 - [ ] İlk ölçek hedefi tam HYG; Gaia için parlaklık/mesafe tabanlı kontrollü alt küme kullanılacak.
 
 #### P1 - Büyük Uzay Hassasiyeti ve Navigasyon
@@ -406,4 +409,4 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**Çevrimdışı sahiplik paketi:** Kullanıcının satın aldığı yıldızları ve sertifikaları backend ile doğruladıktan sonra imzalı yerel snapshot olarak saklamak; ağ yokken 2D/3D hedef ve sertifika görüntülemeyi güvenli şekilde sürdürmek.
+**Floating-origin navigasyon paketi:** Büyük parsec mesafelerinde kamera ve yıldız konumlarını aktif hedef çevresinde yeniden merkezleyerek precision jitter'ı azaltmak; warp, orbit ve sektör geçişlerini aynı koordinat sözleşmesinde tutmak.

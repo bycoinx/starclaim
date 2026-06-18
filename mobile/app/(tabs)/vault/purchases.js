@@ -2,8 +2,8 @@ import React, {useEffect, useState} from 'react';
 import { SafeAreaView, View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import SpaceBackground from '../../../components/SpaceBackground';
 import LanguagePicker from '../../../components/LanguagePicker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 export default function PurchasesScreen(){
   const [purchases, setPurchases] = useState([]);
@@ -11,7 +11,7 @@ export default function PurchasesScreen(){
 
   useEffect(()=>{ load(); },[])
   const load = async ()=>{
-    try{ const raw = await AsyncStorage.getItem('@purchases'); setPurchases(raw?JSON.parse(raw):[]); }catch(e){ console.warn(e); }
+    try{ setPurchases(await getOwnershipPurchases()); }catch(e){ console.warn(e); }
   }
 
   return (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getOwnershipPurchases } from '../src/data/ownershipSnapshot';
 
 export default function MyStarsOverlay({ stars, onSelectStar }) {
   const [visible, setVisible] = useState(false);
@@ -10,8 +10,7 @@ export default function MyStarsOverlay({ stars, onSelectStar }) {
   useEffect(() => { loadOwned(); }, []);
 
   const loadOwned = async () => {
-    const raw = await AsyncStorage.getItem('@purchases');
-    const list = raw ? JSON.parse(raw) : [];
+    const list = await getOwnershipPurchases();
     setOwned(list.map((item) => ({ code: item.id, name: item.name, method: item.method }))); 
   };
 

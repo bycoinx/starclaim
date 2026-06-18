@@ -7,7 +7,7 @@ import CockpitLayout from '../components/CockpitLayout';
 import { THEME } from '../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CONFIG } from '../constants/Config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getOwnershipPurchases } from '../src/data/ownershipSnapshot';
 
 export default function NeuralLink() {
   const [session, setSession] = useState('');
@@ -81,8 +81,7 @@ export default function NeuralLink() {
     setIsTyping(true);
 
     try {
-      const starsRaw = await AsyncStorage.getItem('@purchases');
-      const stars = starsRaw ? JSON.parse(starsRaw) : [];
+      const stars = await getOwnershipPurchases();
       const starNames = stars.map(s => s.name).join(', ');
       
       const contextPrefix = stars.length > 0 

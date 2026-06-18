@@ -23,6 +23,8 @@ from openai import AsyncOpenAI
 from nacl.signing import VerifyKey
 import base58
 import sys
+import hashlib
+import json
 
 try:
     from backend.star_tile_catalog import resolve_catalog_root, resolve_tile_path
@@ -1754,6 +1756,63 @@ async def get_my_orders(user: User = Depends(get_current_user)):
     """Retrieve all purchase records for the authenticated user."""
     cur = db.orders.find({"user_id": user.user_id}, {"_id": 0}).sort([("created_at", -1)])
     return await cur.to_list(100)
+
+
+@api.get("/orders/offline-snapshot")
+async def get_offline_ownership_snapshot(user: User = Depends(get_current_user)):
+    """Return a canonical, integrity-protected ownership snapshot for offline use."""
+    orders = await db.orders.find(
+        {"user_id": user.user_id},
+        {"_id": 0},
+    ).sort([("created_at", -1)]).to_list(100)
+    star_ids = [order.get("star_id") for order in orders if order.get("star_id")]
+    stars = await db.stars.find(
+        {"star_id": {"$in": star_ids}},
+        {
+            "_id": 0,
+            "star_id": 1,
+            "code": 1,
+            "name": 1,
+            "custom_name": 1,
+            "constellation": 1,
+            "ra": 1,
+            "dec": 1,
+            "hip": 1,
+            "hd": 1,
+            "personal_message": 1,
+        },
+    ).to_list(100)
+    stars_by_id = {star["star_id"]: star for star in stars}
+    records = []
+    for order in orders:
+        star = stars_by_id.get(order.get("star_id"), {})
+        records.append({
+            "orderId": order.get("order_id", ""),
+            "starId": order.get("star_id", ""),
+            "starClaimCode": order.get("star_code") or star.get("code", ""),
+            "name": star.get("custom_name") or star.get("name", ""),
+            "hip": star.get("hip", ""),
+            "hd": star.get("hd", ""),
+            "constellation": star.get("constellation", ""),
+            "ra": star.get("ra"),
+            "dec": star.get("dec"),
+            "message": star.get("personal_message", ""),
+            "package": order.get("package", ""),
+            "amount": order.get("amount"),
+            "createdAt": str(order.get("created_at", "")),
+        })
+    snapshot = {
+        "schemaVersion": 1,
+        "userId": user.user_id,
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "records": records,
+    }
+    payload = json.dumps(snapshot, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return {
+        "algorithm": "SHA-256",
+        "digest": hashlib.sha256(payload.encode("utf-8")).hexdigest(),
+        "payload": payload,
+    }
 
 
 @api.get("/orders/certificate/{order_id}")

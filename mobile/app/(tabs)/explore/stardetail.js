@@ -7,9 +7,20 @@ import { THEME } from '../../../constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 const { width } = Dimensions.get('window');
+
+function escapeCertificateText(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
 
 export default function StarDetailScreen() {
   const { starId, name: initialName } = useLocalSearchParams();
@@ -25,8 +36,7 @@ export default function StarDetailScreen() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const raw = await AsyncStorage.getItem('@purchases');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getOwnershipPurchases();
       // starId could be from HIP or custom ID
       const found = list.find(p => p.starId === starId || p.starId?.toString() === starId);
       if (found) {
@@ -42,8 +52,7 @@ export default function StarDetailScreen() {
 
   const handleSaveMessage = async () => {
     try {
-      const raw = await AsyncStorage.getItem('@purchases');
-      let list = raw ? JSON.parse(raw) : [];
+      let list = await getOwnershipPurchases();
       list = list.map(p => {
         if (p.starId === starId || p.starId?.toString() === starId) {
           return { ...p, message };
@@ -54,6 +63,18 @@ export default function StarDetailScreen() {
       Alert.alert('BAŞARILI', 'Ebedi mesajınız güncellendi.');
     } catch (e) {
       Alert.alert('HATA', 'Mesaj kaydedilemedi.');
+    }
+  };
+
+  const handleCertificate = async () => {
+    if (!purchase) return;
+    try {
+      const certificateName = escapeCertificateText(purchase.name || initialName || 'StarClaim Yıldızı');
+      const html = `<!doctype html><html><body style="margin:0;background:#03060d;color:#fff;font-family:Arial;padding:48px;text-align:center"><main style="border:8px double #C9A84C;padding:44px;min-height:620px"><p style="color:#C9A84C;letter-spacing:5px">STARCLAIM</p><h1 style="font-size:42px">${certificateName}</h1><p>Bu kayıt, aşağıdaki yıldızın doğrulanmış sahiplik snapshot'ını temsil eder.</p><hr style="border-color:#C9A84C;margin:40px 0"><p>STARCLAIM KODU: ${escapeCertificateText(purchase.starClaimCode || purchase.code || 'N/A')}</p><p>YILDIZ ID: ${escapeCertificateText(purchase.starId || starId)}</p><p>KOORDİNATLAR: RA ${escapeCertificateText(purchase.ra ?? 'N/A')} / DEC ${escapeCertificateText(purchase.dec ?? 'N/A')}</p><p>TAKIMYILDIZI: ${escapeCertificateText(purchase.constellation || 'N/A')}</p><p>TARİH: ${new Date(purchase.createdAt || purchase.date).toLocaleDateString('tr-TR')}</p><p style="margin-top:60px;color:#C9A84C">${purchase.verified ? 'SUNUCU DOĞRULAMALI ÇEVRİMDIŞI KAYIT' : 'YEREL KAYIT'}</p></main></body></html>`;
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+    } catch (error) {
+      Alert.alert('HATA', 'Sertifika oluşturulamadı.');
     }
   };
 
@@ -162,7 +183,7 @@ export default function StarDetailScreen() {
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity style={[styles.actionBtn, styles.certBtn]}>
+          <TouchableOpacity style={[styles.actionBtn, styles.certBtn]} onPress={handleCertificate}>
             <Ionicons name="ribbon-outline" size={20} color="#fff" />
             <Text style={[styles.actionBtnText, { color: '#fff' }]}>SERTİFİKA</Text>
           </TouchableOpacity>

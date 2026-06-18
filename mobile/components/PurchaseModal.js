@@ -7,6 +7,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { CONFIG } from '../constants/Config';
 import { SecurityService } from '../lib/security';
+import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 
 export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess}){
   const [step, setStep] = useState(1);
@@ -106,6 +107,9 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
       
       purchases.unshift(rec);
       await AsyncStorage.setItem('@purchases', JSON.stringify(purchases));
+      syncOwnershipSnapshot().catch((syncError) => {
+        console.log('Purchase ownership sync deferred', syncError.message);
+      });
       
       // Automatic Vault Integration
       try {

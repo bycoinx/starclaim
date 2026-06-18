@@ -34,6 +34,7 @@ import { THEME } from '../../../constants/Theme';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 const RECENT_TARGETS_KEY = '@starvoyage_recent_targets_v1';
 const MAX_RECENT_TARGETS = 6;
@@ -57,11 +58,10 @@ export default function StarVoyage3D() {
 
   useEffect(() => {
     Promise.all([
-      AsyncStorage.getItem('@purchases'),
+      getOwnershipPurchases(),
       AsyncStorage.getItem(RECENT_TARGETS_KEY),
     ])
-      .then(([purchaseRaw, recentRaw]) => {
-        const storedPurchases = purchaseRaw ? JSON.parse(purchaseRaw) : [];
+      .then(([storedPurchases, recentRaw]) => {
         const storedRecentIds = recentRaw ? JSON.parse(recentRaw) : [];
         setPurchases(Array.isArray(storedPurchases) ? storedPurchases : []);
         setRecentTargetIds((currentIds) => {
@@ -260,8 +260,7 @@ export default function StarVoyage3D() {
 
   const checkOwnership = async (star) => {
     try {
-      const raw = await AsyncStorage.getItem('@purchases');
-      const list = raw ? JSON.parse(raw) : [];
+      const list = await getOwnershipPurchases();
       const found = list.find((purchase) => purchaseMatchesStar(purchase, star));
       setOwnershipData(found || null);
     } catch (e) { console.warn('Ownership check error', e); }

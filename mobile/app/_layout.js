@@ -1,5 +1,6 @@
 import '../polyfills';
 import React, { useEffect } from 'react';
+import { AppState } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
@@ -8,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { Cinzel_400Regular, Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { ensureStarData } from '../src/data/starLoader';
 import { createStarTargetFromStar, resolveStarTarget } from '../src/utils/starIdentity';
+import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_400Regular, Cinzel_700Bold });
@@ -28,6 +30,21 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
+
+  useEffect(() => {
+    const sync = () => syncOwnershipSnapshot().catch((error) => {
+      console.log('Ownership sync deferred', error.message);
+    });
+    sync();
+    const interval = setInterval(sync, 60000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') sync();
+    });
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
+  }, []);
 
   const handleDeepLink = (url) => {
     try {

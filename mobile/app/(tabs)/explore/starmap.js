@@ -4,7 +4,6 @@ import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarCanvas from '../../../components/StarCanvas';
 import StarPopup from '../../../components/StarPopup';
@@ -30,6 +29,7 @@ import {
 } from '../../../src/utils/starIdentity';
 import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 import { LinearGradient } from 'expo-linear-gradient';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -194,9 +194,7 @@ export default function StarMapScreen() {
 
   const loadPurchases = async () => {
     try {
-      const raw = await AsyncStorage.getItem('@purchases');
-      const list = raw ? JSON.parse(raw) : [];
-      setPurchases(list);
+      setPurchases(await getOwnershipPurchases());
     } catch (error) { console.warn('Purchase load error', error); }
   };
 
