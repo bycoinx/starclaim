@@ -23,6 +23,11 @@
       "edgeToEdgeEnabled": true,
       "package": "com.anonymous.mobile"
     },
+    "androidNavigationBar": {
+      "backgroundColor": "#02040A",
+      "barStyle": "light-content",
+      "enforceContrast": false
+    },
     "web": {
       "favicon": "./assets/starcalimx-logo.png"
     },

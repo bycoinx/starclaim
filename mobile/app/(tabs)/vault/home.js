@@ -1,5 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
-import { SafeAreaView, Text, StyleSheet, View, TouchableOpacity, FlatList, Alert, Platform } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, FlatList, Alert, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';

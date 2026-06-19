@@ -141,14 +141,16 @@ Her paket ayrı uygulanacak, test edilecek, fiziksel cihaz ekran görüntüsüyl
 
 **Amaç:** Yeni tasarımdan önce kırık yerleşimi ve yanlış ürün mesajını kaldırmak.
 
-- [ ] SOL bakiyesi, SOL fiyatı, adres ve `SOLANA_NETWORK` kartı kaldırılacak.
-- [ ] Eski cüzdan girişleri görünür navigasyondan çıkarılacak.
-- [ ] Android yatay mod için `SafeAreaInsets` uygulanacak.
-- [ ] Sistem navigasyon çubuğu koyu olacak; içerik beyaz alanın altına girmeyecek.
-- [ ] Alt tab içerik üzerine binmeyecek; scroll yüzeyleri tab yüksekliği kadar boşluk alacak.
-- [ ] Marketplace kullanılabilir genişliğe göre 1/2 kolon değiştirecek.
-- [ ] Bozuk `?` glifleri ve mojibake metinler düzeltilecek.
-- [ ] 3D `STARS 0 / TILES --` durumunda yükleniyor, çevrimdışı ve yeniden dene durumları gösterilecek.
+- [x] SOL bakiyesi, SOL fiyatı, adres ve `SOLANA_NETWORK` kartı kaldırıldı.
+- [x] Eski cüzdan girişleri görünür navigasyondan çıkarıldı.
+- [x] Android yatay mod için gerçek safe-area insetleri uygulandı.
+- [x] Sistem navigasyon çubuğu koyu/ışık ikonlu olacak şekilde yapılandırıldı; içerik inset altında kalmıyor.
+- [x] Ana ekrandaki ikinci alt menü kaldırıldı; tab bar yatay insetlere bağlandı.
+- [x] Marketplace kullanılabilir genişliğe göre 1/2 kolon değiştiriyor.
+- [x] Bozuk ikon adları ve kullanıcıya görünen eski teknik metinler düzeltildi.
+- [x] 3D katalog/GL yükleme, hata ve yeniden dene durumları görünür hale getirildi.
+
+**Doğrulama:** Expo Doctor `18/18`, astronomi/projeksiyon testleri `18/18`, Android Hermes export başarılı. Fiziksel cihaz safe-area ekran görüntüsü Paket 2 kabul turunda alınacak.
 
 **Çıkış kriteri:** Ana ekranlar kırpılmıyor, Solana görünmüyor, boş render sessizce başarısız olmuyor.
 

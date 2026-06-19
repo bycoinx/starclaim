@@ -12,7 +12,7 @@ export default function QRLoginUnavailable() {
         <Ionicons name="shield-outline" size={38} color={THEME.colors.primary} />
         <Text style={styles.title}>QR GİRİŞİ GEÇİCİ OLARAK KAPALI</Text>
         <Text style={styles.description}>
-          Cüzdan tabanlı doğrulama mobil uygulamadan kaldırıldı. Yıldız haritaları ve çevrimdışı gözlem kullanılabilir.
+          Bu giriş yöntemi geçici olarak kullanılamıyor. Yıldız haritaları ve çevrimdışı gözlem kullanılabilir.
         </Text>
         <TouchableOpacity
           style={styles.button}

@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import StarSystem3D from '../../../components/StarSystem3D';
 import { ensureStarData } from '../../../src/data/starLoader';
@@ -43,6 +43,9 @@ export default function StarVoyage3D() {
   const [stars, setStars] = useState([]);
   const [targetStar, setTargetStar] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [renderReady, setRenderReady] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [arrivalVisible, setArrivalVisible] = useState(false);
   const [ownershipData, setOwnershipData] = useState(null);
   const [purchases, setPurchases] = useState([]);
@@ -232,7 +235,15 @@ export default function StarVoyage3D() {
   }
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setLoadError(null);
+    setRenderReady(false);
     ensureStarData().then((list) => {
+      if (cancelled) return;
+      if (!Array.isArray(list) || list.length === 0) {
+        throw new Error('Temel yıldız kataloğu boş döndü.');
+      }
       setStars(list);
       if (params.target) {
         try {
@@ -254,9 +265,16 @@ export default function StarVoyage3D() {
           checkOwnership(found);
         }
       }
-      setLoading(false);
+    }).catch((error) => {
+      if (!cancelled) {
+        setStars([]);
+        setLoadError(error?.message || 'Yıldız kataloğu yüklenemedi.');
+      }
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
     });
-  }, [params.target, params.starId, params.hip, params.hd, params.starClaimCode, params.name]);
+    return () => { cancelled = true; };
+  }, [params.target, params.starId, params.hip, params.hd, params.starClaimCode, params.name, loadAttempt]);
 
   const checkOwnership = async (star) => {
     try {
@@ -340,18 +358,41 @@ export default function StarVoyage3D() {
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={THEME.colors.primary} />
-              <Text style={styles.loadingText}>CALIBRATING_QUANTUM_VIEW...</Text>
+              <Text style={styles.loadingText}>YILDIZ KATALOĞU HAZIRLANIYOR</Text>
+            </View>
+          ) : loadError || stars.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <Ionicons name="cloud-offline-outline" size={42} color={THEME.colors.textMuted} />
+              <Text style={styles.errorTitle}>3D EVREN AÇILAMADI</Text>
+              <Text style={styles.errorMessage}>{loadError || 'Cihazda kullanılabilir yıldız bulunamadı.'}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={() => setLoadAttempt((attempt) => attempt + 1)}>
+                <Ionicons name="refresh" size={18} color="#000" />
+                <Text style={styles.retryButtonText}>YENİDEN DENE</Text>
+              </TouchableOpacity>
             </View>
           ) : (
-            <StarSystem3D
-              stars={renderedSectorWindow.stars}
-              targetStar={targetStar}
-              ownedStars={activeOwnedStars}
-              loadedSectorCount={renderedSectorWindow.sectorIds.length}
-              onArrival={handleArrival}
-              onTargetChange={handleTargetChange}
-              onOwnedStarPress={openOwnedStarCertificate}
-            />
+            <>
+              <StarSystem3D
+                stars={renderedSectorWindow.stars}
+                targetStar={targetStar}
+                ownedStars={activeOwnedStars}
+                loadedSectorCount={renderedSectorWindow.sectorIds.length}
+                onArrival={handleArrival}
+                onTargetChange={handleTargetChange}
+                onOwnedStarPress={openOwnedStarCertificate}
+                onReady={() => setRenderReady(true)}
+                onRenderError={(error) => {
+                  setRenderReady(false);
+                  setLoadError(error?.message || '3D görüntü motoru başlatılamadı.');
+                }}
+              />
+              {!renderReady && (
+                <View style={styles.renderLoadingOverlay} pointerEvents="none">
+                  <ActivityIndicator size="large" color={THEME.colors.primary} />
+                  <Text style={styles.loadingText}>3D SAHNE HAZIRLANIYOR</Text>
+                </View>
+              )}
+            </>
           )}
 
           {arrivalVisible && targetStar && (
@@ -391,7 +432,7 @@ export default function StarVoyage3D() {
                       </View>
                       <Text style={styles.messageText}>"{ownershipData.message || 'Bu yıldız insanlık adına mühürlenmiştir.'}"</Text>
                       <View style={styles.signatureRow}>
-                        <Text style={styles.signatureValue}>BLOCKCHAIN_VERIFIED_SIGNATURE</Text>
+                        <Text style={styles.signatureValue}>STARCLAIM_VERIFIED_RECORD</Text>
                       </View>
                     </View>
                   ) : (
@@ -686,6 +727,11 @@ const styles = StyleSheet.create({
   viewport: { flex: 1 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' },
   loadingText: { color: THEME.colors.primary, fontSize: 11, fontWeight: '900', marginTop: 24, letterSpacing: 3 },
+  renderLoadingOverlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: '#000106' },
+  errorTitle: { color: '#fff', fontSize: 15, fontWeight: '900', marginTop: 18 },
+  errorMessage: { maxWidth: 420, color: THEME.colors.textMuted, fontSize: 11, lineHeight: 17, marginTop: 8, textAlign: 'center' },
+  retryButton: { minHeight: 44, marginTop: 18, paddingHorizontal: 20, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', borderRadius: 7, backgroundColor: THEME.colors.primary },
+  retryButtonText: { color: '#000', fontSize: 10, fontWeight: '900' },
   footer: { 
     paddingHorizontal: 24,
     paddingVertical: 12,

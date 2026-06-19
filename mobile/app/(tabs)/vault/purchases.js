@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import { SafeAreaView, View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import LanguagePicker from '../../../components/LanguagePicker';
 import { useRouter } from 'expo-router';

@@ -1,8 +1,10 @@
 import '../polyfills';
 import React, { useEffect } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
@@ -14,6 +16,16 @@ import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_400Regular, Cinzel_700Bold });
   const router = useRouter();
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+    Promise.all([
+      NavigationBar.setBackgroundColorAsync('#02040A'),
+      NavigationBar.setButtonStyleAsync('light'),
+      NavigationBar.setVisibilityAsync('visible'),
+    ]).catch((error) => console.warn('Navigation bar setup deferred', error));
+    return undefined;
+  }, []);
 
   useEffect(() => {
     // Handle initial link
@@ -99,7 +111,7 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -117,6 +129,6 @@ export default function RootLayout() {
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="vault" options={{ animation: 'slide_from_right' }} />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }

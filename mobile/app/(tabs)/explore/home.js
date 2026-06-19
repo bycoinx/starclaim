@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  SafeAreaView, 
   View, 
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  Dimensions, 
   Platform,
   StatusBar,
   ScrollView,
   ActivityIndicator
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CONFIG } from '../../../constants/Config';
-
-const { width, height } = Dimensions.get('window');
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 
 // Design Palette
 const COLORS = {
@@ -29,13 +27,16 @@ const COLORS = {
 };
 
 export default function HomeScreen() {
-  const [balance, setBalance] = useState('42.069');
+  const [ownedStarCount, setOwnedStarCount] = useState(0);
   const [news, setNews] = useState([]);
   const [loadingNews, setLoadingNews] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     loadNews();
+    getOwnershipPurchases()
+      .then((purchases) => setOwnedStarCount(Array.isArray(purchases) ? purchases.length : 0))
+      .catch(() => setOwnedStarCount(0));
   }, []);
 
   const loadNews = async () => {
@@ -61,7 +62,7 @@ export default function HomeScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
         {/* HUD CORNERS */}
         <View style={styles.hudOverlay} pointerEvents="none">
           <View style={[styles.hudLine, { top: 20, left: 20, width: 60, borderTopWidth: 1, borderColor: COLORS.neon_cyan }]} />
@@ -94,7 +95,7 @@ export default function HomeScreen() {
               end={{x: 1, y: 1}}
               style={styles.aiGradient}
             >
-              <MaterialCommunityIcons name="sparkles" size={18} color="#000" />
+              <MaterialCommunityIcons name="star-four-points" size={18} color="#000" />
               <Text style={styles.aiButtonText}>YILDIZ AI</Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -104,23 +105,26 @@ export default function HomeScreen() {
         <View style={styles.content}>
           <View style={styles.mainGrid}>
             
-            {/* LEFT SECTION: WALLET CARD */}
+            {/* LEFT SECTION: OBSERVATION CARD */}
             <View style={styles.leftCol}>
               <View style={styles.glassCard}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardLabel}>SOLANA_NETWORK</Text>
+                  <Text style={styles.cardLabel}>GÖZLEM MERKEZİ</Text>
                   <View style={styles.pulseDot} />
                 </View>
                 
-                <View style={styles.balanceContainer}>
-                  <Text style={styles.balanceValue}>{balance}</Text>
-                  <Text style={styles.balanceUnit}>SOL</Text>
+                <View style={styles.observationContainer}>
+                  <MaterialCommunityIcons name="telescope" size={42} color={COLORS.neon_cyan} />
+                  <View style={styles.observationCopy}>
+                    <Text style={styles.observationTitle}>SKY LIVE</Text>
+                    <Text style={styles.observationDescription}>Bulunduğun konumdan gerçek gökyüzünü keşfet.</Text>
+                  </View>
                 </View>
                 
                 <View style={styles.cardFooter}>
-                  <Text style={styles.addressText}>0x71C...4f2e</Text>
-                  <TouchableOpacity style={styles.vaultBtn}>
-                    <Text style={styles.vaultBtnText}>VAULT ACCESS</Text>
+                  <Text style={styles.readyText}>KATALOG HAZIR</Text>
+                  <TouchableOpacity style={styles.vaultBtn} onPress={() => router.push('/(tabs)/explore/starmap')}>
+                    <Text style={styles.vaultBtnText}>HARİTAYI AÇ</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -135,11 +139,11 @@ export default function HomeScreen() {
               <View style={styles.telemetryGrid}>
                 <View style={styles.telemetryBox}>
                   <Text style={styles.telLabel}>SYNC_STATUS</Text>
-                  <Text style={[styles.telValue, { color: COLORS.neon_cyan }]}>OPTIMAL</Text>
+                  <Text style={[styles.telValue, { color: COLORS.neon_cyan }]}>HAZIR</Text>
                 </View>
                 <View style={styles.telemetryBox}>
                   <Text style={styles.telLabel}>OWNED_STARS</Text>
-                  <Text style={[styles.telValue, { color: COLORS.neon_gold }]}>12</Text>
+                  <Text style={[styles.telValue, { color: COLORS.neon_gold }]}>{ownedStarCount}</Text>
                 </View>
               </View>
 
@@ -192,52 +196,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* BOTTOM COCKPIT MENU */}
-        <View style={styles.bottomNav}>
-          <CockpitButton 
-            label="MAP" 
-            icon="compass-outline" 
-            active 
-            onPress={() => router.push('/(tabs)/explore/starmap')} 
-          />
-          <CockpitButton 
-            label="3D VOYAGE" 
-            icon="rocket-launch" 
-            onPress={() => router.push('/(tabs)/explore/starvoyage')} 
-          />
-          <CockpitButton 
-            label="VAULT" 
-            icon="shield-key" 
-            onPress={() => router.push('/(tabs)/vault/home')} 
-          />
-          <CockpitButton 
-            label="MARKET" 
-            icon="shopping" 
-            onPress={() => router.push('/marketplace')} 
-          />
-        </View>
-
       </SafeAreaView>
     </View>
-  );
-}
-
-function CockpitButton({ label, icon, onPress, active = false }) {
-  return (
-    <TouchableOpacity 
-      style={[styles.cockpitBtn, active && styles.cockpitBtnActive]} 
-      onPress={onPress}
-    >
-      <MaterialCommunityIcons 
-        name={icon} 
-        size={24} 
-        color={active ? COLORS.neon_cyan : COLORS.text_muted} 
-      />
-      <Text style={[styles.cockpitBtnLabel, active && { color: COLORS.neon_cyan }]}>
-        {label}
-      </Text>
-      {active && <View style={styles.activeIndicator} />}
-    </TouchableOpacity>
   );
 }
 
@@ -337,36 +297,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 4,
   },
-  balanceContainer: {
+  observationContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 12,
+    alignItems: 'center',
+    gap: 18,
     marginBottom: 20,
   },
-  balanceValue: {
+  observationCopy: { flex: 1 },
+  observationTitle: {
     color: '#fff',
-    fontSize: 48,
+    fontSize: 30,
     fontWeight: '900',
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+    letterSpacing: 2,
     textShadowColor: COLORS.neon_cyan,
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
+    textShadowRadius: 8,
   },
-  balanceUnit: {
-    color: COLORS.neon_gold,
-    fontSize: 20,
-    fontWeight: '900',
-  },
+  observationDescription: { color: COLORS.text_muted, fontSize: 11, lineHeight: 17, marginTop: 5 },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  addressText: {
-    color: COLORS.text_muted,
-    fontSize: 12,
-    fontFamily: 'monospace',
-  },
+  readyText: { color: COLORS.neon_cyan, fontSize: 10, fontWeight: '800' },
   vaultBtn: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingHorizontal: 12,
@@ -493,42 +446,5 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
 
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingBottom: 20,
-    paddingHorizontal: 40,
-    gap: 10,
-  },
-  cockpitBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    gap: 4,
-  },
-  cockpitBtnActive: {
-    backgroundColor: 'rgba(0, 242, 254, 0.05)',
-    borderColor: COLORS.neon_cyan,
-  },
-  cockpitBtnLabel: {
-    color: COLORS.text_muted,
-    fontSize: 9,
-    fontWeight: '900',
-    letterSpacing: 1,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    width: '40%',
-    height: 2,
-    backgroundColor: COLORS.neon_cyan,
-    shadowColor: COLORS.neon_cyan,
-    shadowOpacity: 1,
-    shadowRadius: 4,
-  }
 });
 

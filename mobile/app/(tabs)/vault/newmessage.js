@@ -1,5 +1,6 @@
 import React, {useState, useRef} from 'react';
-import { SafeAreaView, Text, StyleSheet, View, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Text, StyleSheet, View, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import LanguagePicker from '../../../components/LanguagePicker';
 import { Audio } from 'expo-av';
@@ -110,7 +111,7 @@ export default function NewMessageScreen(){
         <Text style={styles.label}>ALICI BİLGİSİ (OPSİYONEL)</Text>
         <TextInput 
           style={styles.inputSmall} 
-          placeholder="Cüzdan adresi veya e-posta" 
+          placeholder="Alıcının e-posta adresi"
           placeholderTextColor="rgba(255,255,255,0.2)"
           value={recipient} 
           onChangeText={setRecipient} 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Dimensions, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Dimensions, Share } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SpaceBackground from '../../../components/SpaceBackground';
@@ -190,7 +191,7 @@ export default function StarDetailScreen() {
         </View>
 
         <View style={styles.footerNote}>
-          <Text style={styles.footerText}>BU YILDIZIN MÜLKİYETİ BLOCKCHAIN ÜZERİNDE DOĞRULANMIŞTIR.</Text>
+          <Text style={styles.footerText}>BU YILDIZIN SAHİPLİĞİ STARCLAIM KAYITLARINDA DOĞRULANMIŞTIR.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

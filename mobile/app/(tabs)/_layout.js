@@ -2,6 +2,7 @@ import React from 'react';
 import { Tabs, usePathname } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../constants/Theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const IMMERSIVE_ROUTES = [
   '/explore/starmap',
@@ -11,6 +12,7 @@ const IMMERSIVE_ROUTES = [
 
 export default function TabsLayout() {
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
   const immersive = IMMERSIVE_ROUTES.some((route) => pathname.endsWith(route));
 
   return (
@@ -28,12 +30,12 @@ export default function TabsLayout() {
               borderTopColor: 'rgba(0, 242, 254, 0.2)', // Cyan border
               borderTopWidth: 1.5,
               height: 70,
-              paddingBottom: 12,
+              paddingBottom: Math.max(8, insets.bottom),
               paddingTop: 8,
               position: 'absolute',
               bottom: 0,
-              left: 0,
-              right: 0,
+              left: insets.left,
+              right: insets.right,
               elevation: 0,
             },
         tabBarActiveTintColor: THEME.colors.primary,

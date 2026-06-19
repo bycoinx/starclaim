@@ -1,15 +1,18 @@
 import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { THEME } from '../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SpaceBackground from '../components/SpaceBackground';
-
-const { width } = Dimensions.get('window');
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Marketplace() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const availableWidth = width - insets.left - insets.right - 48;
+  const twoColumns = availableWidth >= 720;
 
   const mockItems = [
     { id: 1, name: 'Sirius A', price: 450, tier: 'Supernova', constellation: 'Canis Major' },
@@ -26,7 +29,7 @@ export default function Marketplace() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <View style={styles.content}>
+      <SafeAreaView style={styles.content} edges={['top', 'right', 'bottom', 'left']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
@@ -43,11 +46,10 @@ export default function Marketplace() {
         <ScrollView 
           contentContainerStyle={styles.scrollContent} 
           showsVerticalScrollIndicator={false}
-          numColumns={2} // We'll simulate columns in the scrollview or just layout cards differently
         >
           <View style={styles.grid}>
             {mockItems.map((item) => (
-              <View key={item.id} style={styles.cardWrapper}>
+              <View key={item.id} style={[styles.cardWrapper, { width: twoColumns ? '50%' : '100%' }]}>
                 <LinearGradient 
                   colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} 
                   style={styles.card}
@@ -60,7 +62,7 @@ export default function Marketplace() {
                   </View>
                   <Text style={styles.nameText}>{item.name.toUpperCase()}</Text>
                   <View style={styles.metaRow}>
-                    <MaterialCommunityIcons name="constellation-star" size={12} color={THEME.colors.textMuted} />
+                    <MaterialCommunityIcons name="star-four-points-outline" size={12} color={THEME.colors.textMuted} />
                     <Text style={styles.constellationText}>{item.constellation.toUpperCase()}</Text>
                   </View>
                   
@@ -81,7 +83,7 @@ export default function Marketplace() {
             ))}
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
 
       {/* Screen HUD Overlay */}
       <View style={styles.screenHud} pointerEvents="none">
@@ -127,7 +129,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 9, color: THEME.colors.primary, fontWeight: '900', letterSpacing: 1.5 },
   scrollContent: { paddingBottom: 100 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
-  cardWrapper: { width: '50%', padding: 8 },
+  cardWrapper: { padding: 8 },
   card: {
     borderRadius: 12,
     padding: 20,

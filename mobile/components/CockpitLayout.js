@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView, Text } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { THEME } from '../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import WarpBackground from './WarpBackground';
@@ -19,7 +20,7 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
          />
       </View>
 
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
         <View style={styles.topStatus}>
           <View style={styles.statusGroup}>
             <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />

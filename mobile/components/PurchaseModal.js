@@ -66,7 +66,7 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
       // Get session
       const session = await SecurityService.getSession();
       if (!session || !session.user) {
-        Alert.alert('HATA', 'Satın alma için cüzdanınızı bağlamanız gerekiyor.');
+        Alert.alert('GİRİŞ GEREKLİ', 'Satın alma işlemi için StarClaim hesabınıza giriş yapın.');
         setLoading(false);
         return;
       }

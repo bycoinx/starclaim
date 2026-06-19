@@ -28,7 +28,7 @@ export default function About() {
 
             <Text style={styles.heading}>Güven ve Şeffaflık</Text>
             <Text style={styles.text}>
-              Blockchain teknolojisi sayesinde yıldız sahipliğiniz ebediyen kayıt altına alınır. 
+              Doğrulanmış StarClaim kayıtları sayesinde yıldız sahipliğiniz güvenle saklanır.
               Aegis güvenlik katmanı ile verileriniz ve varlıklarınız en üst düzeyde korunur.
             </Text>
 

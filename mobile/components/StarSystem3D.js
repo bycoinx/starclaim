@@ -544,6 +544,8 @@ export default function StarSystem3D({
   onArrival = null,
   onTargetChange = null,
   onOwnedStarPress = null,
+  onReady = null,
+  onRenderError = null,
   loadedSectorCount = 0,
 }) {
   const animationFrameRef = useRef(null);
@@ -571,6 +573,8 @@ export default function StarSystem3D({
   const targetLockStartedAtRef = useRef(0);
   const targetStarRef = useRef(targetStar);
   const ownedStarsRef = useRef(ownedStars);
+  const onReadyRef = useRef(onReady);
+  const onRenderErrorRef = useRef(onRenderError);
   const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
@@ -605,6 +609,11 @@ export default function StarSystem3D({
   const [sceneMode, setSceneMode] = useState(sceneModeRef.current);
   const [lockedTarget, setLockedTarget] = useState(targetStar);
   const [visibleLabels, setVisibleLabels] = useState([]);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    onRenderErrorRef.current = onRenderError;
+  }, [onReady, onRenderError]);
 
   useEffect(() => {
     ownedStarsRef.current = ownedStars;
@@ -1033,6 +1042,7 @@ export default function StarSystem3D({
       gl.endFrameEXP();
     };
 
+    onReadyRef.current?.({ starCount: validStars.length });
     render();
   }, [stars, updateQuality]);
 
@@ -1236,7 +1246,10 @@ export default function StarSystem3D({
         onResponderRelease={handleTouchEnd}
         onResponderTerminate={() => { gestureRef.current.pinchDistance = 0; }}
       >
-        <GLView style={StyleSheet.absoluteFill} onContextCreate={onContextCreate} />
+        <GLView
+          style={StyleSheet.absoluteFill}
+          onContextCreate={(gl) => onContextCreate(gl).catch((error) => onRenderErrorRef.current?.(error))}
+        />
       </View>
 
       <View style={styles.labelLayer} pointerEvents="none">
