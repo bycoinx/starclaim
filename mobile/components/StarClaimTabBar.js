@@ -14,7 +14,7 @@ const ITEMS = [
 ];
 
 function getActiveKey(pathname) {
-  if (pathname.includes('/claim') || pathname === '/stars') return 'claim';
+  if (pathname.includes('/claim') || pathname.includes('/catalog') || pathname === '/stars') return 'claim';
   if (pathname.includes('/sky') || pathname.includes('/starmap')) return 'sky';
   if (pathname.includes('/universe') || pathname.includes('/starvoyage')) return 'universe';
   if (pathname.includes('/vault')) return 'vault';

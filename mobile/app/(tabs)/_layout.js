@@ -19,6 +19,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="universe" options={{ title: '3D Evren' }} />
       <Tabs.Screen name="vault" options={{ title: 'StarVault' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      <Tabs.Screen name="catalog" options={{ href: null }} />
       <Tabs.Screen name="explore" options={{ href: null }} />
       <Tabs.Screen name="mystars" options={{ href: null }} />
     </Tabs>

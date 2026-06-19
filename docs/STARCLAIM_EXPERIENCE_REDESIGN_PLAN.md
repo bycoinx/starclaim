@@ -173,14 +173,16 @@ Her paket ayrı uygulanacak, test edilecek, fiziksel cihaz ekran görüntüsüyl
 
 **Amaç:** Finansal dashboard yerine StarClaim'in duygusal ve astronomik değerini göstermek.
 
-- [ ] İlk ekran tam yüzey sinematik uzay kompozisyonu olacak.
-- [ ] Marka, kısa değer önerisi ve `Yıldızını Seç` / `Sky Live` CTA'ları kullanılacak.
-- [ ] Sahiplik varsa hero kullanıcının yıldızıyla kişiselleşecek.
-- [ ] Sahiplik yoksa katalogdan doğrulanmış gökyüzü bölgesi gösterilecek.
-- [ ] Görsel asset AVIF/WebP varyantları ve cihaz profiline göre çözünürlükle hazırlanacak.
-- [ ] Hareket hafif yıldız titreşimi, çok yavaş parallax ve seyrek meteorla sınırlı olacak.
-- [ ] Düşük güç ve azaltılmış hareket için statik alternatif bulunacak.
-- [ ] Hero metni görselin üstünde olacak; karta kapatılmayacak.
+- [x] İlk ekran tam yüzey sinematik uzay kompozisyonuna dönüştürüldü.
+- [x] Marka, kısa değer önerisi ve `Yıldızını Seç` / `Sky Live` CTA'ları eklendi.
+- [x] Sahiplik varsa hero kullanıcının ilk yıldızı ve koleksiyon sayısıyla kişiselleştirildi.
+- [x] Sahiplik yoksa doğrulanmış katalog akışına yönlendiren gökyüzü kompozisyonu gösteriliyor.
+- [x] Mevcut 136 KB yerel nebula asseti çevrimdışı kullanılıyor; yıldız yoğunluğu ekran genişliğine göre ayarlanıyor.
+- [x] Hareket çok yavaş drift ve 27 saniyelik seyrek meteor döngüsüyle sınırlandı.
+- [x] Sistem `Hareketi Azalt` ayarında kompozisyon tamamen statik kalıyor.
+- [x] Hero metni doğrudan görselin üstünde; kart içine kapatılmadı.
+
+**Doğrulama:** Expo Doctor `18/18`, astronomi/projeksiyon testleri `18/18`, Android Hermes export başarılı. Bilinen `three` paket export uyarıları bundle üretimini engellemiyor.
 
 **Çıkış kriteri:** Ürün beş saniyede yıldız sahiplenme ve gözlem deneyimi olarak anlaşılır; kripto izlenimi oluşmaz.
 
