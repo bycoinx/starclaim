@@ -171,13 +171,6 @@ export default function PurchaseModal({visible, onClose, star, onPurchaseSuccess
                 <Text style={[styles.payBtnText, selected==='stripe' && styles.payBtnTextActive]}>Kredi Kartı (Stripe)</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity 
-                style={[styles.payBtn, selected==='solana' && styles.payBtnActive]} 
-                onPress={()=>setSelected('solana')}
-              >
-                <Text style={[styles.payBtnText, selected==='solana' && styles.payBtnTextActive]}>Solana (SOL)</Text>
-              </TouchableOpacity>
-              
               <View style={{height: 12}} />
               
               <GoldButton 

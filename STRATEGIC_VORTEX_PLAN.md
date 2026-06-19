@@ -243,7 +243,7 @@ Bu aşama 2D ve 3D haritalar tamamlanmadan başlamaz.
 - **3D:** Expo GL, Three.js, Custom GLSL
 - **Astronomi:** HYG, J2000/ICRS, konum ve zaman tabanlı Alt/Az
 - **Backend:** FastAPI, MongoDB
-- **Blockchain:** Solana
+- **Blockchain:** Mobil entegrasyon geçici olarak devre dışı; backend geçmiş uyumluluğu korunuyor.
 - **AI:** Gemini, yalnızca hedef yıldız bağlamıyla
 
 Bu planın temel ilkesi şudur: **Önce doğru ve hızlı 2D gökyüzü, sonra aynı motor üzerinde gerçek 3D yolculuk.**
