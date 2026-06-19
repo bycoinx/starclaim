@@ -283,7 +283,7 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 - [x] Sirius, Vega, Polaris ve Güney yarımküre örnekleriyle RA/Dec → Alt/Az regresyon testleri yazıldı.
 - [x] Tarih değişimi, saat dilimi, gün dönümü ve kutup enlemleri test edildi.
-- [ ] Takımyıldızı çizgileri ve IAU sınırlarının RA `0/24h` geçişinde kopmaması doğrulanacak.
+- [x] Takımyıldızı çizgileri ve IAU sınırlarının RA `0/24h` geçişi ortak segment projeksiyonu ve viewport testleriyle doğrulandı.
 - [ ] Kamera yönü ile yıldız projeksiyonu arasındaki cihaz rotasyonu/ekran yönü ofseti kalibre edilecek.
 - [ ] Konum, kamera veya sensör izni reddedildiğinde eksiksiz fallback akışı doğrulanacak.
 

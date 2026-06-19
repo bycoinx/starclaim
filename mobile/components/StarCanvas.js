@@ -32,6 +32,10 @@ import { radiusForMag, colorForSpectrum } from '../src/utils/astronomy';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
 import { getPlanetPositions } from '../src/utils/solarSystem';
 import { DSO_CATALOG } from '../src/data/dsoData';
+import {
+  isSkySegmentVisible,
+  projectSkySegment,
+} from '../src/utils/skyProjection';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -641,25 +645,32 @@ function CelestialGridLine({ type, value, ra, dec, zoom, layout, font, coordinat
 }
 
 function CelestialGridSegment({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const p1 = useDerivedValue(() => project(p1Data.ra, p1Data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const p2 = useDerivedValue(() => project(p2Data.ra, p2Data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-
-  const isVisible = useDerivedValue(() => {
-    const onScreen = (
-      (p1.value.x > -100 && p1.value.x < layout.width + 100 && p1.value.y > -100 && p1.value.y < layout.height + 100)
-      || (p2.value.x > -100 && p2.value.x < layout.width + 100 && p2.value.y > -100 && p2.value.y < layout.height + 100)
-    );
-    const aboveHorizon = (
-      coordinateMode !== 'horizontal'
-      || (p1.value.skyAltitude >= -2 && p2.value.skyAltitude >= -2)
-    );
-    return onScreen && aboveHorizon;
-  });
+  const segment = useDerivedValue(() => projectSkySegment(
+    p1Data,
+    p2Data,
+    ra.value,
+    dec.value,
+    layout.width,
+    layout.height,
+    zoom.value,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+  ));
+  const isVisible = useDerivedValue(() => isSkySegmentVisible(
+    segment.value,
+    layout.width,
+    layout.height,
+    100,
+    coordinateMode,
+    -2,
+    true,
+  ));
 
   return (
     <Line
-      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
-      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
+      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
+      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
       color={nightVision ? 'rgba(255,74,66,0.1)' : 'rgba(0, 242, 254, 0.08)'}
       strokeWidth={0.5}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
@@ -797,25 +808,31 @@ function ConstellationBoundary({ feature, ra, dec, zoom, layout, coordinateMode,
 }
 
 function ConstellationBoundaryLine({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const p1 = useDerivedValue(() => project(p1Data[0] / 15, p1Data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const p2 = useDerivedValue(() => project(p2Data[0] / 15, p2Data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const isVisible = useDerivedValue(() => {
-    const onScreen = (
-      (p1.value.x > -60 && p1.value.x < layout.width + 60 && p1.value.y > -60 && p1.value.y < layout.height + 60)
-      || (p2.value.x > -60 && p2.value.x < layout.width + 60 && p2.value.y > -60 && p2.value.y < layout.height + 60)
-    );
-    const aboveHorizon = (
-      coordinateMode !== 'horizontal'
-      || p1.value.skyAltitude >= 0
-      || p2.value.skyAltitude >= 0
-    );
-    return onScreen && aboveHorizon && zoom.value >= 0.75;
-  });
+  const segment = useDerivedValue(() => projectSkySegment(
+    { ra: p1Data[0] / 15, dec: p1Data[1] },
+    { ra: p2Data[0] / 15, dec: p2Data[1] },
+    ra.value,
+    dec.value,
+    layout.width,
+    layout.height,
+    zoom.value,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+  ));
+  const isVisible = useDerivedValue(() => zoom.value >= 0.75 && isSkySegmentVisible(
+    segment.value,
+    layout.width,
+    layout.height,
+    60,
+    coordinateMode,
+    0,
+  ));
 
   return (
     <Line
-      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
-      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
+      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
+      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
       color={nightVision ? 'rgba(255,74,66,0.13)' : 'rgba(130,160,190,0.11)'}
       strokeWidth={0.65}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
@@ -869,24 +886,32 @@ function ConstellationFeature({ feature, ra, dec, zoom, layout, coordinateMode, 
 }
 
 function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const p1 = useDerivedValue(() => project(p1_data[0] / 15, p1_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const p2 = useDerivedValue(() => project(p2_data[0] / 15, p2_data[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const isVisible = useDerivedValue(() => {
-    const onScreen = (
-      (p1.value.x > -100 && p1.value.x < layout.width + 100 && p1.value.y > -100 && p1.value.y < layout.height + 100)
-      || (p2.value.x > -100 && p2.value.x < layout.width + 100 && p2.value.y > -100 && p2.value.y < layout.height + 100)
-    );
-    const aboveHorizon = (
-      coordinateMode !== 'horizontal'
-      || (p1.value.skyAltitude >= -5 && p2.value.skyAltitude >= -5)
-    );
-    return onScreen && aboveHorizon;
-  });
+  const segment = useDerivedValue(() => projectSkySegment(
+    { ra: p1_data[0] / 15, dec: p1_data[1] },
+    { ra: p2_data[0] / 15, dec: p2_data[1] },
+    ra.value,
+    dec.value,
+    layout.width,
+    layout.height,
+    zoom.value,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+  ));
+  const isVisible = useDerivedValue(() => isSkySegmentVisible(
+    segment.value,
+    layout.width,
+    layout.height,
+    100,
+    coordinateMode,
+    -5,
+    true,
+  ));
 
   return (
     <Line
-      p1={useDerivedValue(() => vec(p1.value.x, p1.value.y))}
-      p2={useDerivedValue(() => vec(p2.value.x, p2.value.y))}
+      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
+      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
       color={nightVision ? 'rgba(255,74,66,0.25)' : 'rgba(74,144,226,0.18)'}
       strokeWidth={useDerivedValue(() => zoom.value > 2 ? 1.2 : 0.8)}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}

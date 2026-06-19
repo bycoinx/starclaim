@@ -8,7 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test:astronomy": "node --test tests/astronomy.test.cjs"
+    "test:astronomy": "node --test tests/*.test.cjs"
   },
   "dependencies": {
     "@expo-google-fonts/cinzel": "^0.2.1",
