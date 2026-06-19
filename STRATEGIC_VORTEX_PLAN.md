@@ -411,8 +411,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **19 Haziran 2026 arayüz önceliği:** Mobil, web ve 2D Sky Live referanslarının projeye uyarlanmış ayrıntılı uygulama planı [docs/STARCLAIM_EXPERIENCE_REDESIGN_PLAN.md](docs/STARCLAIM_EXPERIENCE_REDESIGN_PLAN.md) dosyasına eklendi.
 
-**Tamamlandı:** Mobil P0 kabuk ve Solana görünürlük temizliği; safe-area/system bar koruması, çift alt menü temizliği, responsive marketplace ve açık 3D yükleme/hata durumları eklendi.
+**Tamamlandı:** Mobil P0 kabuk ve Solana görünürlük temizliği; safe-area/system bar koruması, çift alt menü temizliği, responsive marketplace ve açık 3D yükleme/hata durumları eklendi. Beş hedefli mobil navigasyon, profil merkezi, ortak header ölçüleri ve premium gözlem kabuğu kuruldu.
 
-Sıradaki cerrahi paket **Mobil navigasyon ve uygulama kabuğu**dur. Alt navigasyon beş ürün hedefine göre yeniden kurulacak; header ve ortak kontrol ölçüleri tek sisteme taşınacaktır.
+Sıradaki cerrahi paket **Mobil ana ekran dönüşümü**dür. Finansal dashboard kaldırılarak yıldız sahipliği, Sky Live ve StarClaim'in duygusal değerini öne çıkaran sinematik keşif merkezi kurulacaktır.
 
 **Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.

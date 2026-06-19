@@ -183,7 +183,7 @@ export default function VaultHomeScreen(){
         <View style={styles.content}>
           <View style={styles.headerRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <TouchableOpacity onPress={() => router.replace('/(tabs)/explore/home')} style={styles.backBtn}>
+              <TouchableOpacity onPress={() => router.replace('/(tabs)/claim')} style={styles.backBtn}>
                 <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
               </TouchableOpacity>
               <View>

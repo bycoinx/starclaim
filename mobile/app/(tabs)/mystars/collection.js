@@ -107,7 +107,7 @@ export default function CollectionScreen() {
               <Text style={styles.subtitle}>ACCESSING_SECURE_COLLECTION</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)/explore/home')}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)/profile')}>
             <Ionicons name="close" size={24} color={THEME.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -124,7 +124,7 @@ export default function CollectionScreen() {
             </View>
             <Text style={styles.emptyText}>BİR YILDIZ SAHİPLENİLMEDİ</Text>
             <Text style={styles.emptySubText}>Evrende izinizi bırakmak için keşfe çıkın.</Text>
-            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.push('/stars')}>
+            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.replace('/(tabs)/claim')}>
               <Text style={styles.exploreBtnText}>KEŞFETMEYE BAŞLA</Text>
             </TouchableOpacity>
           </View>

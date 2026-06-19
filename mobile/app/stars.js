@@ -8,6 +8,8 @@ import { THEME } from '../constants/Theme';
 import { CONFIG } from '../constants/Config';
 import { raDecToAzAlt, getApproximateLST } from '../src/utils/astronomy';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import SpaceBackground from '../components/SpaceBackground';
 
 const { width, height } = Dimensions.get('window');
 
@@ -132,8 +134,8 @@ export default function Stars() {
     </View>
   );
 
-  if (!permission) return <View style={styles.container} />;
-  if (!permission.granted) {
+  if (activeTab === 'tarama' && !permission) return <View style={styles.container} />;
+  if (activeTab === 'tarama' && !permission.granted) {
     return (
       <View style={styles.permissionContainer}>
         <SpaceBackground />
@@ -147,7 +149,7 @@ export default function Stars() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'right', 'bottom', 'left']}>
       {activeTab === 'tarama' ? (
         <CameraView style={styles.camera} facing="back">
           <View style={styles.overlay}>
@@ -170,7 +172,7 @@ export default function Stars() {
                 <View style={styles.statusDot} />
                 <Text style={styles.statusText}>COSMOS_VISION_ACTIVE</Text>
               </View>
-              <TouchableOpacity style={styles.glassBtn} onPress={() => router.replace('/')}>
+              <TouchableOpacity style={styles.glassBtn} onPress={() => setActiveTab('catalog')}>
                 <Ionicons name="close" size={24} color={THEME.colors.primary} />
               </TouchableOpacity>
             </View>
@@ -210,13 +212,17 @@ export default function Stars() {
           <LinearGradient colors={['rgba(0,0,0,0.8)', 'transparent', 'rgba(0,0,0,0.9)']} style={StyleSheet.absoluteFillObject} />
           
           <View style={styles.catalogHeader}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.catalogIdentity}>
               <Text style={styles.catalogTitle}>STELLAR_CATALOG</Text>
               <View style={styles.catalogStatusRow}>
                 <View style={styles.statusDot} />
                 <Text style={styles.catalogSub}>{filteredStars.length} OBJECTS_DETECTED</Text>
               </View>
             </View>
+            <TouchableOpacity style={styles.arButton} onPress={() => setActiveTab('tarama')}>
+              <MaterialCommunityIcons name="radar" size={20} color={THEME.colors.primary} />
+              <Text style={styles.arButtonText}>AR TARAMA</Text>
+            </TouchableOpacity>
             <View style={styles.catalogSearchGroup}>
               <View style={styles.catalogSearchBar}>
                 <MaterialCommunityIcons name="magnify" size={18} color={THEME.colors.primary} />
@@ -241,23 +247,9 @@ export default function Stars() {
             showsVerticalScrollIndicator={false}
           />
 
-          <View style={styles.catalogNavBar}>
-            <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab('tarama')}>
-              <MaterialCommunityIcons name="radar" size={24} color="#fff" />
-              <Text style={styles.navTabText}>AR_SCAN</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.navTab, styles.navTabActive]}>
-              <MaterialCommunityIcons name="view-grid-outline" size={24} color={THEME.colors.primary} />
-              <Text style={[styles.navTabText, { color: THEME.colors.primary }]}>CATALOG</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.navTab} onPress={() => router.replace('/')}>
-              <MaterialCommunityIcons name="close" size={24} color={THEME.colors.primary} />
-              <Text style={styles.navTabText}>CLOSE</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -299,11 +291,14 @@ const styles = StyleSheet.create({
   closeArDetail: { marginTop: 16, alignItems: 'center' },
   closeArDetailText: { color: THEME.colors.textMuted, fontSize: 10, fontWeight: '900' },
   catalogContainer: { flex: 1, backgroundColor: '#000', padding: 24 },
-  catalogHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32, marginTop: 10 },
-  catalogTitle: { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 4, fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' },
+  catalogHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 24, marginTop: 10 },
+  catalogIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 170 },
+  catalogTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 3, fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' },
   catalogStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   catalogSub: { fontSize: 10, color: THEME.colors.primary, fontWeight: '900', letterSpacing: 2 },
-  catalogSearchGroup: { width: 400, gap: 12 },
+  catalogSearchGroup: { flexGrow: 1, flexShrink: 1, flexBasis: 300, maxWidth: 400, minWidth: 210, gap: 12 },
+  arButton: { minHeight: 44, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(0,242,254,0.28)', backgroundColor: 'rgba(7,11,20,0.76)' },
+  arButtonText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   catalogSearchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(25, 25, 35, 0.7)', borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: 'rgba(0, 242, 254, 0.3)' },
   catalogSearchInput: { flex: 1, color: '#fff', paddingVertical: 10, paddingHorizontal: 8, fontSize: 13, fontWeight: '700' },
   tierFilters: { flexDirection: 'row', gap: 8 },
@@ -311,7 +306,7 @@ const styles = StyleSheet.create({
   tierFilterActive: { backgroundColor: THEME.colors.primary + '20', borderColor: THEME.colors.primary },
   tierFilterText: { color: THEME.colors.textMuted, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   tierFilterTextActive: { color: '#fff' },
-  catalogList: { paddingBottom: 120 },
+  catalogList: { paddingBottom: 24 },
   starCardContainer: { flex: 1/3, padding: 6 },
   starCard: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   starCardGradient: { padding: 16, minHeight: 120 },
@@ -320,8 +315,4 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   starCardPriceValue: { fontSize: 15, fontWeight: '900', color: THEME.colors.primary, fontFamily: 'monospace' },
   cardCorner: { position: 'absolute', width: 10, height: 10 },
-  catalogNavBar: { position: 'absolute', bottom: 24, left: 24, right: 24, flexDirection: 'row', backgroundColor: 'rgba(10, 10, 15, 0.95)', borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(0, 242, 254, 0.2)', padding: 8 },
-  navTab: { flex: 1, alignItems: 'center', paddingVertical: 10, gap: 4 },
-  navTabActive: { backgroundColor: 'rgba(0, 242, 254, 0.1)', borderRadius: 12 },
-  navTabText: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 1.5 }
 });

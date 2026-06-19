@@ -158,12 +158,14 @@ Her paket ayrı uygulanacak, test edilecek, fiziksel cihaz ekran görüntüsüyl
 
 **Amaç:** Referanstaki premium kabuğu küçük telefonlarda güvenilir hale getirmek.
 
-- [ ] Alt navigasyon beş hedefe sabitlenecek: `Yıldız Al`, `Sky Live`, `3D Evren`, `StarVault`, `Profil`.
-- [ ] `Koleksiyon/Yıldızlarım`, Profil veya StarVault içinden erişilen ikincil yüzey olacak.
-- [ ] Aktif sekme bağlama göre altın veya mavi vurgulanacak.
-- [ ] Tablet/yatay telefonda geniş, dar telefonda güvenli ikon+etiket düzeni kullanılacak.
-- [ ] Header, geri, arama, bildirim ve ayar düğmeleri aynı ölçü sistemine taşınacak.
-- [ ] `CockpitLayout` terminal çerçevesinden premium gözlem çerçevesine dönüşecek.
+- [x] Alt navigasyon beş hedefe sabitlendi: `Yıldız Al`, `Sky Live`, `3D Evren`, `StarVault`, `Profil`.
+- [x] `Koleksiyon/Yıldızlarım`, Profil içinden erişilen ikincil yüzeye taşındı.
+- [x] Aktif sekmeye göre altın veya mavi vurgu eklendi.
+- [x] Yatay telefon ve tablette güvenli, sabit ölçülü ikon+etiket düzeni kuruldu.
+- [x] Header ve ortak kontrol ölçüleri tema bileşen değerlerine taşındı.
+- [x] `CockpitLayout` terminal çerçevesinden sade premium gözlem çerçevesine dönüştürüldü.
+
+**Doğrulama:** Expo Doctor `18/18`, astronomi/projeksiyon testleri `18/18`, Android Hermes export başarılı. Fiziksel cihazda safe-area ve beş sekmenin dokunma testi kullanıcı kabul turunda yapılacak.
 
 **Çıkış kriteri:** Navigasyon taşmaz; ana akışlara en fazla iki dokunuşta ulaşılır.
 

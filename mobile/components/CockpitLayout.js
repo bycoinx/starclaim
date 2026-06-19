@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { THEME } from '../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import WarpBackground from './WarpBackground';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CockpitLayout({ children, leftWing, rightWing, showHUD = true }) {
   const hasWings = !!leftWing || !!rightWing;
@@ -21,13 +22,14 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
       </View>
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
-        <View style={styles.topStatus}>
+        <View style={styles.brandBar}>
           <View style={styles.statusGroup}>
-            <View style={[styles.statusDot, { backgroundColor: THEME.colors.primary }]} />
-            <Text style={styles.statusLabel}>STARCALIMX AEGIS v2.0</Text>
+            <Ionicons name="star" size={16} color={THEME.colors.secondary} />
+            <Text style={styles.brandName}>STARCLAIM</Text>
           </View>
           <View style={styles.statusGroup}>
-            <Text style={styles.statusLabel}>{new Date().toLocaleTimeString()}</Text>
+            <View style={styles.statusDot} />
+            <Text style={styles.statusLabel}>GÜVENLİ OTURUM</Text>
           </View>
         </View>
 
@@ -35,7 +37,6 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
           {leftWing && (
             <View style={styles.leftWing}>
               <View style={styles.glassPanel}>
-                <View style={styles.scanline} />
                 {leftWing}
               </View>
             </View>
@@ -48,7 +49,6 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
           {rightWing && (
             <View style={styles.rightWing}>
               <View style={styles.glassPanel}>
-                <View style={styles.scanline} />
                 {rightWing}
               </View>
             </View>
@@ -58,12 +58,7 @@ export default function CockpitLayout({ children, leftWing, rightWing, showHUD =
 
       {showHUD && (
         <View style={styles.hudOverlay} pointerEvents="none">
-          <View style={[styles.hudCorner, styles.hudTopL, { borderColor: THEME.colors.primary + '4D' }]} />
-          <View style={[styles.hudCorner, styles.hudTopR, { borderColor: THEME.colors.primary + '4D' }]} />
-          <View style={[styles.hudCorner, styles.hudBottomL, { borderColor: THEME.colors.primary + '4D' }]} />
-          <View style={[styles.hudCorner, styles.hudBottomR, { borderColor: THEME.colors.primary + '4D' }]} />
-          
-          <View style={styles.globalScanline} />
+          <View style={styles.observationFrame} />
         </View>
       )}
     </View>
@@ -81,14 +76,15 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
-  topStatus: {
+  brandBar: {
+    height: THEME.components.headerHeight,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 242, 254, 0.2)', // Cyan border
+    paddingHorizontal: THEME.spacing.lg,
+    backgroundColor: 'rgba(2,4,10,0.72)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(244,247,255,0.1)',
   },
   statusGroup: {
     flexDirection: 'row',
@@ -99,21 +95,18 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    shadowColor: '#00f2fe',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
+    backgroundColor: THEME.colors.primary,
   },
+  brandName: { color: THEME.colors.text, fontSize: 16, fontFamily: 'Cinzel_700Bold' },
   statusLabel: {
     color: THEME.colors.textMuted,
     fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 1.5,
+    fontWeight: '700',
   },
   contentWrapper: {
     flex: 1,
     flexDirection: 'row',
-    padding: THEME.spacing.sm,
+    padding: 12,
   },
   contentColumn: {
     flexDirection: 'column',
@@ -125,7 +118,7 @@ const styles = StyleSheet.create({
   },
   centerViewport: {
     flex: 1,
-    borderRadius: 22,
+    borderRadius: THEME.components.panelRadius,
     overflow: 'hidden',
   },
   fullViewport: {
@@ -138,36 +131,23 @@ const styles = StyleSheet.create({
   glassPanel: {
     flex: 1,
     backgroundColor: THEME.colors.glass,
-    borderRadius: 18,
+    borderRadius: THEME.components.panelRadius,
     borderWidth: 1,
     borderColor: THEME.colors.glassBorder,
     overflow: 'hidden',
     padding: THEME.spacing.md,
   },
-  scanline: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: 'rgba(0, 242, 254, 0.15)',
-    zIndex: 10,
-  },
-  globalScanline: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 242, 254, 0.02)',
-    opacity: 0.5,
-  },
   hudOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  hudCorner: {
+  observationFrame: {
     position: 'absolute',
-    width: 60,
-    height: 60,
+    top: 8,
+    right: 8,
+    bottom: 8,
+    left: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(119,191,255,0.13)',
+    borderRadius: 12,
   },
-  hudTopL: { top: 12, left: 12, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 28 },
-  hudTopR: { top: 12, right: 12, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 28 },
-  hudBottomL: { bottom: 12, left: 12, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 28 },
-  hudBottomR: { bottom: 12, right: 12, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 28 },
 });

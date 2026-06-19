@@ -343,7 +343,7 @@ export default function StarMapScreen() {
         <View style={styles.overlay} pointerEvents="box-none">
           {/* HEADER ROW */}
           <View style={styles.headerRow} pointerEvents="box-none">
-            <TouchableOpacity style={styles.glassBtn} onPress={() => router.replace('/(tabs)/explore/home')}>
+            <TouchableOpacity style={styles.glassBtn} onPress={() => router.replace('/(tabs)/claim')}>
               <Ionicons name="close" size={24} color={THEME.colors.primary} />
             </TouchableOpacity>
 
