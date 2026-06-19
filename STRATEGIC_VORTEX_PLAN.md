@@ -409,4 +409,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Bir Sonraki Cerrahi Paket
 
-**Floating-origin navigasyon paketi:** Büyük parsec mesafelerinde kamera ve yıldız konumlarını aktif hedef çevresinde yeniden merkezleyerek precision jitter'ı azaltmak; warp, orbit ve sektör geçişlerini aynı koordinat sözleşmesinde tutmak.
+**19 Haziran 2026 arayüz önceliği:** Mobil, web ve 2D Sky Live referanslarının projeye uyarlanmış ayrıntılı uygulama planı [docs/STARCLAIM_EXPERIENCE_REDESIGN_PLAN.md](docs/STARCLAIM_EXPERIENCE_REDESIGN_PLAN.md) dosyasına eklendi.
+
+Sıradaki cerrahi paket artık **Mobil P0 kabuk ve Solana görünürlük temizliği**dir. Safe-area ve sistem navigasyon taşmaları, alt tab çakışması, bozuk glifler, boş 3D durumları ve mobilde kalan SOL/Solana dashboard yüzeyleri tamamlanmadan görsel yeniden tasarıma geçilmeyecektir.
+
+**Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.
