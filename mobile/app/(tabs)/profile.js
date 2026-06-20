@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import SpaceBackground from '../../components/SpaceBackground';
 import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
 import { THEME } from '../../constants/Theme';
 import MobileHeader from '../../components/MobileHeader';
@@ -37,7 +36,7 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <SpaceBackground />
+      <Image source={require('../../assets/profile-cosmos.jpg')} style={styles.backgroundImage} resizeMode="cover" />
       <View style={styles.scrim} />
       <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
         <MobileHeader title="Profil" />
@@ -83,7 +82,8 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#02040A' },
-  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,4,10,0.74)' },
+  backgroundImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
+  scrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(2,4,10,0.48)' },
   safeArea: { flex: 1 },
   content: { flex: 1, padding: 24, flexDirection: 'row', gap: 18 },
   summary: {

@@ -1,10 +1,9 @@
 import React, { useCallback, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import CinematicSpaceBackground from '../../components/CinematicSpaceBackground';
 import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
 import { THEME } from '../../constants/Theme';
 
@@ -47,7 +46,13 @@ export default function ClaimHomeScreen() {
 
   return (
     <View style={styles.container}>
-      <CinematicSpaceBackground />
+      <Image source={require('../../assets/home-cosmos.jpg')} style={styles.backgroundImage} resizeMode="cover" />
+      <LinearGradient
+        pointerEvents="none"
+        colors={['rgba(2,4,10,0.24)', 'rgba(2,4,10,0.46)', 'rgba(2,4,10,0.62)']}
+        locations={[0, 0.52, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <SafeAreaView style={styles.safeArea} edges={['top', 'right', 'bottom', 'left']}>
         <View style={[styles.header, compact && styles.headerCompact]}>
           <View style={styles.brand}>
@@ -125,6 +130,7 @@ export default function ClaimHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#02040A' },
+  backgroundImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   safeArea: { flex: 1 },
   header: {
     height: 68,
