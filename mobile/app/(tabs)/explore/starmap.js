@@ -31,6 +31,7 @@ import {
 import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
+import SkyLiveChrome from '../../../components/SkyLiveChrome';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -72,6 +73,7 @@ export default function StarMapScreen() {
   const [calibrationVisible, setCalibrationVisible] = useState(false);
   const [layersVisible, setLayersVisible] = useState(false);
   const [nightVision, setNightVision] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const lastHeading = useRef(0);
   const lastTilt = useRef(0);
   const router = useRouter();
@@ -99,6 +101,11 @@ export default function StarMapScreen() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
     return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -270,6 +277,13 @@ export default function StarMapScreen() {
   const selectedPurchase = selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
+  const selectedHorizontal = selectedStar && observer
+    ? getHorizontalPosition(selectedStar)
+    : null;
+  const displayAzimuth = normalizeAngle(selectedHorizontal?.az ?? centerRa);
+  const displayAltitude = selectedHorizontal?.alt ?? centerDec;
+  const cardinalDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  const cardinal = cardinalDirections[Math.round(displayAzimuth / 45) % cardinalDirections.length];
   const ownedStarIds = useMemo(
     () => purchases
       .flatMap((item) => [item.starId, item.hip])
@@ -430,7 +444,7 @@ export default function StarMapScreen() {
                 showNebula={showNebula}
                 onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
                 onZoomChange={setZoom}
-                onSelect={(star) => { setSelectedStar(star); setPopupVisible(true); }}
+                onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
                 ownedStarIds={ownedStarIds}
               />
             )}
@@ -467,6 +481,39 @@ export default function StarMapScreen() {
               </View>
             )}
           </View>
+
+          <SkyLiveChrome
+            cardinal={cardinal}
+            previousCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 7) % 8]}
+            nextCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 1) % 8]}
+            azimuth={displayAzimuth}
+            altitude={displayAltitude}
+            observer={observer}
+            now={now}
+            selectedStar={selectedStar}
+            selectedStarOwned={selectedStarOwned}
+            selectedHorizontal={selectedHorizontal}
+            showConstellations={showConstellations}
+            showDeepSpace={showDSOs || showNebula}
+            mode={mode}
+            coordinateMode={coordinateMode}
+            searchQuery={searchQuery}
+            searchResults={searchResults}
+            nightVision={nightVision}
+            onExit={() => router.replace('/(tabs)/claim')}
+            onSearch={handleSearch}
+            onSelectSearchResult={navigateToObject}
+            onOpenSettings={() => setLayersVisible(true)}
+            onToggleConstellations={() => { const next = !showConstellations; setShowConstellations(next); setShowConstellationLabels(next); }}
+            onToggleDeepSpace={() => { const next = !(showDSOs || showNebula); setShowDSOs(next); setShowNebula(next); }}
+            onCenter={selectedStar ? handleCenterOnSelected : activateRealSky}
+            onManualMode={() => { setMode('manual'); setCoordinateMode('equatorial'); }}
+            onSensorMode={activateRealSky}
+            onCameraMode={enableCameraMode}
+            onClearSelection={() => setSelectedStar(null)}
+            onOpenDetails={() => setPopupVisible(true)}
+            onVoyage={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })}
+          />
           
           <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
           <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
@@ -476,21 +523,22 @@ export default function StarMapScreen() {
             <TouchableOpacity activeOpacity={1} style={styles.layersBackdrop} onPress={() => setLayersVisible(false)}>
               <View style={[styles.layersPanel, nightVision && styles.layersPanelNight]}>
                 <View style={styles.layersHeader}>
-                  <Text style={[styles.layersTitle, nightVision && styles.nightText]}>SYSTEM_LAYERS</Text>
+                  <Text style={[styles.layersTitle, nightVision && styles.nightText]}>GÖRÜNÜM AYARLARI</Text>
                   <TouchableOpacity onPress={() => setLayersVisible(false)}>
                     <Ionicons name="close" size={24} color={THEME.colors.primary} />
                   </TouchableOpacity>
                 </View>
                 <ScrollView>
-                  <LayerToggle icon="image-filter-hdr" label="NEBULA_ATMOSPHERE" active={showNebula} onPress={() => setShowNebula(!showNebula)} nightVision={nightVision} />
-                  <LayerToggle icon="format-line-spacing" label="CONSTELLATION_LINES" active={showConstellations} onPress={() => setShowConstellations(!showConstellations)} nightVision={nightVision} />
-                  <LayerToggle icon="text-recognition" label="CONSTELLATION_NAMES" active={showConstellationLabels} onPress={() => setShowConstellationLabels(!showConstellationLabels)} nightVision={nightVision} />
-                  <LayerToggle icon="border-all-variant" label="IAU_BOUNDARIES" active={showConstellationBoundaries} onPress={() => setShowConstellationBoundaries(!showConstellationBoundaries)} nightVision={nightVision} />
-                  <LayerToggle icon="grid" label="COORDINATE_GRID" active={showGrid} onPress={() => setShowGrid(!showGrid)} nightVision={nightVision} />
-                  <LayerToggle icon="format-text" label="STAR_IDENTIFIERS" active={showLabels} onPress={() => setShowLabels(!showLabels)} nightVision={nightVision} />
-                  <LayerToggle icon="planet-outline" label="SOLAR_SYSTEM" active={showPlanets} onPress={() => setShowPlanets(!showPlanets)} nightVision={nightVision} />
-                  <LayerToggle icon="flare" label="DEEP_SPACE_OBJECTS" active={showDSOs} onPress={() => setShowDSOs(!showDSOs)} nightVision={nightVision} />
-                  <LayerToggle icon="auto-fix" label="MYTHOLOGY_VISION" active={showMythology} onPress={() => setShowMythology(!showMythology)} nightVision={nightVision} />
+                  <LayerToggle icon="weather-night" label="Gece Görüşü" active={nightVision} onPress={() => setNightVision(!nightVision)} nightVision={nightVision} />
+                  <LayerToggle icon="image-filter-hdr" label="Nebula Katmanı" active={showNebula} onPress={() => setShowNebula(!showNebula)} nightVision={nightVision} />
+                  <LayerToggle icon="format-line-spacing" label="Takımyıldızı Çizgileri" active={showConstellations} onPress={() => setShowConstellations(!showConstellations)} nightVision={nightVision} />
+                  <LayerToggle icon="text-recognition" label="Takımyıldızı Adları" active={showConstellationLabels} onPress={() => setShowConstellationLabels(!showConstellationLabels)} nightVision={nightVision} />
+                  <LayerToggle icon="border-all-variant" label="IAU Sınırları" active={showConstellationBoundaries} onPress={() => setShowConstellationBoundaries(!showConstellationBoundaries)} nightVision={nightVision} />
+                  <LayerToggle icon="grid" label="Koordinat Izgarası" active={showGrid} onPress={() => setShowGrid(!showGrid)} nightVision={nightVision} />
+                  <LayerToggle icon="format-text" label="Yıldız Etiketleri" active={showLabels} onPress={() => setShowLabels(!showLabels)} nightVision={nightVision} />
+                  <LayerToggle icon="planet-outline" label="Güneş Sistemi" active={showPlanets} onPress={() => setShowPlanets(!showPlanets)} nightVision={nightVision} />
+                  <LayerToggle icon="flare" label="Derin Uzay Nesneleri" active={showDSOs} onPress={() => setShowDSOs(!showDSOs)} nightVision={nightVision} />
+                  <LayerToggle icon="auto-fix" label="Mitoloji Katmanı" active={showMythology} onPress={() => setShowMythology(!showMythology)} nightVision={nightVision} />
                 </ScrollView>
               </View>
             </TouchableOpacity>
@@ -503,9 +551,9 @@ export default function StarMapScreen() {
                 <View style={styles.calibrationIcon}>
                   <MaterialCommunityIcons name="compass-outline" size={48} color={THEME.colors.primary} />
                 </View>
-                <Text style={styles.calibrationTitle}>CALIBRATE_SENSORS</Text>
+                <Text style={styles.calibrationTitle}>SENSÖR KALİBRASYONU</Text>
                 <Text style={styles.calibrationBody}>
-                  Move the device in a figure-8 pattern away from metallic interference to synchronize the quantum orientation.
+                  Telefonu metal nesnelerden uzak tutup havada sekiz çizerek pusulayı kalibre edin.
                 </Text>
                 <View style={styles.accuracyRow}>
                   {[1, 2, 3].map((level) => (
@@ -514,7 +562,7 @@ export default function StarMapScreen() {
                 </View>
                 <TouchableOpacity style={styles.calibrationClose} onPress={() => setCalibrationVisible(false)}>
                   <Text style={styles.calibrationCloseText}>
-                    {headingAccuracy >= 2 ? 'PROCEED' : 'BYPASS'}
+                    {headingAccuracy >= 2 ? 'DEVAM ET' : 'ŞİMDİLİK GEÇ'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -563,10 +611,11 @@ function LayerToggle({ icon, label, active, onPress, nightVision }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   camera: { ...StyleSheet.absoluteFillObject },
-  hudOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
+  hudOverlay: { display: 'none' },
   hudCorner: { position: 'absolute', width: 30, height: 30 },
   overlay: { flex: 1 },
-  headerRow: { 
+  headerRow: {
+    display: 'none',
     flexDirection: 'row', 
     alignItems: 'center', 
     paddingHorizontal: 24, 
@@ -634,7 +683,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0, 242, 254, 0.3)' 
   },
   modeButton: { padding: 10, borderRadius: 8, marginHorizontal: 2 },
-  leftColumn: { position: 'absolute', top: 90, left: 24, zIndex: 10 },
+  leftColumn: { display: 'none' },
   telemetryBox: { 
     backgroundColor: 'rgba(25, 25, 35, 0.6)', 
     padding: 12, 
@@ -645,7 +694,7 @@ const styles = StyleSheet.create({
   telemetryLabel: { color: THEME.colors.textMuted, fontSize: 8, fontWeight: '900', letterSpacing: 1, marginBottom: 4 },
   telemetryValue: { color: '#fff', fontSize: 10, fontWeight: '900', fontFamily: 'monospace', marginBottom: 8 },
   telemetrySeparator: { height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginBottom: 8 },
-  rightColumn: { position: 'absolute', top: 90, right: 24, zIndex: 10, gap: 12 },
+  rightColumn: { display: 'none' },
   toolBtn: { 
     width: 48, 
     height: 48, 
@@ -658,7 +707,8 @@ const styles = StyleSheet.create({
   },
   mapContainer: { flex: 1 },
   nightFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(90,0,0,0.12)', zIndex: 2 },
-  selectionPanel: { 
+  selectionPanel: {
+    display: 'none',
     position: 'absolute', 
     left: 24, 
     right: 24, 

@@ -147,6 +147,21 @@ function getCellKey(x, y) {
   return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
 }
 
+function isSelectedConstellation(feature, selectedStar) {
+  if (!selectedStar) return false;
+  const targetValues = [selectedStar.con, selectedStar.constellation]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+  if (!targetValues.length) return false;
+  const featureValues = [
+    feature.id,
+    feature.properties?.id,
+    feature.properties?.name,
+    feature.properties?.iau,
+  ].filter(Boolean).map((value) => String(value).toLowerCase());
+  return targetValues.some((target) => featureValues.includes(target));
+}
+
 function NebulaBackground({ ra, dec, layout, qualityLevel }) {
   const image = useImage(require('../assets/sky-nebula-premium.jpg'));
   const imageHeight = layout.height * 1.18;
@@ -445,8 +460,9 @@ export default function StarCanvas({
            selectedStarPos.value.y > 0 && selectedStarPos.value.y < layout.height &&
            (!hideBelowHorizon || selectedStarPos.value.skyAltitude == null || selectedStarPos.value.skyAltitude >= 0);
   });
-
-  const fpsDisplay = useDerivedValue(() => `${fpsShared.value} FPS`);
+  const selectedX = useDerivedValue(() => selectedStarPos.value?.x ?? -100);
+  const selectedY = useDerivedValue(() => selectedStarPos.value?.y ?? -100);
+  const selectedHaloCenter = useDerivedValue(() => vec(selectedX.value, selectedY.value));
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -517,11 +533,11 @@ export default function StarCanvas({
             ))}
 
             {showConstellations && constellations.lines?.features?.map((f, i) => (
-              <ConstellationFeature key={i} feature={f} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
+              <ConstellationFeature key={i} feature={f} emphasized={isSelectedConstellation(f, selectedStar)} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
             ))}
 
             {renderedStars.map((star) => (
-              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
+              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
             ))}
 
             {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature) => (
@@ -546,8 +562,12 @@ export default function StarCanvas({
 
             {selectedStarPos.value && isSelectedVisible.value && (
               <Group>
-                <Circle cx={useDerivedValue(() => selectedStarPos.value.x)} cy={useDerivedValue(() => selectedStarPos.value.y)} r={useDerivedValue(() => 22 + Math.sin(time.value * 5) * 4)} color={nightVision ? '#FF4A42' : '#00f2fe'} style="stroke" strokeWidth={1} opacity={0.3} />
-                <Rect x={useDerivedValue(() => selectedStarPos.value.x - 18)} y={useDerivedValue(() => selectedStarPos.value.y - 18)} width={36} height={36} color={nightVision ? '#FF4A42' : '#00f2fe'} style="stroke" strokeWidth={1.2} opacity={useDerivedValue(() => 0.7 + Math.sin(time.value * 8) * 0.2)} />
+                <Circle cx={selectedX} cy={selectedY} r={28} opacity={0.42}>
+                  <RadialGradient c={selectedHaloCenter} r={28} colors={nightVision ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)'] : ['rgba(178,222,255,0.55)', 'rgba(119,191,255,0)']} />
+                </Circle>
+                <Circle cx={selectedX} cy={selectedY} r={useDerivedValue(() => 20 + Math.sin(time.value * 3) * 2)} color={nightVision ? '#FF6961' : '#9DD2FF'} style="stroke" strokeWidth={1} opacity={0.48} />
+                <Circle cx={selectedX} cy={selectedY} r={8} color={nightVision ? 'rgba(255,105,97,0.35)' : 'rgba(157,210,255,0.34)'} />
+                <Circle cx={selectedX} cy={selectedY} r={3.2} color={nightVision ? '#FFD0CC' : '#FFFFFF'} />
               </Group>
             )}
           </Canvas>
@@ -559,7 +579,6 @@ export default function StarCanvas({
             <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.max(0.2, zoom.value - 1); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
               <Text style={styles.zoomText}>-</Text>
             </TouchableOpacity>
-            <Text style={styles.fpsText}>{fpsDisplay}</Text>
           </View>
         </View>
       </GestureDetector>
@@ -873,19 +892,19 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
   );
 }
 
-function ConstellationFeature({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+function ConstellationFeature({ feature, emphasized, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return null;
   return feature.geometry.coordinates.map((path, idx) => (
     <Group key={idx}>
       {path.map((_, i) => {
         if (i === path.length - 1) return null;
-        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />;
+        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} emphasized={emphasized} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />;
       })}
     </Group>
   ));
 }
 
-function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+function ConstellationLine({ p1_data, p2_data, emphasized, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const segment = useDerivedValue(() => projectSkySegment(
     { ra: p1_data[0] / 15, dec: p1_data[1] },
     { ra: p2_data[0] / 15, dec: p2_data[1] },
@@ -912,14 +931,14 @@ function ConstellationLine({ p1_data, p2_data, ra, dec, zoom, layout, coordinate
     <Line
       p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
       p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
-      color={nightVision ? 'rgba(255,74,66,0.25)' : 'rgba(74,144,226,0.18)'}
-      strokeWidth={useDerivedValue(() => zoom.value > 2 ? 1.2 : 0.8)}
+      color={nightVision ? (emphasized ? 'rgba(255,105,97,0.62)' : 'rgba(255,74,66,0.18)') : (emphasized ? 'rgba(126,190,255,0.62)' : 'rgba(120,160,205,0.14)')}
+      strokeWidth={useDerivedValue(() => emphasized ? (zoom.value > 2 ? 1.7 : 1.25) : (zoom.value > 2 ? 1 : 0.7))}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
     />
   );
 }
 
-function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision }) {
+function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision }) {
   const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
     pos.value.x > -30
@@ -928,7 +947,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, coord
     && pos.value.y < layout.height + 30
     && (!hideBelowHorizon || pos.value.skyAltitude == null || pos.value.skyAltitude >= 0)
   ));
-  const labelVisible = useDerivedValue(() => isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
+  const labelVisible = useDerivedValue(() => !suppressLabel && isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
   const ownedX = useDerivedValue(() => pos.value.x);
   const ownedY = useDerivedValue(() => pos.value.y);
   

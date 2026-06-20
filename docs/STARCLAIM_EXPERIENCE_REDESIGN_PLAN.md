@@ -190,17 +190,19 @@ Her paket ayrı uygulanacak, test edilecek, fiziksel cihaz ekran görüntüsüyl
 
 **Amaç:** Mevcut astronomi motorunu sakin, gerçekçi gözlem arayüzüne taşımak.
 
-- [ ] Skia, Alt/Az, LST, konum, sensör ve katalog kodu korunacak; sunum katmanı yeniden düzenlenecek.
-- [ ] Üste yön/pusula şeridi eklenecek ve ekran yönü kalibrasyonuyla beslenecek.
-- [ ] Sol üstte seçili yıldız; sol altta konum/tarih/saat paneli kullanılacak.
-- [ ] Sağ araçlar `Takımyıldızları`, `Derin Uzay`, `Merkeze Al` olarak sadeleşecek.
-- [ ] Diğer katmanlar ayar çekmecesine taşınacak.
-- [ ] Alt merkezde azimut ve yükseklik gösterilecek.
-- [ ] Seçili yıldız core/halo/outer-halo ile vurgulanacak; etiket çakışması önlenecek.
-- [ ] Samanyolu/nebula gerçek yıldızların yerini almayacak; düşük opaklıklı yönlü arka katman olacak.
-- [ ] Seçili takım çizgileri belirgin, diğer çizgiler zayıf olacak.
-- [ ] Manuel, sensör ve kamera modları anlaşılır adlandırılacak.
-- [ ] İzin reddi, çevrimdışı katalog ve kalibrasyon akışları tamamlanacak.
+- [x] Skia, Alt/Az, LST, konum, sensör ve katalog kodu korunarak sunum katmanı yeniden düzenlendi.
+- [x] Üste yön/pusula şeridi eklendi ve aktif gökyüzü yönüyle besleniyor.
+- [x] Sol üstte seçili yıldız; sol altta konum/tarih/saat paneli kullanılıyor.
+- [x] Sağ araçlar `Takımyıldızları`, `Derin Uzay`, `Merkeze Al` olarak sadeleştirildi.
+- [x] Diğer katmanlar Türkçeleştirilmiş görünüm ayarlarına taşındı.
+- [x] Alt merkezde azimut ve yükseklik gösteriliyor.
+- [x] Seçili yıldız core/halo/outer-halo ile vurgulandı; seçili yıldızın çift etiketi bastırıldı.
+- [x] Nebula gerçek katalog yıldızlarının arkasında düşük opaklıklı yönlü katman olarak korunuyor.
+- [x] Seçili takımyıldızı çizgileri belirgin, diğer çizgiler daha zayıf çiziliyor.
+- [x] `Harita`, `Sensör` ve `Kamera` modları açık adlandırıldı.
+- [x] İzin reddi, yerel yıldız kataloğu ve Türkçeleştirilmiş kalibrasyon akışları korunup görünür hale getirildi.
+
+**Doğrulama:** Expo Doctor `18/18`, astronomi/projeksiyon testleri `18/18`, Android Hermes export başarılı. Fiziksel cihazda sensör yönü, kamera izni ve küçük yatay ekran çakışmaları kullanıcı kabul turunda kontrol edilecek.
 
 **Performans bütçesi:**
 
