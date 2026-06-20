@@ -13,6 +13,81 @@ Bu belge StarCalimX'in mevcut kod tabanına göre hazırlanmış uygulama planı
 
 ---
 
+## P0 Uygulama Kilidi: Önce 2D Render ve Veri Katmanı
+
+Bu bölüm, diğer bütün geliştirme maddelerinden daha yüksek önceliklidir.
+
+- **3D geliştirme donduruldu:** Mobil 2D harita aşağıdaki tamamlanma kapısını yüzde yüz geçmeden 3D haritaya yeni özellik, görsel efekt, katalog veya navigasyon geliştirmesi yapılmayacak.
+- **Web görsel geliştirmesi ertelendi:** 2D render ve veri katmanı üretim güvenine ulaşana kadar yaşayan evren/web arka plan paketi başlatılmayacak.
+- **Tek paket, tek doğrulama:** Her adım kodlanacak, otomatik testten geçirilecek, fiziksel cihazda doğrulanacak ve kabul kriteri kapatıldıktan sonra sonraki adıma geçilecek.
+- **Yüzde tahmini yeterli değildir:** Bir aşama ancak veri bütünlüğü, çevrimdışı davranış, render kararlılığı ve cihaz testi kanıtlandığında tamamlanmış sayılacak.
+
+### Zorunlu Uygulama Sırası
+
+#### P0.1 - 2D Render Motoru Üretim Kararlılığı
+
+- [ ] Harita, sensör ve kamera modları arasında art arda geçişlerde donma veya render kaybı yok.
+- [ ] Uygulama ön plan/arka plan geçişi ve ekran döndürme sonrasında çizim yüzeyi geri geliyor.
+- [ ] Skia/Reanimated abonelikleri ekran kapanırken eksiksiz temizleniyor.
+- [ ] 10 dakikalık Harita/Sensör/Kamera testinde crash, bellek artışı veya kontrol kaybı yok.
+- [ ] Düşük, orta ve yüksek cihaz profillerinde yıldız/düğüm sayısı otomatik ve güvenli ayarlanıyor.
+- [ ] Orta sınıf fiziksel Android cihazda hedef FPS, açılış süresi, bellek ve ısı ölçümleri kaydediliyor.
+
+#### P0.2 - Kanonik Astronomik Veri Sözleşmesi
+
+- [ ] Bütün kaynaklar için ortak kayıt şeması kesinleştirilecek: `source`, `sourceId`, `gaiaSourceId`, `hip`, `hd`, `ra`, `dec`, `parallax`, `distanceParsec`, `magnitude`, `colorIndex`, `spectralType`, `epoch`.
+- [ ] Birim, epoch ve koordinat kuralları J2000/ICRS temelinde belgelenip otomatik testlerle korunacak.
+- [ ] Aynı yıldızın HYG, Hipparcos ve Gaia kayıtları tek kanonik kimlik altında birleştirilecek.
+- [ ] Eksik, geçersiz ve çelişkili paralaks/mesafe kayıtları için açık normalizasyon politikası uygulanacak.
+
+#### P0.3 - Gaia DR3 + Hipparcos Veri Hattı
+
+- [ ] Gaia DR3 için tarayıcıya veya telefona ham katalog yüklemeyen çevrimdışı build/import hattı kurulacak.
+- [ ] Hipparcos, ayrı kopya katalog yerine Gaia ile çapraz kimlik ve geriye dönük arama kaynağı olarak kullanılacak.
+- [ ] İlk Gaia alt kümesi; parlak, yakın, HIP eşleşmeli ve StarClaim kataloğunda kullanılan yıldızlardan üretilecek.
+- [ ] Gaia `source_id`, RA/Dec, paralaks, G magnitude, BP-RP renk indisi ve kalite alanları normalize edilecek.
+- [ ] HYG çekirdek katalog güvenli fallback olarak korunacak; Gaia yüklenemezse 2D harita boş kalmayacak.
+- [ ] Kaynak sürümü, kayıt sayısı, SHA-256 bütünlüğü ve üretim tarihi manifestte tutulacak.
+
+#### P0.4 - Mobil Binary Katalog ve Tile Sistemi
+
+- [ ] JSON çalışma formatı yerine `Float32Array`/typed-array tabanlı sıkıştırılmış mobil katalog üretilecek.
+- [ ] Gökyüzü sektörleri görüş alanına göre yüklenip boşaltılacak; bütün katalog RAM'e alınmayacak.
+- [ ] Çekirdek katalog çevrimdışı gömülü, geniş katalog sürümlü ve doğrulanmış tile'lar halinde sunulacak.
+- [ ] Cache boyutu, LRU tahliyesi, bozuk tile kurtarma ve sürüm yükseltme davranışları test edilecek.
+- [ ] Ad, HIP, HD, Gaia source ID ve StarClaim kodu aynı arama indeksinden çözülecek.
+
+#### P0.5 - Gaia/HIP Verisinin 2D Motora Tam Bağlanması
+
+- [ ] Yıldız konumu gerçek RA/Dec, gözlemci konumu ve zamandan doğru Alt/Az değerine çevrilecek.
+- [ ] Yıldız boyutu katalog magnitude değerinden; renk Gaia BP-RP veya güvenilir spektral veriden üretilecek.
+- [ ] Pan, zoom, seçim, etiket, takım yıldızı ve ufuk filtreleri yeni kanonik kimliklerle çalışacak.
+- [ ] Harita, sensör ve kamera modları aynı yıldızı aynı konum ve kimlikle gösterecek.
+- [ ] Katalog yükleme sürerken düşük maliyetli çekirdek görünüm kesintisiz kalacak.
+
+#### P0.6 - Messier ve NGC Derin Uzay Katmanı
+
+- [ ] Elle yazılmış altı nesnelik liste yerine sürümlü Messier kataloğu eklenecek.
+- [ ] Mobil için kontrollü ve doğrulanmış NGC alt kümesi hazırlanacak.
+- [ ] DSO kayıtları tür, RA/Dec, açısal boyut, magnitude, yönelim ve katalog kimliği taşıyacak.
+- [ ] Yıldız ve DSO seçim/arama sonuçları kimlik çakışması olmadan birlikte çalışacak.
+- [ ] DSO görünürlüğü zoom, yüzey parlaklığı ve cihaz kalite profiline göre sınırlandırılacak.
+
+#### P0.7 - 2D Üretim Tamamlanma Kapısı
+
+- [ ] Astronomik referans yıldızları farklı tarih, konum ve saatlerde doğrulanmış.
+- [ ] Gaia/HIP çapraz eşleşme, tekrar kayıt ve kimlik çözümleme testleri geçiyor.
+- [ ] Çevrimiçi, çevrimdışı, ilk kurulum ve bozuk cache senaryoları geçiyor.
+- [ ] Harita/Sensör/Kamera geçişleri fiziksel Android ve iOS cihazlarda doğrulanmış.
+- [ ] Düşük, orta ve yüksek cihazlarda kabul edilen FPS, bellek ve ısı sınırları sağlanmış.
+- [ ] Kullanıcı tarafından 2D görsel kalite ve temel gözlem akışı onaylanmış.
+
+**3D geçiş kuralı:** Yukarıdaki P0.1-P0.7 başlıklarının tamamı `[x]` olmadan 3D geliştirme sırasına geçilmeyecek.
+
+**Exoplanet Archive kararı:** Exoplanet verisi `Star System → Planet` aşamasına aittir. 2D tamamlandıktan ve 3D yıldız sistemi alt sahnesi kurulmaya başlandıktan sonra entegre edilecek; mevcut P0 sırasını bölmeyecek.
+
+---
+
 ## Mevcut Durum
 
 ### Tamamlanan Temel İşler
@@ -398,14 +473,16 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Güncel Uygulama Sırası
 
-1. 3D katalog normalizasyonu ve sektör/tile veri formatı.
-2. 3D kamera tabanlı LOD yükleme/boşaltma.
-3. 2D astronomik regresyon testleri ve RA sınırı düzeltmeleri.
-4. 2D/3D fiziksel cihaz performans profilleri.
-5. 3D floating-origin ve uzun mesafe navigasyonu.
-6. 3D görsel kalite geçişi: yıldız, nebula, pozlama ve galaksi.
-7. Star System/Planet alt sahnesi.
-8. Backend sahiplik senkronizasyonu, çevrimdışı katalog ve mağaza kabul testleri.
+1. 2D Harita/Sensör/Kamera donma ve yaşam döngüsü testlerini kapat.
+2. Kanonik astronomik veri sözleşmesini ve regresyon testlerini tamamla.
+3. Gaia DR3 + Hipparcos çapraz eşleştirme build/import hattını kur.
+4. Sıkıştırılmış binary katalog, manifest ve sektör/tile sistemini tamamla.
+5. Gaia/HIP verisini 2D konum, magnitude, renk, arama ve seçim akışına bağla.
+6. Messier ve kontrollü NGC derin uzay katmanını tamamla.
+7. Çevrimdışı/cache senaryoları ile Android/iOS fiziksel cihaz kabul testlerini kapat.
+8. P0.1-P0.7 tamamlanma kapısını kullanıcı onayıyla kapat.
+9. Yalnızca bundan sonra 3D veri ve render geliştirmesine dön.
+10. 3D Star System aşamasında NASA Exoplanet Archive entegrasyonunu başlat.
 
 ## Bir Sonraki Cerrahi Paket
 
@@ -415,10 +492,10 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **20 Haziran 2026 katalog hotfix'i:** Android AsyncStorage tek-kayıt sınırına takılan şişirilmiş `10.000` yıldız önbelleği kaldırıldı. 2D Sky Live ve 3D Evren artık doğrudan uygulamaya gömülü HYG çekirdek kataloğuyla çevrimdışı açılır; uzak API boş veya erişilemez olduğunda geçerli yerel veri korunur. Tamamlanmamış AR ve doğrudan satın alma girişleri katalog arayüzünden gizlendi.
 
-**20 Haziran 2026 cihaz güveni paketi:** 2D Skia ve 3D GL yüzeylerine ilk gerçek frame, FPS, kalite, açılış süresi, katalog/render yıldız sayısı ve mevcutsa JS heap ölçümü eklendi. Ölçümler cihazda son `20` oturumla sınırlandırıldı. 2D için `8 sn`, 3D için `12 sn` render gözcüsü, hata sınırı ve yeniden deneme ekranı eklenerek beyaz/sonsuz yükleme ekranları kontrollü hata durumuna dönüştürüldü.
+**20 Haziran 2026 cihaz güveni paketi:** 2D Skia ve 3D GL yüzeylerine ilk gerçek frame, FPS, kalite, açılış süresi, katalog/render yıldız sayısı ve mevcutsa JS heap ölçümü eklendi. Ölçümler cihazda son `20` oturumla sınırlandırıldı. İlk sürümde 2D için `8 sn`, 3D için `12 sn` render gözcüsü eklenmişti; fiziksel cihazda çalışan 2D yüzeyi yanlışlıkla kapattığı görülen süre tabanlı 2D gözcüsü daha sonra kaldırıldı. Gerçek render hataları hata sınırıyla, 3D açılış sorunları kontrollü yeniden deneme durumuyla ele alınır.
 
 **20 Haziran 2026 fiziksel cihaz düzeltmeleri:** Skia `2.2.12` tarafından sunulmayan `useFrameCallback`, Reanimated `4.1.7` kaynağına taşınarak Sky Live render çökmesi giderildi. Hata halinde gözlem kontrollerinin hata paneline binmesi engellendi. Mobil katalog filtreleri HYG verisine uygun `Tümü / İsimli / 20 pc içi` seçeneklerine çevrildi; Güneş mesafesi yerel sistem olarak gösterildi. 3D sektör pozlaması düşürüldü, sahne kontrolleri merkezden sol alta taşındı ve StarVault boş durum eylemi kısa yatay ekrana sığdırıldı.
 
-Sıradaki cerrahi paket **Web yaşayan evren motoru**dur. Web ana sayfanın arka planı gerçekçi yıldız dağılımı, bağımsız parlaklık döngüleri, seyrek meteor ve ölçülü derinlik katmanlarıyla kurulacaktır.
+Sıradaki cerrahi paket **P0.1 - 2D Render Motoru Üretim Kararlılığı**dır. Önce son Harita/Sensör/Kamera düzeltmesi fiziksel cihazda doğrulanacak; ardından yaşam döngüsü ve 10 dakikalık stres testi kapatılacaktır.
 
-**Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.
+**Ertelenen paketler:** Web yaşayan evren motoru, 3D floating-origin, 3D görsel kalite ve Star System/Planet geliştirmeleri P0.1-P0.7 tamamlanma kapısından sonra ele alınacaktır.
