@@ -220,6 +220,8 @@ export default function StarCanvas({
   transparentBackground = false,
   nightVision = false,
   showNebula = true,
+  onReady = null,
+  onTelemetry = null,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
 
@@ -228,19 +230,42 @@ export default function StarCanvas({
   const zoom = useSharedValue(initialZoom);
   const time = useSharedValue(0);
   const fpsShared = useSharedValue(0);
+  const readyShared = useSharedValue(false);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const readyDetailsRef = useRef(null);
+  const onReadyRef = useRef(onReady);
+  const onTelemetryRef = useRef(onTelemetry);
+
+  useEffect(() => {
+    onReadyRef.current = onReady;
+    onTelemetryRef.current = onTelemetry;
+  }, [onReady, onTelemetry]);
+
+  const reportTelemetry = (fps) => {
+    onTelemetryRef.current?.({ fps });
+  };
+
+  const reportReady = () => {
+    onReadyRef.current?.(readyDetailsRef.current);
+  };
 
   const planetData = useMemo(() => getPlanetPositions(), []);
   const dsoData = useMemo(() => DSO_CATALOG, []);
 
   useFrameCallback((info) => {
     const now = info.timestamp;
+    if (!readyShared.value) {
+      readyShared.value = true;
+      runOnJS(reportReady)();
+    }
     frameCountRef.current++;
     if (now - lastTimeRef.current >= 1000) {
-      fpsShared.current = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
+      const measuredFps = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
+      fpsShared.value = measuredFps;
       frameCountRef.current = 0;
       lastTimeRef.current = now;
+      runOnJS(reportTelemetry)(measuredFps);
     }
     time.value = now / 1000;
   });
@@ -353,6 +378,14 @@ export default function StarCanvas({
     }
     return level;
   }, [renderedStars.length]);
+
+  readyDetailsRef.current = {
+    catalogStarCount: stars.length,
+    renderedStarCount: renderedStars.length,
+    quality: qualityLevel,
+    width: layout.width,
+    height: layout.height,
+  };
 
   const tapIndex = useMemo(() => {
     const cells = new Map();

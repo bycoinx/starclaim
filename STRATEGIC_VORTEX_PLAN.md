@@ -415,6 +415,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **20 Haziran 2026 katalog hotfix'i:** Android AsyncStorage tek-kayıt sınırına takılan şişirilmiş `10.000` yıldız önbelleği kaldırıldı. 2D Sky Live ve 3D Evren artık doğrudan uygulamaya gömülü HYG çekirdek kataloğuyla çevrimdışı açılır; uzak API boş veya erişilemez olduğunda geçerli yerel veri korunur. Tamamlanmamış AR ve doğrudan satın alma girişleri katalog arayüzünden gizlendi.
 
+**20 Haziran 2026 cihaz güveni paketi:** 2D Skia ve 3D GL yüzeylerine ilk gerçek frame, FPS, kalite, açılış süresi, katalog/render yıldız sayısı ve mevcutsa JS heap ölçümü eklendi. Ölçümler cihazda son `20` oturumla sınırlandırıldı. 2D için `8 sn`, 3D için `12 sn` render gözcüsü, hata sınırı ve yeniden deneme ekranı eklenerek beyaz/sonsuz yükleme ekranları kontrollü hata durumuna dönüştürüldü.
+
 Sıradaki cerrahi paket **Web yaşayan evren motoru**dur. Web ana sayfanın arka planı gerçekçi yıldız dağılımı, bağımsız parlaklık döngüleri, seyrek meteor ve ölçülü derinlik katmanlarıyla kurulacaktır.
 
 **Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.

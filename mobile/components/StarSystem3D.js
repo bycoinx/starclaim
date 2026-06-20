@@ -546,6 +546,7 @@ export default function StarSystem3D({
   onOwnedStarPress = null,
   onReady = null,
   onRenderError = null,
+  onTelemetry = null,
   loadedSectorCount = 0,
 }) {
   const animationFrameRef = useRef(null);
@@ -575,6 +576,7 @@ export default function StarSystem3D({
   const ownedStarsRef = useRef(ownedStars);
   const onReadyRef = useRef(onReady);
   const onRenderErrorRef = useRef(onRenderError);
+  const onTelemetryRef = useRef(onTelemetry);
   const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
@@ -613,7 +615,8 @@ export default function StarSystem3D({
   useEffect(() => {
     onReadyRef.current = onReady;
     onRenderErrorRef.current = onRenderError;
-  }, [onReady, onRenderError]);
+    onTelemetryRef.current = onTelemetry;
+  }, [onReady, onRenderError, onTelemetry]);
 
   useEffect(() => {
     ownedStarsRef.current = ownedStars;
@@ -1023,6 +1026,12 @@ export default function StarSystem3D({
         frameCount = 0;
         fpsWindowAt = now;
         if (mountedRef.current) setFps(measuredFps);
+        onTelemetryRef.current?.({
+          fps: measuredFps,
+          quality: qualityRef.current,
+          renderedStarCount: validStars.length,
+          loadedSectorCount,
+        });
 
         if (measuredFps < 28) {
           qualityRecoveryRef.current = 0;
@@ -1044,7 +1053,7 @@ export default function StarSystem3D({
 
     onReadyRef.current?.({ starCount: validStars.length });
     render();
-  }, [stars, updateQuality]);
+  }, [loadedSectorCount, stars, updateQuality]);
 
   useEffect(() => () => {
     mountedRef.current = false;

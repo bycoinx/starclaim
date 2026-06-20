@@ -32,6 +32,8 @@ import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 import SkyLiveChrome from '../../../components/SkyLiveChrome';
+import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
+import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -46,6 +48,9 @@ export default function StarMapScreen() {
   const [heading, setHeading] = useState(0);
   const [tilt, setTilt] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [mapError, setMapError] = useState(null);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [showConstellations, setShowConstellations] = useState(true);
   const [showConstellationLabels, setShowConstellationLabels] = useState(true);
   const [showConstellationBoundaries, setShowConstellationBoundaries] = useState(false);
@@ -76,10 +81,18 @@ export default function StarMapScreen() {
   const [now, setNow] = useState(() => new Date());
   const lastHeading = useRef(0);
   const lastTilt = useRef(0);
+  const openedAtRef = useRef(Date.now());
+  const canvasReadyDataRef = useRef(null);
+  const diagnosticReportedRef = useRef(false);
   const router = useRouter();
   const ALPHA = 0.15;
 
   useEffect(() => {
+    openedAtRef.current = Date.now();
+    canvasReadyDataRef.current = null;
+    diagnosticReportedRef.current = false;
+    setMapError(null);
+    setCanvasReady(false);
     setLoading(true);
     ensureStarData().then((list) => {
       setStars(list); 
@@ -96,10 +109,25 @@ export default function StarMapScreen() {
     }).catch((error) => {
       console.warn('Sky Live catalog error', error);
       setStars([]);
+      setMapError(error?.message || 'Yıldız kataloğu hazırlanamadı.');
     }).finally(() => setLoading(false));
     ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
-  }, [params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
+  }, [loadAttempt, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
+
+  useEffect(() => {
+    if (loading || mapError || canvasReady || stars.length === 0) return undefined;
+    const timeout = setTimeout(() => {
+      setMapError('2D çizim motoru zamanında hazır olamadı.');
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'timeout',
+        startupMs: Date.now() - openedAtRef.current,
+        catalogStarCount: stars.length,
+      });
+    }, 8000);
+    return () => clearTimeout(timeout);
+  }, [canvasReady, loading, mapError, stars.length]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
@@ -422,8 +450,32 @@ export default function StarMapScreen() {
           </View>
 
           <View style={styles.mapContainer}>
-            {loading ? <ActivityIndicator color={THEME.colors.primary} size="large" /> : (
-              <StarCanvas
+            {loading ? (
+              <View style={styles.mapStatus}>
+                <ActivityIndicator color={THEME.colors.primary} size="large" />
+                <Text style={styles.mapStatusText}>GÖKYÜZÜ HAZIRLANIYOR</Text>
+              </View>
+            ) : mapError || stars.length === 0 ? (
+              <View style={styles.mapStatus}>
+                <MaterialCommunityIcons name="telescope" size={42} color={THEME.colors.textMuted} />
+                <Text style={styles.mapErrorTitle}>SKY LIVE AÇILAMADI</Text>
+                <Text style={styles.mapErrorMessage}>{mapError || 'Cihazda kullanılabilir yıldız bulunamadı.'}</Text>
+                <TouchableOpacity style={styles.mapRetryButton} onPress={() => setLoadAttempt((attempt) => attempt + 1)}>
+                  <Ionicons name="refresh" size={18} color="#000" />
+                  <Text style={styles.mapRetryText}>YENİDEN DENE</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <RenderSurfaceBoundary
+                resetKey={loadAttempt}
+                fallback={<View style={styles.mapStatus} />}
+                onError={(error) => {
+                  setCanvasReady(false);
+                  setMapError(error?.message || '2D çizim motoru başlatılamadı.');
+                }}
+              >
+                <StarCanvas
+                  key={`sky-live-${loadAttempt}`}
                 stars={stars}
                 selectedStar={selectedStar}
                 centerRa={centerRa}
@@ -449,7 +501,23 @@ export default function StarMapScreen() {
                 onZoomChange={setZoom}
                 onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
                 ownedStarIds={ownedStarIds}
-              />
+                  onReady={(details) => {
+                    canvasReadyDataRef.current = details;
+                    setCanvasReady(true);
+                  }}
+                  onTelemetry={({ fps }) => {
+                    if (diagnosticReportedRef.current || !canvasReadyDataRef.current || !fps) return;
+                    diagnosticReportedRef.current = true;
+                    recordRenderDiagnostic({
+                      surface: '2d',
+                      status: 'ready',
+                      startupMs: Date.now() - openedAtRef.current,
+                      fps,
+                      ...canvasReadyDataRef.current,
+                    });
+                  }}
+                />
+              </RenderSurfaceBoundary>
             )}
 
             {nightVision && <View style={styles.nightFilter} pointerEvents="none" />}
@@ -708,7 +776,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)'
   },
-  mapContainer: { flex: 1 },
+  mapContainer: { flex: 1, backgroundColor: '#02040A' },
+  mapStatus: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, backgroundColor: '#02040A' },
+  mapStatusText: { marginTop: 18, color: THEME.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
+  mapErrorTitle: { marginTop: 18, color: '#fff', fontSize: 17, fontWeight: '900', letterSpacing: 1.5 },
+  mapErrorMessage: { marginTop: 10, maxWidth: 420, color: THEME.colors.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  mapRetryButton: { marginTop: 22, minHeight: 48, paddingHorizontal: 24, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: THEME.colors.primary },
+  mapRetryText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
   nightFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(90,0,0,0.12)', zIndex: 2 },
   selectionPanel: {
     display: 'none',

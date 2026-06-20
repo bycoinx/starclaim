@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -31,6 +31,8 @@ import {
 } from '../../../src/utils/starIdentity';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
+import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
+import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -56,6 +58,9 @@ export default function StarVoyage3D() {
   const [searchQuery, setSearchQuery] = useState('');
   const [recentTargetIds, setRecentTargetIds] = useState([]);
   const [remoteSectorWindow, setRemoteSectorWindow] = useState({ stars: [], sectorIds: [] });
+  const openedAtRef = useRef(Date.now());
+  const renderReadyDataRef = useRef(null);
+  const diagnosticReportedRef = useRef(false);
   const params = useLocalSearchParams();
   const router = useRouter();
 
@@ -236,6 +241,9 @@ export default function StarVoyage3D() {
 
   useEffect(() => {
     let cancelled = false;
+    openedAtRef.current = Date.now();
+    renderReadyDataRef.current = null;
+    diagnosticReportedRef.current = false;
     setLoading(true);
     setLoadError(null);
     setRenderReady(false);
@@ -275,6 +283,20 @@ export default function StarVoyage3D() {
     });
     return () => { cancelled = true; };
   }, [params.target, params.starId, params.hip, params.hd, params.starClaimCode, params.name, loadAttempt]);
+
+  useEffect(() => {
+    if (loading || loadError || renderReady || stars.length === 0) return undefined;
+    const timeout = setTimeout(() => {
+      setLoadError('3D çizim motoru zamanında hazır olamadı.');
+      recordRenderDiagnostic({
+        surface: '3d',
+        status: 'timeout',
+        startupMs: Date.now() - openedAtRef.current,
+        catalogStarCount: stars.length,
+      });
+    }, 12000);
+    return () => clearTimeout(timeout);
+  }, [loadError, loading, renderReady, stars.length]);
 
   const checkOwnership = async (star) => {
     try {
@@ -372,20 +394,45 @@ export default function StarVoyage3D() {
             </View>
           ) : (
             <>
-              <StarSystem3D
-                stars={renderedSectorWindow.stars}
-                targetStar={targetStar}
-                ownedStars={activeOwnedStars}
-                loadedSectorCount={renderedSectorWindow.sectorIds.length}
-                onArrival={handleArrival}
-                onTargetChange={handleTargetChange}
-                onOwnedStarPress={openOwnedStarCertificate}
-                onReady={() => setRenderReady(true)}
-                onRenderError={(error) => {
+              <RenderSurfaceBoundary
+                resetKey={loadAttempt}
+                fallback={<View style={styles.loadingContainer} />}
+                onError={(error) => {
                   setRenderReady(false);
                   setLoadError(error?.message || '3D görüntü motoru başlatılamadı.');
                 }}
-              />
+              >
+                <StarSystem3D
+                  key={`star-voyage-${loadAttempt}`}
+                  stars={renderedSectorWindow.stars}
+                  targetStar={targetStar}
+                  ownedStars={activeOwnedStars}
+                  loadedSectorCount={renderedSectorWindow.sectorIds.length}
+                  onArrival={handleArrival}
+                  onTargetChange={handleTargetChange}
+                  onOwnedStarPress={openOwnedStarCertificate}
+                  onReady={(details) => {
+                    renderReadyDataRef.current = details;
+                    setRenderReady(true);
+                  }}
+                  onTelemetry={(telemetry) => {
+                    if (diagnosticReportedRef.current || !renderReadyDataRef.current || !telemetry.fps) return;
+                    diagnosticReportedRef.current = true;
+                    recordRenderDiagnostic({
+                      surface: '3d',
+                      status: 'ready',
+                      startupMs: Date.now() - openedAtRef.current,
+                      catalogStarCount: stars.length,
+                      ...renderReadyDataRef.current,
+                      ...telemetry,
+                    });
+                  }}
+                  onRenderError={(error) => {
+                    setRenderReady(false);
+                    setLoadError(error?.message || '3D görüntü motoru başlatılamadı.');
+                  }}
+                />
+              </RenderSurfaceBoundary>
               {!renderReady && (
                 <View style={styles.renderLoadingOverlay} pointerEvents="none">
                   <ActivityIndicator size="large" color={THEME.colors.primary} />
