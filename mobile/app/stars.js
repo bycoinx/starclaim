@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, Alert, FlatList, TextInput, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList, TextInput, Platform } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { DeviceMotion } from 'expo-sensors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,7 @@ import { raDecToAzAlt, getApproximateLST } from '../src/utils/astronomy';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../components/SpaceBackground';
+import { ensureStarData } from '../src/data/starLoader';
 
 const { width, height } = Dimensions.get('window');
 
@@ -27,14 +28,44 @@ export default function Stars() {
   useEffect(() => {
     const fetchStars = async () => {
       setLoading(true);
-      const apiUrls = [CONFIG.PRODUCTION_URL, CONFIG.API_URL];
       const lst = getApproximateLST();
+
+      try {
+        const localCatalog = await ensureStarData();
+        const localStars = localCatalog
+          .filter((star) => star.properName || star.proper)
+          .slice(0, 100)
+          .map((star) => {
+            const ra = star.raHours ?? star.ra;
+            const dec = star.decDegrees ?? star.dec;
+            const { az, alt } = raDecToAzAlt(ra, dec, lst);
+
+            return {
+              ...star,
+              star_id: star.id,
+              name: star.properName || star.proper,
+              tier: 'catalog',
+              price: null,
+              az,
+              alt,
+              localCatalog: true,
+            };
+          });
+
+        setStars(localStars);
+        setLoading(false);
+      } catch (error) {
+        console.warn('Embedded catalog failed:', error);
+      }
+
+      const apiUrls = CONFIG.getCandidateAPIUrls();
 
       for (const url of apiUrls) {
         try {
+          const timeoutMs = url === CONFIG.PRODUCTION_URL ? 12000 : 1800;
           const response = await Promise.race([
             fetch(`${url}/api/stars?limit=100&sort=price_desc`),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000)),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs)),
           ]);
           if (!response.ok) throw new Error(`HTTP ${response.status}`);
           const data = await response.json();
@@ -43,14 +74,12 @@ export default function Stars() {
             const { az, alt } = raDecToAzAlt(s.ra, s.dec, lst);
             return { ...s, az, alt };
           });
-          setStars(mapped);
+          if (mapped.length) setStars(mapped);
           setLoading(false);
           return;
         } catch (err) { console.warn(`API ${url} failed:`, err.message); }
       }
       
-      Alert.alert("UYARI", "Yıldız kataloğu yüklenemedı. Çevrimdışı mod aktif.");
-      setStars([]);
       setLoading(false);
     };
     fetchStars();
@@ -67,7 +96,7 @@ export default function Stars() {
   }, [permission]);
 
   const filteredStars = stars.filter(star => {
-    const matchesSearch = star.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = String(star.name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTier = selectedTier === 'all' || star.tier?.toLowerCase() === selectedTier.toLowerCase();
     return matchesSearch && matchesTier;
   });
@@ -118,19 +147,22 @@ export default function Stars() {
 
   const renderCatalogItem = ({ item: star }) => (
     <View style={styles.starCardContainer}>
-      <TouchableOpacity style={styles.starCard} onPress={() => setSelectedStar(star)}>
+      <View style={styles.starCard}>
         <LinearGradient colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} style={styles.starCardGradient}>
-          <Text style={styles.starCardTier}>{star.tier?.toUpperCase()}</Text>
+          <Text style={styles.starCardTier}>{star.localCatalog ? 'GÖZLEM KATALOĞU' : star.tier?.toUpperCase()}</Text>
           <Text style={styles.starCardName}>{star.name}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.starCardPriceValue}>${star.price}</Text>
-            <MaterialCommunityIcons name="chevron-right" size={16} color={THEME.colors.primary} />
+            <Text style={styles.starCardPriceValue}>
+              {star.price == null
+                ? `${star.constellation || 'HYG'} · ${Number(star.distanceParsec || 0).toFixed(1)} pc`
+                : `$${star.price}`}
+            </Text>
           </View>
           {/* Card corners */}
           <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '60' }]} />
           <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: THEME.colors.secondary + '60' }]} />
         </LinearGradient>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -219,10 +251,6 @@ export default function Stars() {
                 <Text style={styles.catalogSub}>{filteredStars.length} OBJECTS_DETECTED</Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.arButton} onPress={() => setActiveTab('tarama')}>
-              <MaterialCommunityIcons name="radar" size={20} color={THEME.colors.primary} />
-              <Text style={styles.arButtonText}>AR TARAMA</Text>
-            </TouchableOpacity>
             <View style={styles.catalogSearchGroup}>
               <View style={styles.catalogSearchBar}>
                 <MaterialCommunityIcons name="magnify" size={18} color={THEME.colors.primary} />

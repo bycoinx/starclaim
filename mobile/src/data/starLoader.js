@@ -191,15 +191,15 @@ async function readStoredArray(key) {
 }
 
 async function loadStarData() {
+  const embeddedCore = getEmbeddedCoreCatalog();
+
   try {
     const cachedCore = await readStoredArray(CORE_STORAGE_KEY);
     if (cachedCore?.length) return cachedCore;
 
-    const embeddedCore = getEmbeddedCoreCatalog();
-    if (embeddedCore.length) {
-      await AsyncStorage.setItem(CORE_STORAGE_KEY, JSON.stringify(embeddedCore));
-      return embeddedCore;
-    }
+    // The bundled catalog is already available offline. Persisting the hydrated
+    // 10k-row payload can exceed Android's per-entry storage limit.
+    if (embeddedCore.length) return embeddedCore;
 
     const response = await fetch(CSV_URL);
     if (!response.ok) throw new Error(`HYG catalog request failed: ${response.status}`);
@@ -211,6 +211,8 @@ async function loadStarData() {
     return coreStars;
   } catch (error) {
     console.warn('StarLoader error', error);
+    if (embeddedCore.length) return embeddedCore;
+
     try {
       return (await readStoredArray(LEGACY_STORAGE_KEY)) || [];
     } catch (legacyError) {
@@ -233,10 +235,10 @@ export async function getStoredStars() {
   try {
     return (await readStoredArray(CORE_STORAGE_KEY))
       || (await readStoredArray(LEGACY_STORAGE_KEY))
-      || [];
+      || getEmbeddedCoreCatalog();
   } catch (error) {
     console.warn('getStoredStars', error);
-    return [];
+    return getEmbeddedCoreCatalog();
   }
 }
 

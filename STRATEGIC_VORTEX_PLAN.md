@@ -413,6 +413,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **Tamamlandı:** Mobil P0 kabuk ve Solana görünürlük temizliği; safe-area/system bar koruması, çift alt menü temizliği, responsive marketplace ve açık 3D yükleme/hata durumları eklendi. Beş hedefli mobil navigasyon, profil merkezi, ortak header ölçüleri ve premium gözlem kabuğu kuruldu. Finansal dashboard kaldırılarak sahipliğe göre kişiselleşen sinematik mobil ana ekran eklendi. 2D Sky Live, mevcut Skia ve astronomi motoru korunarak pusula, gözlem araçları ve katmanlı yıldız vurgusuyla yenilendi.
 
+**20 Haziran 2026 katalog hotfix'i:** Android AsyncStorage tek-kayıt sınırına takılan şişirilmiş `10.000` yıldız önbelleği kaldırıldı. 2D Sky Live ve 3D Evren artık doğrudan uygulamaya gömülü HYG çekirdek kataloğuyla çevrimdışı açılır; uzak API boş veya erişilemez olduğunda geçerli yerel veri korunur. Tamamlanmamış AR ve doğrudan satın alma girişleri katalog arayüzünden gizlendi.
+
 Sıradaki cerrahi paket **Web yaşayan evren motoru**dur. Web ana sayfanın arka planı gerçekçi yıldız dağılımı, bağımsız parlaklık döngüleri, seyrek meteor ve ölçülü derinlik katmanlarıyla kurulacaktır.
 
 **Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.

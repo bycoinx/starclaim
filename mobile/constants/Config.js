@@ -1,13 +1,23 @@
 import Constants from 'expo-constants';
 
-// For local development, replace with your PC's local IP (e.g., 192.168.1.37)
-// When deploying, use your production API URL
-const LOCAL_IP = '192.168.1.37'; 
+function getDevelopmentHost() {
+  const hostUri = Constants.expoConfig?.hostUri
+    || Constants.manifest2?.extra?.expoClient?.hostUri
+    || '';
+
+  return String(hostUri).split(':')[0] || '192.168.1.33';
+}
+
+const LOCAL_IP = getDevelopmentHost();
 const PRODUCTION_URL = 'https://starclaim.onrender.com';
 
 export const CONFIG = {
   API_URL: `http://${LOCAL_IP}:8000`,
   PRODUCTION_URL: PRODUCTION_URL,
+  getCandidateAPIUrls: () => [
+    `http://${getDevelopmentHost()}:8000`,
+    PRODUCTION_URL,
+  ],
   // Helper function to get working API URL
   getAPIUrl: async () => {
     try {

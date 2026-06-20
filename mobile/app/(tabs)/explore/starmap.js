@@ -80,9 +80,9 @@ export default function StarMapScreen() {
   const ALPHA = 0.15;
 
   useEffect(() => {
-    ensureStarData().then((list) => { 
+    setLoading(true);
+    ensureStarData().then((list) => {
       setStars(list); 
-      setLoading(false); 
       
       if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
         const found = resolveStarTarget(list, params);
@@ -93,7 +93,10 @@ export default function StarMapScreen() {
           setSelectedStar(found);
         }
       }
-    });
+    }).catch((error) => {
+      console.warn('Sky Live catalog error', error);
+      setStars([]);
+    }).finally(() => setLoading(false));
     ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
   }, [params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
