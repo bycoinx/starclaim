@@ -554,6 +554,7 @@ export default function StarMapScreen() {
           </View>
 
           <SkyLiveChrome
+            surfaceAvailable={!loading && !mapError && stars.length > 0}
             cardinal={cardinal}
             previousCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 7) % 8]}
             nextCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 1) % 8]}

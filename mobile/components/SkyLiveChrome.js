@@ -47,6 +47,7 @@ export default function SkyLiveChrome({
   searchQuery,
   searchResults,
   nightVision,
+  surfaceAvailable = true,
   onExit,
   onSearch,
   onSelectSearchResult,
@@ -99,7 +100,7 @@ export default function SkyLiveChrome({
         </View>
       </View>
 
-      {searchVisible && (
+      {surfaceAvailable && searchVisible && (
         <View style={styles.searchWidget}>
           <View style={styles.searchBar}>
             <Ionicons name="search" size={18} color={THEME.colors.primary} />
@@ -134,7 +135,7 @@ export default function SkyLiveChrome({
         </View>
       )}
 
-      {selectedStar && (
+      {surfaceAvailable && selectedStar && (
         <View style={styles.selectionPanel}>
           <View style={styles.selectionHeader}>
             <View style={styles.selectionIcon}><Ionicons name="sparkles" size={18} color={THEME.colors.primary} /></View>
@@ -154,19 +155,19 @@ export default function SkyLiveChrome({
         </View>
       )}
 
-      <View style={styles.locationPanel} pointerEvents="none">
+      {surfaceAvailable && <View style={styles.locationPanel} pointerEvents="none">
         <InfoLine icon="location-outline" text={observer ? `${observer.latitude.toFixed(2)}°, ${observer.longitude.toFixed(2)}°` : 'Konum kapalı'} />
         <InfoLine icon="calendar-outline" text={now.toLocaleDateString('tr-TR')} />
         <InfoLine icon="time-outline" text={now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} />
-      </View>
+      </View>}
 
-      <View style={styles.rightTools} pointerEvents="box-none">
+      {surfaceAvailable && <View style={styles.rightTools} pointerEvents="box-none">
         <ToolButton icon="git-network-outline" label="Takımyıldızları" active={showConstellations} onPress={onToggleConstellations} />
         <ToolButton icon="planet-outline" label="Derin Uzay" active={showDeepSpace} onPress={onToggleDeepSpace} />
         <ToolButton icon="locate-outline" label="Merkeze Al" active={Boolean(selectedStar)} onPress={onCenter} />
-      </View>
+      </View>}
 
-      <View style={styles.bottomCenter} pointerEvents="box-none">
+      {surfaceAvailable && <View style={styles.bottomCenter} pointerEvents="box-none">
         <View style={styles.modeSelector}>
           <ModeButton label="Harita" active={mode === 'manual' && coordinateMode === 'equatorial'} onPress={onManualMode} />
           <ModeButton label="Sensör" active={mode === 'manual' && coordinateMode === 'horizontal'} onPress={onSensorMode} />
@@ -176,7 +177,7 @@ export default function SkyLiveChrome({
           <Text style={styles.coordinateText}>Yön: {azimuth.toFixed(0)}°</Text>
           <Text style={styles.coordinateText}>Yükseklik: {altitude.toFixed(0)}°</Text>
         </View>
-      </View>
+      </View>}
     </View>
   );
 }

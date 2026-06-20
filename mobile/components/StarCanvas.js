@@ -12,7 +12,6 @@ import {
   RadialGradient,
   Rect,
   Skia,
-  useFrameCallback,
   RuntimeEffect,
   Image as SkiaImage,
   useImage
@@ -25,6 +24,7 @@ import {
 import {
   useSharedValue, 
   useDerivedValue,
+  useFrameCallback,
   runOnJS,
   withSpring
 } from 'react-native-reanimated';

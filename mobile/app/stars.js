@@ -13,6 +13,11 @@ import SpaceBackground from '../components/SpaceBackground';
 import { ensureStarData } from '../src/data/starLoader';
 
 const { width, height } = Dimensions.get('window');
+const CATALOG_FILTERS = [
+  { key: 'all', label: 'TÜMÜ' },
+  { key: 'named', label: 'İSİMLİ' },
+  { key: 'nearby', label: '20 PC İÇİ' },
+];
 
 export default function Stars() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -33,7 +38,6 @@ export default function Stars() {
       try {
         const localCatalog = await ensureStarData();
         const localStars = localCatalog
-          .filter((star) => star.properName || star.proper)
           .slice(0, 100)
           .map((star) => {
             const ra = star.raHours ?? star.ra;
@@ -43,12 +47,13 @@ export default function Stars() {
             return {
               ...star,
               star_id: star.id,
-              name: star.properName || star.proper,
+              name: star.properName || star.proper || `HYG ${star.id}`,
               tier: 'catalog',
               price: null,
               az,
               alt,
               localCatalog: true,
+              catalogNamed: Boolean(star.properName || star.proper),
             };
           });
 
@@ -97,8 +102,11 @@ export default function Stars() {
 
   const filteredStars = stars.filter(star => {
     const matchesSearch = String(star.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTier = selectedTier === 'all' || star.tier?.toLowerCase() === selectedTier.toLowerCase();
-    return matchesSearch && matchesTier;
+    const distance = Number(star.distanceParsec ?? star.dist);
+    const matchesFilter = selectedTier === 'all'
+      || (selectedTier === 'named' && (star.catalogNamed || !star.localCatalog))
+      || (selectedTier === 'nearby' && Number.isFinite(distance) && distance > 0 && distance <= 20);
+    return matchesSearch && matchesFilter;
   });
 
   const renderARMode = () => {
@@ -154,7 +162,9 @@ export default function Stars() {
           <View style={styles.priceRow}>
             <Text style={styles.starCardPriceValue}>
               {star.price == null
-                ? `${star.constellation || 'HYG'} · ${Number(star.distanceParsec || 0).toFixed(1)} pc`
+                ? (String(star.id) === '0'
+                  ? `${star.spectralType || 'G2V'} · YEREL SİSTEM`
+                  : `${star.constellation || star.spectralType || 'HYG'} · ${Number(star.distanceParsec || 0).toFixed(1)} pc`)
                 : `$${star.price}`}
             </Text>
           </View>
@@ -257,9 +267,9 @@ export default function Stars() {
                 <TextInput style={styles.catalogSearchInput} placeholder="SEARCH_SYSTEM..." placeholderTextColor="rgba(0,242,254,0.3)" value={searchQuery} onChangeText={setSearchQuery} />
               </View>
               <View style={styles.tierFilters}>
-                {['all', 'nova', 'supernova'].map(tier => (
-                  <TouchableOpacity key={tier} style={[styles.tierFilter, selectedTier === tier && styles.tierFilterActive]} onPress={() => setSelectedTier(tier)}>
-                    <Text style={[styles.tierFilterText, selectedTier === tier && styles.tierFilterTextActive]}>{tier.toUpperCase()}</Text>
+                {CATALOG_FILTERS.map((filter) => (
+                  <TouchableOpacity key={filter.key} style={[styles.tierFilter, selectedTier === filter.key && styles.tierFilterActive]} onPress={() => setSelectedTier(filter.key)}>
+                    <Text style={[styles.tierFilterText, selectedTier === filter.key && styles.tierFilterTextActive]}>{filter.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>

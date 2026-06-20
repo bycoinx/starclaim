@@ -417,6 +417,8 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **20 Haziran 2026 cihaz güveni paketi:** 2D Skia ve 3D GL yüzeylerine ilk gerçek frame, FPS, kalite, açılış süresi, katalog/render yıldız sayısı ve mevcutsa JS heap ölçümü eklendi. Ölçümler cihazda son `20` oturumla sınırlandırıldı. 2D için `8 sn`, 3D için `12 sn` render gözcüsü, hata sınırı ve yeniden deneme ekranı eklenerek beyaz/sonsuz yükleme ekranları kontrollü hata durumuna dönüştürüldü.
 
+**20 Haziran 2026 fiziksel cihaz düzeltmeleri:** Skia `2.2.12` tarafından sunulmayan `useFrameCallback`, Reanimated `4.1.7` kaynağına taşınarak Sky Live render çökmesi giderildi. Hata halinde gözlem kontrollerinin hata paneline binmesi engellendi. Mobil katalog filtreleri HYG verisine uygun `Tümü / İsimli / 20 pc içi` seçeneklerine çevrildi; Güneş mesafesi yerel sistem olarak gösterildi. 3D sektör pozlaması düşürüldü, sahne kontrolleri merkezden sol alta taşındı ve StarVault boş durum eylemi kısa yatay ekrana sığdırıldı.
+
 Sıradaki cerrahi paket **Web yaşayan evren motoru**dur. Web ana sayfanın arka planı gerçekçi yıldız dağılımı, bağımsız parlaklık döngüleri, seyrek meteor ve ölçülü derinlik katmanlarıyla kurulacaktır.
 
 **Ertelenen teknik paket:** Floating-origin navigasyonu; yeni mobil kabuk, 2D Sky Live görsel dönüşümü ve web yaşayan evren paketlerinden sonra 3D Evren arayüz uyumu içinde ele alınacaktır.

@@ -44,6 +44,7 @@ const starVertexShader = `
 const starFragmentShader = `
   uniform float time;
   uniform float layerOpacity;
+  uniform float intensity;
   varying vec3 vColor;
   varying float vSeed;
 
@@ -61,8 +62,8 @@ const starFragmentShader = `
     ) * smoothstep(0.5, 0.08, radius) * 0.12;
     float pulse = 0.94 + 0.06 * sin(time * 1.7 + vSeed * 2.3);
     float alpha = min(1.0, (core + halo + outerHalo + diffraction) * pulse);
-    vec3 color = vColor * (0.82 + core * 1.25 + diffraction * 0.7);
-    gl_FragColor = vec4(color, alpha * layerOpacity);
+    vec3 color = vColor * (0.72 + core * 0.92 + diffraction * 0.48);
+    gl_FragColor = vec4(color, alpha * layerOpacity * intensity);
   }
 `;
 
@@ -312,7 +313,7 @@ function createGalaxyGeometry(count = GALAXY_LIMITS.high) {
     const color = warmCore.clone().lerp(coolArm, radialMix);
     if (!inCore && random() < 0.28) color.lerp(violetDust, 0.45);
     colors.set([color.r, color.g, color.b], offset);
-    sizes[index] = inCore ? 2.2 + random() * 1.8 : 0.8 + random() * 1.7;
+    sizes[index] = inCore ? 1.7 + random() * 1.35 : 0.7 + random() * 1.25;
   }
 
   const geometry = new THREE.BufferGeometry();
@@ -387,7 +388,7 @@ function createSectorStarGeometry(stars) {
     const magnitude = Number.isFinite(Number(star.mag)) ? Number(star.mag) : 5;
     positions.set([position.x, position.y, position.z], index * 3);
     colors.set([color.r, color.g, color.b], index * 3);
-    sizes[index] = THREE.MathUtils.clamp(1.15 + Math.sqrt(Math.max(0, 6.6 - magnitude)) * 1.45, 1, 6);
+    sizes[index] = THREE.MathUtils.clamp(0.9 + Math.sqrt(Math.max(0, 6.6 - magnitude)) * 0.92, 0.8, 4.1);
   });
 
   const geometry = new THREE.BufferGeometry();
@@ -744,7 +745,7 @@ export default function StarSystem3D({
     labelCandidatesRef.current = buildLabelCandidates(validStars, ownedStarIdsRef.current);
     const starGeometry = createSectorStarGeometry(validStars);
     starGeometry.setDrawRange(0, Math.min(validStars.length, QUALITY_LIMITS[qualityRef.current]));
-    const starUniforms = { time: { value: 0 }, layerOpacity: { value: 1 } };
+    const starUniforms = { time: { value: 0 }, layerOpacity: { value: 1 }, intensity: { value: 0.58 } };
     const starMaterial = new THREE.ShaderMaterial({
       uniforms: starUniforms,
       vertexShader: starVertexShader,
@@ -765,7 +766,7 @@ export default function StarSystem3D({
 
     const galaxyGeometry = createGalaxyGeometry();
     galaxyGeometry.setDrawRange(0, GALAXY_LIMITS[qualityRef.current]);
-    const galaxyUniforms = { time: { value: 0 }, layerOpacity: { value: 1 } };
+    const galaxyUniforms = { time: { value: 0 }, layerOpacity: { value: 1 }, intensity: { value: 0.78 } };
     const galaxyMaterial = new THREE.ShaderMaterial({
       uniforms: galaxyUniforms,
       vertexShader: starVertexShader,
@@ -1388,7 +1389,7 @@ const styles = StyleSheet.create({
   telemetryName: { color: '#fff', fontSize: 11, fontWeight: '800', marginBottom: 8 },
   telemetryLine: { color: 'rgba(255,255,255,0.48)', fontSize: 9, fontWeight: '700', marginTop: 3 },
   telemetryValue: { color: THEME.colors.primary },
-  controls: { position: 'absolute', left: 0, right: 0, bottom: 24, alignItems: 'center', gap: 10 },
+  controls: { position: 'absolute', left: 18, bottom: 18, alignItems: 'flex-start', gap: 8 },
   sceneTabs: {
     width: 276,
     height: 38,
