@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { AppState, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
@@ -34,6 +34,7 @@ import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 import SkyLiveChrome from '../../../components/SkyLiveChrome';
 import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
 import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
+import { adjustHeadingForScreen, getScreenTilt } from '../../../src/utils/deviceOrientation';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -79,6 +80,8 @@ export default function StarMapScreen() {
   const [layersVisible, setLayersVisible] = useState(false);
   const [nightVision, setNightVision] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [screenOrientation, setScreenOrientation] = useState(ScreenOrientation.Orientation.UNKNOWN);
+  const [capabilityNotice, setCapabilityNotice] = useState(null);
   const lastHeading = useRef(0);
   const lastTilt = useRef(0);
   const openedAtRef = useRef(Date.now());
@@ -135,6 +138,20 @@ export default function StarMapScreen() {
   }, []);
 
   useEffect(() => {
+    let mounted = true;
+    ScreenOrientation.getOrientationAsync()
+      .then((orientation) => { if (mounted) setScreenOrientation(orientation); })
+      .catch(() => {});
+    const subscription = ScreenOrientation.addOrientationChangeListener(({ orientationInfo }) => {
+      setScreenOrientation(orientationInfo.orientation);
+    });
+    return () => {
+      mounted = false;
+      ScreenOrientation.removeOrientationChangeListener(subscription);
+    };
+  }, []);
+
+  useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(timer);
   }, []);
@@ -164,10 +181,12 @@ export default function StarMapScreen() {
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
       if (!permission.granted) {
-        Alert.alert(
-          'Konum izni gerekli',
-          'Gercek gokyuzunu gostermek icin konum izni vermelisiniz.',
-        );
+        setMode('manual');
+        setCoordinateMode('equatorial');
+        setCapabilityNotice({
+          title: 'Konum olmadan harita modu',
+          message: 'Gerçek gökyüzü yönü için konum izni gerekir. Yıldız haritasını dokunarak kullanmaya devam edebilirsiniz.',
+        });
         return null;
       }
 
@@ -185,10 +204,16 @@ export default function StarMapScreen() {
       setCenterRa(mode === 'camera' ? heading : 180);
       setCenterDec(mode === 'camera' ? tilt : 25);
       setZoom(1.2);
+      setCapabilityNotice(null);
       return nextObserver;
     } catch (error) {
       console.warn('Location error', error);
-      Alert.alert('Konum alinamadi', 'Konum servisini kontrol edip tekrar deneyin.');
+      setMode('manual');
+      setCoordinateMode('equatorial');
+      setCapabilityNotice({
+        title: 'Konum alınamadı',
+        message: 'Konum servisini kontrol edene kadar dokunmatik yıldız haritası kullanılabilir.',
+      });
       return null;
     }
   };
@@ -245,7 +270,8 @@ export default function StarMapScreen() {
     let usingFallback = false;
 
     const applyHeading = (nextHeading) => {
-      let diff = nextHeading - lastHeading.current;
+      const adjustedHeading = adjustHeadingForScreen(nextHeading, screenOrientation);
+      let diff = adjustedHeading - lastHeading.current;
       if (diff > 180) diff -= 360;
       if (diff < -180) diff += 360;
       const filteredHeading = normalizeAngle(lastHeading.current + diff * ALPHA);
@@ -261,7 +287,8 @@ export default function StarMapScreen() {
 
     const motionSub = DeviceMotion.addListener((data) => {
       const betaDegrees = (data.rotation?.beta || 0) * (180 / Math.PI);
-      const newTilt = Math.max(-90, Math.min(90, betaDegrees - 90));
+      const gammaDegrees = (data.rotation?.gamma || 0) * (180 / Math.PI);
+      const newTilt = getScreenTilt(betaDegrees, gammaDegrees, screenOrientation);
       const filteredTilt = lastTilt.current + (newTilt - lastTilt.current) * ALPHA;
       lastTilt.current = filteredTilt;
       setTilt(filteredTilt);
@@ -283,7 +310,16 @@ export default function StarMapScreen() {
         usingFallback = true;
         setHeadingSource('fallback');
         setHeadingAccuracy(0);
-        setCalibrationVisible(true);
+        const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
+        if (magnetometerAvailable) {
+          setCalibrationVisible(true);
+        } else {
+          setMode('manual');
+          setCapabilityNotice({
+            title: 'Yön sensörü bulunamadı',
+            message: 'Bu cihazda pusula kullanılamıyor. Haritayı sürükleyerek ve yakınlaştırarak kullanabilirsiniz.',
+          });
+        }
       }
     };
 
@@ -296,7 +332,7 @@ export default function StarMapScreen() {
       fallbackMagSub.remove();
       motionSub.remove();
     };
-  }, [appState, mode]);
+  }, [appState, mode, screenOrientation]);
 
   useEffect(() => {
     if (mode === 'camera') {
@@ -349,10 +385,23 @@ export default function StarMapScreen() {
     const activeObserver = observer || await activateRealSky();
     if (!activeObserver) return;
 
+    const motionAvailable = await DeviceMotion.isAvailableAsync().catch(() => false);
+    const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
+    if (!motionAvailable || !magnetometerAvailable) {
+      setMode('manual');
+      setCoordinateMode('horizontal');
+      setCapabilityNotice({
+        title: 'Kamera yönlendirmesi desteklenmiyor',
+        message: 'Cihazın gerekli yön sensörleri eksik. Gerçek konuma göre 2D haritayı dokunarak kullanabilirsiniz.',
+      });
+      return;
+    }
+
     if (cameraPermission === true) {
       setCoordinateMode('horizontal');
       setCalibrationVisible(headingAccuracy < 2);
       setMode('camera');
+      setCapabilityNotice(null);
       return;
     }
 
@@ -362,11 +411,14 @@ export default function StarMapScreen() {
       setCoordinateMode('horizontal');
       setCalibrationVisible(true);
       setMode('camera');
+      setCapabilityNotice(null);
     } else {
-      Alert.alert(
-        'Kamera izni gerekli',
-        'Canli gokyuzu modunu kullanmak icin kamera izni vermelisiniz.',
-      );
+      setMode('manual');
+      setCoordinateMode('horizontal');
+      setCapabilityNotice({
+        title: 'Kamera izni verilmedi',
+        message: 'Kamera görüntüsü kapalı. Gerçek konuma göre sensörlü veya dokunmatik haritayı kullanabilirsiniz.',
+      });
     }
   };
 
@@ -586,6 +638,24 @@ export default function StarMapScreen() {
             onOpenDetails={() => setPopupVisible(true)}
             onVoyage={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })}
           />
+
+          {capabilityNotice && (
+            <View style={styles.capabilityNotice} accessibilityRole="alert">
+              <Ionicons name="information-circle-outline" size={19} color={THEME.colors.primary} />
+              <View style={styles.capabilityNoticeCopy}>
+                <Text style={styles.capabilityNoticeTitle}>{capabilityNotice.title}</Text>
+                <Text style={styles.capabilityNoticeMessage}>{capabilityNotice.message}</Text>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Bilgilendirmeyi kapat"
+                style={styles.capabilityNoticeClose}
+                onPress={() => setCapabilityNotice(null)}
+              >
+                <Ionicons name="close" size={19} color="rgba(244,247,255,0.72)" />
+              </TouchableOpacity>
+            </View>
+          )}
           
           <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
           <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
@@ -784,6 +854,11 @@ const styles = StyleSheet.create({
   mapErrorMessage: { marginTop: 10, maxWidth: 420, color: THEME.colors.textMuted, fontSize: 13, textAlign: 'center', lineHeight: 19 },
   mapRetryButton: { marginTop: 22, minHeight: 48, paddingHorizontal: 24, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: THEME.colors.primary },
   mapRetryText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  capabilityNotice: { position: 'absolute', zIndex: 80, top: 68, left: '50%', width: 430, marginLeft: -215, minHeight: 66, padding: 12, borderRadius: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(3,7,14,0.96)', borderWidth: 1, borderColor: 'rgba(119,191,255,0.38)' },
+  capabilityNoticeCopy: { flex: 1 },
+  capabilityNoticeTitle: { color: '#F4F7FF', fontSize: 12, fontWeight: '800' },
+  capabilityNoticeMessage: { color: 'rgba(244,247,255,0.68)', fontSize: 10, lineHeight: 14, marginTop: 3 },
+  capabilityNoticeClose: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
   nightFilter: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(90,0,0,0.12)', zIndex: 2 },
   selectionPanel: {
     display: 'none',
