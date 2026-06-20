@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
 import { 
   Canvas, 
@@ -233,7 +233,7 @@ function DeepSpaceAtmosphere({ layout, nightVision }) {
   );
 }
 
-export default function StarCanvas({
+const StarCanvas = forwardRef(function StarCanvas({
   stars,
   selectedStar,
   centerRa: initialRa,
@@ -261,7 +261,7 @@ export default function StarCanvas({
   showNebula = true,
   onReady = null,
   onTelemetry = null,
-}) {
+}, ref) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   const [qualityLevel, setQualityLevel] = useState('high');
 
@@ -277,6 +277,14 @@ export default function StarCanvas({
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
   const qualityRef = useRef({ level: 'high', maximum: 'high', lowSamples: 0, highSamples: 0 });
+
+  useImperativeHandle(ref, () => ({
+    setView(nextRa, nextDec) {
+      if (!Number.isFinite(nextRa) || !Number.isFinite(nextDec)) return;
+      ra.value = nextRa;
+      dec.value = Math.max(-90, Math.min(90, nextDec));
+    },
+  }), [dec, ra]);
 
   useEffect(() => {
     onReadyRef.current = onReady;
@@ -383,57 +391,32 @@ export default function StarCanvas({
   const renderedStars = useMemo(() => {
     const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
     const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
-    return stars.reduce((visible, star) => {
+    const poolLimit = qualityLevel === 'low' ? 650 : qualityLevel === 'medium' ? 1100 : 1600;
+    const importantStars = [];
+    const regularStars = [];
+
+    stars.forEach((star) => {
       const owned = (
         ownedIdSet.has(String(star.id))
         || ownedIdSet.has(String(star.hip))
       );
-      const important = owned || selectedStar?.id === star.id;
-      if (!important && Number(star.mag) > magnitudeLimit) return visible;
+      const important = owned || String(selectedStar?.id) === String(star.id);
+      if (!important && Number(star.mag) > magnitudeLimit) return;
 
-      const position = project(
-        star.ra,
-        star.dec,
-        initialRa,
-        initialDec,
-        layout.width,
-        layout.height,
-        initialZoom,
-        coordinateMode,
-        observerLatitude,
-        lstDegrees,
-      );
-      const insidePaddedViewport = (
-        position.x >= -VIEWPORT_PADDING
-        && position.x <= layout.width + VIEWPORT_PADDING
-        && position.y >= -VIEWPORT_PADDING
-        && position.y <= layout.height + VIEWPORT_PADDING
-      );
-      const aboveHorizon = (
-        !hideBelowHorizon
-        || position.skyAltitude == null
-        || position.skyAltitude >= 0
-      );
-      if (!important && (!insidePaddedViewport || !aboveHorizon)) return visible;
-
-      visible.push({
+      const prepared = {
         ...star,
         radius: radiusForMag(star.mag, star.spect),
         color: nightVision ? '#FF514A' : colorForSpectrum(star.spect),
         owned,
-      });
-      return visible;
-    }, []);
+      };
+      if (important) importantStars.push(prepared);
+      else regularStars.push(prepared);
+    });
+
+    regularStars.sort((a, b) => Number(a.mag) - Number(b.mag));
+    return [...importantStars, ...regularStars.slice(0, poolLimit)];
   }, [
-    coordinateMode,
-    hideBelowHorizon,
-    initialDec,
-    initialRa,
     initialZoom,
-    layout.height,
-    layout.width,
-    lstDegrees,
-    observerLatitude,
     nightVision,
     ownedIdSet,
     qualityLevel,
@@ -497,39 +480,6 @@ export default function StarCanvas({
     height: layout.height,
   };
 
-  const tapIndex = useMemo(() => {
-    const cells = new Map();
-    renderedStars.forEach((star) => {
-      const position = project(
-        star.ra,
-        star.dec,
-        initialRa,
-        initialDec,
-        layout.width,
-        layout.height,
-        initialZoom,
-        coordinateMode,
-        observerLatitude,
-        lstDegrees,
-      );
-      const key = getCellKey(position.x, position.y);
-      const bucket = cells.get(key);
-      if (bucket) bucket.push(star);
-      else cells.set(key, [star]);
-    });
-    return cells;
-  }, [
-    coordinateMode,
-    initialDec,
-    initialRa,
-    initialZoom,
-    layout.height,
-    layout.width,
-    lstDegrees,
-    observerLatitude,
-    renderedStars,
-  ]);
-
   useEffect(() => {
     if (__DEV__) {
       console.debug(`[StarCanvas] render set: ${renderedStars.length}/${stars.length}`);
@@ -540,17 +490,7 @@ export default function StarCanvas({
     if (!onSelect) return;
     let closestStar = null;
     let minDistance = 25;
-    const cellX = Math.floor(x / TAP_CELL_SIZE);
-    const cellY = Math.floor(y / TAP_CELL_SIZE);
-    const candidates = [];
-    for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
-      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
-        const bucket = tapIndex.get(`${cellX + xOffset}:${cellY + yOffset}`);
-        if (bucket) candidates.push(...bucket);
-      }
-    }
-
-    candidates.forEach((star) => {
+    renderedStars.forEach((star) => {
       const p = project(
         star.ra,
         star.dec,
@@ -730,7 +670,9 @@ export default function StarCanvas({
       </GestureDetector>
     </GestureHandlerRootView>
   );
-}
+});
+
+export default StarCanvas;
 
 function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const raSteps = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];

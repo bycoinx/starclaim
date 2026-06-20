@@ -83,6 +83,7 @@ export default function StarMapScreen() {
   const autoTrackingStartedRef = useRef(false);
   const openedAtRef = useRef(Date.now());
   const canvasReadyDataRef = useRef(null);
+  const starCanvasRef = useRef(null);
   const diagnosticReportedRef = useRef(false);
   const router = useRouter();
   const ALPHA = 0.15;
@@ -303,17 +304,18 @@ export default function StarMapScreen() {
     };
 
     startHeading();
+    let lastHudCommit = 0;
     const viewCommitTimer = setInterval(() => {
-      setViewDirection((current) => {
-        const next = { heading: lastHeading.current, tilt: lastTilt.current };
-        const headingDelta = Math.abs(next.heading - current.heading);
-        const tiltDelta = Math.abs(next.tilt - current.tilt);
-        return headingDelta < 0.2 && tiltDelta < 0.2 ? current : next;
-      });
+      starCanvasRef.current?.setView(lastHeading.current, lastTilt.current * 0.6);
+
+      const nowMs = Date.now();
+      if (nowMs - lastHudCommit < 1000) return;
+      lastHudCommit = nowMs;
+      setViewDirection({ heading: lastHeading.current, tilt: lastTilt.current });
       setHeadingAccuracy((current) => (
         current === lastHeadingAccuracy.current ? current : lastHeadingAccuracy.current
       ));
-    }, 500);
+    }, 100);
     Magnetometer.setUpdateInterval(66);
     DeviceMotion.setUpdateInterval(66);
     return () => {
@@ -325,21 +327,14 @@ export default function StarMapScreen() {
     };
   }, [appState, mode, screenOrientation]);
 
-  useEffect(() => {
-    if (mode === 'sensor') {
-      setCenterRa(heading);
-      setCenterDec(tilt * 0.6);
-    }
-  }, [mode, heading, tilt]);
-
   const selectedPurchase = selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
   const selectedHorizontal = selectedStar && observer
     ? getHorizontalPosition(selectedStar)
     : null;
-  const displayAzimuth = normalizeAngle(selectedHorizontal?.az ?? centerRa);
-  const displayAltitude = selectedHorizontal?.alt ?? centerDec;
+  const displayAzimuth = normalizeAngle(selectedHorizontal?.az ?? (mode === 'sensor' ? heading : centerRa));
+  const displayAltitude = selectedHorizontal?.alt ?? (mode === 'sensor' ? tilt * 0.6 : centerDec);
   const cardinalDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const cardinal = cardinalDirections[Math.round(displayAzimuth / 45) % cardinalDirections.length];
   const ownedStarIds = useMemo(
@@ -493,6 +488,7 @@ export default function StarMapScreen() {
                 }}
               >
                 <StarCanvas
+                  ref={starCanvasRef}
                   key={`sky-live-${loadAttempt}`}
                 stars={stars}
                 selectedStar={selectedStar}
