@@ -43,7 +43,10 @@ import {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const deg2rad = (deg) => deg * Math.PI / 180;
+const deg2rad = (deg) => {
+  'worklet';
+  return deg * Math.PI / 180;
+};
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
 const TAP_CELL_SIZE = 56;
 const VIEWPORT_PADDING = 140;
@@ -561,6 +564,7 @@ export default function StarCanvas({
   const selectedX = useDerivedValue(() => selectedStarPos.value?.x ?? -100);
   const selectedY = useDerivedValue(() => selectedStarPos.value?.y ?? -100);
   const selectedHaloCenter = useDerivedValue(() => vec(selectedX.value, selectedY.value));
+  const selectedOpacity = useDerivedValue(() => isSelectedVisible.value ? 1 : 0);
 
   return (
     <GestureHandlerRootView style={[styles.container, transparentBackground && styles.transparentContainer]}>
@@ -615,9 +619,9 @@ export default function StarCanvas({
               <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {showConstellationBoundaries && constellations.boundaries?.features?.map((feature) => (
+            {showConstellationBoundaries && constellations.boundaries?.features?.map((feature, index) => (
               <ConstellationBoundary
-                key={feature.id}
+                key={`${feature.id || 'boundary'}-${index}`}
                 feature={feature}
                 ra={ra}
                 dec={dec}
@@ -638,9 +642,9 @@ export default function StarCanvas({
               <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
             ))}
 
-            {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature) => (
+            {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature, index) => (
               <ConstellationLabel
-                key={feature.id}
+                key={`${feature.id || 'label'}-${index}`}
                 feature={feature}
                 ra={ra}
                 dec={dec}
@@ -658,8 +662,8 @@ export default function StarCanvas({
               <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {selectedStarPos.value && isSelectedVisible.value && (
-              <Group>
+            {selectedStar && (
+              <Group opacity={selectedOpacity}>
                 <Circle cx={selectedX} cy={selectedY} r={28} opacity={0.42}>
                   <RadialGradient c={selectedHaloCenter} r={28} colors={nightVision ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)'] : ['rgba(178,222,255,0.55)', 'rgba(119,191,255,0)']} />
                 </Circle>
@@ -1046,6 +1050,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
     && (!hideBelowHorizon || pos.value.skyAltitude == null || pos.value.skyAltitude >= 0)
   ));
   const labelVisible = useDerivedValue(() => !suppressLabel && isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
+  const detailLabelVisible = useDerivedValue(() => labelVisible.value && zoom.value > 4);
   const ownedX = useDerivedValue(() => pos.value.x);
   const ownedY = useDerivedValue(() => pos.value.y);
   
@@ -1086,15 +1091,14 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
              font={font} 
              color={nightVision ? 'rgba(255,74,66,0.76)' : 'rgba(255,255,255,0.7)'}
            />
-           {zoom.value > 4 && (
-             <SkiaText 
-               x={useDerivedValue(() => pos.value.x + star.radius + 6)} 
-               y={useDerivedValue(() => pos.value.y - star.radius + 8)} 
-               text={`MAG: ${star.mag?.toFixed(2)}`} 
-               font={font} 
-               color={nightVision ? 'rgba(255,74,66,0.45)' : 'rgba(0, 204, 255, 0.4)'}
-             />
-           )}
+           <SkiaText 
+             x={useDerivedValue(() => pos.value.x + star.radius + 6)} 
+             y={useDerivedValue(() => pos.value.y - star.radius + 8)} 
+             text={`MAG: ${star.mag?.toFixed(2)}`} 
+             font={font} 
+             color={nightVision ? 'rgba(255,74,66,0.45)' : 'rgba(0, 204, 255, 0.4)'}
+             opacity={detailLabelVisible}
+           />
         </Group>
       )}
     </Group>
@@ -1112,6 +1116,7 @@ function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, obs
   ));
 
   const pulse = useDerivedValue(() => 1 + Math.sin(time.value * 2) * 0.15);
+  const planetDetailVisible = useDerivedValue(() => zoom.value > 2.5 ? 0.5 : 0);
   const accent = nightVision ? '#FF4A42' : planet.color;
 
   return (
@@ -1154,16 +1159,14 @@ function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, obs
             font={font} 
             color="#fff" 
           />
-          {zoom.value > 2.5 && (
-            <SkiaText 
-              x={useDerivedValue(() => pos.value.x + 16)} 
-              y={useDerivedValue(() => pos.value.y + 16)} 
-              text="SYSTEM_OBJECT" 
-              font={font} 
-              color={accent} 
-              opacity={0.5}
-            />
-          )}
+          <SkiaText 
+            x={useDerivedValue(() => pos.value.x + 16)} 
+            y={useDerivedValue(() => pos.value.y + 16)} 
+            text="SYSTEM_OBJECT" 
+            font={font} 
+            color={accent} 
+            opacity={planetDetailVisible}
+          />
         </Group>
       )}
     </Group>
@@ -1182,6 +1185,7 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
 
   const accent = nightVision ? '#FF4A42' : dso.color;
   const pulse = useDerivedValue(() => 0.6 + Math.sin(time.value * 1.5) * 0.2);
+  const dsoLabelVisible = useDerivedValue(() => zoom.value > 1.8 ? 1 : 0);
 
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
@@ -1228,8 +1232,8 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
       )}
 
       {/* Identity Label */}
-      {font && zoom.value > 1.8 && (
-        <Group>
+      {font && (
+        <Group opacity={dsoLabelVisible}>
           <SkiaText 
             x={useDerivedValue(() => pos.value.x + 14)} 
             y={useDerivedValue(() => pos.value.y - 4)} 
