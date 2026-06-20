@@ -12,14 +12,6 @@ function ToolButton({ icon, label, active, onPress }) {
   );
 }
 
-function ModeButton({ label, active, onPress }) {
-  return (
-    <TouchableOpacity accessibilityRole="button" style={[styles.modeButton, active && styles.modeButtonActive]} onPress={onPress}>
-      <Text style={[styles.modeLabel, active && styles.modeLabelActive]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 function InfoLine({ icon, text }) {
   return (
     <View style={styles.infoLine}>
@@ -43,7 +35,6 @@ export default function SkyLiveChrome({
   showConstellations,
   showDeepSpace,
   mode,
-  coordinateMode,
   searchQuery,
   searchResults,
   nightVision,
@@ -55,9 +46,7 @@ export default function SkyLiveChrome({
   onToggleConstellations,
   onToggleDeepSpace,
   onCenter,
-  onManualMode,
   onSensorMode,
-  onCameraMode,
   onClearSelection,
   onOpenDetails,
   onVoyage,
@@ -168,11 +157,17 @@ export default function SkyLiveChrome({
       </View>}
 
       {surfaceAvailable && <View style={styles.bottomCenter} pointerEvents="box-none">
-        <View style={styles.modeSelector}>
-          <ModeButton label="Harita" active={mode === 'manual' && coordinateMode === 'equatorial'} onPress={onManualMode} />
-          <ModeButton label="Sensör" active={mode === 'sensor'} onPress={onSensorMode} />
-          <ModeButton label="Kamera" active={mode === 'camera'} onPress={onCameraMode} />
-        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={mode === 'sensor' ? 'Cihaz takibi açık' : 'Cihaz takibini sürdür'}
+          style={[styles.trackingButton, mode === 'sensor' && styles.trackingButtonActive]}
+          onPress={onSensorMode}
+        >
+          <Ionicons name={mode === 'sensor' ? 'navigate' : 'navigate-outline'} size={16} color={mode === 'sensor' ? THEME.colors.secondary : THEME.colors.primary} />
+          <Text style={[styles.trackingLabel, mode === 'sensor' && styles.trackingLabelActive]}>
+            {mode === 'sensor' ? 'CİHAZ TAKİBİ' : 'TAKİBİ SÜRDÜR'}
+          </Text>
+        </TouchableOpacity>
         <View style={styles.coordinatePill} pointerEvents="none">
           <Text style={styles.coordinateText}>Yön: {azimuth.toFixed(0)}°</Text>
           <Text style={styles.coordinateText}>Yükseklik: {altitude.toFixed(0)}°</Text>
@@ -225,11 +220,10 @@ const styles = StyleSheet.create({
   toolLabel: { color: 'rgba(244,247,255,0.72)', fontSize: 9, lineHeight: 12, textAlign: 'center' },
   toolLabelActive: { color: '#F0D47D' },
   bottomCenter: { position: 'absolute', left: '50%', bottom: 18, width: 330, marginLeft: -165, alignItems: 'center', gap: 7 },
-  modeSelector: { ...glass, height: 35, borderRadius: 18, padding: 3, flexDirection: 'row' },
-  modeButton: { minWidth: 82, height: 29, paddingHorizontal: 12, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  modeButtonActive: { backgroundColor: 'rgba(119,191,255,0.16)' },
-  modeLabel: { color: 'rgba(244,247,255,0.46)', fontSize: 9, fontWeight: '700' },
-  modeLabelActive: { color: '#BFE1FF' },
+  trackingButton: { ...glass, minWidth: 142, height: 34, borderRadius: 17, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  trackingButtonActive: { borderColor: 'rgba(230,188,74,0.42)', backgroundColor: 'rgba(230,188,74,0.08)' },
+  trackingLabel: { color: '#BFE1FF', fontSize: 9, fontWeight: '700' },
+  trackingLabelActive: { color: '#F0D47D' },
   coordinatePill: { ...glass, minHeight: 30, borderRadius: 15, paddingHorizontal: 15, flexDirection: 'row', alignItems: 'center', gap: 14 },
   coordinateText: { color: 'rgba(244,247,255,0.72)', fontSize: 10 },
 });

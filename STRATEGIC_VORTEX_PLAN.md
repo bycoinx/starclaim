@@ -26,10 +26,11 @@ Bu bölüm, diğer bütün geliştirme maddelerinden daha yüksek önceliklidir.
 
 #### P0.1 - 2D Render Motoru Üretim Kararlılığı
 
-- [ ] Harita, sensör ve kamera modları arasında art arda geçişlerde donma veya render kaybı yok.
+- [ ] Tek Sky Live yüzeyi otomatik cihaz yön takibiyle açılıyor; ayrı Harita/Sensör/Kamera modları bulunmuyor.
+- [ ] Kullanıcı pan veya zoom yaptığında manuel kontrol kesintisiz devralıyor; `Takibi Sürdür` ile sensör merkezlemesine dönülüyor.
 - [ ] Uygulama ön plan/arka plan geçişi ve ekran döndürme sonrasında çizim yüzeyi geri geliyor.
 - [ ] Skia/Reanimated abonelikleri ekran kapanırken eksiksiz temizleniyor.
-- [ ] 10 dakikalık Harita/Sensör/Kamera testinde crash, bellek artışı veya kontrol kaybı yok.
+- [ ] 10 dakikalık otomatik takip/manüel devralma testinde crash, bellek artışı veya kontrol kaybı yok.
 - [ ] Düşük, orta ve yüksek cihaz profillerinde yıldız/düğüm sayısı otomatik ve güvenli ayarlanıyor.
 - [ ] Orta sınıf fiziksel Android cihazda hedef FPS, açılış süresi, bellek ve ısı ölçümleri kaydediliyor.
 
@@ -473,7 +474,7 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## Güncel Uygulama Sırası
 
-1. 2D Harita/Sensör/Kamera donma ve yaşam döngüsü testlerini kapat.
+1. Tek 2D Sky Live yüzeyinde otomatik takip/manüel devralma donma ve yaşam döngüsü testlerini kapat.
 2. Kanonik astronomik veri sözleşmesini ve regresyon testlerini tamamla.
 3. Gaia DR3 + Hipparcos çapraz eşleştirme build/import hattını kur.
 4. Sıkıştırılmış binary katalog, manifest ve sektör/tile sistemini tamamla.
@@ -496,6 +497,6 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 **20 Haziran 2026 fiziksel cihaz düzeltmeleri:** Skia `2.2.12` tarafından sunulmayan `useFrameCallback`, Reanimated `4.1.7` kaynağına taşınarak Sky Live render çökmesi giderildi. Hata halinde gözlem kontrollerinin hata paneline binmesi engellendi. Mobil katalog filtreleri HYG verisine uygun `Tümü / İsimli / 20 pc içi` seçeneklerine çevrildi; Güneş mesafesi yerel sistem olarak gösterildi. 3D sektör pozlaması düşürüldü, sahne kontrolleri merkezden sol alta taşındı ve StarVault boş durum eylemi kısa yatay ekrana sığdırıldı.
 
-Sıradaki cerrahi paket **P0.1 - 2D Render Motoru Üretim Kararlılığı**dır. Önce son Harita/Sensör/Kamera düzeltmesi fiziksel cihazda doğrulanacak; ardından yaşam döngüsü ve 10 dakikalık stres testi kapatılacaktır.
+Sıradaki cerrahi paket **P0.1 - 2D Render Motoru Üretim Kararlılığı**dır. Ayrı Harita/Sensör/Kamera geçişleri kaldırılmıştır; tek Sky Live yüzeyi cihaz sensörüyle takip eder, pan/zoom ile manuel devralınır ve `Takibi Sürdür` ile sensöre dönülür. Bu akış fiziksel cihazda doğrulandıktan sonra yaşam döngüsü ve 10 dakikalık stres testi kapatılacaktır.
 
 **Ertelenen paketler:** Web yaşayan evren motoru, 3D floating-origin, 3D görsel kalite ve Star System/Planet geliştirmeleri P0.1-P0.7 tamamlanma kapısından sonra ele alınacaktır.

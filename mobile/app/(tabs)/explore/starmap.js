@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, CameraView } from 'expo-camera';
 import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
@@ -42,7 +41,6 @@ export default function StarMapScreen() {
   const [selectedStar, setSelectedStar] = useState(null);
   const [popupVisible, setPopupVisible] = useState(false);
   const [mode, setMode] = useState('manual');
-  const [cameraPermission, setCameraPermission] = useState(null);
   const [centerRa, setCenterRa] = useState(180);
   const [centerDec, setCenterDec] = useState(0);
   const [zoom, setZoom] = useState(1.2);
@@ -73,7 +71,6 @@ export default function StarMapScreen() {
   const [siderealTime, setSiderealTime] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
   const [headingAccuracy, setHeadingAccuracy] = useState(0);
-  const [headingSource, setHeadingSource] = useState('waiting');
   const [calibrationVisible, setCalibrationVisible] = useState(false);
   const [layersVisible, setLayersVisible] = useState(false);
   const [nightVision, setNightVision] = useState(false);
@@ -82,6 +79,8 @@ export default function StarMapScreen() {
   const [capabilityNotice, setCapabilityNotice] = useState(null);
   const lastHeading = useRef(0);
   const lastTilt = useRef(0);
+  const lastHeadingAccuracy = useRef(0);
+  const autoTrackingStartedRef = useRef(false);
   const openedAtRef = useRef(Date.now());
   const canvasReadyDataRef = useRef(null);
   const diagnosticReportedRef = useRef(false);
@@ -185,8 +184,8 @@ export default function StarMapScreen() {
       setObserver(nextObserver);
       setSiderealTime(nextSiderealTime);
       setCoordinateMode('horizontal');
-      setCenterRa(mode === 'camera' ? heading : 180);
-      setCenterDec(mode === 'camera' ? tilt : 25);
+      setCenterRa(mode === 'sensor' ? heading : 180);
+      setCenterDec(mode === 'sensor' ? tilt : 25);
       setZoom(1.2);
       setCapabilityNotice(null);
       return nextObserver;
@@ -247,7 +246,7 @@ export default function StarMapScreen() {
   };
 
   useEffect(() => {
-    if (!['camera', 'sensor'].includes(mode) || appState !== 'active') return undefined;
+    if (mode !== 'sensor' || appState !== 'active') return undefined;
 
     let headingSubscription;
     let cancelled = false;
@@ -282,16 +281,14 @@ export default function StarMapScreen() {
           if (cancelled) return;
           const trueHeadingAvailable = measurement.trueHeading >= 0;
           applyHeading(trueHeadingAvailable ? measurement.trueHeading : measurement.magHeading);
-          setHeadingSource(trueHeadingAvailable ? 'true' : 'magnetic');
-          setHeadingAccuracy(measurement.accuracy);
+          lastHeadingAccuracy.current = measurement.accuracy;
           if (measurement.accuracy >= 2) setCalibrationVisible(false);
         });
         if (cancelled) headingSubscription.remove();
       } catch (error) {
         console.warn('Heading sensor error', error);
         usingFallback = true;
-        setHeadingSource('fallback');
-        setHeadingAccuracy(0);
+        lastHeadingAccuracy.current = 0;
         const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
         if (magnetometerAvailable) {
           setCalibrationVisible(true);
@@ -313,7 +310,10 @@ export default function StarMapScreen() {
         const tiltDelta = Math.abs(next.tilt - current.tilt);
         return headingDelta < 0.2 && tiltDelta < 0.2 ? current : next;
       });
-    }, 250);
+      setHeadingAccuracy((current) => (
+        current === lastHeadingAccuracy.current ? current : lastHeadingAccuracy.current
+      ));
+    }, 500);
     Magnetometer.setUpdateInterval(66);
     DeviceMotion.setUpdateInterval(66);
     return () => {
@@ -326,7 +326,7 @@ export default function StarMapScreen() {
   }, [appState, mode, screenOrientation]);
 
   useEffect(() => {
-    if (mode === 'camera' || mode === 'sensor') {
+    if (mode === 'sensor') {
       setCenterRa(heading);
       setCenterDec(tilt * 0.6);
     }
@@ -372,47 +372,6 @@ export default function StarMapScreen() {
     }
   };
 
-  const enableCameraMode = async () => {
-    const activeObserver = observer || await activateRealSky();
-    if (!activeObserver) return;
-
-    const motionAvailable = await DeviceMotion.isAvailableAsync().catch(() => false);
-    const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
-    if (!motionAvailable || !magnetometerAvailable) {
-      setMode('manual');
-      setCoordinateMode('horizontal');
-      setCapabilityNotice({
-        title: 'Kamera yönlendirmesi desteklenmiyor',
-        message: 'Cihazın gerekli yön sensörleri eksik. Gerçek konuma göre 2D haritayı dokunarak kullanabilirsiniz.',
-      });
-      return;
-    }
-
-    if (cameraPermission === true) {
-      setCoordinateMode('horizontal');
-      setCalibrationVisible(headingAccuracy < 2);
-      setMode('camera');
-      setCapabilityNotice(null);
-      return;
-    }
-
-    const status = await Camera.requestCameraPermissionsAsync();
-    setCameraPermission(status.granted);
-    if (status.granted) {
-      setCoordinateMode('horizontal');
-      setCalibrationVisible(true);
-      setMode('camera');
-      setCapabilityNotice(null);
-    } else {
-      setMode('manual');
-      setCoordinateMode('horizontal');
-      setCapabilityNotice({
-        title: 'Kamera izni verilmedi',
-        message: 'Kamera görüntüsü kapalı. Gerçek konuma göre sensörlü veya dokunmatik haritayı kullanabilirsiniz.',
-      });
-    }
-  };
-
   const enableSensorMode = async () => {
     const activeObserver = observer || await activateRealSky();
     if (!activeObserver) return;
@@ -434,12 +393,14 @@ export default function StarMapScreen() {
     setCapabilityNotice(null);
   };
 
+  useEffect(() => {
+    if (loading || stars.length === 0 || selectedStar || autoTrackingStartedRef.current) return;
+    autoTrackingStartedRef.current = true;
+    enableSensorMode();
+  }, [loading, selectedStar, stars.length]);
+
   return (
     <View style={styles.container}>
-      {mode === 'camera' && cameraPermission ? (
-        <CameraView style={styles.camera} facing="back" />
-      ) : null}
-      
       {/* HUD OVERLAY */}
       <View style={styles.hudOverlay} pointerEvents="none">
         <View style={[styles.hudCorner, { top: 30, left: 30, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '40' }]} />
@@ -481,13 +442,7 @@ export default function StarMapScreen() {
               )}
             </View>
 
-            <View style={styles.rightControls}>
-              <View style={styles.modeToggleGroup}>
-                <ModeButton icon="gesture-tap" active={mode==='manual'} onPress={() => setMode('manual')} />
-                <ModeButton icon="video-outline" active={mode==='camera'} onPress={enableCameraMode} />
-                <ModeButton icon="crosshairs-gps" active={mode === 'sensor'} onPress={enableSensorMode} color={THEME.colors.primary} />
-              </View>
-            </View>
+            <View style={styles.rightControls} />
           </View>
 
           {/* LEFT TELEMETRY COLUMN */}
@@ -513,7 +468,7 @@ export default function StarMapScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={[styles.mapContainer, mode === 'camera' && styles.mapContainerTransparent]}>
+          <View style={styles.mapContainer}>
             {loading ? (
               <View style={styles.mapStatus}>
                 <ActivityIndicator color={THEME.colors.primary} size="large" />
@@ -557,11 +512,11 @@ export default function StarMapScreen() {
                 observerLatitude={observer?.latitude || 0}
                 lstDegrees={siderealTime}
                 hideBelowHorizon
-                transparentBackground={mode === 'camera'}
+                transparentBackground={false}
                 nightVision={nightVision}
                 showNebula={showNebula}
                 onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
-                onZoomChange={setZoom}
+                onZoomChange={(nextZoom) => { setMode('manual'); setZoom(nextZoom); }}
                 onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
                 ownedStarIds={ownedStarIds}
                   onReady={(details) => {
@@ -630,7 +585,6 @@ export default function StarMapScreen() {
             showConstellations={showConstellations}
             showDeepSpace={showDSOs || showNebula}
             mode={mode}
-            coordinateMode={coordinateMode}
             searchQuery={searchQuery}
             searchResults={searchResults}
             nightVision={nightVision}
@@ -641,9 +595,7 @@ export default function StarMapScreen() {
             onToggleConstellations={() => { const next = !showConstellations; setShowConstellations(next); setShowConstellationLabels(next); }}
             onToggleDeepSpace={() => { const next = !(showDSOs || showNebula); setShowDSOs(next); setShowNebula(next); }}
             onCenter={selectedStar ? handleCenterOnSelected : activateRealSky}
-            onManualMode={() => { setMode('manual'); setCoordinateMode('equatorial'); }}
             onSensorMode={enableSensorMode}
-            onCameraMode={enableCameraMode}
             onClearSelection={() => setSelectedStar(null)}
             onOpenDetails={() => setPopupVisible(true)}
             onVoyage={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })}
@@ -697,7 +649,7 @@ export default function StarMapScreen() {
           </Modal>
 
           {/* CALIBRATION MODAL */}
-          <Modal visible={calibrationVisible && mode === 'camera'} transparent animationType="fade" onRequestClose={() => setCalibrationVisible(false)}>
+          <Modal visible={calibrationVisible && mode === 'sensor'} transparent animationType="fade" onRequestClose={() => setCalibrationVisible(false)}>
             <View style={styles.calibrationBackdrop}>
               <View style={styles.calibrationPanel}>
                 <View style={styles.calibrationIcon}>
@@ -726,17 +678,6 @@ export default function StarMapScreen() {
   );
 }
 
-function ModeButton({ icon, active, onPress, color = '#fff' }) {
-  return (
-    <TouchableOpacity 
-      style={[styles.modeButton, active && { backgroundColor: THEME.colors.primary + '25', borderColor: THEME.colors.primary, borderWidth: 1 }]} 
-      onPress={onPress}
-    >
-      <MaterialCommunityIcons name={icon} size={20} color={active ? THEME.colors.primary : color} />
-    </TouchableOpacity>
-  );
-}
-
 function ActionButton({ icon, onPress, color }) {
   return (
     <TouchableOpacity style={styles.selectionIconButton} onPress={onPress}>
@@ -762,7 +703,6 @@ function LayerToggle({ icon, label, active, onPress, nightVision }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
-  camera: { ...StyleSheet.absoluteFillObject },
   hudOverlay: { display: 'none' },
   hudCorner: { position: 'absolute', width: 30, height: 30 },
   overlay: { flex: 1 },
@@ -826,15 +766,6 @@ const styles = StyleSheet.create({
   },
   searchResultText: { color: '#fff', fontSize: 13, fontWeight: '900', letterSpacing: 1 },
   rightControls: { flexDirection: 'row', gap: 12 },
-  modeToggleGroup: { 
-    flexDirection: 'row', 
-    backgroundColor: 'rgba(25, 25, 35, 0.7)', 
-    borderRadius: 12, 
-    padding: 4, 
-    borderWidth: 1, 
-    borderColor: 'rgba(0, 242, 254, 0.3)' 
-  },
-  modeButton: { padding: 10, borderRadius: 8, marginHorizontal: 2 },
   leftColumn: { display: 'none' },
   telemetryBox: { 
     backgroundColor: 'rgba(25, 25, 35, 0.6)', 
@@ -858,7 +789,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)'
   },
   mapContainer: { flex: 1, backgroundColor: '#02040A' },
-  mapContainerTransparent: { backgroundColor: 'transparent' },
   mapStatus: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, backgroundColor: '#02040A' },
   mapStatusText: { marginTop: 18, color: THEME.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
   mapErrorTitle: { marginTop: 18, color: '#fff', fontSize: 17, fontWeight: '900', letterSpacing: 1.5 },
