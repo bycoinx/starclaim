@@ -170,7 +170,7 @@ export default function SkyLiveChrome({
       {surfaceAvailable && <View style={styles.bottomCenter} pointerEvents="box-none">
         <View style={styles.modeSelector}>
           <ModeButton label="Harita" active={mode === 'manual' && coordinateMode === 'equatorial'} onPress={onManualMode} />
-          <ModeButton label="Sensör" active={mode === 'manual' && coordinateMode === 'horizontal'} onPress={onSensorMode} />
+          <ModeButton label="Sensör" active={mode === 'sensor'} onPress={onSensorMode} />
           <ModeButton label="Kamera" active={mode === 'camera'} onPress={onCameraMode} />
         </View>
         <View style={styles.coordinatePill} pointerEvents="none">

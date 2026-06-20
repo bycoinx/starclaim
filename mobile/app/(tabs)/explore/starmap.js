@@ -46,11 +46,9 @@ export default function StarMapScreen() {
   const [centerRa, setCenterRa] = useState(180);
   const [centerDec, setCenterDec] = useState(0);
   const [zoom, setZoom] = useState(1.2);
-  const [heading, setHeading] = useState(0);
-  const [tilt, setTilt] = useState(0);
+  const [viewDirection, setViewDirection] = useState({ heading: 0, tilt: 0 });
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
-  const [canvasReady, setCanvasReady] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [showConstellations, setShowConstellations] = useState(true);
   const [showConstellationLabels, setShowConstellationLabels] = useState(true);
@@ -89,13 +87,13 @@ export default function StarMapScreen() {
   const diagnosticReportedRef = useRef(false);
   const router = useRouter();
   const ALPHA = 0.15;
+  const { heading, tilt } = viewDirection;
 
   useEffect(() => {
     openedAtRef.current = Date.now();
     canvasReadyDataRef.current = null;
     diagnosticReportedRef.current = false;
     setMapError(null);
-    setCanvasReady(false);
     setLoading(true);
     ensureStarData().then((list) => {
       setStars(list); 
@@ -117,20 +115,6 @@ export default function StarMapScreen() {
     ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
   }, [loadAttempt, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
-
-  useEffect(() => {
-    if (loading || mapError || canvasReady || stars.length === 0) return undefined;
-    const timeout = setTimeout(() => {
-      setMapError('2D çizim motoru zamanında hazır olamadı.');
-      recordRenderDiagnostic({
-        surface: '2d',
-        status: 'timeout',
-        startupMs: Date.now() - openedAtRef.current,
-        catalogStarCount: stars.length,
-      });
-    }, 8000);
-    return () => clearTimeout(timeout);
-  }, [canvasReady, loading, mapError, stars.length]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
@@ -162,7 +146,7 @@ export default function StarMapScreen() {
       setSiderealTime(getLocalSiderealTime(observer.longitude, new Date()));
     };
     updateSiderealTime();
-    const timer = setInterval(updateSiderealTime, 1000);
+    const timer = setInterval(updateSiderealTime, 30000);
     return () => clearInterval(timer);
   }, [coordinateMode, observer]);
 
@@ -263,7 +247,7 @@ export default function StarMapScreen() {
   };
 
   useEffect(() => {
-    if (mode !== 'camera' || appState !== 'active') return undefined;
+    if (!['camera', 'sensor'].includes(mode) || appState !== 'active') return undefined;
 
     let headingSubscription;
     let cancelled = false;
@@ -276,7 +260,6 @@ export default function StarMapScreen() {
       if (diff < -180) diff += 360;
       const filteredHeading = normalizeAngle(lastHeading.current + diff * ALPHA);
       lastHeading.current = filteredHeading;
-      setHeading(filteredHeading);
     };
 
     const fallbackMagSub = Magnetometer.addListener((data) => {
@@ -291,7 +274,6 @@ export default function StarMapScreen() {
       const newTilt = getScreenTilt(betaDegrees, gammaDegrees, screenOrientation);
       const filteredTilt = lastTilt.current + (newTilt - lastTilt.current) * ALPHA;
       lastTilt.current = filteredTilt;
-      setTilt(filteredTilt);
     });
 
     const startHeading = async () => {
@@ -324,6 +306,14 @@ export default function StarMapScreen() {
     };
 
     startHeading();
+    const viewCommitTimer = setInterval(() => {
+      setViewDirection((current) => {
+        const next = { heading: lastHeading.current, tilt: lastTilt.current };
+        const headingDelta = Math.abs(next.heading - current.heading);
+        const tiltDelta = Math.abs(next.tilt - current.tilt);
+        return headingDelta < 0.2 && tiltDelta < 0.2 ? current : next;
+      });
+    }, 250);
     Magnetometer.setUpdateInterval(66);
     DeviceMotion.setUpdateInterval(66);
     return () => {
@@ -331,11 +321,12 @@ export default function StarMapScreen() {
       headingSubscription?.remove();
       fallbackMagSub.remove();
       motionSub.remove();
+      clearInterval(viewCommitTimer);
     };
   }, [appState, mode, screenOrientation]);
 
   useEffect(() => {
-    if (mode === 'camera') {
+    if (mode === 'camera' || mode === 'sensor') {
       setCenterRa(heading);
       setCenterDec(tilt * 0.6);
     }
@@ -423,9 +414,22 @@ export default function StarMapScreen() {
   };
 
   const enableSensorMode = async () => {
-    const activeObserver = await activateRealSky();
+    const activeObserver = observer || await activateRealSky();
     if (!activeObserver) return;
-    setMode('manual');
+
+    const motionAvailable = await DeviceMotion.isAvailableAsync().catch(() => false);
+    const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
+    if (!motionAvailable || !magnetometerAvailable) {
+      setMode('manual');
+      setCoordinateMode('horizontal');
+      setCapabilityNotice({
+        title: 'Yön sensörü desteklenmiyor',
+        message: 'Bu cihazda canlı yönlendirme kullanılamıyor. Konuma göre haritayı dokunarak kullanabilirsiniz.',
+      });
+      return;
+    }
+
+    setMode('sensor');
     setCoordinateMode('horizontal');
     setCapabilityNotice(null);
   };
@@ -481,7 +485,7 @@ export default function StarMapScreen() {
               <View style={styles.modeToggleGroup}>
                 <ModeButton icon="gesture-tap" active={mode==='manual'} onPress={() => setMode('manual')} />
                 <ModeButton icon="video-outline" active={mode==='camera'} onPress={enableCameraMode} />
-                <ModeButton icon="crosshairs-gps" active={coordinateMode === 'horizontal'} onPress={activateRealSky} color={THEME.colors.primary} />
+                <ModeButton icon="crosshairs-gps" active={mode === 'sensor'} onPress={enableSensorMode} color={THEME.colors.primary} />
               </View>
             </View>
           </View>
@@ -530,7 +534,6 @@ export default function StarMapScreen() {
                 resetKey={loadAttempt}
                 fallback={<View style={styles.mapStatus} />}
                 onError={(error) => {
-                  setCanvasReady(false);
                   setMapError(error?.message || '2D çizim motoru başlatılamadı.');
                 }}
               >
@@ -563,7 +566,6 @@ export default function StarMapScreen() {
                 ownedStarIds={ownedStarIds}
                   onReady={(details) => {
                     canvasReadyDataRef.current = details;
-                    setCanvasReady(true);
                   }}
                   onTelemetry={({ fps }) => {
                     if (diagnosticReportedRef.current || !canvasReadyDataRef.current || !fps) return;
