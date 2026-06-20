@@ -134,10 +134,10 @@ function project(
 }
 
 function magnitudeLimitForZoom(zoom) {
-  if (zoom < 0.8) return 3.8;
-  if (zoom < 1.5) return 4.7;
-  if (zoom < 3) return 5.5;
-  return 6.5;
+  if (zoom < 0.8) return 4.8;
+  if (zoom < 1.5) return 5.8;
+  if (zoom < 3) return 6.3;
+  return 6.7;
 }
 
 function getCellKey(x, y) {
@@ -173,12 +173,31 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
     (layout.height - imageHeight) / 2
     + Math.max(-1, Math.min(1, dec.value / 90)) * verticalTravel
   ));
+  const distantX = useDerivedValue(() => (
+    (layout.width - imageWidth * 1.12) / 2
+    + Math.cos(deg2rad(ra.value * 0.45)) * horizontalTravel * 0.34
+  ));
+  const distantY = useDerivedValue(() => (
+    (layout.height - imageHeight * 1.12) / 2
+    - Math.max(-1, Math.min(1, dec.value / 90)) * verticalTravel * 0.25
+  ));
 
   if (!image) return null;
 
-  const opacity = qualityLevel === 'low' ? 0.22 : qualityLevel === 'medium' ? 0.3 : 0.38;
+  const opacity = qualityLevel === 'low' ? 0.24 : qualityLevel === 'medium' ? 0.46 : 0.54;
   return (
-    <Group opacity={opacity}>
+    <Group>
+      {qualityLevel === 'high' && (
+        <SkiaImage
+          image={image}
+          x={distantX}
+          y={distantY}
+          width={imageWidth * 1.12}
+          height={imageHeight * 1.12}
+          fit="cover"
+          opacity={0.16}
+        />
+      )}
       <SkiaImage
         image={image}
         x={x}
@@ -186,7 +205,30 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
         width={imageWidth}
         height={imageHeight}
         fit="cover"
+        opacity={opacity}
       />
+    </Group>
+  );
+}
+
+function DeepSpaceAtmosphere({ layout, nightVision }) {
+  if (nightVision) return null;
+  return (
+    <Group>
+      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.42}>
+        <RadialGradient
+          c={vec(layout.width * 0.18, layout.height * 0.2)}
+          r={layout.width * 0.78}
+          colors={['rgba(18,48,96,0.58)', 'rgba(5,11,28,0.12)', 'rgba(0,0,0,0)']}
+        />
+      </Rect>
+      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.32}>
+        <RadialGradient
+          c={vec(layout.width * 0.82, layout.height * 0.68)}
+          r={layout.width * 0.68}
+          colors={['rgba(75,35,112,0.42)', 'rgba(9,14,38,0.1)', 'rgba(0,0,0,0)']}
+        />
+      </Rect>
     </Group>
   );
 }
@@ -339,7 +381,7 @@ export default function StarCanvas({
   );
 
   const renderedStars = useMemo(() => {
-    const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.8 : qualityLevel === 'medium' ? -0.35 : 0;
+    const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
     const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
     return stars.reduce((visible, star) => {
       const owned = (
@@ -573,9 +615,11 @@ export default function StarCanvas({
           <Canvas style={styles.canvas}>
             {!transparentBackground && (
               <Rect x={0} y={0} width={layout.width} height={layout.height}>
-                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.5} colors={nightVision ? ['#160000', '#000000'] : ['#050B1A', '#000000']} />
+                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.25} colors={nightVision ? ['#160000', '#000000'] : ['#071329', '#020713', '#000105']} />
               </Rect>
             )}
+
+            {!transparentBackground && <DeepSpaceAtmosphere layout={layout} nightVision={nightVision} />}
 
             {showNebula && qualityLevel !== 'low' && !transparentBackground && !nightVision && (
               <NebulaBackground
@@ -792,7 +836,7 @@ function CelestialGridSegment({ p1Data, p2Data, ra, dec, zoom, layout, coordinat
     <Line
       p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
       p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
-      color={nightVision ? 'rgba(255,74,66,0.1)' : 'rgba(0, 242, 254, 0.08)'}
+      color={nightVision ? 'rgba(255,74,66,0.07)' : 'rgba(80,145,190,0.035)'}
       strokeWidth={0.5}
       opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
     />
@@ -1053,6 +1097,8 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
   const detailLabelVisible = useDerivedValue(() => labelVisible.value && zoom.value > 4);
   const ownedX = useDerivedValue(() => pos.value.x);
   const ownedY = useDerivedValue(() => pos.value.y);
+  const haloCenter = useDerivedValue(() => vec(pos.value.x, pos.value.y));
+  const isBrightStar = Number(star.mag) <= 2;
   
   const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
   const starOpacity = useDerivedValue(() => {
@@ -1062,6 +1108,22 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
 
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+      {isBrightStar && qualityLevel !== 'low' && (
+        <Circle
+          cx={ownedX}
+          cy={ownedY}
+          r={Math.max(8, star.radius * 4.2)}
+          opacity={nightVision ? 0.18 : 0.34}
+        >
+          <RadialGradient
+            c={haloCenter}
+            r={Math.max(8, star.radius * 4.2)}
+            colors={nightVision
+              ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)']
+              : [`${star.color}88`, `${star.color}22`, 'rgba(0,0,0,0)']}
+          />
+        </Circle>
+      )}
       <Circle
         cx={useDerivedValue(() => pos.value.x)}
         cy={useDerivedValue(() => pos.value.y)}
@@ -1069,6 +1131,15 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
         color={star.color}
         opacity={starOpacity}
       />
+      {isBrightStar && (
+        <Circle
+          cx={ownedX}
+          cy={ownedY}
+          r={Math.max(0.65, star.radius * 0.34)}
+          color={nightVision ? '#FFD4D0' : '#FFFFFF'}
+          opacity={0.96}
+        />
+      )}
       {star.owned && (
         <Circle
           cx={ownedX}
