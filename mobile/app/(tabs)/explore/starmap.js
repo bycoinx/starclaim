@@ -48,10 +48,10 @@ export default function StarMapScreen() {
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [showConstellations, setShowConstellations] = useState(true);
-  const [showConstellationLabels, setShowConstellationLabels] = useState(true);
+  const [showConstellations, setShowConstellations] = useState(false);
+  const [showConstellationLabels, setShowConstellationLabels] = useState(false);
   const [showConstellationBoundaries, setShowConstellationBoundaries] = useState(false);
-  const [showGrid, setShowGrid] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
   const [showPlanets, setShowPlanets] = useState(true);
   const [showDSOs, setShowDSOs] = useState(true);
@@ -372,8 +372,7 @@ export default function StarMapScreen() {
     if (!activeObserver) return;
 
     const motionAvailable = await DeviceMotion.isAvailableAsync().catch(() => false);
-    const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
-    if (!motionAvailable || !magnetometerAvailable) {
+    if (!motionAvailable) {
       setMode('manual');
       setCoordinateMode('horizontal');
       setCapabilityNotice({

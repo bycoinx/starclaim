@@ -193,13 +193,16 @@ async function readStoredArray(key) {
 async function loadStarData() {
   const embeddedCore = getEmbeddedCoreCatalog();
 
+  if (embeddedCore.length) {
+    // Older builds stored the full hydrated catalog in one Android SQLite row.
+    // Never read that oversized row; the bundled catalog is the canonical offline core.
+    AsyncStorage.multiRemove([CORE_STORAGE_KEY, LEGACY_STORAGE_KEY]).catch(() => {});
+    return embeddedCore;
+  }
+
   try {
     const cachedCore = await readStoredArray(CORE_STORAGE_KEY);
     if (cachedCore?.length) return cachedCore;
-
-    // The bundled catalog is already available offline. Persisting the hydrated
-    // 10k-row payload can exceed Android's per-entry storage limit.
-    if (embeddedCore.length) return embeddedCore;
 
     const response = await fetch(CSV_URL);
     if (!response.ok) throw new Error(`HYG catalog request failed: ${response.status}`);
@@ -232,13 +235,16 @@ export function ensureStarData() {
 }
 
 export async function getStoredStars() {
+  const embeddedCore = getEmbeddedCoreCatalog();
+  if (embeddedCore.length) return embeddedCore;
+
   try {
     return (await readStoredArray(CORE_STORAGE_KEY))
       || (await readStoredArray(LEGACY_STORAGE_KEY))
-      || getEmbeddedCoreCatalog();
+      || embeddedCore;
   } catch (error) {
     console.warn('getStoredStars', error);
-    return getEmbeddedCoreCatalog();
+    return embeddedCore;
   }
 }
 

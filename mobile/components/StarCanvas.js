@@ -391,7 +391,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   const renderedStars = useMemo(() => {
     const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
     const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
-    const poolLimit = qualityLevel === 'low' ? 650 : qualityLevel === 'medium' ? 1100 : 1600;
+    const poolLimit = qualityLevel === 'low' ? 180 : qualityLevel === 'medium' ? 320 : 500;
     const importantStars = [];
     const regularStars = [];
 
