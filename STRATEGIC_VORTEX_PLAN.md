@@ -256,9 +256,9 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ## 2D Sky Map Durumu
 
-**İşlevsel MVP:** yaklaşık `%80`
+**İşlevsel MVP:** yaklaşık `%90`
 
-**Üretim ve cihaz güveni:** yaklaşık `%60`
+**Üretim ve cihaz güveni:** yaklaşık `%72`
 
 ### 2D Tamamlananlar
 
@@ -284,13 +284,13 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 - [x] Sirius, Vega, Polaris ve Güney yarımküre örnekleriyle RA/Dec → Alt/Az regresyon testleri yazıldı.
 - [x] Tarih değişimi, saat dilimi, gün dönümü ve kutup enlemleri test edildi.
 - [x] Takımyıldızı çizgileri ve IAU sınırlarının RA `0/24h` geçişi ortak segment projeksiyonu ve viewport testleriyle doğrulandı.
-- [ ] Kamera yönü ile yıldız projeksiyonu arasındaki cihaz rotasyonu/ekran yönü ofseti kalibre edilecek.
-- [ ] Konum, kamera veya sensör izni reddedildiğinde eksiksiz fallback akışı doğrulanacak.
+- [ ] Kamera yönü ile yıldız projeksiyonu arasındaki cihaz rotasyonu/ekran yönü ofseti yazılımda eklendi; fiziksel cihaz kalibrasyonu doğrulanacak.
+- [ ] Konum, kamera veya sensör izni reddedildiğinde dokunmatik haritaya fallback eklendi; fiziksel cihazda izin senaryoları doğrulanacak.
 
 #### P1 - Performans ve Cihaz Profili
 
-- [ ] Skia draw-node sayısı katman bazında ölçülecek ve geliştirici telemetrisine eklenecek.
-- [ ] Kalite profili yalnızca PixelRatio/yıldız sayısına değil, ölçülen FPS ve cihaz belleğine bağlanacak.
+- [x] Skia draw-node sayısı yıldız, ızgara, takımyıldızı, sınır, DSO, gezegen, mitoloji ve arka plan katmanları için tahmin edilip geliştirici telemetrisine eklendi.
+- [x] Kalite profili PixelRatio/katalog yoğunluğuna ek olarak ölçülen FPS ve kullanılabildiğinde JS heap baskısına bağlandı; düşürme/yükseltme histerezisi eklendi.
 - [ ] Takımyıldızı, sınır, DSO ve mitoloji katmanları için görünür alan elemesi genişletilecek.
 - [ ] Düşük/orta/yüksek Android cihazlarda 10 dakikalık ısı, bellek, FPS ve crash testi yapılacak.
 - [ ] Kabul hedefi: orta sınıf Android'de `55-60 FPS`, düşük sınıfta kararlı `30 FPS`.

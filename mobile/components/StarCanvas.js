@@ -36,6 +36,12 @@ import {
   isSkySegmentVisible,
   projectSkySegment,
 } from '../src/utils/skyProjection';
+import {
+  estimateLayerNodes,
+  getBaseRenderQuality,
+  getHeapPressure,
+  updateAdaptiveQuality,
+} from '../src/utils/renderQuality';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -224,6 +230,7 @@ export default function StarCanvas({
   onTelemetry = null,
 }) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
+  const [qualityLevel, setQualityLevel] = useState('high');
 
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
@@ -236,6 +243,7 @@ export default function StarCanvas({
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
+  const qualityRef = useRef({ level: 'high', maximum: 'high', lowSamples: 0, highSamples: 0 });
 
   useEffect(() => {
     onReadyRef.current = onReady;
@@ -243,7 +251,24 @@ export default function StarCanvas({
   }, [onReady, onTelemetry]);
 
   const reportTelemetry = (fps) => {
-    onTelemetryRef.current?.({ fps });
+    const heapPressure = getHeapPressure();
+    const next = updateAdaptiveQuality({
+      current: qualityRef.current.level,
+      maximum: qualityRef.current.maximum,
+      fps,
+      heapPressure,
+      lowSamples: qualityRef.current.lowSamples,
+      highSamples: qualityRef.current.highSamples,
+    });
+    qualityRef.current = { ...qualityRef.current, ...next };
+    setQualityLevel((current) => current === next.level ? current : next.level);
+    onTelemetryRef.current?.({
+      fps,
+      heapPressure,
+      quality: next.level,
+      layerNodes: readyDetailsRef.current?.layerNodes,
+      totalDrawNodes: readyDetailsRef.current?.totalDrawNodes,
+    });
   };
 
   const reportReady = () => {
@@ -252,6 +277,23 @@ export default function StarCanvas({
 
   const planetData = useMemo(() => getPlanetPositions(), []);
   const dsoData = useMemo(() => DSO_CATALOG, []);
+
+  const baseQuality = useMemo(() => getBaseRenderQuality({
+    pixelRatio: PixelRatio.get(),
+    scenePixels: layout.width * layout.height * Math.pow(PixelRatio.get(), 2),
+    catalogStarCount: stars.length,
+  }), [layout.height, layout.width, stars.length]);
+
+  useEffect(() => {
+    qualityRef.current.maximum = baseQuality;
+    const levels = ['low', 'medium', 'high'];
+    if (levels.indexOf(qualityRef.current.level) > levels.indexOf(baseQuality)) {
+      qualityRef.current.level = baseQuality;
+      qualityRef.current.lowSamples = 0;
+      qualityRef.current.highSamples = 0;
+      setQualityLevel(baseQuality);
+    }
+  }, [baseQuality]);
 
   useFrameCallback((info) => {
     const now = info.timestamp;
@@ -306,7 +348,8 @@ export default function StarCanvas({
   );
 
   const renderedStars = useMemo(() => {
-    const magnitudeLimit = magnitudeLimitForZoom(initialZoom);
+    const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.8 : qualityLevel === 'medium' ? -0.35 : 0;
+    const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
     return stars.reduce((visible, star) => {
       const owned = (
         ownedIdSet.has(String(star.id))
@@ -360,29 +403,63 @@ export default function StarCanvas({
     observerLatitude,
     nightVision,
     ownedIdSet,
+    qualityLevel,
     selectedStar?.id,
     stars,
   ]);
 
-  const qualityLevel = useMemo(() => {
-    const devicePixelRatio = PixelRatio.get();
-    let level = 'high';
-    if (devicePixelRatio < 1.5) level = 'medium';
-    if (devicePixelRatio < 1) level = 'low';
-    const starCount = renderedStars.length;
-    if (starCount > 1500) {
-      if (level === 'high') level = 'medium';
-      else if (level === 'medium') level = 'low';
-    } else if (starCount > 800) {
-      if (level === 'high') level = 'medium';
-    }
-    return level;
-  }, [renderedStars.length]);
+  const layerNodeEstimate = useMemo(() => {
+    const countSegments = (features = []) => features.reduce((total, feature) => {
+      const coordinates = feature.geometry?.coordinates || [];
+      const paths = feature.geometry?.type === 'MultiPolygon'
+        ? coordinates.flat()
+        : coordinates;
+      return total + paths.reduce((pathTotal, path) => pathTotal + Math.max(0, path.length - 1), 0);
+    }, 0);
+    return estimateLayerNodes({
+      renderedStars,
+      showGrid,
+      showNebula,
+      showConstellations,
+      showConstellationLabels,
+      showConstellationBoundaries,
+      showDSOs,
+      showPlanets,
+      showMythology,
+      coordinateMode,
+      constellationLines: countSegments(constellations.lines?.features),
+      constellationLabels: constellations.labels?.features?.length || 0,
+      constellationBoundaries: countSegments(constellations.boundaries?.features),
+      dsoCount: dsoData.length,
+      planetCount: planetData.length,
+      mythologyCount: Object.keys(MYTHOLOGY_ASSETS).length,
+      quality: qualityLevel,
+    });
+  }, [
+    constellations.boundaries?.features,
+    constellations.labels?.features,
+    constellations.lines?.features,
+    coordinateMode,
+    dsoData.length,
+    planetData.length,
+    qualityLevel,
+    renderedStars,
+    showConstellationBoundaries,
+    showConstellationLabels,
+    showConstellations,
+    showDSOs,
+    showGrid,
+    showMythology,
+    showNebula,
+    showPlanets,
+  ]);
 
   readyDetailsRef.current = {
     catalogStarCount: stars.length,
     renderedStarCount: renderedStars.length,
     quality: qualityLevel,
+    layerNodes: layerNodeEstimate.layers,
+    totalDrawNodes: layerNodeEstimate.total,
     width: layout.width,
     height: layout.height,
   };
@@ -508,7 +585,7 @@ export default function StarCanvas({
               </Rect>
             )}
 
-            {showNebula && !transparentBackground && !nightVision && (
+            {showNebula && qualityLevel !== 'low' && !transparentBackground && !nightVision && (
               <NebulaBackground
                 ra={ra}
                 dec={dec}
@@ -570,7 +647,7 @@ export default function StarCanvas({
             ))}
 
             {renderedStars.map((star) => (
-              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} />
+              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
             ))}
 
             {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature) => (
@@ -971,7 +1048,7 @@ function ConstellationLine({ p1_data, p2_data, emphasized, ra, dec, zoom, layout
   );
 }
 
-function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision }) {
+function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel }) {
   const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const isVisible = useDerivedValue(() => (
     pos.value.x > -30
@@ -989,7 +1066,7 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
       <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={star.radius} color={star.color}>
-         <RuntimeEffect source={twinkleEffect} uniforms={uniforms} />
+         {qualityLevel !== 'low' && <RuntimeEffect source={twinkleEffect} uniforms={uniforms} />}
       </Circle>
       {star.owned && (
         <Circle
