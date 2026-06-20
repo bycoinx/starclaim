@@ -422,6 +422,14 @@ export default function StarMapScreen() {
     }
   };
 
+  const enableSensorMode = async () => {
+    const activeObserver = await activateRealSky();
+    if (!activeObserver) return;
+    setMode('manual');
+    setCoordinateMode('horizontal');
+    setCapabilityNotice(null);
+  };
+
   return (
     <View style={styles.container}>
       {mode === 'camera' && cameraPermission ? (
@@ -501,7 +509,7 @@ export default function StarMapScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.mapContainer}>
+          <View style={[styles.mapContainer, mode === 'camera' && styles.mapContainerTransparent]}>
             {loading ? (
               <View style={styles.mapStatus}>
                 <ActivityIndicator color={THEME.colors.primary} size="large" />
@@ -632,7 +640,7 @@ export default function StarMapScreen() {
             onToggleDeepSpace={() => { const next = !(showDSOs || showNebula); setShowDSOs(next); setShowNebula(next); }}
             onCenter={selectedStar ? handleCenterOnSelected : activateRealSky}
             onManualMode={() => { setMode('manual'); setCoordinateMode('equatorial'); }}
-            onSensorMode={activateRealSky}
+            onSensorMode={enableSensorMode}
             onCameraMode={enableCameraMode}
             onClearSelection={() => setSelectedStar(null)}
             onOpenDetails={() => setPopupVisible(true)}
@@ -848,6 +856,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)'
   },
   mapContainer: { flex: 1, backgroundColor: '#02040A' },
+  mapContainerTransparent: { backgroundColor: 'transparent' },
   mapStatus: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28, backgroundColor: '#02040A' },
   mapStatusText: { marginTop: 18, color: THEME.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
   mapErrorTitle: { marginTop: 18, color: '#fff', fontSize: 17, fontWeight: '900', letterSpacing: 1.5 },

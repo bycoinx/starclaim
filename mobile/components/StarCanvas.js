@@ -11,8 +11,6 @@ import {
   LinearGradient,
   RadialGradient,
   Rect,
-  Skia,
-  RuntimeEffect,
   Image as SkiaImage,
   useImage
 } from '@shopify/react-native-skia';
@@ -49,16 +47,6 @@ const deg2rad = (deg) => deg * Math.PI / 180;
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
 const TAP_CELL_SIZE = 56;
 const VIEWPORT_PADDING = 140;
-
-const TWINKLE_SHADER = `
-uniform float iTime;
-half4 main(vec2 fragCoord) {
-  float twinkle = sin(iTime * 3.5 + fragCoord.x * 0.12 + fragCoord.y * 0.12) * 0.2 + 0.8;
-  return half4(twinkle, twinkle, twinkle, 1.0);
-}
-`;
-
-const twinkleEffect = Skia.RuntimeEffect.Make(TWINKLE_SHADER);
 
 function normalizeRaDelta(delta) {
   'worklet';
@@ -575,9 +563,9 @@ export default function StarCanvas({
   const selectedHaloCenter = useDerivedValue(() => vec(selectedX.value, selectedY.value));
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView style={[styles.container, transparentBackground && styles.transparentContainer]}>
       <GestureDetector gesture={combinedGesture}>
-        <View style={styles.container} onLayout={(e) => setLayout(e.nativeEvent.layout)}>
+        <View style={[styles.container, transparentBackground && styles.transparentContainer]} onLayout={(e) => setLayout(e.nativeEvent.layout)}>
           <Canvas style={styles.canvas}>
             {!transparentBackground && (
               <Rect x={0} y={0} width={layout.width} height={layout.height}>
@@ -1061,13 +1049,21 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
   const ownedX = useDerivedValue(() => pos.value.x);
   const ownedY = useDerivedValue(() => pos.value.y);
   
-  const uniforms = useDerivedValue(() => ({ iTime: time.value + (parseFloat(star.id || 0) % 5) }));
+  const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
+  const starOpacity = useDerivedValue(() => {
+    if (qualityLevel === 'low') return 0.92;
+    return 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
+  });
 
   return (
     <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={star.radius} color={star.color}>
-         {qualityLevel !== 'low' && <RuntimeEffect source={twinkleEffect} uniforms={uniforms} />}
-      </Circle>
+      <Circle
+        cx={useDerivedValue(() => pos.value.x)}
+        cy={useDerivedValue(() => pos.value.y)}
+        r={star.radius}
+        color={star.color}
+        opacity={starOpacity}
+      />
       {star.owned && (
         <Circle
           cx={ownedX}
@@ -1270,6 +1266,7 @@ function MythologyFigure({ data, ra, dec, zoom, layout, coordinateMode, observer
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
+  transparentContainer: { backgroundColor: 'transparent' },
   canvas: { flex: 1 },
   controls: {
     position: 'absolute',
