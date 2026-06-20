@@ -79,7 +79,7 @@ Bu bölüm, diğer bütün geliştirme maddelerinden daha yüksek önceliklidir.
 - [ ] Astronomik referans yıldızları farklı tarih, konum ve saatlerde doğrulanmış.
 - [ ] Gaia/HIP çapraz eşleşme, tekrar kayıt ve kimlik çözümleme testleri geçiyor.
 - [ ] Çevrimiçi, çevrimdışı, ilk kurulum ve bozuk cache senaryoları geçiyor.
-- [ ] Harita/Sensör/Kamera geçişleri fiziksel Android ve iOS cihazlarda doğrulanmış.
+- [ ] Tek Sky Live yüzeyinde sensör takibi, manuel devralma ve uygulama yaşam döngüsü fiziksel Android ve iOS cihazlarda doğrulanmış.
 - [ ] Düşük, orta ve yüksek cihazlarda kabul edilen FPS, bellek ve ısı sınırları sağlanmış.
 - [ ] Kullanıcı tarafından 2D görsel kalite ve temel gözlem akışı onaylanmış.
 
@@ -500,3 +500,5 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 Sıradaki cerrahi paket **P0.1 - 2D Render Motoru Üretim Kararlılığı**dır. Ayrı Harita/Sensör/Kamera geçişleri kaldırılmıştır; tek Sky Live yüzeyi cihaz sensörüyle takip eder, pan/zoom ile manuel devralınır ve `Takibi Sürdür` ile sensöre dönülür. Bu akış fiziksel cihazda doğrulandıktan sonra yaşam döngüsü ve 10 dakikalık stres testi kapatılacaktır.
 
 **Ertelenen paketler:** Web yaşayan evren motoru, 3D floating-origin, 3D görsel kalite ve Star System/Planet geliştirmeleri P0.1-P0.7 tamamlanma kapısından sonra ele alınacaktır.
+
+**21 Haziran 2026 3D izolasyonu:** Mevcut Expo GL/Three.js prototipi çalışma zamanı rotalarından çıkarıldı ve `components/legacy/StarVoyage3D.legacy.js` altında referans olarak korundu. `3D Evren` sekmesi ile yıldız detaylarından gelen 3D bağlantıları yalnızca hafif güncelleme ekranını açar. Böylece Three.js/Expo Three modülleri başlangıç paketine girmez; 2D render ve veri katmanı tamamlanana kadar 3D motoru CPU, GPU, sensör, ağ veya katalog kaynağı tüketmez. P0.1-P0.7 tamamlandıktan sonra 3D motoru mevcut prototip üzerine yama yapmak yerine kanonik veri sözleşmesi ve yeni render mimarisiyle yeniden kurulacaktır.
