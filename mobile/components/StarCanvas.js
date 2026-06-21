@@ -1,32 +1,35 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
-import { 
-  Canvas, 
-  Circle, 
-  Line, 
-  Group, 
-  Text as SkiaText, 
-  useFont, 
+import {
+  Canvas,
+  Circle,
+  Line,
+  Group,
+  Text as SkiaText,
+  useFont,
   vec,
   LinearGradient,
   RadialGradient,
   Rect,
   Image as SkiaImage,
-  useImage
+  useImage,
+  Path,
+  Points,
+  Skia,
 } from '@shopify/react-native-skia';
-import { 
-  Gesture, 
-  GestureDetector, 
-  GestureHandlerRootView 
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView
 } from 'react-native-gesture-handler';
 import {
-  useSharedValue, 
+  useSharedValue,
   useDerivedValue,
   useFrameCallback,
   runOnJS,
   withSpring
 } from 'react-native-reanimated';
-import { radiusForMag, colorForSpectrum } from '../src/utils/astronomy';
+import { radiusForMag, colorForStar } from '../src/utils/astronomy';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
 import { getPlanetPositions } from '../src/utils/solarSystem';
 import { DSO_CATALOG } from '../src/data/dsoData';
@@ -134,10 +137,10 @@ function project(
 }
 
 function magnitudeLimitForZoom(zoom) {
-  if (zoom < 0.8) return 4.8;
-  if (zoom < 1.5) return 5.8;
-  if (zoom < 3) return 6.3;
-  return 6.7;
+  if (zoom < 0.8) return 6.2;
+  if (zoom < 1.5) return 7.2;
+  if (zoom < 3) return 8.4;
+  return 9.5;
 }
 
 function getCellKey(x, y) {
@@ -145,6 +148,7 @@ function getCellKey(x, y) {
 }
 
 function isSelectedConstellation(feature, selectedStar) {
+  'worklet';
   if (!selectedStar) return false;
   const targetValues = [selectedStar.con, selectedStar.constellation]
     .filter(Boolean)
@@ -160,53 +164,48 @@ function isSelectedConstellation(feature, selectedStar) {
 }
 
 function NebulaBackground({ ra, dec, layout, qualityLevel }) {
-  const image = useImage(require('../assets/sky-nebula-premium.jpg'));
-  const imageHeight = layout.height * 1.18;
-  const imageWidth = Math.max(layout.width * 1.4, imageHeight * 2);
-  const horizontalTravel = Math.max(0, (imageWidth - layout.width) * 0.34);
-  const verticalTravel = Math.max(0, (imageHeight - layout.height) * 0.42);
-  const x = useDerivedValue(() => (
-    (layout.width - imageWidth) / 2
-    - Math.sin(deg2rad(ra.value)) * horizontalTravel
+  const blueCenter = useDerivedValue(() => vec(
+    layout.width * (0.28 + Math.sin(deg2rad(ra.value)) * 0.18),
+    layout.height * (0.38 + Math.max(-1, Math.min(1, dec.value / 90)) * 0.16),
   ));
-  const y = useDerivedValue(() => (
-    (layout.height - imageHeight) / 2
-    + Math.max(-1, Math.min(1, dec.value / 90)) * verticalTravel
+  const violetCenter = useDerivedValue(() => vec(
+    layout.width * (0.72 + Math.cos(deg2rad(ra.value * 0.62)) * 0.16),
+    layout.height * (0.62 - Math.max(-1, Math.min(1, dec.value / 90)) * 0.12),
   ));
-  const distantX = useDerivedValue(() => (
-    (layout.width - imageWidth * 1.12) / 2
-    + Math.cos(deg2rad(ra.value * 0.45)) * horizontalTravel * 0.34
+  const bandStart = useDerivedValue(() => vec(
+    -layout.width * 0.2 + Math.sin(deg2rad(ra.value * 0.35)) * layout.width * 0.12,
+    layout.height * 0.18,
   ));
-  const distantY = useDerivedValue(() => (
-    (layout.height - imageHeight * 1.12) / 2
-    - Math.max(-1, Math.min(1, dec.value / 90)) * verticalTravel * 0.25
+  const bandEnd = useDerivedValue(() => vec(
+    layout.width * 1.2 + Math.sin(deg2rad(ra.value * 0.35)) * layout.width * 0.12,
+    layout.height * 0.84,
   ));
-
-  if (!image) return null;
-
-  const opacity = qualityLevel === 'low' ? 0.24 : qualityLevel === 'medium' ? 0.46 : 0.54;
+  const opacity = qualityLevel === 'low' ? 0.2 : qualityLevel === 'medium' ? 0.28 : 0.34;
   return (
-    <Group>
-      {qualityLevel === 'high' && (
-        <SkiaImage
-          image={image}
-          x={distantX}
-          y={distantY}
-          width={imageWidth * 1.12}
-          height={imageHeight * 1.12}
-          fit="cover"
-          opacity={0.16}
+    <Group opacity={opacity}>
+      <Rect x={0} y={0} width={layout.width} height={layout.height}>
+        <RadialGradient
+          c={blueCenter}
+          r={layout.width * 0.72}
+          colors={['rgba(25,64,125,0.48)', 'rgba(5,16,42,0.16)', 'rgba(0,0,0,0)']}
         />
+      </Rect>
+      <Rect x={0} y={0} width={layout.width} height={layout.height}>
+        <RadialGradient
+          c={violetCenter}
+          r={layout.width * 0.62}
+          colors={['rgba(78,43,112,0.32)', 'rgba(13,12,39,0.12)', 'rgba(0,0,0,0)']}
+        />
+      </Rect>
+      {qualityLevel !== 'low' && (
+        <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.18}>
+          <LinearGradient
+            start={bandStart}
+            end={bandEnd}
+            colors={['rgba(0,0,0,0)', 'rgba(92,116,168,0.32)', 'rgba(0,0,0,0)']}
+          />
+        </Rect>
       )}
-      <SkiaImage
-        image={image}
-        x={x}
-        y={y}
-        width={imageWidth}
-        height={imageHeight}
-        fit="cover"
-        opacity={opacity}
-      />
     </Group>
   );
 }
@@ -261,6 +260,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   showNebula = true,
   onReady = null,
   onTelemetry = null,
+  onInteractionStateChange = null,
 }, ref) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   const [qualityLevel, setQualityLevel] = useState('high');
@@ -289,7 +289,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   useEffect(() => {
     onReadyRef.current = onReady;
     onTelemetryRef.current = onTelemetry;
-  }, [onReady, onTelemetry]);
+  }, [onInteractionStateChange, onReady, onTelemetry]);
 
   const reportTelemetry = (fps) => {
     const heapPressure = getHeapPressure();
@@ -352,7 +352,7 @@ const StarCanvas = forwardRef(function StarCanvas({
     }
     time.value = now / 1000;
   });
-  
+
   useEffect(() => {
     ra.value = withSpring(initialRa, SPRING_CONFIG);
     dec.value = withSpring(initialDec, SPRING_CONFIG);
@@ -360,6 +360,9 @@ const StarCanvas = forwardRef(function StarCanvas({
   }, [initialRa, initialDec, initialZoom]);
 
   const panGesture = Gesture.Pan()
+    .onBegin(() => {
+      if (onInteractionStateChange) runOnJS(onInteractionStateChange)(true);
+    })
     .onUpdate((e) => {
       const field = 90 / zoom.value;
       const scale = layout.width / field;
@@ -372,15 +375,24 @@ const StarCanvas = forwardRef(function StarCanvas({
     })
     .onEnd(() => {
       if (onCenterChange) runOnJS(onCenterChange)({ ra: ra.value, dec: dec.value });
+    })
+    .onFinalize(() => {
+      if (onInteractionStateChange) runOnJS(onInteractionStateChange)(false);
     });
 
   const pinchGesture = Gesture.Pinch()
+    .onBegin(() => {
+      if (onInteractionStateChange) runOnJS(onInteractionStateChange)(true);
+    })
     .onUpdate((e) => {
       const newZoom = zoom.value * e.scaleChange;
       zoom.value = Math.max(0.2, Math.min(15, newZoom));
     })
     .onEnd(() => {
       if (onZoomChange) runOnJS(onZoomChange)(zoom.value);
+    })
+    .onFinalize(() => {
+      if (onInteractionStateChange) runOnJS(onInteractionStateChange)(false);
     });
 
   const ownedIdSet = useMemo(
@@ -391,7 +403,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   const renderedStars = useMemo(() => {
     const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
     const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
-    const poolLimit = qualityLevel === 'low' ? 180 : qualityLevel === 'medium' ? 320 : 500;
+    const poolLimit = qualityLevel === 'low' ? 600 : qualityLevel === 'medium' ? 1100 : 1800;
     const importantStars = [];
     const regularStars = [];
 
@@ -406,7 +418,7 @@ const StarCanvas = forwardRef(function StarCanvas({
       const prepared = {
         ...star,
         radius: radiusForMag(star.mag, star.spect),
-        color: nightVision ? '#FF514A' : colorForSpectrum(star.spect),
+        color: nightVision ? '#FF514A' : colorForStar(star),
         owned,
       };
       if (important) importantStars.push(prepared);
@@ -424,6 +436,22 @@ const StarCanvas = forwardRef(function StarCanvas({
     stars,
   ]);
 
+  const starBatches = useMemo(() => {
+    const batches = new Map();
+    renderedStars.forEach((star) => {
+      const radius = Math.max(0.75, Math.min(3, Math.round(star.radius * 2) / 2));
+      const key = `${star.color}:${radius}`;
+      const batch = batches.get(key) || { key, color: star.color, radius, stars: [] };
+      batch.stars.push(star);
+      batches.set(key, batch);
+    });
+    return [...batches.values()];
+  }, [renderedStars]);
+
+  const overlayStars = useMemo(() => renderedStars
+    .filter((star) => star.owned || (star.proper && (showLabels || initialZoom > 2.8)))
+    .slice(0, 24), [initialZoom, renderedStars, showLabels]);
+
   const layerNodeEstimate = useMemo(() => {
     const countSegments = (features = []) => features.reduce((total, feature) => {
       const coordinates = feature.geometry?.coordinates || [];
@@ -434,6 +462,8 @@ const StarCanvas = forwardRef(function StarCanvas({
     }, 0);
     return estimateLayerNodes({
       renderedStars,
+      starBatchCount: starBatches.length,
+      starOverlayCount: overlayStars.length,
       showGrid,
       showNebula,
       showConstellations,
@@ -460,6 +490,8 @@ const StarCanvas = forwardRef(function StarCanvas({
     planetData.length,
     qualityLevel,
     renderedStars,
+    starBatches.length,
+    overlayStars.length,
     showConstellationBoundaries,
     showConstellationLabels,
     showConstellations,
@@ -603,10 +635,9 @@ const StarCanvas = forwardRef(function StarCanvas({
               <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {showConstellationBoundaries && constellations.boundaries?.features?.map((feature, index) => (
-              <ConstellationBoundary
-                key={`${feature.id || 'boundary'}-${index}`}
-                feature={feature}
+            {showConstellationBoundaries && (
+              <ConstellationBoundariesPath
+                boundaries={constellations.boundaries}
                 ra={ra}
                 dec={dec}
                 zoom={zoom}
@@ -616,14 +647,29 @@ const StarCanvas = forwardRef(function StarCanvas({
                 lstDegrees={lstDegrees}
                 nightVision={nightVision}
               />
+            )}
+
+            {showConstellations && (
+              <ConstellationsPath
+                constellations={constellations}
+                selectedStar={selectedStar}
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                nightVision={nightVision}
+              />
+            )}
+
+            {starBatches.map((batch) => (
+              <StarPointBatch key={batch.key} batch={batch} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} qualityLevel={qualityLevel} />
             ))}
 
-            {showConstellations && constellations.lines?.features?.map((f, i) => (
-              <ConstellationFeature key={i} feature={f} emphasized={isSelectedConstellation(f, selectedStar)} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />
-            ))}
-
-            {renderedStars.map((star) => (
-              <StarCircle key={star.id} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
+            {overlayStars.map((star) => (
+              <StarCircle key={`overlay-${star.canonicalId || star.id}`} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.canonicalId === star.canonicalId || selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
             ))}
 
             {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature, index) => (
@@ -657,12 +703,12 @@ const StarCanvas = forwardRef(function StarCanvas({
               </Group>
             )}
           </Canvas>
-          
+
           <View style={styles.controls} pointerEvents="box-none">
-            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.min(15, zoom.value + 1); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
+            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.min(15, zoom.value + 1); onZoomChange?.(zoom.value); }}>
               <Text style={styles.zoomText}>+</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.max(0.2, zoom.value - 1); if(onZoomChange) runOnJS(onZoomChange)(zoom.value); }}>
+            <TouchableOpacity style={styles.zoomButton} onPress={() => { zoom.value = Math.max(0.2, zoom.value - 1); onZoomChange?.(zoom.value); }}>
               <Text style={styles.zoomText}>-</Text>
             </TouchableOpacity>
           </View>
@@ -678,109 +724,70 @@ function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLa
   const raSteps = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
   const decSteps = [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
 
-  return (
-    <Group>
-      {raSteps.map((raStep) => (
-        <CelestialGridLine
-          key={`ra-${raStep}`}
-          type="ra"
-          value={raStep}
-          ra={ra}
-          dec={dec}
-          zoom={zoom}
-          layout={layout}
-          font={font}
-          coordinateMode={coordinateMode}
-          observerLatitude={observerLatitude}
-          lstDegrees={lstDegrees}
-          nightVision={nightVision}
-        />
-      ))}
-      {decSteps.map((decStep) => (
-        <CelestialGridLine
-          key={`dec-${decStep}`}
-          type="dec"
-          value={decStep}
-          ra={ra}
-          dec={dec}
-          zoom={zoom}
-          layout={layout}
-          font={font}
-          coordinateMode={coordinateMode}
-          observerLatitude={observerLatitude}
-          lstDegrees={lstDegrees}
-          nightVision={nightVision}
-        />
-      ))}
-    </Group>
-  );
-}
+  const gridLines = useMemo(() => {
+    const lines = [];
+    raSteps.forEach((raStep) => {
+      const linePoints = [];
+      for (let d = -85; d <= 85; d += 5) {
+        linePoints.push({ ra: raStep, dec: d });
+      }
+      lines.push(linePoints);
+    });
+    decSteps.forEach((decStep) => {
+      const linePoints = [];
+      for (let r = 0; r <= 24; r += 1) {
+        linePoints.push({ ra: r, dec: decStep });
+      }
+      lines.push(linePoints);
+    });
+    return lines;
+  }, []);
 
-function CelestialGridLine({ type, value, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const points = useMemo(() => {
-    const p = [];
-    if (type === 'ra') {
-      for (let d = -85; d <= 85; d += 5) p.push({ ra: value, dec: d });
-    } else {
-      for (let r = 0; r <= 24; r += 1) p.push({ ra: r, dec: value });
-    }
-    return p;
-  }, [type, value]);
+  const path = useDerivedValue(() => {
+    const p = Skia.Path.Make();
+    const w = layout.width;
+    const h = layout.height;
+    const z = zoom.value;
+    const rVal = ra.value;
+    const dVal = dec.value;
 
-  return (
-    <Group>
-      {points.map((_, i) => {
-        if (i === points.length - 1) return null;
-        return (
-          <CelestialGridSegment
-            key={i}
-            p1Data={points[i]}
-            p2Data={points[i + 1]}
-            ra={ra}
-            dec={dec}
-            zoom={zoom}
-            layout={layout}
-            coordinateMode={coordinateMode}
-            observerLatitude={observerLatitude}
-            lstDegrees={lstDegrees}
-            nightVision={nightVision}
-          />
+    gridLines.forEach((linePoints) => {
+      let isDrawing = false;
+      for (let i = 0; i < linePoints.length - 1; i++) {
+        const segment = projectSkySegment(
+          linePoints[i],
+          linePoints[i + 1],
+          rVal,
+          dVal,
+          w,
+          h,
+          z,
+          coordinateMode,
+          observerLatitude,
+          lstDegrees,
         );
-      })}
-    </Group>
-  );
-}
 
-function CelestialGridSegment({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const segment = useDerivedValue(() => projectSkySegment(
-    p1Data,
-    p2Data,
-    ra.value,
-    dec.value,
-    layout.width,
-    layout.height,
-    zoom.value,
-    coordinateMode,
-    observerLatitude,
-    lstDegrees,
-  ));
-  const isVisible = useDerivedValue(() => isSkySegmentVisible(
-    segment.value,
-    layout.width,
-    layout.height,
-    100,
-    coordinateMode,
-    -2,
-    true,
-  ));
+        if (isSkySegmentVisible(segment, w, h, 100, coordinateMode, -2, true)) {
+          if (!isDrawing) {
+            p.moveTo(segment.p1.x, segment.p1.y);
+            isDrawing = true;
+          }
+          p.lineTo(segment.p2.x, segment.p2.y);
+        } else {
+          isDrawing = false;
+        }
+      }
+    });
+
+    return p;
+  });
 
   return (
-    <Line
-      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
-      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
+    <Path
+      path={path}
       color={nightVision ? 'rgba(255,74,66,0.07)' : 'rgba(80,145,190,0.035)'}
       strokeWidth={0.5}
-      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
+      style="stroke"
     />
   );
 }
@@ -811,7 +818,7 @@ function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
           colors={nightVision ? ['rgba(25,0,0,0.95)', '#000000'] : ['rgba(10,15,30,0.92)', '#000000']}
         />
       </Rect>
-      
+
       {/* Atmospheric Glow */}
       <Rect
         x={0}
@@ -868,13 +875,19 @@ function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision 
     && pos.value.y < layout.height - 8
   ));
 
+  const cx = useDerivedValue(() => pos.value.x);
+  const cy = useDerivedValue(() => pos.value.y);
+  const textX = useDerivedValue(() => pos.value.x - 4);
+  const textY = useDerivedValue(() => pos.value.y + 4);
+  const opacity = useDerivedValue(() => isVisible.value ? 1 : 0);
+
   if (!font) return null;
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
-      <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={11} color="rgba(0,0,0,0.72)" />
+    <Group opacity={opacity}>
+      <Circle cx={cx} cy={cy} r={11} color="rgba(0,0,0,0.72)" />
       <SkiaText
-        x={useDerivedValue(() => pos.value.x - 4)}
-        y={useDerivedValue(() => pos.value.y + 4)}
+        x={textX}
+        y={textY}
         text={direction.label}
         font={font}
         color={nightVision ? '#FF4A42' : '#C9A84C'}
@@ -884,65 +897,65 @@ function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision 
 }
 
 function getBoundaryPaths(feature) {
+  'worklet';
   if (feature.geometry?.type === 'Polygon') return feature.geometry.coordinates;
   if (feature.geometry?.type === 'MultiPolygon') return feature.geometry.coordinates.flat();
   return [];
 }
 
-function ConstellationBoundary({ feature, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  return getBoundaryPaths(feature).map((path, pathIndex) => (
-    <Group key={`${feature.id}-${pathIndex}`}>
-      {path.map((point, pointIndex) => {
-        if (pointIndex === path.length - 1) return null;
-        return (
-          <ConstellationBoundaryLine
-            key={`${feature.id}-${pathIndex}-${pointIndex}`}
-            p1Data={point}
-            p2Data={path[pointIndex + 1]}
-            ra={ra}
-            dec={dec}
-            zoom={zoom}
-            layout={layout}
-            coordinateMode={coordinateMode}
-            observerLatitude={observerLatitude}
-            lstDegrees={lstDegrees}
-            nightVision={nightVision}
-          />
-        );
-      })}
-    </Group>
-  ));
-}
+function ConstellationBoundariesPath({ boundaries, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const features = boundaries?.features || [];
 
-function ConstellationBoundaryLine({ p1Data, p2Data, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const segment = useDerivedValue(() => projectSkySegment(
-    { ra: p1Data[0] / 15, dec: p1Data[1] },
-    { ra: p2Data[0] / 15, dec: p2Data[1] },
-    ra.value,
-    dec.value,
-    layout.width,
-    layout.height,
-    zoom.value,
-    coordinateMode,
-    observerLatitude,
-    lstDegrees,
-  ));
-  const isVisible = useDerivedValue(() => zoom.value >= 0.75 && isSkySegmentVisible(
-    segment.value,
-    layout.width,
-    layout.height,
-    60,
-    coordinateMode,
-    0,
-  ));
+  const path = useDerivedValue(() => {
+    const p = Skia.Path.Make();
+    const w = layout.width;
+    const h = layout.height;
+    const z = zoom.value;
+    const rVal = ra.value;
+    const dVal = dec.value;
+
+    if (z < 0.75) return p;
+
+    features.forEach((feature) => {
+      const paths = getBoundaryPaths(feature);
+      paths.forEach((pathPoints) => {
+        let isDrawing = false;
+        for (let i = 0; i < pathPoints.length - 1; i++) {
+          const segment = projectSkySegment(
+            { ra: pathPoints[i][0] / 15, dec: pathPoints[i][1] },
+            { ra: pathPoints[i + 1][0] / 15, dec: pathPoints[i + 1][1] },
+            rVal,
+            dVal,
+            w,
+            h,
+            z,
+            coordinateMode,
+            observerLatitude,
+            lstDegrees,
+          );
+
+          if (isSkySegmentVisible(segment, w, h, 60, coordinateMode, 0)) {
+            if (!isDrawing) {
+              p.moveTo(segment.p1.x, segment.p1.y);
+              isDrawing = true;
+            }
+            p.lineTo(segment.p2.x, segment.p2.y);
+          } else {
+            isDrawing = false;
+          }
+        }
+      });
+    });
+
+    return p;
+  });
 
   return (
-    <Line
-      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
-      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
+    <Path
+      path={path}
       color={nightVision ? 'rgba(255,74,66,0.13)' : 'rgba(130,160,190,0.11)'}
       strokeWidth={0.65}
-      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
+      style="stroke"
     />
   );
 }
@@ -952,7 +965,7 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
   const label = feature.properties?.tr || feature.properties?.name || feature.id;
   const rank = Number(feature.properties?.rank || 3);
   const pos = useDerivedValue(() => project(coordinates[0] / 15, coordinates[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  
+
   const isVisible = useDerivedValue(() => {
     const rankVisible = rank <= 1 || zoom.value >= 1.5;
     return (
@@ -966,12 +979,20 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
     );
   });
 
+  const opacity = useDerivedValue(() => {
+    if (!isVisible.value) return 0;
+    return zoom.value < 1.0 ? 0.4 : 0.8;
+  });
+
+  const labelX = useDerivedValue(() => pos.value.x - 40);
+  const labelY = useDerivedValue(() => pos.value.y);
+
   if (!font || !coordinates) return null;
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? (zoom.value < 1.0 ? 0.4 : 0.8) : 0)}>
+    <Group opacity={opacity}>
       <SkiaText
-        x={useDerivedValue(() => pos.value.x - 40)}
-        y={useDerivedValue(() => pos.value.y)}
+        x={labelX}
+        y={labelY}
         text={String(label).toUpperCase()}
         font={font}
         color={nightVision ? '#FF4A42' : '#E6C98C'}
@@ -980,103 +1001,189 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
   );
 }
 
-function ConstellationFeature({ feature, emphasized, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return null;
-  return feature.geometry.coordinates.map((path, idx) => (
-    <Group key={idx}>
-      {path.map((_, i) => {
-        if (i === path.length - 1) return null;
-        return <ConstellationLine key={i} p1_data={path[i]} p2_data={path[i+1]} emphasized={emphasized} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} />;
-      })}
-    </Group>
-  ));
-}
+function ConstellationsPath({ constellations, selectedStar, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const lines = constellations.lines?.features || [];
 
-function ConstellationLine({ p1_data, p2_data, emphasized, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const segment = useDerivedValue(() => projectSkySegment(
-    { ra: p1_data[0] / 15, dec: p1_data[1] },
-    { ra: p2_data[0] / 15, dec: p2_data[1] },
-    ra.value,
-    dec.value,
-    layout.width,
-    layout.height,
-    zoom.value,
-    coordinateMode,
-    observerLatitude,
-    lstDegrees,
-  ));
-  const isVisible = useDerivedValue(() => isSkySegmentVisible(
-    segment.value,
-    layout.width,
-    layout.height,
-    100,
-    coordinateMode,
-    -5,
-    true,
-  ));
+  const paths = useDerivedValue(() => {
+    const regularPath = Skia.Path.Make();
+    const emphasizedPath = Skia.Path.Make();
+    const w = layout.width;
+    const h = layout.height;
+    const z = zoom.value;
+    const rVal = ra.value;
+    const dVal = dec.value;
+
+    lines.forEach((feature) => {
+      if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return;
+      const emphasized = isSelectedConstellation(feature, selectedStar);
+      const targetPath = emphasized ? emphasizedPath : regularPath;
+
+      feature.geometry.coordinates.forEach((linePoints) => {
+        let isDrawing = false;
+        for (let i = 0; i < linePoints.length - 1; i++) {
+          const segment = projectSkySegment(
+            { ra: linePoints[i][0] / 15, dec: linePoints[i][1] },
+            { ra: linePoints[i + 1][0] / 15, dec: linePoints[i + 1][1] },
+            rVal,
+            dVal,
+            w,
+            h,
+            z,
+            coordinateMode,
+            observerLatitude,
+            lstDegrees,
+          );
+
+          if (isSkySegmentVisible(segment, w, h, 100, coordinateMode, -5, true)) {
+            if (!isDrawing) {
+              targetPath.moveTo(segment.p1.x, segment.p1.y);
+              isDrawing = true;
+            }
+            targetPath.lineTo(segment.p2.x, segment.p2.y);
+          } else {
+            isDrawing = false;
+          }
+        }
+      });
+    });
+
+    return { regular: regularPath, emphasized: emphasizedPath };
+  });
+
+  const regular = useDerivedValue(() => paths.value.regular);
+  const emphasized = useDerivedValue(() => paths.value.emphasized);
+
+  const regularColor = nightVision ? 'rgba(255,74,66,0.18)' : 'rgba(120,160,205,0.14)';
+  const emphasizedColor = nightVision ? 'rgba(255,105,97,0.62)' : 'rgba(126,190,255,0.62)';
+  const regularWidth = useDerivedValue(() => zoom.value > 2 ? 1 : 0.7);
+  const emphasizedWidth = useDerivedValue(() => zoom.value > 2 ? 1.7 : 1.25);
 
   return (
-    <Line
-      p1={useDerivedValue(() => vec(segment.value.p1.x, segment.value.p1.y))}
-      p2={useDerivedValue(() => vec(segment.value.p2.x, segment.value.p2.y))}
-      color={nightVision ? (emphasized ? 'rgba(255,105,97,0.62)' : 'rgba(255,74,66,0.18)') : (emphasized ? 'rgba(126,190,255,0.62)' : 'rgba(120,160,205,0.14)')}
-      strokeWidth={useDerivedValue(() => emphasized ? (zoom.value > 2 ? 1.7 : 1.25) : (zoom.value > 2 ? 1 : 0.7))}
-      opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}
-    />
+    <Group>
+      <Path
+        path={regular}
+        color={regularColor}
+        strokeWidth={regularWidth}
+        style="stroke"
+      />
+      <Path
+        path={emphasized}
+        color={emphasizedColor}
+        strokeWidth={emphasizedWidth}
+        style="stroke"
+      />
+    </Group>
   );
 }
 
-function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel }) {
-  const pos = useDerivedValue(() => project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
-  const isVisible = useDerivedValue(() => (
-    pos.value.x > -30
-    && pos.value.x < layout.width + 30
-    && pos.value.y > -30
-    && pos.value.y < layout.height + 30
-    && (!hideBelowHorizon || pos.value.skyAltitude == null || pos.value.skyAltitude >= 0)
+const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom, layout, time, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel }) {
+  const points = useDerivedValue(() => batch.stars.map((star) => {
+    'worklet';
+    const projected = project(
+      star.ra,
+      star.dec,
+      ra.value,
+      dec.value,
+      layout.width,
+      layout.height,
+      zoom.value,
+      coordinateMode,
+      observerLatitude,
+      lstDegrees,
+    );
+    const visible = projected.x > -20
+      && projected.x < layout.width + 20
+      && projected.y > -20
+      && projected.y < layout.height + 20
+      && (!hideBelowHorizon || projected.skyAltitude == null || projected.skyAltitude >= 0);
+    return visible
+      ? { x: projected.x, y: projected.y }
+      : { x: -1000, y: -1000 };
+  }));
+  const phase = batch.key.length * 0.41;
+  const opacity = useDerivedValue(() => (
+    qualityLevel === 'low' ? 0.92 : 0.91 + Math.sin(time.value * 1.25 + phase) * 0.035
   ));
-  const labelVisible = useDerivedValue(() => !suppressLabel && isVisible.value && !!star.proper && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4)));
-  const detailLabelVisible = useDerivedValue(() => labelVisible.value && zoom.value > 4);
-  const ownedX = useDerivedValue(() => pos.value.x);
-  const ownedY = useDerivedValue(() => pos.value.y);
-  const haloCenter = useDerivedValue(() => vec(pos.value.x, pos.value.y));
-  const isBrightStar = Number(star.mag) <= 2;
-  
-  const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
-  const starOpacity = useDerivedValue(() => {
-    if (qualityLevel === 'low') return 0.92;
-    return 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
-  });
 
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+    <Points
+      points={points}
+      mode="points"
+      color={batch.color}
+      strokeWidth={batch.radius * 2}
+      strokeCap="round"
+      opacity={opacity}
+    />
+  );
+});
+
+const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel }) {
+  const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
+  const isBrightStar = Number(star.mag) <= 2;
+
+  const starState = useDerivedValue(() => {
+    const p = project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees);
+    const isVisible = p.x > -30 && p.x < layout.width + 30 && p.y > -30 && p.y < layout.height + 30 && (!hideBelowHorizon || p.skyAltitude == null || p.skyAltitude >= 0);
+    const opacity = qualityLevel === 'low' ? 0.92 : 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
+    return {
+      x: p.x,
+      y: p.y,
+      isVisible,
+      opacity,
+    };
+  });
+
+  const cx = useDerivedValue(() => starState.value.x);
+  const cy = useDerivedValue(() => starState.value.y);
+  const opacity = useDerivedValue(() => starState.value.isVisible ? starState.value.opacity : 0);
+  const groupOpacity = useDerivedValue(() => starState.value.isVisible ? 1 : 0);
+
+  const haloCenter = useDerivedValue(() => vec(starState.value.x, starState.value.y));
+
+  const labelVisible = useDerivedValue(() => {
+    if (suppressLabel || !star.proper) return false;
+    return starState.value.isVisible && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4));
+  });
+
+  const labelOpacity = useDerivedValue(() => labelVisible.value ? 1 : 0);
+  const detailLabelOpacity = useDerivedValue(() => labelVisible.value && zoom.value > 4 ? 0.5 : 0);
+
+  const haloRadius = Math.max(8, star.radius * 4.2);
+  const haloColors = nightVision
+    ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)']
+    : [`${star.color}88`, `${star.color}22`, 'rgba(0,0,0,0)'];
+
+  const labelX = useDerivedValue(() => starState.value.x + star.radius + 6);
+  const labelY1 = useDerivedValue(() => starState.value.y - star.radius - 4);
+  const labelY2 = useDerivedValue(() => starState.value.y - star.radius + 8);
+
+  return (
+    <Group opacity={groupOpacity}>
       {isBrightStar && qualityLevel !== 'low' && (
         <Circle
-          cx={ownedX}
-          cy={ownedY}
-          r={Math.max(8, star.radius * 4.2)}
+          cx={cx}
+          cy={cy}
+          r={haloRadius}
           opacity={nightVision ? 0.18 : 0.34}
         >
           <RadialGradient
             c={haloCenter}
-            r={Math.max(8, star.radius * 4.2)}
-            colors={nightVision
-              ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)']
-              : [`${star.color}88`, `${star.color}22`, 'rgba(0,0,0,0)']}
+            r={haloRadius}
+            colors={haloColors}
           />
         </Circle>
       )}
       <Circle
-        cx={useDerivedValue(() => pos.value.x)}
-        cy={useDerivedValue(() => pos.value.y)}
+        cx={cx}
+        cy={cy}
         r={star.radius}
         color={star.color}
-        opacity={starOpacity}
+        opacity={opacity}
       />
       {isBrightStar && (
         <Circle
-          cx={ownedX}
-          cy={ownedY}
+          cx={cx}
+          cy={cy}
           r={Math.max(0.65, star.radius * 0.34)}
           color={nightVision ? '#FFD4D0' : '#FFFFFF'}
           opacity={0.96}
@@ -1084,8 +1191,8 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
       )}
       {star.owned && (
         <Circle
-          cx={ownedX}
-          cy={ownedY}
+          cx={cx}
+          cy={cy}
           r={star.radius + 6}
           color={nightVision ? '#FF4A42' : '#C9A84C'}
           style="stroke"
@@ -1093,30 +1200,29 @@ function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppr
           opacity={0.85}
         />
       )}
-      
-      {/* High-Performance Labeling Enhancement */}
+
       {font && star.proper && (
-        <Group opacity={useDerivedValue(() => labelVisible.value ? 1 : 0)}>
-           <SkiaText 
-             x={useDerivedValue(() => pos.value.x + star.radius + 6)} 
-             y={useDerivedValue(() => pos.value.y - star.radius - 4)} 
-             text={star.proper.toUpperCase()} 
-             font={font} 
+        <Group opacity={labelOpacity}>
+           <SkiaText
+             x={labelX}
+             y={labelY1}
+             text={star.proper.toUpperCase()}
+             font={font}
              color={nightVision ? 'rgba(255,74,66,0.76)' : 'rgba(255,255,255,0.7)'}
            />
-           <SkiaText 
-             x={useDerivedValue(() => pos.value.x + star.radius + 6)} 
-             y={useDerivedValue(() => pos.value.y - star.radius + 8)} 
-             text={`MAG: ${star.mag?.toFixed(2)}`} 
-             font={font} 
+           <SkiaText
+             x={labelX}
+             y={labelY2}
+             text={`MAG: ${star.mag?.toFixed(2)}`}
+             font={font}
              color={nightVision ? 'rgba(255,74,66,0.45)' : 'rgba(0, 204, 255, 0.4)'}
-             opacity={detailLabelVisible}
+             opacity={detailLabelOpacity}
            />
         </Group>
       )}
     </Group>
   );
-}
+});
 
 function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision, time }) {
   const pos = useDerivedValue(() => project(planet.ra, planet.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
@@ -1132,52 +1238,63 @@ function PlanetMarker({ planet, ra, dec, zoom, layout, font, coordinateMode, obs
   const planetDetailVisible = useDerivedValue(() => zoom.value > 2.5 ? 0.5 : 0);
   const accent = nightVision ? '#FF4A42' : planet.color;
 
+  const cx = useDerivedValue(() => pos.value.x);
+  const cy = useDerivedValue(() => pos.value.y);
+  const opacity = useDerivedValue(() => isVisible.value ? 1 : 0);
+  const outerRadius = useDerivedValue(() => 14 * pulse.value * (zoom.value > 2 ? 1.4 : 1));
+  const midRadius = useDerivedValue(() => 8 * (zoom.value > 2 ? 1.4 : 1));
+  const innerRadius = useDerivedValue(() => 4 * (zoom.value > 2 ? 1.4 : 1));
+  const labelOpacity = useDerivedValue(() => zoom.value > 0.8 ? 1 : 0);
+  const labelX = useDerivedValue(() => pos.value.x + 16);
+  const labelY1 = useDerivedValue(() => pos.value.y + 4);
+  const labelY2 = useDerivedValue(() => pos.value.y + 16);
+
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+    <Group opacity={opacity}>
       {/* Outer Glow / Pulse */}
-      <Circle 
-        cx={useDerivedValue(() => pos.value.x)} 
-        cy={useDerivedValue(() => pos.value.y)} 
-        r={useDerivedValue(() => 14 * pulse.value * (zoom.value > 2 ? 1.4 : 1))} 
-        color={accent} 
-        opacity={0.15} 
+      <Circle
+        cx={cx}
+        cy={cy}
+        r={outerRadius}
+        color={accent}
+        opacity={0.15}
       />
-      
+
       {/* Target Ring */}
-      <Circle 
-        cx={useDerivedValue(() => pos.value.x)} 
-        cy={useDerivedValue(() => pos.value.y)} 
-        r={useDerivedValue(() => 8 * (zoom.value > 2 ? 1.4 : 1))} 
-        color={accent} 
-        style="stroke" 
-        strokeWidth={1} 
-        opacity={0.6} 
+      <Circle
+        cx={cx}
+        cy={cy}
+        r={midRadius}
+        color={accent}
+        style="stroke"
+        strokeWidth={1}
+        opacity={0.6}
       />
 
       {/* Solid Core */}
-      <Circle 
-        cx={useDerivedValue(() => pos.value.x)} 
-        cy={useDerivedValue(() => pos.value.y)} 
-        r={useDerivedValue(() => 4 * (zoom.value > 2 ? 1.4 : 1))} 
-        color={accent} 
+      <Circle
+        cx={cx}
+        cy={cy}
+        r={innerRadius}
+        color={accent}
       />
 
       {/* Planet Label with High Visibility */}
       {font && (
-        <Group opacity={useDerivedValue(() => zoom.value > 0.8 ? 1 : 0)}>
-          <SkiaText 
-            x={useDerivedValue(() => pos.value.x + 16)} 
-            y={useDerivedValue(() => pos.value.y + 4)} 
-            text={planet.name} 
-            font={font} 
-            color="#fff" 
+        <Group opacity={labelOpacity}>
+          <SkiaText
+            x={labelX}
+            y={labelY1}
+            text={planet.name}
+            font={font}
+            color="#fff"
           />
-          <SkiaText 
-            x={useDerivedValue(() => pos.value.x + 16)} 
-            y={useDerivedValue(() => pos.value.y + 16)} 
-            text="SYSTEM_OBJECT" 
-            font={font} 
-            color={accent} 
+          <SkiaText
+            x={labelX}
+            y={labelY2}
+            text="SYSTEM_OBJECT"
+            font={font}
+            color={accent}
             opacity={planetDetailVisible}
           />
         </Group>
@@ -1200,45 +1317,59 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
   const pulse = useDerivedValue(() => 0.6 + Math.sin(time.value * 1.5) * 0.2);
   const dsoLabelVisible = useDerivedValue(() => zoom.value > 1.8 ? 1 : 0);
 
+  const cx = useDerivedValue(() => pos.value.x);
+  const cy = useDerivedValue(() => pos.value.y);
+  const opacity = useDerivedValue(() => isVisible.value ? 1 : 0);
+  const clusterRadius = useDerivedValue(() => 10 * (zoom.value / 2));
+  const rectX = useDerivedValue(() => pos.value.x - 12 * (zoom.value / 2));
+  const rectY = useDerivedValue(() => pos.value.y - 4 * (zoom.value / 2));
+  const rectWidth = useDerivedValue(() => 24 * (zoom.value / 2));
+  const rectHeight = useDerivedValue(() => 8 * (zoom.value / 2));
+  const nebX = useDerivedValue(() => pos.value.x - 8);
+  const nebY = useDerivedValue(() => pos.value.y - 8);
+  const labelX = useDerivedValue(() => pos.value.x + 14);
+  const labelY1 = useDerivedValue(() => pos.value.y - 4);
+  const labelY2 = useDerivedValue(() => pos.value.y + 8);
+
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 1 : 0)}>
+    <Group opacity={opacity}>
       {dso.type === 'galaxy' && (
         <Group>
-          <Circle cx={useDerivedValue(() => pos.value.x)} cy={useDerivedValue(() => pos.value.y)} r={useDerivedValue(() => 10 * (zoom.value / 2))} color={accent} opacity={0.1} />
-          <Rect 
-            x={useDerivedValue(() => pos.value.x - 12 * (zoom.value / 2))} 
-            y={useDerivedValue(() => pos.value.y - 4 * (zoom.value / 2))} 
-            width={useDerivedValue(() => 24 * (zoom.value / 2))} 
-            height={useDerivedValue(() => 8 * (zoom.value / 2))} 
-            color={accent} 
-            opacity={0.4} 
-            style="stroke" 
-            strokeWidth={1} 
+          <Circle cx={cx} cy={cy} r={clusterRadius} color={accent} opacity={0.1} />
+          <Rect
+            x={rectX}
+            y={rectY}
+            width={rectWidth}
+            height={rectHeight}
+            color={accent}
+            opacity={0.4}
+            style="stroke"
+            strokeWidth={1}
           />
         </Group>
       )}
 
       {dso.type === 'nebula' && (
-        <Rect 
-          x={useDerivedValue(() => pos.value.x - 8)} 
-          y={useDerivedValue(() => pos.value.y - 8)} 
-          width={16} 
-          height={16} 
-          color={accent} 
-          style="stroke" 
-          strokeWidth={1} 
+        <Rect
+          x={nebX}
+          y={nebY}
+          width={16}
+          height={16}
+          color={accent}
+          style="stroke"
+          strokeWidth={1}
           opacity={pulse}
         />
       )}
 
       {dso.type === 'cluster' && (
-        <Circle 
-          cx={useDerivedValue(() => pos.value.x)} 
-          cy={useDerivedValue(() => pos.value.y)} 
-          r={10} 
-          color={accent} 
-          style="stroke" 
-          strokeWidth={1} 
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={10}
+          color={accent}
+          style="stroke"
+          strokeWidth={1}
           strokeCap="round"
           opacity={0.5}
         />
@@ -1247,19 +1378,19 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
       {/* Identity Label */}
       {font && (
         <Group opacity={dsoLabelVisible}>
-          <SkiaText 
-            x={useDerivedValue(() => pos.value.x + 14)} 
-            y={useDerivedValue(() => pos.value.y - 4)} 
-            text={dso.name.toUpperCase()} 
-            font={font} 
-            color="#fff" 
+          <SkiaText
+            x={labelX}
+            y={labelY1}
+            text={dso.name.toUpperCase()}
+            font={font}
+            color="#fff"
           />
-          <SkiaText 
-            x={useDerivedValue(() => pos.value.x + 14)} 
-            y={useDerivedValue(() => pos.value.y + 8)} 
-            text={dso.type.toUpperCase()} 
-            font={font} 
-            color={accent} 
+          <SkiaText
+            x={labelX}
+            y={labelY2}
+            text={dso.type.toUpperCase()}
+            font={font}
+            color={accent}
             opacity={0.6}
           />
         </Group>
@@ -1273,10 +1404,15 @@ function MythologyFigure({ data, ra, dec, zoom, layout, coordinateMode, observer
   const pos = useDerivedValue(() => project(data.ra, data.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
   const size = useDerivedValue(() => 320 * (data.scale || 1.0) * (zoom.value / 2.0));
   const isVisible = useDerivedValue(() => pos.value.x > -size.value && pos.value.x < layout.width + size.value && pos.value.y > -size.value && pos.value.y < layout.height + size.value);
+
+  const opacity = useDerivedValue(() => isVisible.value ? 0.2 : 0);
+  const imageX = useDerivedValue(() => pos.value.x - size.value / 2);
+  const imageY = useDerivedValue(() => pos.value.y - size.value / 2);
+
   if (!image) return null;
   return (
-    <Group opacity={useDerivedValue(() => isVisible.value ? 0.2 : 0)}>
-      <SkiaImage image={image} x={useDerivedValue(() => pos.value.x - size.value / 2)} y={useDerivedValue(() => pos.value.y - size.value / 2)} width={size} height={size} fit="contain" />
+    <Group opacity={opacity}>
+      <SkiaImage image={image} x={imageX} y={imageY} width={size} height={size} fit="contain" />
     </Group>
   );
 }

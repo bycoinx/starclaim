@@ -11,6 +11,7 @@ const ACTIONS = [
   { key: 'collection', label: 'Yıldızlarım', detail: 'Sahiplik kayıtları ve sertifikalar', icon: 'star-outline', href: '/(tabs)/mystars/collection' },
   { key: 'vault', label: 'StarVault', detail: 'Mesajlar ve anılar', icon: 'lock-closed-outline', href: '/(tabs)/vault/home' },
   { key: 'about', label: 'StarClaim Hakkında', detail: 'Misyon ve iletişim', icon: 'information-circle-outline', href: '/about' },
+  { key: 'debug', label: 'Hata Ayıklama', detail: '2D render ve sensör tanı kayıtları', icon: 'pulse-outline', href: '/debug' },
 ];
 
 export default function ProfileScreen() {

@@ -1,0 +1,14 @@
+SELECT TOP 75000
+  g.source_id,
+  g.ra,
+  g.dec,
+  g.parallax,
+  g.phot_g_mean_mag,
+  g.bp_rp,
+  g.ruwe,
+  g.duplicated_source
+FROM gaiadr3.gaia_source AS g
+WHERE g.parallax >= 10
+  AND g.phot_g_mean_mag <= 14
+  AND g.ruwe <= 1.4
+ORDER BY g.phot_g_mean_mag ASC

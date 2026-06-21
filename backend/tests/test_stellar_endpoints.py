@@ -9,8 +9,11 @@ BASE = 'http://127.0.0.1:8000'
 
 def server_up():
     try:
-        r = requests.get(BASE, timeout=3)
-        return r.status_code < 600
+        r = requests.get(BASE + '/health', timeout=5)
+        payload = r.json()
+        if isinstance(payload, list) and payload:
+            payload = payload[0]
+        return r.ok and isinstance(payload, dict) and payload.get('status') == 'healthy'
     except Exception:
         return False
 

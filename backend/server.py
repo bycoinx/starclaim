@@ -28,8 +28,10 @@ import json
 
 try:
     from backend.star_tile_catalog import resolve_catalog_root, resolve_tile_path
+    from backend.binary_star_catalog import resolve_binary_catalog_root, resolve_binary_tile_path
 except ModuleNotFoundError:
     from star_tile_catalog import resolve_catalog_root, resolve_tile_path
+    from binary_star_catalog import resolve_binary_catalog_root, resolve_binary_tile_path
 
 try:
     from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
@@ -66,6 +68,8 @@ load_dotenv(ROOT_DIR / ".env")
 
 STAR_TILE_ROOT = Path(os.environ.get("STAR_TILE_ROOT", ROOT_DIR / "data" / "star_tiles")).resolve()
 STAR_TILE_VERSION = os.environ.get("STAR_TILE_VERSION", "hyg-v4.1-sector-v1")
+STAR_TILE_2D_ROOT = Path(os.environ.get("STAR_TILE_2D_ROOT", ROOT_DIR / "data" / "star_tiles_2d")).resolve()
+STAR_TILE_2D_VERSION = os.environ.get("STAR_TILE_2D_VERSION", "gaia-dr3-hip-2d-v1")
 
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
@@ -96,7 +100,10 @@ TRANSFER_RATE_LIMIT_MAX = 3     # max transfers per window per user
 _transfer_activity = {}
 _transfer_lock = asyncio.Lock()
 
-client = AsyncIOMotorClient(MONGO_URL)
+client = AsyncIOMotorClient(
+    MONGO_URL,
+    serverSelectionTimeoutMS=int(os.environ.get("MONGO_SERVER_SELECTION_TIMEOUT_MS", "3000")),
+)
 db = client[DB_NAME]
 
 app = FastAPI(title="StarCalimX API")
@@ -552,10 +559,15 @@ async def ensure_indexes():
 
 @app.on_event("startup")
 async def startup():
-    await ensure_indexes()
-    await seed_database()
-    if DEMO_CLEANUP_ENABLED:
-        await cleanup_demo_data_once()
+    try:
+        await ensure_indexes()
+        await seed_database()
+        if DEMO_CLEANUP_ENABLED:
+            await cleanup_demo_data_once()
+    except Exception as error:
+        # Read-only catalog and health-independent routes must remain available
+        # when MongoDB is temporarily unavailable during local/mobile testing.
+        logger.warning("MongoDB startup tasks skipped: %s", error)
     # Initialize Redis-backed rate limiter if configured
     if REDIS_URL and FASTAPI_LIMITER_AVAILABLE:
         try:
@@ -765,6 +777,38 @@ async def websocket_auth(websocket: WebSocket, auth_session_id: str):
 
 
 # -------------------- Stars --------------------
+@api.get("/catalog/2d/manifest")
+async def get_2d_catalog_manifest():
+    catalog_root = resolve_binary_catalog_root(STAR_TILE_2D_ROOT, STAR_TILE_2D_VERSION)
+    manifest_path = catalog_root / "manifest.json"
+    if not manifest_path.is_file():
+        raise HTTPException(status_code=503, detail="2D Gaia catalog tiles are not built")
+    return FileResponse(manifest_path, media_type="application/json", headers={"Cache-Control": "public, max-age=300"})
+
+
+@api.get("/catalog/2d/names")
+async def get_2d_catalog_names():
+    names_path = resolve_binary_catalog_root(STAR_TILE_2D_ROOT, STAR_TILE_2D_VERSION) / "names.json"
+    if not names_path.is_file():
+        raise HTTPException(status_code=503, detail="2D Gaia name index is not built")
+    return FileResponse(names_path, media_type="application/json", headers={"Cache-Control": "public, max-age=31536000, immutable"})
+
+
+@api.get("/catalog/2d/tiles/{sector_id}")
+async def get_2d_catalog_tile(sector_id: str):
+    try:
+        tile_path = resolve_binary_tile_path(STAR_TILE_2D_ROOT, STAR_TILE_2D_VERSION, sector_id)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    if not tile_path.is_file():
+        raise HTTPException(status_code=404, detail="2D Gaia tile not found")
+    return FileResponse(
+        tile_path,
+        media_type="application/octet-stream",
+        headers={"Cache-Control": "public, max-age=31536000, immutable"},
+    )
+
+
 @api.get("/catalog/3d/manifest")
 async def get_3d_catalog_manifest():
     try:

@@ -22,10 +22,25 @@ function loadApplicationModule(relativePath) {
 const {
   getGreenwichSiderealTime,
   getLocalSiderealTime,
+  altAzToRaDec,
+  colorForStar,
   normalizeRaDelta,
   projectRaDec,
   raDecToAltAz,
 } = loadApplicationModule('../src/utils/astronomy.js');
+
+test('horizontal and equatorial coordinates round-trip within numerical tolerance', () => {
+  const horizontal = raDecToAltAz(6.752481, -16.716116, 41.0082, 125.5);
+  const equatorial = altAzToRaDec(horizontal.az, horizontal.alt, 41.0082, 125.5);
+  assert.ok(Math.abs(equatorial.ra - 6.752481) < 1e-9);
+  assert.ok(Math.abs(equatorial.dec - (-16.716116)) < 1e-9);
+});
+
+test('Gaia BP-RP color is preferred and spectral class remains a fallback', () => {
+  assert.equal(colorForStar({ colorIndex: -0.3, spectralType: 'M' }), '#9DBBFF');
+  assert.equal(colorForStar({ colorIndex: 1.6, spectralType: 'O' }), '#FF9B82');
+  assert.equal(colorForStar({ spectralType: 'G2V' }), '#FFF0C2');
+});
 
 const STARS = {
   sirius: { raHours: 6.752481, decDegrees: -16.716116 },

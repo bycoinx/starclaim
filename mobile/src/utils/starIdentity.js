@@ -19,17 +19,16 @@ function normalizeText(value) {
  */
 export function getStarSearchTokens(star) {
   return [
+    star?.canonicalId,
+    star?.sourceId,
+    star?.gaiaSourceId,
+    star?.gaiaSourceId ? `Gaia DR3 ${star.gaiaSourceId}` : null,
     star?.id,
     star?.hip,
     star?.hip ? `HIP ${star.hip}` : null,
     star?.hd,
     star?.hd ? `HD ${star.hd}` : null,
-    star?.id,
     star?.star_id,
-    star?.hip,
-    star?.hip ? `HIP ${star.hip}` : null,
-    star?.hd,
-    star?.hd ? `HD ${star.hd}` : null,
     star?.proper,
     star?.properName,
     star?.name,
@@ -86,6 +85,9 @@ export function starMatchesQuery(star, query) {
  */
 export function starMatchesTarget(star, target) {
   const candidates = [
+    target?.canonicalId,
+    target?.sourceId,
+    target?.gaiaSourceId,
     target?.starId, // from deep link or external reference
     target?.id,
     target?.hip,
@@ -121,6 +123,11 @@ export function resolveStarTarget(stars, target) {
 export function createStarTargetFromStar(star) {
   if (!star) return createEmptyStarTarget();
   return {
+    schemaVersion: star.schemaVersion,
+    canonicalId: star.canonicalId,
+    source: star.source,
+    sourceId: star.sourceId,
+    gaiaSourceId: star.gaiaSourceId,
     id: star.id,
     hip: star.hip,
     hd: star.hd,
@@ -134,5 +141,8 @@ export function createStarTargetFromStar(star) {
     magnitude: star.magnitude,
     spectralType: star.spectralType,
     constellation: star.constellation,
+    epoch: star.epoch,
+    coordinateFrame: star.coordinateFrame,
+    colorIndex: star.colorIndex,
   };
 }

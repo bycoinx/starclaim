@@ -76,6 +76,18 @@ export function colorForSpectrum(spect) {
   return '#EAF0FF';
 }
 
+export function colorForStar(star) {
+  const colorIndex = Number(star?.colorIndex ?? star?.bpRp);
+  if (!Number.isFinite(colorIndex)) return colorForSpectrum(star?.spectralType ?? star?.spect);
+  if (colorIndex < -0.2) return '#9DBBFF';
+  if (colorIndex < 0.0) return '#B9D3FF';
+  if (colorIndex < 0.3) return '#E8EEFF';
+  if (colorIndex < 0.58) return '#FFF7EA';
+  if (colorIndex < 0.9) return '#FFF0C2';
+  if (colorIndex < 1.4) return '#FFD09A';
+  return '#FF9B82';
+}
+
 export function getJulianDate(date = new Date()) {
   return date.getTime() / 86400000 + 2440587.5;
 }
@@ -115,6 +127,24 @@ export function raDecToAltAz(raHours, decDegrees, latitudeDegrees, lstDegrees) {
 
 export function raDecToAzAlt(raHours, decDegrees, lstDegrees, latitudeDegrees = 0) {
   return raDecToAltAz(raHours, decDegrees, latitudeDegrees, lstDegrees);
+}
+
+export function altAzToRaDec(azDegrees, altDegrees, latitudeDegrees, lstDegrees) {
+  const azimuth = deg2rad(normalizeAngle(azDegrees));
+  const altitude = deg2rad(clampDeclination(altDegrees));
+  const latitude = deg2rad(clampDeclination(latitudeDegrees));
+  const sinDeclination = (
+    Math.sin(altitude) * Math.sin(latitude)
+    + Math.cos(altitude) * Math.cos(latitude) * Math.cos(azimuth)
+  );
+  const declination = Math.asin(Math.max(-1, Math.min(1, sinDeclination)));
+  const hourAngle = Math.atan2(
+    -Math.sin(azimuth) * Math.cos(altitude),
+    Math.sin(altitude) * Math.cos(latitude)
+      - Math.cos(altitude) * Math.sin(latitude) * Math.cos(azimuth),
+  ) * 180 / Math.PI;
+  const raDegrees = normalizeAngle(Number(lstDegrees || 0) - hourAngle);
+  return { ra: raDegreesToHours(raDegrees), raDegrees, dec: declination * 180 / Math.PI };
 }
 
 export function getApproximateLST(longitudeDegrees = 0, date = new Date()) {

@@ -7,6 +7,8 @@ import {
   getStarSectorId,
 } from './starSectorCatalog';
 import embeddedCoreRows from '../../assets/catalog/hyg-core-v1.json';
+import embeddedCoreManifest from '../../assets/catalog/hyg-core-v1.manifest.json';
+import { createCanonicalStar } from './canonicalStar';
 
 const CORE_STORAGE_KEY = '@hyg_core_stars_v3';
 const MANIFEST_STORAGE_KEY = '@hyg_sector_manifest_v1';
@@ -21,33 +23,29 @@ let catalogLoadPromise = null;
 
 function hydrateEmbeddedStar(row) {
   const [id, hip, hd, properName, raHours, decDegrees, distanceParsec, magnitude, spectralType, constellation, sectorId] = row;
-  return {
+  const star = createCanonicalStar({
     id: String(id),
-    hip: hip || '',
-    hd: hd || '',
-    proper: properName || '',
-    properName: properName || '',
-    ra: raHours,
+    hip,
+    hd,
+    properName,
     raHours,
-    raDegrees: raHours * 15,
-    dec: decDegrees,
     decDegrees,
-    dist: distanceParsec,
     distanceParsec,
-    mag: magnitude,
     magnitude,
-    spect: spectralType || '',
-    spectralType: spectralType || '',
-    con: constellation || '',
-    constellation: constellation || '',
-    sectorId,
-    starClaimCode: '',
-    type: 'star',
-  };
+    spectralType,
+    constellation,
+  }, {
+    source: 'hyg',
+    sourceId: id,
+    sourceCatalogVersion: '4.1',
+  });
+  if (!star) return null;
+  star.sectorId = getStarSectorId(star);
+  return star;
 }
 
 function getEmbeddedCoreCatalog() {
-  return embeddedCoreRows.map(hydrateEmbeddedStar);
+  return embeddedCoreRows.map(hydrateEmbeddedStar).filter(Boolean);
 }
 
 function csvLineToFields(line) {
@@ -97,32 +95,27 @@ function normalizeStar(columns, indexes, fallbackId) {
   const magnitude = parseFiniteNumber(columns[indexes.mag]);
   if (raHours == null || decDegrees == null || magnitude == null) return null;
 
-  const distanceParsec = parseFiniteNumber(columns[indexes.dist]) || 0;
+  const distanceParsec = parseFiniteNumber(columns[indexes.dist]);
   const properName = columns[indexes.proper] || '';
   const spectralType = columns[indexes.spect] || '';
   const constellation = columns[indexes.con] || '';
-  const star = {
+  const star = createCanonicalStar({
     id: columns[indexes.id] || String(fallbackId),
     hip: columns[indexes.hip] || '',
     hd: columns[indexes.hd] || '',
-    proper: properName,
     properName,
-    ra: raHours,
     raHours,
-    raDegrees: raHours * 15,
-    dec: decDegrees,
     decDegrees,
-    dist: distanceParsec,
     distanceParsec,
-    mag: magnitude,
     magnitude,
-    spect: spectralType,
     spectralType,
-    con: constellation,
     constellation,
-    starClaimCode: '',
-    type: 'star',
-  };
+  }, {
+    source: 'hyg',
+    sourceId: columns[indexes.id] || String(fallbackId),
+    sourceCatalogVersion: '4.1',
+  });
+  if (!star) return null;
   star.sectorId = getStarSectorId(star);
   return star;
 }
@@ -251,10 +244,10 @@ export async function getStoredStars() {
 export async function getStarCatalogManifest() {
   try {
     const raw = await AsyncStorage.getItem(MANIFEST_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? JSON.parse(raw) : embeddedCoreManifest;
   } catch (error) {
     console.warn('getStarCatalogManifest', error);
-    return null;
+    return embeddedCoreManifest;
   }
 }
 

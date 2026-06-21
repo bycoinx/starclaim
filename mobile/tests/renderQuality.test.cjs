@@ -71,5 +71,33 @@ test('layer telemetry reports a stable total', () => {
     quality: 'high',
   });
   assert.equal(estimate.layers.stars, 4);
+  assert.equal(estimate.layers.grid, 1);
+  assert.equal(estimate.layers.constellations, 2);
+  assert.equal(estimate.layers.boundaries, 0);
   assert.equal(estimate.total, Object.values(estimate.layers).reduce((sum, value) => sum + value, 0));
+});
+
+test('batched star telemetry reports GPU draw groups instead of every catalog row', () => {
+  const estimate = estimateLayerNodes({
+    renderedStars: new Array(500).fill({ proper: '', owned: false }),
+    starBatchCount: 18,
+    starOverlayCount: 2,
+    showGrid: false,
+    showNebula: false,
+    showConstellations: false,
+    showConstellationLabels: false,
+    showConstellationBoundaries: false,
+    showDSOs: false,
+    showPlanets: false,
+    showMythology: false,
+    coordinateMode: 'equatorial',
+    constellationLines: 0,
+    constellationLabels: 0,
+    constellationBoundaries: 0,
+    dsoCount: 0,
+    planetCount: 0,
+    mythologyCount: 0,
+    quality: 'medium',
+  });
+  assert.equal(estimate.layers.stars, 28);
 });

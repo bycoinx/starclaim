@@ -42,4 +42,14 @@ export async function getRenderDiagnostics() {
   }
 }
 
+export async function clearRenderDiagnostics() {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.warn('Render diagnostic clear failed', error);
+    return false;
+  }
+}
+
 export const RENDER_DIAGNOSTICS_STORAGE_KEY = STORAGE_KEY;

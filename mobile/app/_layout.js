@@ -127,6 +127,7 @@ export default function RootLayout() {
         <Stack.Screen name="neural-link" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="qr-login" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="about" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="debug" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="vault" options={{ animation: 'slide_from_right' }} />
       </Stack>
     </SafeAreaProvider>

@@ -49,6 +49,8 @@ export function updateAdaptiveQuality({
 
 export function estimateLayerNodes({
   renderedStars,
+  starBatchCount = null,
+  starOverlayCount = 0,
   showGrid,
   showNebula,
   showConstellations,
@@ -66,17 +68,19 @@ export function estimateLayerNodes({
   mythologyCount,
   quality,
 }) {
-  const starNodes = renderedStars.reduce((count, star) => (
-    count + 1 + (star.owned ? 1 : 0) + (star.proper ? 1 : 0)
-  ), 0);
+  const starNodes = Number.isFinite(starBatchCount)
+    ? starBatchCount + starOverlayCount * 5
+    : renderedStars.reduce((count, star) => (
+      count + 1 + (star.owned ? 1 : 0) + (star.proper ? 1 : 0)
+    ), 0);
   const layers = {
     background: 1 + (showNebula && quality !== 'low' ? 1 : 0),
     horizon: coordinateMode === 'horizontal' ? 11 : 0,
-    grid: showGrid ? 672 : 0,
+    grid: showGrid ? 1 : 0,
     stars: starNodes,
-    constellations: showConstellations ? constellationLines : 0,
+    constellations: showConstellations && constellationLines > 0 ? 2 : 0,
     constellationLabels: showConstellationLabels && quality !== 'low' ? constellationLabels : 0,
-    boundaries: showConstellationBoundaries ? constellationBoundaries : 0,
+    boundaries: showConstellationBoundaries && constellationBoundaries > 0 ? 1 : 0,
     deepSpace: showDSOs ? dsoCount * 4 : 0,
     planets: showPlanets ? planetCount * 4 : 0,
     mythology: showMythology && quality === 'high' ? mythologyCount : 0,

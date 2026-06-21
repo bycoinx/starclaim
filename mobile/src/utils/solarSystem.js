@@ -1,6 +1,6 @@
 /**
  * Güneş Sistemi nesnelerinin (Gezegenler ve Ay) anlık konumlarını hesaplayan yardımcı fonksiyonlar.
- * Keplerian Elements kullanılarak yaklaşık RA/Dec koordinatları üretilir.
+ * Keplerian Elements kullanılarak heliosentrik XYZ ve yaklaşık RA/Dec koordinatları üretilir.
  */
 
 const deg2rad = (deg) => deg * Math.PI / 180;
@@ -12,7 +12,7 @@ function normalize(v) {
   return val;
 }
 
-// J2000 epoch değerleri (Yaklaşık değerler)
+// J2000 epoch değerleri (Keplerian Elements)
 const PLANETS = {
   mercury: { N: 48.33, i: 7.00, w: 29.12, a: 0.387, e: 0.2056, M0: 174.79, dM: 4.0923 },
   venus:   { N: 76.68, i: 3.39, w: 54.89, a: 0.723, e: 0.0067, M0: 50.11,  dM: 1.6021 },
@@ -22,33 +22,47 @@ const PLANETS = {
 };
 
 /**
- * Verilen tarih için gezegenlerin RA/Dec koordinatlarını döner.
+ * Verilen tarih için gezegenlerin heliosentrik XYZ (AU) ve RA/Dec koordinatlarını döner.
  */
 export function getPlanetPositions(date = new Date()) {
   const d = (date - new Date('2000-01-01T12:00:00Z')) / (1000 * 60 * 60 * 24);
-  
+
   return Object.keys(PLANETS).map(name => {
     const p = PLANETS[name];
     const M = normalize(p.M0 + p.dM * d);
     const E = solveKepler(M, p.e);
-    
-    // Heliosentrik düzlem koordinatları
-    const x = p.a * (Math.cos(deg2rad(E)) - p.e);
-    const y = p.a * Math.sqrt(1 - p.e * p.e) * Math.sin(deg2rad(E));
-    
-    const lon = rad2deg(Math.atan2(y, x)) + p.w;
-    
-    // Basitleştirilmiş RA/Dec dönüşümü (Dünya'dan bakış simülasyonu)
-    // Gerçek hesaplama için Dünya'nın konumu da çıkarılmalıdır.
-    // Bu versiyon haritada görsel bir referans noktası sağlar.
+
+    // Orbital plane coordinates
+    const xv = p.a * (Math.cos(deg2rad(E)) - p.e);
+    const yv = p.a * Math.sqrt(1 - p.e * p.e) * Math.sin(deg2rad(E));
+
+    const v = rad2deg(Math.atan2(yv, xv));
+    const r = Math.sqrt(xv * xv + yv * yv);
+
+    // Convert to Heliocentric XYZ (Ecliptic)
+    const cosN = Math.cos(deg2rad(p.N));
+    const sinN = Math.sin(deg2rad(p.N));
+    const cosVW = Math.cos(deg2rad(v + p.w));
+    const sinVW = Math.sin(deg2rad(v + p.w));
+    const cosi = Math.cos(deg2rad(p.i));
+    const sini = Math.sin(deg2rad(p.i));
+
+    const x = r * (cosN * cosVW - sinN * sinVW * cosi);
+    const y = r * (sinN * cosVW + cosN * sinVW * cosi);
+    const z = r * (sinVW * sini);
+
+    // Simple RA/Dec for 2D map (approximate)
+    const lon = rad2deg(Math.atan2(y, x));
     const ra = normalize(lon) / 15;
-    const dec = p.i * Math.sin(deg2rad(lon - p.N));
-    
+    const dec = rad2deg(Math.asin(z / r));
+
     return {
       id: `planet-${name}`,
       name: name.toUpperCase(),
+      x, y, z, // In AU
       ra,
       dec,
+      distanceAU: r,
       type: 'planet',
       color: getPlanetColor(name)
     };
@@ -57,7 +71,7 @@ export function getPlanetPositions(date = new Date()) {
 
 function solveKepler(M, e) {
   let E = M;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 10; i++) { // More iterations for accuracy
     E = E - (E - rad2deg(e * Math.sin(deg2rad(E))) - M) / (1 - e * Math.cos(deg2rad(E)));
   }
   return E;

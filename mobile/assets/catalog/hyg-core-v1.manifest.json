@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "starSchemaVersion": 1,
+  "catalogVersion": "hyg-v4.1-core-v1",
+  "source": "HYG Database v4.1",
+  "coordinateFrame": "ICRS",
+  "epoch": "J2000.0",
+  "recordCount": 10000,
+  "generatedAt": "2026-06-21T16:26:13.9703557Z",
+  "sha256": "f21e9eb0fc86f9808546a1ef4ab5523b94c82d3585449ff361a43927b99d8e88",
+  "distancePolicy": "Non-positive and 100000 pc HYG sentinel values are unknown."
+}

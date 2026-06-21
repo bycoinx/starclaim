@@ -36,32 +36,32 @@ Bu bölüm, diğer bütün geliştirme maddelerinden daha yüksek önceliklidir.
 
 #### P0.2 - Kanonik Astronomik Veri Sözleşmesi
 
-- [ ] Bütün kaynaklar için ortak kayıt şeması kesinleştirilecek: `source`, `sourceId`, `gaiaSourceId`, `hip`, `hd`, `ra`, `dec`, `parallax`, `distanceParsec`, `magnitude`, `colorIndex`, `spectralType`, `epoch`.
-- [ ] Birim, epoch ve koordinat kuralları J2000/ICRS temelinde belgelenip otomatik testlerle korunacak.
-- [ ] Aynı yıldızın HYG, Hipparcos ve Gaia kayıtları tek kanonik kimlik altında birleştirilecek.
-- [ ] Eksik, geçersiz ve çelişkili paralaks/mesafe kayıtları için açık normalizasyon politikası uygulanacak.
+  - [x] Bütün kaynaklar için ortak kayıt şeması kesinleştirilecek: `source`, `sourceId`, `gaiaSourceId`, `hip`, `hd`, `ra`, `dec`, `parallax`, `distanceParsec`, `magnitude`, `colorIndex`, `spectralType`, `epoch`.
+  - [x] Birim, epoch ve koordinat kuralları J2000/ICRS temelinde belgelenip otomatik testlerle korunacak.
+- [x] Aynı yıldızın HYG, Hipparcos ve Gaia kayıtları tek kanonik kimlik altında birleştirilecek.
+  - [x] Eksik, geçersiz ve çelişkili paralaks/mesafe kayıtları için açık normalizasyon politikası uygulanacak.
 
 #### P0.3 - Gaia DR3 + Hipparcos Veri Hattı
 
-- [ ] Gaia DR3 için tarayıcıya veya telefona ham katalog yüklemeyen çevrimdışı build/import hattı kurulacak.
-- [ ] Hipparcos, ayrı kopya katalog yerine Gaia ile çapraz kimlik ve geriye dönük arama kaynağı olarak kullanılacak.
-- [ ] İlk Gaia alt kümesi; parlak, yakın, HIP eşleşmeli ve StarClaim kataloğunda kullanılan yıldızlardan üretilecek.
-- [ ] Gaia `source_id`, RA/Dec, paralaks, G magnitude, BP-RP renk indisi ve kalite alanları normalize edilecek.
-- [ ] HYG çekirdek katalog güvenli fallback olarak korunacak; Gaia yüklenemezse 2D harita boş kalmayacak.
-- [ ] Kaynak sürümü, kayıt sayısı, SHA-256 bütünlüğü ve üretim tarihi manifestte tutulacak.
+- [x] Gaia DR3 için tarayıcıya veya telefona ham katalog yüklemeyen çevrimdışı build/import hattı kurulacak.
+- [x] Hipparcos, ayrı kopya katalog yerine Gaia ile çapraz kimlik ve geriye dönük arama kaynağı olarak kullanılacak.
+- [x] İlk Gaia alt kümesi; parlak, yakın, HIP eşleşmeli ve StarClaim kataloğunda kullanılan yıldızlardan üretilecek.
+- [x] Gaia `source_id`, RA/Dec, paralaks, G magnitude, BP-RP renk indisi ve kalite alanları normalize edilecek.
+  - [x] HYG çekirdek katalog güvenli fallback olarak korunacak; Gaia yüklenemezse 2D harita boş kalmayacak.
+  - [x] Kaynak sürümü, kayıt sayısı, SHA-256 bütünlüğü ve üretim tarihi manifestte tutulacak.
 
 #### P0.4 - Mobil Binary Katalog ve Tile Sistemi
 
-- [ ] JSON çalışma formatı yerine `Float32Array`/typed-array tabanlı sıkıştırılmış mobil katalog üretilecek.
-- [ ] Gökyüzü sektörleri görüş alanına göre yüklenip boşaltılacak; bütün katalog RAM'e alınmayacak.
-- [ ] Çekirdek katalog çevrimdışı gömülü, geniş katalog sürümlü ve doğrulanmış tile'lar halinde sunulacak.
+- [x] JSON çalışma formatı yerine `Float32Array`/typed-array tabanlı sıkıştırılmış mobil katalog üretilecek.
+- [x] Gökyüzü sektörleri görüş alanına göre yüklenip boşaltılacak; bütün katalog RAM'e alınmayacak.
+- [x] Çekirdek katalog çevrimdışı gömülü, geniş katalog sürümlü ve doğrulanmış tile'lar halinde sunulacak.
 - [ ] Cache boyutu, LRU tahliyesi, bozuk tile kurtarma ve sürüm yükseltme davranışları test edilecek.
 - [ ] Ad, HIP, HD, Gaia source ID ve StarClaim kodu aynı arama indeksinden çözülecek.
 
 #### P0.5 - Gaia/HIP Verisinin 2D Motora Tam Bağlanması
 
-- [ ] Yıldız konumu gerçek RA/Dec, gözlemci konumu ve zamandan doğru Alt/Az değerine çevrilecek.
-- [ ] Yıldız boyutu katalog magnitude değerinden; renk Gaia BP-RP veya güvenilir spektral veriden üretilecek.
+- [x] Yıldız konumu gerçek RA/Dec, gözlemci konumu ve zamandan doğru Alt/Az değerine çevrilecek.
+- [x] Yıldız boyutu katalog magnitude değerinden; renk Gaia BP-RP veya güvenilir spektral veriden üretilecek.
 - [ ] Pan, zoom, seçim, etiket, takım yıldızı ve ufuk filtreleri yeni kanonik kimliklerle çalışacak.
 - [ ] Harita, sensör ve kamera modları aynı yıldızı aynı konum ve kimlikle gösterecek.
 - [ ] Katalog yükleme sürerken düşük maliyetli çekirdek görünüm kesintisiz kalacak.
@@ -502,3 +502,9 @@ Sıradaki cerrahi paket **P0.1 - 2D Render Motoru Üretim Kararlılığı**dır.
 **Ertelenen paketler:** Web yaşayan evren motoru, 3D floating-origin, 3D görsel kalite ve Star System/Planet geliştirmeleri P0.1-P0.7 tamamlanma kapısından sonra ele alınacaktır.
 
 **21 Haziran 2026 3D izolasyonu:** Mevcut Expo GL/Three.js prototipi çalışma zamanı rotalarından çıkarıldı ve `components/legacy/StarVoyage3D.legacy.js` altında referans olarak korundu. `3D Evren` sekmesi ile yıldız detaylarından gelen 3D bağlantıları yalnızca hafif güncelleme ekranını açar. Böylece Three.js/Expo Three modülleri başlangıç paketine girmez; 2D render ve veri katmanı tamamlanana kadar 3D motoru CPU, GPU, sensör, ağ veya katalog kaynağı tüketmez. P0.1-P0.7 tamamlandıktan sonra 3D motoru mevcut prototip üzerine yama yapmak yerine kanonik veri sözleşmesi ve yeni render mimarisiyle yeniden kurulacaktır.
+
+**21 Haziran 2026 P0.2 veri ve render temeli:** HYG çekirdek katalog `ICRS/J2000` kanonik yıldız sözleşmesine bağlandı. `source`, kaynak kimliği, Gaia/HIP/HD kimlikleri, RA/Dec, paralaks, mesafe, magnitude, renk indisi, spektral tip ve epoch alanları tek modelde toplandı. HYG `100000 pc` sentinel değeri bilinmeyen mesafe olarak normalize edildi. Gömülü 10.000 kaydın tamamı; geçerli koordinat, magnitude ve benzersiz kanonik kimlik için otomatik testten geçiyor. Katalog sürümü, kayıt sayısı, üretim zamanı ve SHA-256 değeri manifestte tutuluyor ve testte gerçek dosyayla karşılaştırılıyor. Skia grid, takım yıldızı ve sınır çizgileri tek-path düğüm telemetrisine geçirildi; yıldız bileşenleri memoize edildi ve çizim anahtarı kanonik kimliğe taşındı. Gaia DR3/Hipparcos çapraz eşleştirme ile binary tile üretimi sonraki veri paketidir.
+
+**21 Haziran 2026 P0.3 çevrimdışı Gaia/HIP build hattı:** `scripts/build_gaia_hip_catalog.py`, resmi Gaia DR3 `gaia_source` dışa aktarımını ve `hipparcos2_best_neighbour` çapraz eşleşmesini masaüstünde işler; ham Gaia verisi uygulamaya girmez. Gaia `source_id` kanonik kimliktir. HIP çakışmaları açısal uzaklık ve eşleşme kalitesine göre tekilleştirilir; HYG yalnız ad, HD, spektral tip ve takımyıldız zenginleştirmesi/fallback kaynağıdır. RA/Dec, paralaks, mesafe, G magnitude, BP-RP, RUWE ve duplicate-source politikası normalize edilir. Üç resmi seçim akışı birleştirildi: genel parlak katalog, HIP eşleşmeli katalog ve 100 parsek içindeki yakın yıldızlar. Nihai 50.000 kayıtta 7.669 parlak (`G <= 6.5`), 44.193 yakın (`<= 100 pc`), 15.559 HIP eşleşmeli ve 49.848 BP-RP renk verili yıldız bulunuyor.
+
+**21 Haziran 2026 P0.4 binary 2D katalog:** Gaia/HIP alt kümesi 15 derece RA ve 10 derece Dec hücreleriyle 432 tile'a ayrıldı. Her yıldız `SCB1` little-endian biçiminde 40 baytlık sabit kayıttır; toplam geometri 2.006.912 bayttır. Backend manifest, ad indeksi ve immutable binary tile endpoint'lerini sunuyor. Mobil istemci yalnız görünür sektörleri dörder paralel istekle alıyor, SHA-256 ile doğruluyor, Expo dosya cache'ine yazıyor ve 24 tile bellek LRU sınırı uyguluyor. Ağ veya doğrulama hatasında gömülü 10.000 HYG çekirdeği kesintisiz fallback olarak kalıyor. 432 tile'ın tamamının SHA, byte, kayıt sayısı ve toplam 50.000 yıldız bütünlüğü mobil test paketinde doğrulanıyor. Kalıcı cache üst sınırı/tahliyesi ve bozuk-cache fiziksel cihaz senaryosu P0.4'te açık kalan son maddedir.

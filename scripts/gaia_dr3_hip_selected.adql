@@ -1,0 +1,15 @@
+SELECT TOP 75000
+  g.source_id,
+  g.ra,
+  g.dec,
+  g.parallax,
+  g.phot_g_mean_mag,
+  g.bp_rp,
+  g.ruwe,
+  g.duplicated_source
+FROM gaiadr3.gaia_source AS g
+JOIN gaiadr3.hipparcos2_best_neighbour AS x
+  ON g.source_id = x.source_id
+WHERE g.phot_g_mean_mag <= 14
+  AND g.ruwe <= 1.4
+ORDER BY g.phot_g_mean_mag ASC

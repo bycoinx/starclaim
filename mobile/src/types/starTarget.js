@@ -3,6 +3,15 @@
  * across 2D map, 3D voyage, detail screens, and deep links.
  */
 export const StarTargetShape = {
+  /** Canonical schema version */
+  schemaVersion: 'number',
+  /** Stable cross-catalog identity */
+  canonicalId: 'string',
+  /** Source catalog name and source-local identifier */
+  source: 'string',
+  sourceId: 'string',
+  /** Gaia DR3 source identifier */
+  gaiaSourceId: 'string',
   /** Unique identifier (Mongo _id or UUID) */
   id: 'string',
   /** HIP catalogue number */
@@ -29,6 +38,11 @@ export const StarTargetShape = {
   spectralType: 'string',
   /** Constellation name */
   constellation: 'string',
+  /** Reference epoch and coordinate frame */
+  epoch: 'string',
+  coordinateFrame: 'string',
+  /** B-V or source-compatible color index */
+  colorIndex: 'number',
 };
 
 /**
@@ -37,6 +51,11 @@ export const StarTargetShape = {
  */
 export function createEmptyStarTarget() {
   return {
+    schemaVersion: undefined,
+    canonicalId: undefined,
+    source: undefined,
+    sourceId: undefined,
+    gaiaSourceId: undefined,
     id: undefined,
     hip: undefined,
     hd: undefined,
@@ -50,6 +69,9 @@ export function createEmptyStarTarget() {
     magnitude: undefined,
     spectralType: undefined,
     constellation: undefined,
+    epoch: undefined,
+    coordinateFrame: undefined,
+    colorIndex: undefined,
   };
 }
 
@@ -60,8 +82,21 @@ export function createEmptyStarTarget() {
  */
 export function isValidStarTarget(target) {
   if (!target || typeof target !== 'object') return false;
-  const { id, hip, hd, properName, name, starClaimCode } = target;
+  const {
+    canonicalId,
+    sourceId,
+    gaiaSourceId,
+    id,
+    hip,
+    hd,
+    properName,
+    name,
+    starClaimCode,
+  } = target;
   return !!(
+    canonicalId ||
+    sourceId ||
+    gaiaSourceId ||
     id ||
     hip ||
     hd ||

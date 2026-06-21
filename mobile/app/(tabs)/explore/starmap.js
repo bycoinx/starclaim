@@ -9,12 +9,14 @@ import StarCanvas from '../../../components/StarCanvas';
 import StarPopup from '../../../components/StarPopup';
 import PurchaseModal from '../../../components/PurchaseModal';
 import { ensureStarData } from '../../../src/data/starLoader';
+import { loadGaiaViewport } from '../../../src/data/remoteGaiaCatalog';
 import { ensureConstellations } from '../../../src/data/constellationLoader';
 import {
   getStarDecDegrees,
   getStarRaHours,
   getStarRaDegrees,
   getLocalSiderealTime,
+  altAzToRaDec,
   normalizeAngle,
   raDecToAltAz,
 } from '../../../src/utils/astronomy';
@@ -85,6 +87,12 @@ export default function StarMapScreen() {
   const canvasReadyDataRef = useRef(null);
   const starCanvasRef = useRef(null);
   const diagnosticReportedRef = useRef(false);
+  const lowFpsSamplesRef = useRef(0);
+  const lastLowFpsDiagnosticAtRef = useRef(0);
+  const coreStarsRef = useRef([]);
+  const gaiaRequestRef = useRef(0);
+  const gaiaViewportLoadedRef = useRef(false);
+  const interactionActiveRef = useRef(false);
   const router = useRouter();
   const ALPHA = 0.15;
   const { heading, tilt } = viewDirection;
@@ -93,9 +101,12 @@ export default function StarMapScreen() {
     openedAtRef.current = Date.now();
     canvasReadyDataRef.current = null;
     diagnosticReportedRef.current = false;
+    lowFpsSamplesRef.current = 0;
+    gaiaViewportLoadedRef.current = false;
     setMapError(null);
     setLoading(true);
     ensureStarData().then((list) => {
+      coreStarsRef.current = list;
       setStars(list); 
       
       if (params.starId || params.hip || params.hd || params.starClaimCode || params.name) {
@@ -111,10 +122,52 @@ export default function StarMapScreen() {
       console.warn('Sky Live catalog error', error);
       setStars([]);
       setMapError(error?.message || 'Yıldız kataloğu hazırlanamadı.');
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'error',
+        stage: 'catalog',
+        message: error?.message || 'Yıldız kataloğu hazırlanamadı.',
+      });
     }).finally(() => setLoading(false));
     ensureConstellations().then(setConstellations).catch(() => {});
     loadPurchases();
   }, [loadAttempt, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
+
+  useEffect(() => {
+    if (loading || mapError || !coreStarsRef.current.length) return undefined;
+    if (interactionActiveRef.current) return undefined;
+    if (mode === 'sensor' && gaiaViewportLoadedRef.current) return undefined;
+    const requestId = gaiaRequestRef.current + 1;
+    gaiaRequestRef.current = requestId;
+    const timer = setTimeout(async () => {
+      try {
+        const equatorialCenter = coordinateMode === 'horizontal' && observer
+          ? altAzToRaDec(centerRa, centerDec, observer.latitude, siderealTime)
+          : { raDegrees: centerRa, dec: centerDec };
+        const field = 90 / Math.max(0.8, zoom);
+        const result = await loadGaiaViewport({
+          centerRaDegrees: equatorialCenter.raDegrees,
+          centerDecDegrees: equatorialCenter.dec,
+          horizontalFovDegrees: field,
+          verticalFovDegrees: field * 0.65,
+          maxStars: 12000,
+        });
+        if (gaiaRequestRef.current !== requestId || !result.stars.length) return;
+        gaiaViewportLoadedRef.current = true;
+        const gaiaHips = new Set(result.stars.map((star) => String(star.hip || '')).filter(Boolean));
+        const gaiaIds = new Set(result.stars.map((star) => star.canonicalId));
+        const fallback = coreStarsRef.current.filter((star) => (
+          !gaiaIds.has(star.canonicalId)
+          && (!star.hip || !gaiaHips.has(String(star.hip)))
+        ));
+        setStars([...result.stars, ...fallback].slice(0, 14000));
+      } catch (error) {
+        console.warn('Gaia viewport fallback to embedded HYG core', error);
+        if (gaiaRequestRef.current === requestId) setStars(coreStarsRef.current);
+      }
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [centerDec, centerRa, coordinateMode, loading, mapError, mode, observer, siderealTime, zoom]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', setAppState);
@@ -288,6 +341,12 @@ export default function StarMapScreen() {
         if (cancelled) headingSubscription.remove();
       } catch (error) {
         console.warn('Heading sensor error', error);
+        recordRenderDiagnostic({
+          surface: '2d',
+          status: 'sensor-fallback',
+          stage: 'heading',
+          message: error?.message || 'Pusula sağlayıcısı başlatılamadı.',
+        });
         usingFallback = true;
         lastHeadingAccuracy.current = 0;
         const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
@@ -379,12 +438,24 @@ export default function StarMapScreen() {
         title: 'Yön sensörü desteklenmiyor',
         message: 'Bu cihazda canlı yönlendirme kullanılamıyor. Konuma göre haritayı dokunarak kullanabilirsiniz.',
       });
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'sensor-fallback',
+        stage: 'motion-availability',
+        message: 'DeviceMotion bu cihazda kullanılamıyor.',
+      });
       return;
     }
 
     setMode('sensor');
     setCoordinateMode('horizontal');
     setCapabilityNotice(null);
+    recordRenderDiagnostic({
+      surface: '2d',
+      status: 'sensor-active',
+      orientation: screenOrientation,
+      platform: Platform.OS,
+    });
   };
 
   useEffect(() => {
@@ -483,7 +554,14 @@ export default function StarMapScreen() {
                 resetKey={loadAttempt}
                 fallback={<View style={styles.mapStatus} />}
                 onError={(error) => {
-                  setMapError(error?.message || '2D çizim motoru başlatılamadı.');
+                  const message = error?.message || '2D çizim motoru başlatılamadı.';
+                  setMapError(message);
+                  recordRenderDiagnostic({
+                    surface: '2d',
+                    status: 'error',
+                    stage: 'render-boundary',
+                    message,
+                  });
                 }}
               >
                 <StarCanvas
@@ -506,10 +584,13 @@ export default function StarMapScreen() {
                 coordinateMode={coordinateMode}
                 observerLatitude={observer?.latitude || 0}
                 lstDegrees={siderealTime}
-                hideBelowHorizon
+                hideBelowHorizon={false}
                 transparentBackground={false}
                 nightVision={nightVision}
                 showNebula={showNebula}
+                onInteractionStateChange={(active) => {
+                  interactionActiveRef.current = active;
+                }}
                 onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
                 onZoomChange={(nextZoom) => { setMode('manual'); setZoom(nextZoom); }}
                 onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
@@ -518,15 +599,32 @@ export default function StarMapScreen() {
                     canvasReadyDataRef.current = details;
                   }}
                   onTelemetry={({ fps }) => {
-                    if (diagnosticReportedRef.current || !canvasReadyDataRef.current || !fps) return;
-                    diagnosticReportedRef.current = true;
-                    recordRenderDiagnostic({
-                      surface: '2d',
-                      status: 'ready',
-                      startupMs: Date.now() - openedAtRef.current,
-                      fps,
-                      ...canvasReadyDataRef.current,
-                    });
+                    if (!canvasReadyDataRef.current || !fps) return;
+                    if (!diagnosticReportedRef.current) {
+                      diagnosticReportedRef.current = true;
+                      recordRenderDiagnostic({
+                        surface: '2d',
+                        status: 'ready',
+                        startupMs: Date.now() - openedAtRef.current,
+                        fps,
+                        mode,
+                        ...canvasReadyDataRef.current,
+                      });
+                    }
+
+                    lowFpsSamplesRef.current = fps < 25 ? lowFpsSamplesRef.current + 1 : 0;
+                    const nowMs = Date.now();
+                    if (lowFpsSamplesRef.current >= 3 && nowMs - lastLowFpsDiagnosticAtRef.current > 15000) {
+                      lastLowFpsDiagnosticAtRef.current = nowMs;
+                      lowFpsSamplesRef.current = 0;
+                      recordRenderDiagnostic({
+                        surface: '2d',
+                        status: 'low-fps',
+                        fps,
+                        mode,
+                        ...canvasReadyDataRef.current,
+                      });
+                    }
                   }}
                 />
               </RenderSurfaceBoundary>
