@@ -1,5 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio, InteractionManager } from 'react-native';
 import {
   Canvas,
   Circle,
@@ -32,7 +32,6 @@ import {
 import { radiusForMag, colorForStar } from '../src/utils/astronomy';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
 import { getPlanetPositions } from '../src/utils/solarSystem';
-import { DSO_CATALOG } from '../src/data/dsoData';
 import {
   isSkySegmentVisible,
   projectSkySegment,
@@ -53,6 +52,21 @@ const deg2rad = (deg) => {
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
 const TAP_CELL_SIZE = 56;
 const VIEWPORT_PADDING = 140;
+const STAR_RENDER_BUDGET = { low: 100, medium: 200, high: 300 };
+const GALACTIC_PLANE = Array.from({ length: 73 }, (_, index) => {
+  const longitude = index * 5 * Math.PI / 180;
+  const galacticX = Math.cos(longitude);
+  const galacticY = Math.sin(longitude);
+  const equatorialX = -0.0548755604 * galacticX + 0.4941094279 * galacticY;
+  const equatorialY = -0.8734370902 * galacticX - 0.4448296300 * galacticY;
+  const equatorialZ = -0.4838350155 * galacticX + 0.7469822445 * galacticY;
+  let raDegrees = Math.atan2(equatorialY, equatorialX) * 180 / Math.PI;
+  if (raDegrees < 0) raDegrees += 360;
+  return {
+    ra: raDegrees / 15,
+    dec: Math.asin(equatorialZ) * 180 / Math.PI,
+  };
+});
 
 function normalizeRaDelta(delta) {
   'worklet';
@@ -143,6 +157,27 @@ function magnitudeLimitForZoom(zoom) {
   return 9.5;
 }
 
+function isCoarselyVisible(ra, dec, virtualCenter, zoom, layout) {
+  'worklet';
+  const fovDegrees = 90 / Math.max(0.1, zoom);
+  const padding = 15;
+  const halfFovX = (fovDegrees / 2) + padding;
+  const halfFovY = (fovDegrees / 2) + padding;
+
+  const decDiff = Math.abs(dec - virtualCenter.dec);
+  if (decDiff > halfFovY) return false;
+
+  let raDiff = Math.abs(ra * 15 - virtualCenter.ra);
+  while (raDiff > 180) raDiff = 360 - raDiff;
+
+  const cosDec = Math.cos((virtualCenter.dec * Math.PI) / 180);
+  // Avoid division by zero or near-zero
+  const cosDecAdjusted = Math.max(0.001, cosDec);
+  const maxRaDiff = halfFovX / cosDecAdjusted;
+
+  return raDiff <= maxRaDiff;
+}
+
 function getCellKey(x, y) {
   return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
 }
@@ -210,6 +245,55 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
   );
 }
 
+function MilkyWayDensity({
+  ra,
+  dec,
+  zoom,
+  layout,
+  coordinateMode,
+  observerLatitude,
+  lstDegrees,
+  qualityLevel,
+  nightVision,
+}) {
+  const path = useDerivedValue(() => {
+    const result = Skia.Path.Make();
+    let previous = null;
+    GALACTIC_PLANE.forEach((point) => {
+      const projected = project(
+        point.ra,
+        point.dec,
+        ra.value,
+        dec.value,
+        layout.width,
+        layout.height,
+        zoom.value,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
+      const shouldContinue = previous
+        && Math.abs(projected.x - previous.x) < layout.width * 0.5
+        && Math.abs(projected.y - previous.y) < layout.height * 0.75;
+      if (shouldContinue) result.lineTo(projected.x, projected.y);
+      else result.moveTo(projected.x, projected.y);
+      previous = projected;
+    });
+    return result;
+  });
+  const strength = qualityLevel === 'low' ? 0.34 : qualityLevel === 'medium' ? 0.48 : 0.58;
+  const widthScale = qualityLevel === 'low' ? 0.78 : qualityLevel === 'medium' ? 0.9 : 1;
+
+  return (
+    <Group opacity={nightVision ? strength * 0.32 : strength}>
+      <Path path={path} color={nightVision ? '#300607' : '#10244A'} style="stroke" strokeWidth={170 * widthScale} strokeCap="round" opacity={0.3} />
+      <Path path={path} color={nightVision ? '#4A0909' : '#263B72'} style="stroke" strokeWidth={105 * widthScale} strokeCap="round" opacity={0.25} />
+      <Path path={path} color={nightVision ? '#651010' : '#755D86'} style="stroke" strokeWidth={58 * widthScale} strokeCap="round" opacity={0.2} />
+      <Path path={path} color={nightVision ? '#140000' : '#020713'} style="stroke" strokeWidth={15 * widthScale} strokeCap="round" opacity={0.5} />
+    </Group>
+  );
+}
+
 function DeepSpaceAtmosphere({ layout, nightVision }) {
   if (nightVision) return null;
   return (
@@ -232,7 +316,7 @@ function DeepSpaceAtmosphere({ layout, nightVision }) {
   );
 }
 
-const StarCanvas = forwardRef(function StarCanvas({
+const StarCanvasBase = forwardRef(function StarCanvas({
   stars,
   selectedStar,
   centerRa: initialRa,
@@ -261,9 +345,13 @@ const StarCanvas = forwardRef(function StarCanvas({
   onReady = null,
   onTelemetry = null,
   onInteractionStateChange = null,
+  active = true,
 }, ref) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   const [qualityLevel, setQualityLevel] = useState('high');
+  const [dsoData, setDsoData] = useState([]);
+  const [virtualCenter, setVirtualCenter] = useState({ ra: initialRa, dec: initialDec });
+  const virtualCenterRef = useRef({ ra: initialRa, dec: initialDec });
 
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
@@ -271,8 +359,10 @@ const StarCanvas = forwardRef(function StarCanvas({
   const time = useSharedValue(0);
   const fpsShared = useSharedValue(0);
   const readyShared = useSharedValue(false);
+  const gestureFrame = useSharedValue(0);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(0);
+  const lastVisualTickRef = useRef(0);
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
@@ -283,6 +373,13 @@ const StarCanvas = forwardRef(function StarCanvas({
       if (!Number.isFinite(nextRa) || !Number.isFinite(nextDec)) return;
       ra.value = nextRa;
       dec.value = Math.max(-90, Math.min(90, nextDec));
+      const nextDecClamped = Math.max(-90, Math.min(90, nextDec));
+      const current = virtualCenterRef.current;
+      if (Math.abs(normalizeRaDelta(nextRa - current.ra)) >= 8 || Math.abs(nextDecClamped - current.dec) >= 6) {
+        const next = { ra: nextRa, dec: nextDecClamped };
+        virtualCenterRef.current = next;
+        setVirtualCenter(next);
+      }
     },
   }), [dec, ra]);
 
@@ -317,7 +414,22 @@ const StarCanvas = forwardRef(function StarCanvas({
   };
 
   const planetData = useMemo(() => getPlanetPositions(), []);
-  const dsoData = useMemo(() => DSO_CATALOG, []);
+
+  useEffect(() => {
+    if (!showDSOs || dsoData.length) return undefined;
+    let cancelled = false;
+    const task = InteractionManager.runAfterInteractions(() => {
+      import('../src/data/dsoData')
+        .then(({ DSO_CATALOG }) => {
+          if (!cancelled) setDsoData(DSO_CATALOG);
+        })
+        .catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+      task.cancel?.();
+    };
+  }, [dsoData.length, showDSOs]);
 
   const baseQuality = useMemo(() => getBaseRenderQuality({
     pixelRatio: PixelRatio.get(),
@@ -350,13 +462,19 @@ const StarCanvas = forwardRef(function StarCanvas({
       lastTimeRef.current = now;
       runOnJS(reportTelemetry)(measuredFps);
     }
-    time.value = now / 1000;
-  });
+    if (now - lastVisualTickRef.current >= 33) {
+      lastVisualTickRef.current = now;
+      time.value = now / 1000;
+    }
+  }, active);
 
   useEffect(() => {
     ra.value = withSpring(initialRa, SPRING_CONFIG);
     dec.value = withSpring(initialDec, SPRING_CONFIG);
     zoom.value = withSpring(initialZoom, SPRING_CONFIG);
+    const next = { ra: initialRa, dec: initialDec };
+    virtualCenterRef.current = next;
+    setVirtualCenter(next);
   }, [initialRa, initialDec, initialZoom]);
 
   const panGesture = Gesture.Pan()
@@ -364,6 +482,8 @@ const StarCanvas = forwardRef(function StarCanvas({
       if (onInteractionStateChange) runOnJS(onInteractionStateChange)(true);
     })
     .onUpdate((e) => {
+      gestureFrame.value = (gestureFrame.value + 1) % 2;
+      if (gestureFrame.value !== 0) return;
       const field = 90 / zoom.value;
       const scale = layout.width / field;
       const raMove = (e.changeX / scale) / Math.cos(deg2rad(dec.value));
@@ -403,7 +523,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   const renderedStars = useMemo(() => {
     const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
     const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
-    const poolLimit = qualityLevel === 'low' ? 600 : qualityLevel === 'medium' ? 1100 : 1800;
+    const poolLimit = STAR_RENDER_BUDGET[qualityLevel] || STAR_RENDER_BUDGET.medium;
     const importantStars = [];
     const regularStars = [];
 
@@ -421,6 +541,40 @@ const StarCanvas = forwardRef(function StarCanvas({
         color: nightVision ? '#FF514A' : colorForStar(star),
         owned,
       };
+      if (coordinateMode === 'horizontal') {
+        const horizontal = equatorialToHorizontal(
+          star.ra,
+          star.dec,
+          observerLatitude,
+          lstDegrees,
+        );
+        prepared.horizontalAz = horizontal.az;
+        prepared.horizontalAlt = horizontal.alt;
+      }
+      const projected = coordinateMode === 'horizontal'
+        ? projectDegrees(
+          prepared.horizontalAz,
+          prepared.horizontalAlt,
+          virtualCenter.ra,
+          virtualCenter.dec,
+          layout.width,
+          layout.height,
+          initialZoom,
+        )
+        : projectDegrees(
+          star.ra * 15,
+          star.dec,
+          virtualCenter.ra,
+          virtualCenter.dec,
+          layout.width,
+          layout.height,
+          initialZoom,
+        );
+      const inVirtualViewport = projected.x >= -VIEWPORT_PADDING
+        && projected.x <= layout.width + VIEWPORT_PADDING
+        && projected.y >= -VIEWPORT_PADDING
+        && projected.y <= layout.height + VIEWPORT_PADDING;
+      if (!important && !inVirtualViewport) return;
       if (important) importantStars.push(prepared);
       else regularStars.push(prepared);
     });
@@ -432,8 +586,15 @@ const StarCanvas = forwardRef(function StarCanvas({
     nightVision,
     ownedIdSet,
     qualityLevel,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+    layout.height,
+    layout.width,
     selectedStar?.id,
     stars,
+    virtualCenter.dec,
+    virtualCenter.ra,
   ]);
 
   const starBatches = useMemo(() => {
@@ -451,6 +612,147 @@ const StarCanvas = forwardRef(function StarCanvas({
   const overlayStars = useMemo(() => renderedStars
     .filter((star) => star.owned || (star.proper && (showLabels || initialZoom > 2.8)))
     .slice(0, 24), [initialZoom, renderedStars, showLabels]);
+
+  const visibleDSOs = useMemo(() => {
+    if (!showDSOs) return [];
+
+    // Pre-calculate viewport bounds for efficiency
+    const fovDegrees = 90 / Math.max(0.1, initialZoom);
+    const halfFovX = (fovDegrees / 2) + 15; // padding
+    const halfFovY = (fovDegrees / 2) + 15; // padding
+
+    return dsoData.filter(dso => {
+      // Simple bounding box check
+      return isCoarselyVisible(dso.ra, dso.dec, virtualCenter, initialZoom, layout);
+    });
+  }, [dsoData, showDSOs, virtualCenter, initialZoom, layout]);
+
+  const visiblePlanets = useMemo(() => {
+    if (!showPlanets) return [];
+
+    // Pre-calculate viewport bounds for efficiency
+    const fovDegrees = 90 / Math.max(0.1, initialZoom);
+    const halfFovX = (fovDegrees / 2) + 15; // padding
+    const halfFovY = (fovDegrees / 2) + 15; // padding
+
+    return planetData.filter(planet => {
+      // Simple bounding box check
+      return isCoarselyVisible(planet.ra, planet.dec, virtualCenter, initialZoom, layout);
+    });
+  }, [planetData, showPlanets, virtualCenter, initialZoom, layout]);
+
+  const visibleConstellationLabels = useMemo(() => {
+    if (!showConstellationLabels || !constellations.labels?.features) return [];
+
+    // Pre-calculate viewport bounds for efficiency
+    const fovDegrees = 90 / Math.max(0.1, initialZoom);
+    const halfFovX = (fovDegrees / 2) + 15; // padding
+    const halfFovY = (fovDegrees / 2) + 15; // padding
+
+    return constellations.labels.features.filter(feature => {
+      const coords = feature.geometry?.coordinates;
+      if (!coords) return false;
+
+      // Simple bounding box check for label position
+      const ra = coords[0] / 15;
+      const dec = coords[1];
+      return isCoarselyVisible(ra, dec, virtualCenter, initialZoom, layout);
+    });
+  }, [constellations.labels?.features, showConstellationLabels, virtualCenter, initialZoom, layout]);
+
+  const visibleConstellationLines = useMemo(() => {
+    if (!showConstellations || !constellations.lines?.features) return [];
+
+    // Pre-calculate viewport bounds for efficiency
+    const fovDegrees = 90 / Math.max(0.1, initialZoom);
+    const halfFovX = (fovDegrees / 2) + 15; // padding
+    const halfFovY = (fovDegrees / 2) + 15; // padding
+
+    return constellations.lines.features.filter(feature => {
+      if (!feature.geometry?.coordinates) return false;
+
+      // First check if feature's bounding box intersects viewport
+      const coords = feature.geometry.coordinates.flat();
+      if (coords.length === 0) return false;
+
+      let minRa = Infinity, maxRa = -Infinity;
+      let minDec = Infinity, maxDec = -Infinity;
+
+      for (let i = 0; i < coords.length; i += 2) {
+        const ra = coords[i] / 15;
+        const dec = coords[i + 1];
+        if (ra < minRa) minRa = ra;
+        if (ra > maxRa) maxRa = ra;
+        if (dec < minDec) minDec = dec;
+        if (dec > maxDec) maxDec = dec;
+      }
+
+      // Normalize RA for wraparound
+      let raDiff = maxRa - minRa;
+      if (raDiff > 180) raDiff = 360 - raDiff;
+
+      // Check if bounding box intersects viewport (simplified)
+      const decIntersects = !(minDec > virtualCenter.dec + halfFovY || maxDec < virtualCenter.dec - halfFovY);
+      const raIntersects = !(minRa > virtualCenter.dec + halfFovX || maxRa < virtualCenter.dec - halfFovX); // Simplified
+
+      if (!decIntersects || !raIntersects) return false;
+
+      // If bounding box intersects, do detailed check
+      return feature.geometry.coordinates.some(linePoints =>
+        linePoints.some(pt => isCoarselyVisible(pt[0] / 15, pt[1], virtualCenter, initialZoom, layout))
+      );
+    });
+  }, [constellations.lines?.features, showConstellations, virtualCenter, initialZoom, layout]);
+
+  const visibleBoundaries = useMemo(() => {
+    if (!showConstellationBoundaries || !constellations.boundaries?.features) return [];
+
+    // Pre-calculate viewport bounds for efficiency
+    const fovDegrees = 90 / Math.max(0.1, initialZoom);
+    const halfFovX = (fovDegrees / 2) + 15; // padding
+    const halfFovY = (fovDegrees / 2) + 15; // padding
+
+    return constellations.boundaries.features.filter(feature => {
+      const paths = getBoundaryPaths(feature);
+
+      // First check if feature's bounding box intersects viewport
+      let intersects = false;
+      for (const pathPoints of paths) {
+        const coords = pathPoints.flat();
+        if (coords.length === 0) continue;
+
+        let minRa = Infinity, maxRa = -Infinity;
+        let minDec = Infinity, maxDec = -Infinity;
+
+        for (let i = 0; i < coords.length; i += 2) {
+          const ra = coords[i] / 15;
+          const dec = coords[i + 1];
+          if (ra < minRa) minRa = ra;
+          if (ra > maxRa) maxRa = ra;
+          if (dec < minDec) minDec = dec;
+          if (dec > maxDec) maxDec = dec;
+        }
+
+        // Normalize RA for wraparound (simplified check)
+        let raDiff = maxRa - minRa;
+        if (raDiff > 180) raDiff = 360 - raDiff;
+
+        // Check if bounding box intersects viewport (simplified)
+        const decIntersects = !(minDec > virtualCenter.dec + halfFovY || maxDec < virtualCenter.dec - halfFovY);
+        const raIntersects = !(minRa > virtualCenter.dec + halfFovX || maxRa < virtualCenter.dec - halfFovX); // Simplified
+
+        if (decIntersects && raIntersects) {
+          // If bounding box intersects, do detailed check
+          intersects = pathPoints.some(pt =>
+            isCoarselyVisible(pt[0] / 15, pt[1], virtualCenter, initialZoom, layout)
+          );
+          if (intersects) break; // Early exit if we found an intersecting path
+        }
+      }
+
+      return intersects;
+    });
+  }, [constellations.boundaries?.features, showConstellationBoundaries, virtualCenter, initialZoom, layout]);
 
   const layerNodeEstimate = useMemo(() => {
     const countSegments = (features = []) => features.reduce((total, feature) => {
@@ -473,33 +775,33 @@ const StarCanvas = forwardRef(function StarCanvas({
       showPlanets,
       showMythology,
       coordinateMode,
-      constellationLines: countSegments(constellations.lines?.features),
-      constellationLabels: constellations.labels?.features?.length || 0,
-      constellationBoundaries: countSegments(constellations.boundaries?.features),
-      dsoCount: dsoData.length,
-      planetCount: planetData.length,
+      constellationLines: countSegments(visibleConstellationLines),
+      constellationLabels: visibleConstellationLabels.length,
+      constellationBoundaries: countSegments(visibleBoundaries),
+      dsoCount: visibleDSOs.length,
+      planetCount: visiblePlanets.length,
       mythologyCount: Object.keys(MYTHOLOGY_ASSETS).length,
       quality: qualityLevel,
     });
   }, [
-    constellations.boundaries?.features,
-    constellations.labels?.features,
-    constellations.lines?.features,
-    coordinateMode,
-    dsoData.length,
-    planetData.length,
-    qualityLevel,
     renderedStars,
     starBatches.length,
     overlayStars.length,
-    showConstellationBoundaries,
-    showConstellationLabels,
-    showConstellations,
-    showDSOs,
     showGrid,
-    showMythology,
     showNebula,
+    showConstellations,
+    showConstellationLabels,
+    showConstellationBoundaries,
+    showDSOs,
     showPlanets,
+    showMythology,
+    coordinateMode,
+    visibleConstellationLines,
+    visibleConstellationLabels,
+    visibleBoundaries,
+    visibleDSOs,
+    visiblePlanets,
+    qualityLevel,
   ]);
 
   readyDetailsRef.current = {
@@ -579,6 +881,7 @@ const StarCanvas = forwardRef(function StarCanvas({
   const selectedY = useDerivedValue(() => selectedStarPos.value?.y ?? -100);
   const selectedHaloCenter = useDerivedValue(() => vec(selectedX.value, selectedY.value));
   const selectedOpacity = useDerivedValue(() => isSelectedVisible.value ? 1 : 0);
+  const selectedRingRadius = useDerivedValue(() => 20 + Math.sin(time.value * 3) * 2);
 
   return (
     <GestureHandlerRootView style={[styles.container, transparentBackground && styles.transparentContainer]}>
@@ -599,6 +902,20 @@ const StarCanvas = forwardRef(function StarCanvas({
                 dec={dec}
                 layout={layout}
                 qualityLevel={qualityLevel}
+              />
+            )}
+
+            {showNebula && !transparentBackground && (
+              <MilkyWayDensity
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                qualityLevel={qualityLevel}
+                nightVision={nightVision}
               />
             )}
 
@@ -627,17 +944,21 @@ const StarCanvas = forwardRef(function StarCanvas({
               />
             )}
 
-            {showMythology && qualityLevel === 'high' && Object.keys(MYTHOLOGY_ASSETS).map((key) => (
-              <MythologyFigure key={key} data={MYTHOLOGY_ASSETS[key]} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
-            ))}
+            {showMythology && qualityLevel === 'high' && Object.keys(MYTHOLOGY_ASSETS).map((key) => {
+              const data = MYTHOLOGY_ASSETS[key];
+              if (!isCoarselyVisible(data.ra, data.dec, virtualCenter, initialZoom, layout)) return null;
+              return (
+                <MythologyFigure key={key} data={data} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
+              );
+            })}
 
-            {showDSOs && dsoData.map((dso) => (
+            {showDSOs && visibleDSOs.map((dso) => (
               <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
             {showConstellationBoundaries && (
               <ConstellationBoundariesPath
-                boundaries={constellations.boundaries}
+                features={visibleBoundaries}
                 ra={ra}
                 dec={dec}
                 zoom={zoom}
@@ -651,7 +972,7 @@ const StarCanvas = forwardRef(function StarCanvas({
 
             {showConstellations && (
               <ConstellationsPath
-                constellations={constellations}
+                lines={visibleConstellationLines}
                 selectedStar={selectedStar}
                 ra={ra}
                 dec={dec}
@@ -672,7 +993,7 @@ const StarCanvas = forwardRef(function StarCanvas({
               <StarCircle key={`overlay-${star.canonicalId || star.id}`} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.canonicalId === star.canonicalId || selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
             ))}
 
-            {showConstellationLabels && qualityLevel !== 'low' && constellations.labels?.features?.map((feature, index) => (
+            {showConstellationLabels && qualityLevel !== 'low' && visibleConstellationLabels.map((feature, index) => (
               <ConstellationLabel
                 key={`${feature.id || 'label'}-${index}`}
                 feature={feature}
@@ -688,7 +1009,7 @@ const StarCanvas = forwardRef(function StarCanvas({
               />
             ))}
 
-            {showPlanets && planetData.map((planet) => (
+            {showPlanets && visiblePlanets.map((planet) => (
               <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
@@ -697,7 +1018,7 @@ const StarCanvas = forwardRef(function StarCanvas({
                 <Circle cx={selectedX} cy={selectedY} r={28} opacity={0.42}>
                   <RadialGradient c={selectedHaloCenter} r={28} colors={nightVision ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)'] : ['rgba(178,222,255,0.55)', 'rgba(119,191,255,0)']} />
                 </Circle>
-                <Circle cx={selectedX} cy={selectedY} r={useDerivedValue(() => 20 + Math.sin(time.value * 3) * 2)} color={nightVision ? '#FF6961' : '#9DD2FF'} style="stroke" strokeWidth={1} opacity={0.48} />
+                <Circle cx={selectedX} cy={selectedY} r={selectedRingRadius} color={nightVision ? '#FF6961' : '#9DD2FF'} style="stroke" strokeWidth={1} opacity={0.48} />
                 <Circle cx={selectedX} cy={selectedY} r={8} color={nightVision ? 'rgba(255,105,97,0.35)' : 'rgba(157,210,255,0.34)'} />
                 <Circle cx={selectedX} cy={selectedY} r={3.2} color={nightVision ? '#FFD0CC' : '#FFFFFF'} />
               </Group>
@@ -718,9 +1039,27 @@ const StarCanvas = forwardRef(function StarCanvas({
   );
 });
 
-export default StarCanvas;
+const areEqual = (prevProps, nextProps) => {
+  // Ignore ref prop as it's always a new object
+  if (prevProps.ref !== nextProps.ref) {
+    // Check all other props
+    const prevKeys = Object.keys(prevProps).filter(key => key !== 'ref');
+    const nextKeys = Object.keys(nextProps).filter(key => key !== 'ref');
 
-function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+    if (prevKeys.length !== nextKeys.length) return false;
+
+    for (const key of prevKeys) {
+      if (prevProps[key] !== nextProps[key]) return false;
+    }
+
+    return true;
+  }
+  return true;
+};
+
+export default React.memo(StarCanvas, areEqual);
+
+const CelestialGrid = React.memo(function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const raSteps = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
   const decSteps = [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
 
@@ -790,9 +1129,9 @@ function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLa
       style="stroke"
     />
   );
-}
+});
 
-function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
+const HorizonOverlay = React.memo(function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
   const horizonY = useDerivedValue(() => (
     projectDegrees(ra.value, 0, ra.value, dec.value, layout.width, layout.height, zoom.value).y
   ));
@@ -854,9 +1193,9 @@ function HorizonOverlay({ ra, dec, zoom, layout, font, nightVision }) {
       ))}
     </Group>
   );
-}
+});
 
-function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision }) {
+const HorizonDirection = React.memo(function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision }) {
   const pos = useDerivedValue(() => (
     projectDegrees(
       direction.az,
@@ -894,7 +1233,7 @@ function HorizonDirection({ direction, ra, dec, zoom, layout, font, nightVision 
       />
     </Group>
   );
-}
+});
 
 function getBoundaryPaths(feature) {
   'worklet';
@@ -1077,29 +1416,57 @@ function ConstellationsPath({ constellations, selectedStar, ra, dec, zoom, layou
 }
 
 const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom, layout, time, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel }) {
-  const points = useDerivedValue(() => batch.stars.map((star) => {
-    'worklet';
-    const projected = project(
-      star.ra,
-      star.dec,
-      ra.value,
-      dec.value,
-      layout.width,
-      layout.height,
-      zoom.value,
-      coordinateMode,
-      observerLatitude,
-      lstDegrees,
-    );
-    const visible = projected.x > -20
-      && projected.x < layout.width + 20
-      && projected.y > -20
-      && projected.y < layout.height + 20
-      && (!hideBelowHorizon || projected.skyAltitude == null || projected.skyAltitude >= 0);
-    return visible
-      ? { x: projected.x, y: projected.y }
-      : { x: -1000, y: -1000 };
-  }));
+  // Pre-calculate star positions when dependencies change, not every frame
+  const starPositions = useMemo(() => {
+    return batch.stars.map((star) => {
+      'worklet';
+      const projected = coordinateMode === 'horizontal'
+        && Number.isFinite(star.horizontalAz)
+        && Number.isFinite(star.horizontalAlt)
+        ? {
+          ...projectDegrees(
+            star.horizontalAz,
+            star.horizontalAlt,
+            ra.value,
+            dec.value,
+            layout.width,
+            layout.height,
+            zoom.value,
+          ),
+          skyAltitude: star.horizontalAlt,
+        }
+        : project(
+          star.ra,
+          star.dec,
+          ra.value,
+          dec.value,
+          layout.width,
+          layout.height,
+          zoom.value,
+          coordinateMode,
+          observerLatitude,
+          lstDegrees,
+        );
+      const visible = projected.x > -20
+        && projected.x < layout.width + 20
+        && projected.y > -20
+        && projected.y < layout.height + 20
+        && (!hideBelowHorizon || projected.skyAltitude == null || projected.skyAltitude >= 0);
+      return visible
+        ? { x: projected.x, y: projected.y, visible: true }
+        : { x: -1000, y: -1000, visible: false };
+    });
+  }, [batch.stars, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon]);
+
+  // Animate points based on pre-calculated positions
+  const points = useDerivedValue(() =>
+    starPositions.map(starPos =>
+      starPos.visible
+        ? { x: starPos.x, y: starPos.y }
+        : { x: -1000, y: -1000 }
+    )
+  );
+
   const phase = batch.key.length * 0.41;
   const opacity = useDerivedValue(() => (
     qualityLevel === 'low' ? 0.92 : 0.91 + Math.sin(time.value * 1.25 + phase) * 0.035
@@ -1121,7 +1488,9 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
   const isBrightStar = Number(star.mag) <= 2;
 
-  const starState = useDerivedValue(() => {
+  // Pre-calculate star position when dependencies change
+  const starPosition = useMemo(() => {
+    'worklet';
     const p = project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees);
     const isVisible = p.x > -30 && p.x < layout.width + 30 && p.y > -30 && p.y < layout.height + 30 && (!hideBelowHorizon || p.skyAltitude == null || p.skyAltitude >= 0);
     const opacity = qualityLevel === 'low' ? 0.92 : 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
@@ -1129,20 +1498,21 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
       x: p.x,
       y: p.y,
       isVisible,
-      opacity,
+      baseOpacity: opacity,
+      twinklePhase,
     };
-  });
+  }, [star, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel, time]);
 
-  const cx = useDerivedValue(() => starState.value.x);
-  const cy = useDerivedValue(() => starState.value.y);
-  const opacity = useDerivedValue(() => starState.value.isVisible ? starState.value.opacity : 0);
-  const groupOpacity = useDerivedValue(() => starState.value.isVisible ? 1 : 0);
+  const cx = useDerivedValue(() => starPosition.value.x);
+  const cy = useDerivedValue(() => starPosition.value.y);
+  const opacity = useDerivedValue(() => starPosition.value.isVisible ? starPosition.value.baseOpacity : 0);
+  const groupOpacity = useDerivedValue(() => starPosition.value.isVisible ? 1 : 0);
 
-  const haloCenter = useDerivedValue(() => vec(starState.value.x, starState.value.y));
+  const haloCenter = useDerivedValue(() => vec(starPosition.value.x, starPosition.value.y));
 
   const labelVisible = useDerivedValue(() => {
     if (suppressLabel || !star.proper) return false;
-    return starState.value.isVisible && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4));
+    return starPosition.value.isVisible && (zoom.value > 2.8 || (showLabels && zoom.value > 1.4));
   });
 
   const labelOpacity = useDerivedValue(() => labelVisible.value ? 1 : 0);
@@ -1153,9 +1523,9 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
     ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)']
     : [`${star.color}88`, `${star.color}22`, 'rgba(0,0,0,0)'];
 
-  const labelX = useDerivedValue(() => starState.value.x + star.radius + 6);
-  const labelY1 = useDerivedValue(() => starState.value.y - star.radius - 4);
-  const labelY2 = useDerivedValue(() => starState.value.y - star.radius + 8);
+  const labelX = useDerivedValue(() => starPosition.value.x + star.radius + 6);
+  const labelY1 = useDerivedValue(() => starPosition.value.y - star.radius - 4);
+  const labelY2 = useDerivedValue(() => starPosition.value.y - star.radius + 8);
 
   return (
     <Group opacity={groupOpacity}>

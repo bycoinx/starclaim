@@ -67,7 +67,7 @@ function spectralColor(rand, bias = 0) {
   return new THREE.Color('#ff8f6c');
 }
 
-function PremiumStarField({ count = 32000 }) {
+function PremiumStarField({ count = 18000 }) {
   const materialRef = useRef();
   const groupRef = useRef();
 
@@ -288,7 +288,7 @@ function Planet({ planet, index }) {
   );
 }
 
-function AsteroidBelt({ count = 1800 }) {
+function AsteroidBelt({ count = 900 }) {
   const geometry = useMemo(() => {
     const rand = seededRandom(3047);
     const positions = new Float32Array(count * 3);
@@ -386,21 +386,20 @@ function SceneRig() {
 
   return (
     <group ref={groupRef}>
-      <PremiumStarField />
-      <Sun />
       <AsteroidBelt />
       {PLANETS.map((planet, index) => (
-        <group
-          key={planet.name}
-          rotation={[
-            THREE.MathUtils.degToRad(planet.inclination),
-            THREE.MathUtils.degToRad(planet.node),
-            0,
-          ]}
-        >
-          <OrbitLine radius={planet.orbit} />
-          <Planet planet={planet} index={index} />
-        </group>
+        <Suspense key={planet.name} fallback={null}>
+          <group
+            rotation={[
+              THREE.MathUtils.degToRad(planet.inclination),
+              THREE.MathUtils.degToRad(planet.node),
+              0,
+            ]}
+          >
+            <OrbitLine radius={planet.orbit} />
+            <Planet planet={planet} index={index} />
+          </group>
+        </Suspense>
       ))}
       <MobileSignal />
     </group>
@@ -413,29 +412,33 @@ export default function GalaxyScene() {
       <Canvas
         camera={{ position: [150, 90, 250], fov: 42, near: 0.1, far: 3000 }}
         gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
-        dpr={[1, 1.5]}
+        dpr={[1, 1.25]}
       >
+        <color attach="background" args={['#010207']} />
+        <fog attach="fog" args={['#010207', 360, 1180]} />
+        <ambientLight intensity={0.22} />
+
+        <PremiumStarField />
         <Suspense fallback={null}>
-          <color attach="background" args={['#010207']} />
-          <fog attach="fog" args={['#010207', 360, 1180]} />
-          <ambientLight intensity={0.22} />
-          <SceneRig />
-          <OrbitControls
-            enablePan={false}
-            enableDamping
-            dampingFactor={0.045}
-            rotateSpeed={0.34}
-            zoomSpeed={0.62}
-            minDistance={74}
-            maxDistance={660}
-            target={[0, 0, 0]}
-            makeDefault
-          />
-          <EffectComposer multisampling={2}>
-            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.78} intensity={1.28} radius={0.72} />
-            <Vignette eskil={false} offset={0.18} darkness={0.72} />
-          </EffectComposer>
+          <Sun />
         </Suspense>
+
+        <SceneRig />
+        <OrbitControls
+          enablePan={false}
+          enableDamping
+          dampingFactor={0.045}
+          rotateSpeed={0.34}
+          zoomSpeed={0.62}
+          minDistance={74}
+          maxDistance={660}
+          target={[0, 0, 0]}
+          makeDefault
+        />
+        <EffectComposer multisampling={0}>
+          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.78} intensity={1.18} radius={0.68} />
+          <Vignette eskil={false} offset={0.18} darkness={0.72} />
+        </EffectComposer>
       </Canvas>
     </div>
   );

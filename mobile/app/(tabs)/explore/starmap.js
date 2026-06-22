@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { AppState, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
@@ -364,29 +364,40 @@ export default function StarMapScreen() {
 
     startHeading();
     let lastHudCommit = 0;
-    const viewCommitTimer = setInterval(() => {
-      starCanvasRef.current?.setView(lastHeading.current, lastTilt.current * 0.6);
+    let lastUpdateAt = 0;
+    let animationFrameId;
 
+    const tick = () => {
+      if (cancelled) return;
       const nowMs = Date.now();
-      if (nowMs - lastHudCommit < 1000) return;
-      lastHudCommit = nowMs;
-      setViewDirection({ heading: lastHeading.current, tilt: lastTilt.current });
-      setHeadingAccuracy((current) => (
-        current === lastHeadingAccuracy.current ? current : lastHeadingAccuracy.current
-      ));
-    }, 100);
-    Magnetometer.setUpdateInterval(66);
-    DeviceMotion.setUpdateInterval(66);
+      if (nowMs - lastUpdateAt >= 16) {
+        lastUpdateAt = nowMs;
+        starCanvasRef.current?.setView(lastHeading.current, lastTilt.current * 0.6);
+      }
+
+      if (nowMs - lastHudCommit >= 1000) {
+        lastHudCommit = nowMs;
+        setViewDirection({ heading: lastHeading.current, tilt: lastTilt.current });
+        setHeadingAccuracy((current) => (
+          current === lastHeadingAccuracy.current ? current : lastHeadingAccuracy.current
+        ));
+      }
+
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    animationFrameId = requestAnimationFrame(tick);
+
+    Magnetometer.setUpdateInterval(120);
+    DeviceMotion.setUpdateInterval(120);
     return () => {
       cancelled = true;
       headingSubscription?.remove();
       fallbackMagSub.remove();
       motionSub.remove();
-      clearInterval(viewCommitTimer);
+      cancelAnimationFrame(animationFrameId);
     };
   }, [appState, mode, screenOrientation]);
-
-  const selectedPurchase = selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
   const selectedHorizontal = selectedStar && observer
@@ -463,6 +474,59 @@ export default function StarMapScreen() {
     autoTrackingStartedRef.current = true;
     enableSensorMode();
   }, [loading, selectedStar, stars.length]);
+
+  const handleInteractionStateChange = useCallback((active) => {
+    interactionActiveRef.current = active;
+  }, []);
+
+  const handleCenterChange = useCallback(({ ra, dec }) => {
+    setMode('manual');
+    setCenterRa(normalizeAngle(ra));
+    setCenterDec(Math.max(-90, Math.min(90, dec)));
+  }, []);
+
+  const handleZoomChange = useCallback((nextZoom) => {
+    setMode('manual');
+    setZoom(nextZoom);
+  }, []);
+
+  const handleSelect = useCallback((star) => {
+    setSelectedStar(star);
+    setPopupVisible(false);
+  }, []);
+
+  const handleReady = useCallback((details) => {
+    canvasReadyDataRef.current = details;
+  }, []);
+
+  const handleTelemetry = useCallback(({ fps }) => {
+    if (!canvasReadyDataRef.current || !fps) return;
+    if (!diagnosticReportedRef.current) {
+      diagnosticReportedRef.current = true;
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'ready',
+        startupMs: Date.now() - openedAtRef.current,
+        fps,
+        mode,
+        ...canvasReadyDataRef.current,
+      });
+    }
+
+    lowFpsSamplesRef.current = fps < 25 ? lowFpsSamplesRef.current + 1 : 0;
+    const nowMs = Date.now();
+    if (lowFpsSamplesRef.current >= 3 && nowMs - lastLowFpsDiagnosticAtRef.current > 15000) {
+      lastLowFpsDiagnosticAtRef.current = nowMs;
+      lowFpsSamplesRef.current = 0;
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'low-fps',
+        fps,
+        mode,
+        ...canvasReadyDataRef.current,
+      });
+    }
+  }, [mode]);
 
   return (
     <View style={styles.container}>
@@ -567,65 +631,34 @@ export default function StarMapScreen() {
                 <StarCanvas
                   ref={starCanvasRef}
                   key={`sky-live-${loadAttempt}`}
-                stars={stars}
-                selectedStar={selectedStar}
-                centerRa={centerRa}
-                centerDec={centerDec}
-                zoom={zoom}
-                showConstellations={showConstellations}
-                showConstellationLabels={showConstellationLabels}
-                showConstellationBoundaries={showConstellationBoundaries}
-                showGrid={showGrid}
-                showLabels={showLabels}
-                showPlanets={showPlanets}
-                showDSOs={showDSOs}
-                constellations={constellations}
-                showMythology={showMythology}
-                coordinateMode={coordinateMode}
-                observerLatitude={observer?.latitude || 0}
-                lstDegrees={siderealTime}
-                hideBelowHorizon={false}
-                transparentBackground={false}
-                nightVision={nightVision}
-                showNebula={showNebula}
-                onInteractionStateChange={(active) => {
-                  interactionActiveRef.current = active;
-                }}
-                onCenterChange={({ ra, dec }) => { setMode('manual'); setCenterRa(normalizeAngle(ra)); setCenterDec(Math.max(-90, Math.min(90, dec))); }}
-                onZoomChange={(nextZoom) => { setMode('manual'); setZoom(nextZoom); }}
-                onSelect={(star) => { setSelectedStar(star); setPopupVisible(false); }}
-                ownedStarIds={ownedStarIds}
-                  onReady={(details) => {
-                    canvasReadyDataRef.current = details;
-                  }}
-                  onTelemetry={({ fps }) => {
-                    if (!canvasReadyDataRef.current || !fps) return;
-                    if (!diagnosticReportedRef.current) {
-                      diagnosticReportedRef.current = true;
-                      recordRenderDiagnostic({
-                        surface: '2d',
-                        status: 'ready',
-                        startupMs: Date.now() - openedAtRef.current,
-                        fps,
-                        mode,
-                        ...canvasReadyDataRef.current,
-                      });
-                    }
-
-                    lowFpsSamplesRef.current = fps < 25 ? lowFpsSamplesRef.current + 1 : 0;
-                    const nowMs = Date.now();
-                    if (lowFpsSamplesRef.current >= 3 && nowMs - lastLowFpsDiagnosticAtRef.current > 15000) {
-                      lastLowFpsDiagnosticAtRef.current = nowMs;
-                      lowFpsSamplesRef.current = 0;
-                      recordRenderDiagnostic({
-                        surface: '2d',
-                        status: 'low-fps',
-                        fps,
-                        mode,
-                        ...canvasReadyDataRef.current,
-                      });
-                    }
-                  }}
+                  stars={stars}
+                  selectedStar={selectedStar}
+                  centerRa={centerRa}
+                  centerDec={centerDec}
+                  zoom={zoom}
+                  showConstellations={showConstellations}
+                  showConstellationLabels={showConstellationLabels}
+                  showConstellationBoundaries={showConstellationBoundaries}
+                  showGrid={showGrid}
+                  showLabels={showLabels}
+                  showPlanets={showPlanets}
+                  showDSOs={showDSOs}
+                  constellations={constellations}
+                  showMythology={showMythology}
+                  coordinateMode={coordinateMode}
+                  observerLatitude={observer?.latitude || 0}
+                  lstDegrees={siderealTime}
+                  hideBelowHorizon={false}
+                  transparentBackground={false}
+                  nightVision={nightVision}
+                  showNebula={showNebula}
+                  onInteractionStateChange={handleInteractionStateChange}
+                  onCenterChange={handleCenterChange}
+                  onZoomChange={handleZoomChange}
+                  onSelect={handleSelect}
+                  ownedStarIds={ownedStarIds}
+                  onReady={handleReady}
+                  onTelemetry={handleTelemetry}
                 />
               </RenderSurfaceBoundary>
             )}
