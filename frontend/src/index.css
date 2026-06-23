@@ -71,9 +71,9 @@
     }
     .nebula-bg {
         background-image:
-          radial-gradient(ellipse at 15% 30%, rgba(123, 94, 167, 0.18), transparent 55%),
-          radial-gradient(ellipse at 85% 70%, rgba(77, 166, 255, 0.12), transparent 60%),
-          radial-gradient(ellipse at 50% 110%, rgba(201, 168, 76, 0.08), transparent 60%);
+          radial-gradient(ellipse at 15% 30%, rgba(123, 94, 167, 0.3), transparent 50%),
+          radial-gradient(ellipse at 85% 70%, rgba(77, 166, 255, 0.2), transparent 50%),
+          radial-gradient(ellipse at 50% 110%, rgba(201, 168, 76, 0.15), transparent 50%);
     }
     .divider-gold {
         height: 1px;
