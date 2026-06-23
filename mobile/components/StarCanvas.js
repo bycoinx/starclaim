@@ -76,6 +76,44 @@ function normalizeRaDelta(delta) {
   return value;
 }
 
+// Calculate parallax offset for a star based on its distance and view movement
+// Returns { raOffset, decOffset } in degrees to add to star's position
+function calculateParallaxOffset(star, prevRa, prevDec, currRa, currDec, layoutWidth, layoutHeight, zoomValue) {
+  'worklet';
+  // Get star distance in parsecs
+  const distanceParsec = getStarDistanceParsec(star);
+
+  // Calculate how much the view center has moved (in degrees)
+  const raMove = normalizeRaDelta(currRa - prevRa);
+  const decMove = currDec - prevDec;
+
+  // Convert view movement from degrees to pixels at current zoom
+  // Scale: pixels per degree = layoutWidth * zoomValue / 90 (approx, for small angles near equator)
+  const pixelsPerDegree = layoutWidth * zoomValue / 90;
+  const raMovePixels = raMove * pixelsPerDegree;
+  const decMovePixels = decMove * pixelsPerDegree;
+
+  // Parallax effect: closer stars appear to move more relative to distant ones
+  // We want the offset to be in the OPPOSITE direction of view movement
+  // Calculate normalized distance factor (closer = larger effect)
+  // Use a logarithmic curve to avoid extreme values for very close/distant stars
+  const normalizedDistance = Math.log(Math.max(distanceParsec, 1)) / Math.log(10000); // log(1)=0, log(10000)=~9.2
+  const distanceFactor = 1.0 - Math.min(normalizedDistance, 1.0); // 1 for close stars, 0 for distant
+
+  // Base parallax strength in pixels - aiming for 0.5-4px range as per document
+  const baseParallaxPixels = 2.0; // Medium strength
+
+  // Calculate parallax offset in pixels
+  const raOffsetPixels = -raMovePixels * distanceFactor * baseParallaxPixels;
+  const decOffsetPixels = -decMovePixels * distanceFactor * baseParallaxPixels;
+
+  // Convert back to degrees for application in project function
+  const raOffset = raOffsetPixels / pixelsPerDegree;
+  const decOffset = decOffsetPixels / pixelsPerDegree;
+
+  return { raOffset, decOffset };
+}
+
 function equatorialToHorizontal(raHours, decDegrees, latitudeDegrees, lstDegrees) {
   'worklet';
   const hourAngle = normalizeRaDelta(lstDegrees - raHours * 15) * Math.PI / 180;
@@ -150,6 +188,68 @@ function project(
   return { x: projected.x, y: projected.y, skyAltitude: null };
 }
 
+// Enhanced projection function with parallax effect for stars
+function projectWithParallax(
+  star,
+  starRa,
+  starDec,
+  centerRa,
+  centerDec,
+  width,
+  height,
+  zoom,
+  coordinateMode,
+  observerLatitude,
+  lstDegrees,
+) {
+  'worklet';
+  // Calculate parallax offset based on view movement
+  const parallaxOffset = calculateParallaxOffset(
+    star,
+    prevRaRef.current,
+    prevDecRef.current,
+    centerRa,
+    centerDec,
+    width,
+    height,
+    zoom
+  );
+
+  // Apply parallax offset to star's position
+  const adjustedRa = normalizeRaDelta(starRa + parallaxOffset.raOffset);
+  const adjustedDec = starDec + parallaxOffset.decOffset;
+
+  // Project using adjusted position
+  if (coordinateMode === 'horizontal') {
+    const horizontal = equatorialToHorizontal(
+      adjustedRa,
+      adjustedDec,
+      observerLatitude,
+      lstDegrees,
+    );
+    const projected = projectDegrees(
+      horizontal.az,
+      horizontal.alt,
+      centerRa,
+      centerDec,
+      width,
+      height,
+      zoom,
+    );
+    return { x: projected.x, y: projected.y, skyAltitude: horizontal.alt };
+  }
+  const projected = projectDegrees(
+    adjustedRa * 15,
+    adjustedDec,
+    centerRa,
+    centerDec,
+    width,
+    height,
+    zoom,
+  );
+  return { x: projected.x, y: projected.y, skyAltitude: null };
+}
+
 function magnitudeLimitForZoom(zoom) {
   if (zoom < 0.8) return 6.2;
   if (zoom < 1.5) return 7.2;
@@ -203,44 +303,46 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
     layout.width * (0.28 + Math.sin(deg2rad(ra.value)) * 0.18),
     layout.height * (0.38 + Math.max(-1, Math.min(1, dec.value / 90)) * 0.16),
   ));
-  const violetCenter = useDerivedValue(() => vec(
+  const purpleCenter = useDerivedValue(() => vec(
     layout.width * (0.72 + Math.cos(deg2rad(ra.value * 0.62)) * 0.16),
     layout.height * (0.62 - Math.max(-1, Math.min(1, dec.value / 90)) * 0.12),
   ));
-  const bandStart = useDerivedValue(() => vec(
-    -layout.width * 0.2 + Math.sin(deg2rad(ra.value * 0.35)) * layout.width * 0.12,
-    layout.height * 0.18,
+  const navyCenter = useDerivedValue(() => vec(
+    layout.width * (0.5 + Math.sin(deg2rad(ra.value * 0.4)) * 0.1),
+    layout.height * (0.5 + Math.cos(deg2rad(dec.value * 0.3)) * 0.1),
   ));
-  const bandEnd = useDerivedValue(() => vec(
-    layout.width * 1.2 + Math.sin(deg2rad(ra.value * 0.35)) * layout.width * 0.12,
-    layout.height * 0.84,
-  ));
-  const opacity = qualityLevel === 'low' ? 0.2 : qualityLevel === 'medium' ? 0.28 : 0.34;
+
+  // Very subtle nebula - only 5% opacity as per document
+  const nebulaOpacity = 0.05;
+
   return (
-    <Group opacity={opacity}>
+    <Group opacity={nebulaOpacity}>
+      {/* Very light blue nebula */}
       <Rect x={0} y={0} width={layout.width} height={layout.height}>
         <RadialGradient
           c={blueCenter}
-          r={layout.width * 0.72}
-          colors={['rgba(25,64,125,0.48)', 'rgba(5,16,42,0.16)', 'rgba(0,0,0,0)']}
+          r={layout.width * 0.8}
+          colors={['rgba(30, 60, 120, 0.03)', 'rgba(10, 20, 40, 0.01)', 'rgba(0,0,0,0)']}
         />
       </Rect>
+
+      {/* Very light purple nebula */}
       <Rect x={0} y={0} width={layout.width} height={layout.height}>
         <RadialGradient
-          c={violetCenter}
-          r={layout.width * 0.62}
-          colors={['rgba(78,43,112,0.32)', 'rgba(13,12,39,0.12)', 'rgba(0,0,0,0)']}
+          c={purpleCenter}
+          r={layout.width * 0.7}
+          colors={['rgba(60, 30, 80, 0.025)', 'rgba(20, 10, 30, 0.005)', 'rgba(0,0,0,0)']}
         />
       </Rect>
-      {qualityLevel !== 'low' && (
-        <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.18}>
-          <LinearGradient
-            start={bandStart}
-            end={bandEnd}
-            colors={['rgba(0,0,0,0)', 'rgba(92,116,168,0.32)', 'rgba(0,0,0,0)']}
-          />
-        </Rect>
-      )}
+
+      {/* Very light navy nebula */}
+      <Rect x={0} y={0} width={layout.width} height={layout.height}>
+        <RadialGradient
+          c={navyCenter}
+          r={layout.width * 0.6}
+          colors={['rgba(10, 20, 60, 0.02)', 'rgba(5, 10, 20, 0.005)', 'rgba(0,0,0,0)']}
+        />
+      </Rect>
     </Group>
   );
 }
@@ -281,15 +383,21 @@ function MilkyWayDensity({
     });
     return result;
   });
-  const strength = qualityLevel === 'low' ? 0.34 : qualityLevel === 'medium' ? 0.48 : 0.58;
-  const widthScale = qualityLevel === 'low' ? 0.78 : qualityLevel === 'medium' ? 0.9 : 1;
+
+  // Milky Way at 10-15% opacity as per document (using 12%)
+  const milkyWayOpacity = 0.12;
+  const widthScale = qualityLevel === 'low' ? 0.6 : qualityLevel === 'medium' ? 0.8 : 1;
 
   return (
-    <Group opacity={nightVision ? strength * 0.32 : strength}>
-      <Path path={path} color={nightVision ? '#300607' : '#10244A'} style="stroke" strokeWidth={170 * widthScale} strokeCap="round" opacity={0.3} />
-      <Path path={path} color={nightVision ? '#4A0909' : '#263B72'} style="stroke" strokeWidth={105 * widthScale} strokeCap="round" opacity={0.25} />
-      <Path path={path} color={nightVision ? '#651010' : '#755D86'} style="stroke" strokeWidth={58 * widthScale} strokeCap="round" opacity={0.2} />
-      <Path path={path} color={nightVision ? '#140000' : '#020713'} style="stroke" strokeWidth={15 * widthScale} strokeCap="round" opacity={0.5} />
+    <Group opacity={milkyWayOpacity}>
+      {/* Main Milky Way band - very subtle */}
+      <Path path={path} color='#1A1A2E' style="stroke" strokeWidth={80 * widthScale} strokeCap="round" opacity={0.4} />
+      <Path path={path} color='#16213E' style="stroke" strokeWidth={60 * widthScale} strokeCap="round" opacity={0.3} />
+      <Path path={path} color='#0F3460' style="stroke" strokeWidth={40 * widthScale} strokeCap="round" opacity={0.2} />
+
+      {/* Very subtle glow */}
+      <Path path={path} color='#533483' style="stroke" strokeWidth={120 * widthScale} strokeCap="round" opacity={0.08} />
+      <Path path={path} color='#7209B7' style="stroke" strokeWidth={100 * widthScale} strokeCap="round" opacity={0.05} />
     </Group>
   );
 }
@@ -352,6 +460,8 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const [dsoData, setDsoData] = useState([]);
   const [virtualCenter, setVirtualCenter] = useState({ ra: initialRa, dec: initialDec });
   const virtualCenterRef = useRef({ ra: initialRa, dec: initialDec });
+  // For parallax effect: track reference center to calculate movement
+  const refCenterRef = useRef({ ra: initialRa, dec: initialDec });
 
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
@@ -366,6 +476,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
+  // For parallax effect: track previous center to calculate movement delta
+  const prevRaRef = useRef(initialRa);
+  const prevDecRef = useRef(initialDec);
   const qualityRef = useRef({ level: 'high', maximum: 'high', lowSamples: 0, highSamples: 0 });
 
   useImperativeHandle(ref, () => ({
@@ -466,6 +579,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       lastVisualTickRef.current = now;
       time.value = now / 1000;
     }
+    // Update previous center values for parallax calculation
+    prevRaRef.current = ra.value;
+    prevDecRef.current = dec.value;
   }, active);
 
   useEffect(() => {
@@ -890,7 +1006,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
           <Canvas style={styles.canvas}>
             {!transparentBackground && (
               <Rect x={0} y={0} width={layout.width} height={layout.height}>
-                <RadialGradient c={vec(layout.width / 2, layout.height / 2)} r={layout.width * 1.25} colors={nightVision ? ['#160000', '#000000'] : ['#071329', '#020713', '#000105']} />
+                <RadialGradient
+                  c={vec(layout.width / 2, layout.height / 2)}
+                  r={layout.width * 1.25}
+                  colors={['#02050A', '#000000', '#000000']}
+                />
               </Rect>
             )}
 
@@ -1012,6 +1132,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
             {showPlanets && visiblePlanets.map((planet) => (
               <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
+
+            {/* Shooting star effect */}
+            <ShootingStar time={time} layout={layout} />
 
             {selectedStar && (
               <Group opacity={selectedOpacity}>
@@ -1424,7 +1547,8 @@ const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom
         && Number.isFinite(star.horizontalAz)
         && Number.isFinite(star.horizontalAlt)
         ? {
-          ...projectDegrees(
+          ...projectWithParallax(
+            star,
             star.horizontalAz,
             star.horizontalAlt,
             ra.value,
@@ -1435,7 +1559,8 @@ const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom
           ),
           skyAltitude: star.horizontalAlt,
         }
-        : project(
+        : projectWithParallax(
+          star,
           star.ra,
           star.dec,
           ra.value,
@@ -1488,10 +1613,28 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
   const isBrightStar = Number(star.mag) <= 2;
 
+  // Add slight uniqueness to each star based on its ID for premium feel
+  const starSeed = parseFloat(star.id || 0);
+  const starUniqueOffset = (starSeed % 97) / 1000; // Value between 0-0.096
+  const starUniqueScale = 0.95 + (starSeed % 13) / 100; // Value between 0.95-1.07
+  const starUniqueHue = (starSeed % 31) / 100; // Value between 0-0.31 for subtle hue shift
+
   // Pre-calculate star position when dependencies change
   const starPosition = useMemo(() => {
     'worklet';
-    const p = project(star.ra, star.dec, ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees);
+    const p = projectWithParallax(
+      star,
+      star.ra,
+      star.dec,
+      ra.value,
+      dec.value,
+      layout.width,
+      layout.height,
+      zoom.value,
+      coordinateMode,
+      observerLatitude,
+      lstDegrees,
+    );
     const isVisible = p.x > -30 && p.x < layout.width + 30 && p.y > -30 && p.y < layout.height + 30 && (!hideBelowHorizon || p.skyAltitude == null || p.skyAltitude >= 0);
     const opacity = qualityLevel === 'low' ? 0.92 : 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
     return {
@@ -1518,10 +1661,53 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   const labelOpacity = useDerivedValue(() => labelVisible.value ? 1 : 0);
   const detailLabelOpacity = useDerivedValue(() => labelVisible.value && zoom.value > 4 ? 0.5 : 0);
 
+  // Enhanced star color with slight uniqueness
+  const enhancedStarColor = useMemo(() => {
+    if (nightVision) return '#FF514A';
+
+    // Parse the original color
+    let color = star.color;
+    if (color.startsWith('rgba')) {
+      // Already has alpha, return as is for night vision compatibility
+      return color;
+    }
+
+    // Add subtle color variation based on star properties for uniqueness
+    // This makes each star slightly different while maintaining spectral accuracy
+    const baseColor = color;
+
+    // For premium feel, add tiny variations to make each star unique
+    // We'll modify the color slightly in HSL space, then convert back
+    // But for simplicity, we'll do a slight RGB shift based on star ID
+
+    // Extract RGB values from hex color
+    let r = 0, g = 0, b = 0;
+    if (color.length === 7) {
+      r = parseInt(color.substring(1, 3), 16);
+      g = parseInt(color.substring(3, 5), 16);
+      b = parseInt(color.substring(5, 7), 16);
+    }
+
+    // Apply subtle unique variation (±3% for each channel)
+    const variation = starUniqueOffset * 0.06; // ±3%
+    r = Math.min(255, Math.max(0, r + (r * variation * (starSeed % 2 ? 1 : -1))));
+    g = Math.min(255, Math.max(0, g + (g * variation * ((starSeed + 1) % 2 ? 1 : -1))));
+    b = Math.min(255, Math.max(0, b + (b * variation * ((starSeed + 2) % 2 ? 1 : -1))));
+
+    // Convert back to hex
+    const toHex = (n) => n.toString(16).padStart(2, '0');
+    return `#${toHex(Math.round(r))}${toHex(Math.round(g))}${toHex(Math.round(b))}`;
+  }, [star.color, nightVision, starUniqueOffset, starSeed]);
+
   const haloRadius = Math.max(8, star.radius * 4.2);
   const haloColors = nightVision
     ? ['rgba(255,105,97,0.5)', 'rgba(255,74,66,0)']
-    : [`${star.color}88`, `${star.color}22`, 'rgba(0,0,0,0)'];
+    : [
+        // Slightly enhanced halo with lens bloom effect
+        `${enhancedStarColor}88`, // Inner halo
+        `${enhancedStarColor}22`, // Middle halo
+        'rgba(0,0,0,0)'           // Outer transparent
+      ];
 
   const labelX = useDerivedValue(() => starPosition.value.x + star.radius + 6);
   const labelY1 = useDerivedValue(() => starPosition.value.y - star.radius - 4);
@@ -1530,35 +1716,98 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   return (
     <Group opacity={groupOpacity}>
       {isBrightStar && qualityLevel !== 'low' && (
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={haloRadius}
-          opacity={nightVision ? 0.18 : 0.34}
-        >
-          <RadialGradient
-            c={haloCenter}
+        <>
+          {/* Enhanced glow effect for bright stars */}
+          <Circle
+            cx={cx}
+            cy={cy}
+            r={haloRadius * 1.2}
+            opacity={nightVision ? 0.12 : 0.2}
+          >
+            <RadialGradient
+              c={haloCenter}
+              r={haloRadius * 1.2}
+              colors={[
+                `${enhancedStarColor}33`, // Very subtle outer glow
+                `${enhancedStarColor}00`, // Transparent edge
+              ]}
+            />
+          </Circle>
+
+          {/* Main halo with lens bloom effect */}
+          <Circle
+            cx={cx}
+            cy={cy}
             r={haloRadius}
-            colors={haloColors}
-          />
-        </Circle>
+            opacity={nightVision ? 0.18 : 0.34}
+          >
+            <RadialGradient
+              c={haloCenter}
+              r={haloRadius}
+              colors={haloColors}
+            />
+          </Circle>
+
+          {/* Very low level diffraction spike for bright stars */}
+          {/* Only visible on very bright stars (mag < 1.5) and only at higher zoom */}
+          {Number(star.mag) < 1.5 && zoom.value > 2 && (
+            <>
+              {/* Vertical spike */}
+              <Line
+                p1={{ x: cx, y: cy - haloRadius * 0.8 }}
+                p2={{ x: cx, y: cy + haloRadius * 0.8 }}
+                strokeWidth={0.5}
+                color={nightVision ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)'}
+                opacity={0.3}
+              />
+              {/* Horizontal spike */}
+              <Line
+                p1={{ x: cx - haloRadius * 0.8, y: cy }}
+                p2={{ x: cx + haloRadius * 0.8, y: cy }}
+                strokeWidth={0.5}
+                color={nightVision ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)'}
+                opacity={0.3}
+              />
+              {/* Diagonal spikes */}
+              <Line
+                p1={{ x: cx - haloRadius * 0.6, y: cy - haloRadius * 0.6 }}
+                p2={{ x: cx + haloRadius * 0.6, y: cy + haloRadius * 0.6 }}
+                strokeWidth={0.3}
+                color={nightVision ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'}
+                opacity={0.2}
+              />
+              <Line
+                p1={{ x: cx + haloRadius * 0.6, y: cy - haloRadius * 0.6 }}
+                p2={{ x: cx - haloRadius * 0.6, y: cy + haloRadius * 0.6 }}
+                strokeWidth={0.3}
+                color={nightVision ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'}
+                opacity={0.2}
+              />
+            </>
+          )}
+        </>
       )}
+
+      {/* Main star body with unique color */}
       <Circle
         cx={cx}
         cy={cy}
-        r={star.radius}
-        color={star.color}
+        r={star.radius * starUniqueScale}
+        color={enhancedStarColor}
         opacity={opacity}
       />
+
+      {/* Inner bright core */}
       {isBrightStar && (
         <Circle
           cx={cx}
           cy={cy}
-          r={Math.max(0.65, star.radius * 0.34)}
+          r={Math.max(0.5, star.radius * 0.25)}
           color={nightVision ? '#FFD4D0' : '#FFFFFF'}
-          opacity={0.96}
+          opacity={0.8}
         />
       )}
+
       {star.owned && (
         <Circle
           cx={cx}
@@ -1765,6 +2014,116 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
           />
         </Group>
       )}
+    </Group>
+  );
+}
+
+// Shooting star effect for premium feel
+function ShootingStar({ time, layout }) {
+  // Create a shooting star every 90 seconds on average
+  const shootingStarTime = useDerivedValue(() => {
+    // Use star field as seed for deterministic but seemingly random shooting stars
+    const baseTime = 90000; // 90 seconds in ms
+    const cycleTime = (time.value * 1000) % baseTime;
+    return cycleTime < 100; // Active for 100ms every 90 seconds
+  });
+
+  const [showStar, setShowStar] = useState(false);
+  const [starProgress, setStarProgress] = useState(0);
+  const [starX, setStarX] = useState(0);
+  const [starY, setStarY] = useState(0);
+  const [starLength, setStarLength] = useState(0);
+  const [starAngle, setStarAngle] = useState(0);
+
+  useEffect(() => {
+    if (shootingStarTime.value) {
+      // Randomly decide to show a shooting star
+      if (Math.random() < 0.02) { // 2% chance each frame when timing is right
+        setShowStar(true);
+        // Random position across the sky
+        setStarX(Math.random() * layout.width);
+        setStarY(Math.random() * layout.height * 0.8); // Mostly in upper 80% of sky
+        // Random length and angle
+        setStarLength(80 + Math.random() * 120); // 80-200px length
+        setStarAngle(Math.random() * Math.PI * 2); // Random angle
+        setStarProgress(0);
+      }
+    }
+
+    if (showStar) {
+      // Animate the shooting star
+      const timer = setInterval(() => {
+        setStarProgress(prev => {
+          const next = prev + 0.02; // Adjust speed as needed
+          if (next >= 1) {
+            setShowStar(false);
+            return 0;
+          }
+          return next;
+        });
+      }, 16); // ~60fps
+
+      return () => clearInterval(timer);
+    }
+  }, [showStar, shootingStarTime.value, layout.width, layout.height]);
+
+  if (!showStar) return null;
+
+  // Calculate current position based on progress
+  const progress = Math.min(1, starProgress);
+  const easeOut = 1 - Math.pow(1 - progress, 3); // Smooth easing
+  const currentLength = starLength * easeOut;
+  const endX = starX + Math.cos(starAngle) * currentLength;
+  const endY = starY + Math.sin(starAngle) * currentLength;
+
+  // Create fading tail effect
+  const tailLength = 20;
+  const tailSegments = 5;
+
+  return (
+    <Group>
+      {/* Main shooting star line */}
+      <Line
+        p1={{ x: starX, y: starY }}
+        p2={{ x: endX, y: endY }}
+        strokeWidth={2}
+        color="#FFFFFF"
+        opacity={0.8}
+      />
+
+      {/* Tail segments for fading effect */}
+      {[...Array(tailSegments)].map((_, i) => {
+        const segmentProgress = i / tailSegments;
+        const segmentStart = {
+          x: starX + Math.cos(starAngle) * (currentLength * (1 - segmentProgress) - tailLength),
+          y: starY + Math.sin(starAngle) * (currentLength * (1 - segmentProgress) - tailLength)
+        };
+        const segmentEnd = {
+          x: starX + Math.cos(starAngle) * (currentLength * (1 - segmentProgress)),
+          y: starY + Math.sin(starAngle) * (currentLength * (1 - segmentProgress))
+        };
+
+        const segmentOpacity = 0.3 * (1 - segmentProgress);
+        return (
+          <Line
+            key={i}
+            p1={segmentStart}
+            p2={segmentEnd}
+            strokeWidth={1}
+            color="#FFFFFF"
+            opacity={segmentOpacity}
+          );
+        );
+      })}
+
+      {/* Bright head */}
+      <Circle
+        cx={endX}
+        cy={endY}
+        r={1.5}
+        color="#FFFFFF"
+        opacity={0.9}
+      />
     </Group>
   );
 }
