@@ -695,7 +695,15 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       else regularStars.push(prepared);
     });
 
-    regularStars.sort((a, b) => Number(a.mag) - Number(b.mag));
+    // Sort regular stars by magnitude (brightest first), handling invalid values
+    regularStars.sort((a, b) => {
+      const magA = Number(a.mag);
+      const magB = Number(b.mag);
+      // Treat invalid magnitudes as infinity so they appear at the end
+      const safeA = isNaN(magA) ? Infinity : magA;
+      const safeB = isNaN(magB) ? Infinity : magB;
+      return safeA - safeB;
+    });
     return [...importantStars, ...regularStars.slice(0, poolLimit)];
   }, [
     initialZoom,
