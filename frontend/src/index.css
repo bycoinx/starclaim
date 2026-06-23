@@ -36,7 +36,7 @@
     body {
         margin: 0;
         font-family: 'DM Sans', sans-serif;
-        background: #050A1A;
+        background: #050814;
         color: #F0F4FF;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
@@ -71,9 +71,9 @@
     }
     .nebula-bg {
         background-image:
-          radial-gradient(ellipse at 15% 30%, rgba(123, 94, 167, 0.3), transparent 50%),
-          radial-gradient(ellipse at 85% 70%, rgba(77, 166, 255, 0.2), transparent 50%),
-          radial-gradient(ellipse at 50% 110%, rgba(201, 168, 76, 0.15), transparent 50%);
+          radial-gradient(ellipse at 15% 25%, rgba(122, 92, 255, 0.15), transparent 45%),
+          radial-gradient(ellipse at 80% 75%, rgba(77, 124, 255, 0.1), transparent 45%),
+          radial-gradient(ellipse at 50% 90%, rgba(212, 175, 55, 0.08), transparent 45%);
     }
     .divider-gold {
         height: 1px;
@@ -155,5 +155,19 @@ a[href*="emergent.sh"] {
 /* Ensure CTA visibility */
 [data-testid="nav-claim-cta"] {
     z-index: 60 !important;
+}
+
+/* Nebula opacity pulse for gentle shifts */
+.nebula-bg {
+    animation: nebulaPulse 80s ease-in-out infinite;
+}
+
+@keyframes nebulaPulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
 }
 

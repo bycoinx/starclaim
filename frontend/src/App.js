@@ -164,7 +164,7 @@ function AppShell() {
   return (
     <>
       {!isCosmosRoute && (
-        <div className="fixed inset-0 z-0 pointer-events-none nebula-bg opacity-20">
+        <div className="fixed inset-0 z-0 pointer-events-none nebula-bg">
           <StarCanvas density={500} />
         </div>
       )}
