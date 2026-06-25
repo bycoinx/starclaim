@@ -75,6 +75,51 @@
           radial-gradient(ellipse at 80% 75%, rgba(77, 124, 255, 0.1), transparent 45%),
           radial-gradient(ellipse at 50% 90%, rgba(212, 175, 55, 0.08), transparent 45%);
     }
+    .hero-cosmos-shell {
+        background: #03040A;
+        isolation: isolate;
+    }
+    .hero-cosmos-image {
+        z-index: 0;
+        background-image:
+          linear-gradient(180deg, rgba(3, 4, 10, 0.1), rgba(3, 4, 10, 0.18) 52%, rgba(3, 4, 10, 0.58)),
+          var(--hero-space-image);
+        background-size: cover;
+        background-position: center;
+        transform: scale(1.035);
+        animation: heroCosmicDrift 90s ease-in-out infinite alternate;
+        will-change: transform;
+    }
+    .hero-cosmos-nebula {
+        z-index: 1;
+        background-image:
+          radial-gradient(ellipse at 17% 38%, rgba(77, 124, 255, 0.18), transparent 42%),
+          radial-gradient(ellipse at 78% 42%, rgba(122, 92, 255, 0.17), transparent 38%),
+          radial-gradient(ellipse at 48% 86%, rgba(245, 217, 122, 0.09), transparent 35%);
+        mix-blend-mode: screen;
+        opacity: 0.65;
+        animation: heroNebulaBreath 42s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+    .hero-cosmos-contrast {
+        z-index: 3;
+        background:
+          radial-gradient(ellipse at 50% 46%, rgba(3, 4, 10, 0.16) 0%, rgba(3, 4, 10, 0.22) 31%, rgba(3, 4, 10, 0.56) 72%, rgba(3, 4, 10, 0.82) 100%),
+          linear-gradient(90deg, rgba(3, 4, 10, 0.32), rgba(3, 4, 10, 0.06) 32%, rgba(3, 4, 10, 0.06) 68%, rgba(3, 4, 10, 0.36)),
+          linear-gradient(180deg, rgba(3, 4, 10, 0.5) 0%, transparent 18%, transparent 70%, rgba(3, 4, 10, 0.7) 100%);
+        pointer-events: none;
+    }
+    .hero-kicker {
+        box-shadow: 0 0 28px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(245, 217, 122, 0.18);
+    }
+    .hero-title-cosmic {
+        display: inline-block;
+        background: linear-gradient(105deg, #FFFFFF 0%, #BFE2FF 35%, #A994FF 68%, #F5D97A 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 34px rgba(128, 172, 255, 0.28), 0 10px 44px rgba(0, 0, 0, 0.9);
+    }
     .divider-gold {
         height: 1px;
         background: linear-gradient(90deg, transparent, rgba(201,168,76,0.6), transparent);
@@ -171,3 +216,42 @@ a[href*="emergent.sh"] {
     }
 }
 
+@keyframes heroCosmicDrift {
+    0% {
+        transform: scale(1.035) translate3d(-0.35%, -0.25%, 0);
+    }
+    100% {
+        transform: scale(1.055) translate3d(0.35%, 0.25%, 0);
+    }
+}
+
+@keyframes heroNebulaBreath {
+    0% {
+        opacity: 0.48;
+        transform: translate3d(-3px, 0, 0);
+    }
+    100% {
+        opacity: 0.72;
+        transform: translate3d(3px, -2px, 0);
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-cosmos-image {
+        background-position: 50% center;
+        transform: scale(1.08);
+    }
+    .hero-cosmos-contrast {
+        background:
+          radial-gradient(ellipse at 50% 47%, rgba(3, 4, 10, 0.28) 0%, rgba(3, 4, 10, 0.38) 48%, rgba(3, 4, 10, 0.78) 100%),
+          linear-gradient(180deg, rgba(3, 4, 10, 0.58) 0%, transparent 24%, transparent 64%, rgba(3, 4, 10, 0.76) 100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-cosmos-image,
+    .hero-cosmos-nebula,
+    .nebula-bg {
+        animation: none;
+    }
+}

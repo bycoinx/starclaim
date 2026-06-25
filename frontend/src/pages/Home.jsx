@@ -88,18 +88,26 @@ export default function Home({ onOpenClaim, stats }) {
   const [email, setEmail] = useState("");
 
   return (
-    <div className="bg-black relative">
+    <div className="bg-[#03040A] relative">
       {/* GLOBAL STAR STREAM */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-60">
-        <StarCanvas density={600} />
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-45">
+        <StarCanvas density={420} />
       </div>
 
       {/* HERO - AEGIS REFINED */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden z-10">
-        <div className="absolute inset-0 nebula-bg opacity-30" />
+      <section
+        className="hero-cosmos-shell relative min-h-screen flex items-center justify-center overflow-hidden z-10"
+        style={{ "--hero-space-image": "url('/images/hero-space.webp')" }}
+      >
+        <div className="absolute inset-0 hero-cosmos-image" />
+        <div className="absolute inset-0 hero-cosmos-nebula" />
+        <div className="absolute inset-0 hero-cosmos-contrast" />
+        <div className="absolute inset-0 z-[2] pointer-events-none opacity-60 mix-blend-screen">
+          <StarCanvas density={260} />
+        </div>
         
         {/* SUBTLE HUD OVERLAYS */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 z-[3] pointer-events-none">
           <div className="absolute top-32 left-8 opacity-20 scale-75 origin-top-left">
             <div className="text-[9px] font-mono text-cyan-400 uppercase tracking-[0.3em]">System.Aegis_v5.0</div>
             <div className="w-20 h-[1px] bg-cyan-400/50 mt-1" />
@@ -110,16 +118,16 @@ export default function Home({ onOpenClaim, stats }) {
           </div>
         </div>
 
-        <div className="relative text-center px-6 max-w-5xl mx-auto pt-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sc-gold/20 bg-sc-gold/5 text-[10px] tracking-[0.3em] uppercase text-sc-gold/80 mb-10 animate-fade-up">
+        <div className="relative z-[4] text-center px-6 max-w-6xl mx-auto pt-20">
+          <div className="hero-kicker inline-flex items-center gap-2 px-4 py-2 rounded-full border border-sc-gold/30 bg-black/35 text-[10px] tracking-[0.32em] uppercase text-sc-gold mb-10 animate-fade-up backdrop-blur-md">
             <ShieldCheck className="w-3 h-3" /> {lang === "TR" ? "Kuantum Güvenlikli Hafıza Platformu" : "Quantum-Safe Memory Platform"}
           </div>
           
-          <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl leading-[1.1] tracking-tight mb-10 animate-fade-up">
-            <span className="gold-gradient-text uppercase">{t("hero_title")}</span>
+          <h1 className="font-display text-5xl sm:text-6xl lg:text-8xl leading-[1.05] tracking-tight mb-10 animate-fade-up">
+            <span className="hero-title-cosmic uppercase whitespace-pre-line">{t("hero_title")}</span>
           </h1>
           
-          <p className="text-sc-text/70 text-lg md:text-xl max-w-2xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed" style={{ animationDelay: "200ms" }}>
+          <p className="text-sc-text/80 text-lg md:text-xl max-w-2xl mx-auto mb-14 font-accent italic animate-fade-up leading-relaxed drop-shadow-[0_2px_16px_rgba(0,0,0,0.85)]" style={{ animationDelay: "200ms" }}>
             {t("hero_sub")}
           </p>
           
@@ -137,7 +145,7 @@ export default function Home({ onOpenClaim, stats }) {
           </div>
         </div>
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 text-sc-text-muted/40 text-[9px] tracking-[0.5em] font-display">
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[4] text-sc-text-muted/45 text-[9px] tracking-[0.5em] font-display">
           EST. 2026 · SCROLL
         </div>
       </section>

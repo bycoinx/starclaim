@@ -154,8 +154,8 @@ export default function StarCanvas({ density = 320, className = "" }) {
         d.y += d.vy;
 
         // Apply camera drift (subtract because camera movement creates opposite apparent motion)
-        const drawDx = d.x - driftOffsetX;
-        const drawDy = d.y - driftOffsetY;
+        let drawDx = d.x - driftOffsetX;
+        let drawDy = d.y - driftOffsetY;
 
         // Wrap around
         if (drawDx < -10) drawDx = clientWidth + 10;
@@ -230,4 +230,3 @@ export default function StarCanvas({ density = 320, className = "" }) {
     />
   );
 }
-
