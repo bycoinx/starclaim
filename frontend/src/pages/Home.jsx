@@ -97,7 +97,10 @@ export default function Home({ onOpenClaim, stats }) {
       {/* HERO - AEGIS REFINED */}
       <section
         className="hero-cosmos-shell relative min-h-screen flex items-center justify-center overflow-hidden z-10"
-        style={{ "--hero-space-image": "url('/images/hero-space.webp')" }}
+        style={{
+          "--hero-space-image": "image-set(url('/images/hero-space-desktop.webp') 1x, url('/images/hero-space.webp') 2x)",
+          "--hero-space-mobile-image": "url('/images/hero-space-mobile.webp')",
+        }}
       >
         <div className="absolute inset-0 hero-cosmos-image" />
         <div className="absolute inset-0 hero-cosmos-nebula" />

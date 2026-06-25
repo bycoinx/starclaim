@@ -239,6 +239,9 @@ a[href*="emergent.sh"] {
 @media (max-width: 768px) {
     .hero-cosmos-image {
         background-position: 50% center;
+        background-image:
+          linear-gradient(180deg, rgba(3, 4, 10, 0.14), rgba(3, 4, 10, 0.24) 50%, rgba(3, 4, 10, 0.68)),
+          var(--hero-space-mobile-image);
         transform: scale(1.08);
     }
     .hero-cosmos-contrast {
