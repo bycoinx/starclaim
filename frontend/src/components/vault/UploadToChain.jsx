@@ -92,9 +92,6 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
       setProgress(10);
       setStatus('preparing');
       
-      const arrayBuffer = await encryptedBlob.arrayBuffer();
-      const encryptedData = Array.from(new Uint8Array(arrayBuffer));
-      
       // Step 2: Upload to Arweave
       setProgress(30);
       setStatus('uploading');

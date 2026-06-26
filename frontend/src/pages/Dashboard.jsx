@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../lib/api";
@@ -51,7 +51,7 @@ export default function Dashboard() {
     }
   };
 
-  const refreshData = () => {
+  const refreshData = useCallback(() => {
     if (!user) return;
     setFetching(true);
     
@@ -65,13 +65,13 @@ export default function Dashboard() {
       console.error("Dashboard fetch error:", err);
       toast.error(lang === "TR" ? "Veriler yüklenemedi." : "Data could not be loaded.");
     }).finally(() => setFetching(false));
-  };
+  }, [lang, user]);
 
   useEffect(() => {
     if (loading) return;
     if (!user) { setFetching(false); return; }
     refreshData();
-  }, [user, loading]);
+  }, [user, loading, refreshData]);
 
   const downloadCertificate = async (star) => {
     if (!star.order_id) {
@@ -255,7 +255,7 @@ export default function Dashboard() {
 
                     <h3 className="font-display text-2xl mb-2 gold-gradient-text tracking-tight">{s.custom_name || s.name}</h3>
                     <div className="text-[11px] text-sc-text-muted mb-4 font-mono tracking-wider flex items-center gap-2">
-                      <Globe size={10} /> {s.name} // {s.constellation.toUpperCase()}
+                      <Globe size={10} /> {s.name} {"//"} {s.constellation.toUpperCase()}
                     </div>
 
                     {s.personal_message && (
@@ -318,13 +318,13 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <div className="text-[10px] tracking-[0.2em] text-sc-gold font-bold uppercase mb-1">
-                        ORDER_ID: {o.order_id} // {new Date(o.created_at).toLocaleDateString()}
+                        ORDER_ID: {o.order_id} {"//"} {new Date(o.created_at).toLocaleDateString()}
                       </div>
                       <div className="font-display text-xl text-sc-text">
                         {o.package.toUpperCase()} · {o.star_code}
                       </div>
                       <div className="text-xs text-sc-text-muted mt-1">
-                        Amount: ${o.amount} // {o.gift ? "GIFT_ORDER" : "PERSONAL_CLAIM"}
+                        Amount: ${o.amount} {"//"} {o.gift ? "GIFT_ORDER" : "PERSONAL_CLAIM"}
                       </div>
                     </div>
                   </div>

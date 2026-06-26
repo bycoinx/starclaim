@@ -76,7 +76,7 @@ function PageLoading() {
 }
 
 function AppShell() {
-  const { lang, t } = useT();
+  const { lang } = useT();
   const location = useLocation();
   const isCosmosRoute = location.pathname === "/cosmos";
   const [checkoutOpen, setCheckoutOpen] = useState(false);

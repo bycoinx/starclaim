@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [newNews, setNewNews] = useState({ title: "", content: "", image_url: "", category: "announcement" });
   const [newConfig, setNewConfig] = useState({ key: "", value: "", description: "" });
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setFetching(true);
     try {
       const [statsRes, ordersRes, newsRes, configsRes] = await Promise.all([
@@ -55,13 +55,13 @@ export default function AdminDashboard() {
     } finally {
       setFetching(false);
     }
-  };
+  }, [lang]);
 
   useEffect(() => {
     if (loading) return;
     if (!user?.is_admin) return;
     fetchData();
-  }, [user, loading, lang]);
+  }, [user, loading, fetchData]);
 
   const handleCreateNews = async (e) => {
     e.preventDefault();

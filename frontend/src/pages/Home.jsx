@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Star, Scroll, Heart, Check, ShieldCheck, Database, Zap, Lock, EyeOff } from "lucide-react";
-import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import StarCanvas from "../components/StarCanvas";
 
@@ -85,7 +84,6 @@ function Reveal({ children, delay = 0 }) {
 export default function Home({ onOpenClaim, stats }) {
   const { t, lang } = useT();
   const isTR = lang === "TR";
-  const [email, setEmail] = useState("");
 
   return (
     <div className="bg-[#03040A] relative">
