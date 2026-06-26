@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { Loader2, Telescope, Activity, Star, Info, ArrowUpDown } from "lucide-react";
@@ -13,6 +13,34 @@ const tierCls = {
   standard: "border-white/10",
 };
 
+const FALLBACK_STARS = [
+  { star_id: "fallback-sirius", code: "SIRIUS-A", name: "Sirius", constellation: "Canis Major", tier: "legendary", price: 2999, spect: "A1V" },
+  { star_id: "fallback-vega", code: "VEGA-LYR", name: "Vega", constellation: "Lyra", tier: "legendary", price: 1499, spect: "A0V" },
+  { star_id: "fallback-rigel", code: "RIGEL-ORI", name: "Rigel", constellation: "Orion", tier: "supernova", price: 1299, spect: "B8Iab" },
+  { star_id: "fallback-polaris", code: "POLARIS-UMI", name: "Polaris", constellation: "Ursa Minor", tier: "nova", price: 899, spect: "F7Ib" },
+];
+
+const normalizeStars = (data) => {
+  if (!Array.isArray(data)) return [];
+
+  return data.filter(Boolean).map((star, index) => ({
+    star_id: star.star_id || star.id || star.code || `star-${index}`,
+    code: star.code || star.star_code || `SC-${index + 1}`,
+    name: star.name || star.proper || star.properName || `Star ${index + 1}`,
+    constellation: star.constellation || "Unknown",
+    tier: star.tier || "standard",
+    price: Number(star.price ?? star.asking_price ?? 0),
+    spect: star.spect || star.spectralType || "",
+    ...star,
+  }));
+};
+
+const getFallbackMessage = (lang) => (
+  lang === "TR"
+    ? "Yıldız kataloğu geçici olarak yerel yedek modda açıldı."
+    : "Star catalog opened in local fallback mode."
+);
+
 export default function StarPicker({ onClaim }) {
   const { lang, t } = useT();
   const isTR = lang === "TR";
@@ -20,24 +48,36 @@ export default function StarPicker({ onClaim }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("default"); // default, price-high, price-low, name-az, name-za
+  const [sortBy, setSortBy] = useState("default");
 
-  const loadStars = useCallback(() => {
+  const loadStars = useCallback(async () => {
     setLoading(true);
     setError("");
-    // Request only available (for-sale) stars by default
-    api.get("/stars", { params: { limit: 100, available: true } })
-      .then(({ data }) => {
-        if (Array.isArray(data)) setStars(data);
-        else setStars([]);
-      })
-      .catch((err) => {
-        console.error("Star Catalog fetch error:", err);
-        setStars([]);
-        setError(t("error_star_load") || (lang === "TR" ? "Yıldız kataloğu şu anda yüklenemedi." : "Star catalog could not be loaded."));
-      })
-      .finally(() => setLoading(false));
-  }, [t, lang]);
+
+    try {
+      const availableResponse = await api.get("/stars", { params: { limit: 100, available: true } });
+      const availableStars = normalizeStars(availableResponse.data);
+      if (availableStars.length > 0) {
+        setStars(availableStars);
+        return;
+      }
+
+      const catalogResponse = await api.get("/stars", { params: { limit: 100 } });
+      const catalogStars = normalizeStars(catalogResponse.data);
+      if (catalogStars.length > 0) {
+        setStars(catalogStars);
+        return;
+      }
+
+      throw new Error("Star catalog returned no rows.");
+    } catch (err) {
+      console.error("Star Catalog fetch error:", err);
+      setStars(FALLBACK_STARS);
+      setError(getFallbackMessage(lang));
+    } finally {
+      setLoading(false);
+    }
+  }, [lang]);
 
   useEffect(() => {
     loadStars();
@@ -48,15 +88,15 @@ export default function StarPicker({ onClaim }) {
     if (sortBy === "price-low") return (a.price || 0) - (b.price || 0);
     if (sortBy === "name-az") return (a.proper || a.name || "").localeCompare(b.proper || b.name || "");
     if (sortBy === "name-za") return (b.proper || b.name || "").localeCompare(a.proper || a.name || "");
-    return 0; // default (ranking from API)
+    return 0;
   });
 
-  const filteredStars = sortedStars.filter(s => filter === "all" || s.tier?.toLowerCase() === filter);
+  const filteredStars = sortedStars.filter((s) => filter === "all" || s.tier?.toLowerCase() === filter);
 
   return (
     <div className="min-h-screen bg-[#010208] pt-28 pb-24 relative overflow-hidden dashboard-container">
       <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-      
+
       <div className="relative max-w-7xl mx-auto px-6 md:px-10 z-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-8">
           <div>
@@ -72,36 +112,34 @@ export default function StarPicker({ onClaim }) {
             </p>
           </div>
 
-          {/* Sorting Controls */}
           <div className="flex items-center gap-4 bg-sc-deep/40 p-2 rounded-xl border border-white/5 self-start md:self-end">
-             <div className="flex items-center gap-2 px-3 text-[10px] text-sc-gold/60 font-bold tracking-widest border-r border-white/10 uppercase">
-                <ArrowUpDown size={12} /> {t("picker_sort")}
-             </div>
-             <select 
-               value={sortBy} 
-               onChange={(e) => setSortBy(e.target.value)}
-               className="bg-transparent text-white text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer pr-4"
-             >
-                <option value="default" className="bg-sc-deep">{isTR ? "Varsayılan" : "Default"}</option>
-                <option value="price-high" className="bg-sc-deep">{isTR ? "En Pahalı" : "Price: High"}</option>
-                <option value="price-low" className="bg-sc-deep">{isTR ? "En Ucuz" : "Price: Low"}</option>
-                <option value="name-az" className="bg-sc-deep">A → Z</option>
-                <option value="name-za" className="bg-sc-deep">Z → A</option>
-             </select>
+            <div className="flex items-center gap-2 px-3 text-[10px] text-sc-gold/60 font-bold tracking-widest border-r border-white/10 uppercase">
+              <ArrowUpDown size={12} /> {t("picker_sort")}
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent text-white text-[10px] font-bold uppercase tracking-widest outline-none cursor-pointer pr-4"
+            >
+              <option value="default" className="bg-sc-deep">{isTR ? "Varsayılan" : "Default"}</option>
+              <option value="price-high" className="bg-sc-deep">{isTR ? "En Pahalı" : "Price: High"}</option>
+              <option value="price-low" className="bg-sc-deep">{isTR ? "En Ucuz" : "Price: Low"}</option>
+              <option value="name-az" className="bg-sc-deep">A to Z</option>
+              <option value="name-za" className="bg-sc-deep">Z to A</option>
+            </select>
           </div>
         </div>
 
-        {/* Filter Tabs */}
         <div className="flex flex-wrap gap-3 mb-10">
-          {["all", "legendary", "zodiac", "supernova", "nova"].map((t_key) => (
+          {["all", "legendary", "zodiac", "supernova", "nova"].map((tKey) => (
             <button
-              key={t_key}
-              onClick={() => setFilter(t_key)}
+              key={tKey}
+              onClick={() => setFilter(tKey)}
               className={`px-6 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                filter === t_key ? "border-sc-gold bg-sc-gold/10 text-sc-gold" : "border-white/10 text-white/40 hover:border-white/20"
+                filter === tKey ? "border-sc-gold bg-sc-gold/10 text-sc-gold" : "border-white/10 text-white/40 hover:border-white/20"
               }`}
             >
-              {t_key === "all" ? (isTR ? "Tümü" : "All") : t_key}
+              {tKey === "all" ? (isTR ? "Tümü" : "All") : tKey}
             </button>
           ))}
         </div>
@@ -111,65 +149,69 @@ export default function StarPicker({ onClaim }) {
             <Loader2 className="w-10 h-10 animate-spin text-sc-gold opacity-50" />
             <div className="text-[10px] tracking-[0.3em] text-sc-gold/60 uppercase font-bold font-mono">Scanning Deep Space...</div>
           </div>
-        ) : error ? (
-          <div className="terminal-frame border-sc-red/30 p-10 text-center max-w-2xl mx-auto">
-            <div className="terminal-scanline" />
-            <Activity className="w-10 h-10 text-sc-red mx-auto mb-5" />
-            <p className="text-sc-text-muted mb-7 font-mono text-xs">{error}</p>
-            <button onClick={loadStars} className="btn-gold px-8 py-3 uppercase text-[10px] font-bold">RETRY_PROTOCOL</button>
-          </div>
-        ) : filteredStars.length === 0 ? (
-          <div className="text-center py-20 text-sc-text-muted uppercase tracking-[0.2em] text-xs font-mono">
-            {isTR ? "Bu kategoride uygun yıldız bulunamadı." : "No stars found in this category."}
-          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AnimatePresence>
-              {filteredStars.map((s, idx) => (
-                <motion.div
-                  key={s.star_id || s.code}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`terminal-frame p-6 border ${tierCls[s.tier?.toLowerCase()] || tierCls.standard} group`}
-                >
-                  <div className="terminal-scanline" />
-                  <div className="flex items-start justify-between mt-4 mb-6">
-                    <div>
-                      <div className="text-[9px] uppercase tracking-[0.2em] text-sc-gold font-bold mb-1">{s.tier}</div>
-                      <h3 className="font-display text-2xl gold-gradient-text tracking-tight">{s.name}</h3>
-                      <div className="text-[9px] text-sc-text-muted font-mono tracking-wider mt-1 uppercase">
-                         {s.constellation} {" // "} {s.code}
-                      </div>
-                    </div>
-                    {s.spect && (
-                      <div className="px-2 py-1 rounded border border-sc-blue/20 text-[8px] font-bold font-mono text-sc-blue bg-sc-blue/5">
-                        {s.spect}
-                      </div>
-                    )}
-                  </div>
+          <>
+            {error && (
+              <div className="mb-8 max-w-2xl mx-auto border border-sc-gold/20 bg-sc-gold/5 rounded-xl px-4 py-3 flex items-center gap-3 text-[11px] text-sc-gold/80 font-mono">
+                <Activity className="w-4 h-4" />
+                {error}
+              </div>
+            )}
 
-                  <div className="telemetry-item-box border-sc-gold/40 bg-sc-gold/5 mb-6">
-                    <div className="telemetry-label text-sc-gold">{t("picker_price_label")}</div>
-                    <div className="telemetry-value text-sc-gold font-bold text-2xl">${s.price}</div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => onClaim(s)} 
-                      className="flex-1 py-3 rounded-lg bg-sc-gold text-sc-deep text-[10px] uppercase tracking-[0.2em] font-bold hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2"
+            {filteredStars.length === 0 ? (
+              <div className="text-center py-20 text-sc-text-muted uppercase tracking-[0.2em] text-xs font-mono">
+                {isTR ? "Bu kategoride uygun yıldız bulunamadı." : "No stars found in this category."}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <AnimatePresence>
+                  {filteredStars.map((s, idx) => (
+                    <motion.div
+                      key={s.star_id || s.code}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`terminal-frame p-6 border ${tierCls[s.tier?.toLowerCase()] || tierCls.standard} group`}
                     >
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      {t("picker_claim").toUpperCase()}
-                    </button>
-                    <button className="p-3 rounded-lg border border-white/10 text-white/40 hover:text-white transition-all">
-                      <Info size={16} />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+                      <div className="terminal-scanline" />
+                      <div className="flex items-start justify-between mt-4 mb-6">
+                        <div>
+                          <div className="text-[9px] uppercase tracking-[0.2em] text-sc-gold font-bold mb-1">{s.tier}</div>
+                          <h3 className="font-display text-2xl gold-gradient-text tracking-tight">{s.name}</h3>
+                          <div className="text-[9px] text-sc-text-muted font-mono tracking-wider mt-1 uppercase">
+                            {s.constellation} {" // "} {s.code}
+                          </div>
+                        </div>
+                        {s.spect && (
+                          <div className="px-2 py-1 rounded border border-sc-blue/20 text-[8px] font-bold font-mono text-sc-blue bg-sc-blue/5">
+                            {s.spect}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="telemetry-item-box border-sc-gold/40 bg-sc-gold/5 mb-6">
+                        <div className="telemetry-label text-sc-gold">{t("picker_price_label")}</div>
+                        <div className="telemetry-value text-sc-gold font-bold text-2xl">${s.price}</div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => onClaim?.(s)}
+                          className="flex-1 py-3 rounded-lg bg-sc-gold text-sc-deep text-[10px] uppercase tracking-[0.2em] font-bold hover:shadow-[0_0_20px_rgba(251,191,36,0.3)] transition-all flex items-center justify-center gap-2"
+                        >
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          {t("picker_claim").toUpperCase()}
+                        </button>
+                        <button className="p-3 rounded-lg border border-white/10 text-white/40 hover:text-white transition-all">
+                          <Info size={16} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
