@@ -26,13 +26,13 @@ Bu bölüm, diğer bütün geliştirme maddelerinden daha yüksek önceliklidir.
 
 #### P0.1 - 2D Render Motoru Üretim Kararlılığı
 
-- [ ] Tek Sky Live yüzeyi otomatik cihaz yön takibiyle açılıyor; ayrı Harita/Sensör/Kamera modları bulunmuyor.
-- [ ] Kullanıcı pan veya zoom yaptığında manuel kontrol kesintisiz devralıyor; `Takibi Sürdür` ile sensör merkezlemesine dönülüyor.
-- [ ] Uygulama ön plan/arka plan geçişi ve ekran döndürme sonrasında çizim yüzeyi geri geliyor.
-- [ ] Skia/Reanimated abonelikleri ekran kapanırken eksiksiz temizleniyor.
-- [ ] 10 dakikalık otomatik takip/manüel devralma testinde crash, bellek artışı veya kontrol kaybı yok.
-- [ ] Düşük, orta ve yüksek cihaz profillerinde yıldız/düğüm sayısı otomatik ve güvenli ayarlanıyor.
-- [ ] Orta sınıf fiziksel Android cihazda hedef FPS, açılış süresi, bellek ve ısı ölçümleri kaydediliyor.
+- [x] Tek Sky Live yüzeyi otomatik cihaz yön takibiyle açılıyor; ayrı Harita/Sensör/Kamera modları bulunmuyor.
+- [x] Kullanıcı pan veya zoom yaptığında manuel kontrol kesintisiz devralıyor; `Takibi Sürdür` ile sensör merkezlemesine dönülüyor.
+- [x] Uygulama ön plan/arka plan geçişi ve ekran döndürme sonrasında çizim yüzeyi geri geliyor.
+- [x] Skia/Reanimated abonelikleri ekran kapanırken eksiksiz temizleniyor.
+- [x] 10 dakikalık otomatik takip/manüel devralma testinde crash, bellek artışı veya kontrol kaybı yok.
+- [x] Düşük, orta ve yüksek cihaz profillerinde yıldız/düğüm sayısı otomatik ve güvenli ayarlanıyor.
+- [x] Orta sınıf fiziksel Android cihazda hedef FPS, açılış süresi, bellek ve ısı ölçümleri kaydediliyor.
 
 #### P0.2 - Kanonik Astronomik Veri Sözleşmesi
 
@@ -381,9 +381,9 @@ Bu bölüm kod tabanının güncel incelemesine göre hazırlanmıştır ve yuka
 
 ### 2D Tamamlanma Kriteri
 
-- [ ] Astronomik regresyon testleri yeşil.
+- [x] Astronomik regresyon testleri yeşil.
 - [ ] En az bir düşük, bir orta ve bir yüksek Android cihaz profili ölçülmüş.
-- [ ] 10 dakikalık kamera/sensör kullanımında abonelik, GL/Skia veya bellek sızıntısı yok.
+- [x] 10 dakikalık kamera/sensör kullanımında abonelik, GL/Skia veya bellek sızıntısı yok.
 - [ ] Takımyıldızı çizgileri pan, zoom, yatay görünüm ve RA sınırında doğru.
 - [ ] İzin reddi ve çevrimdışı katalog senaryoları kullanılabilir durumda.
 

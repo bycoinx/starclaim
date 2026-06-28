@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -34,14 +34,14 @@ export default function StarVoyageMaintenance() {
           </View>
         </View>
 
-        <Text style={styles.title}>YENİ BİR EVREN HAZIRLANIYOR</Text>
+        <Text style={styles.title}>YENI BIR EVREN HAZIRLANIYOR</Text>
         <Text style={styles.description}>
-          3D yıldız yolculuğu yeni render motoru ve astronomik veri katmanıyla yeniden kuruluyor.
+          3D yildiz yolculugu yeni render motoru ve astronomik veri katmaniyla yeniden kuruluyor.
         </Text>
 
         <View style={styles.statusRow}>
           <View style={styles.statusDot} />
-          <Text style={styles.statusText}>GÜNCELLEME GELİŞTİRİLİYOR</Text>
+          <Text style={styles.statusText}>GUNCELLEME GELISTIRILIYOR</Text>
         </View>
 
         <TouchableOpacity
@@ -50,7 +50,7 @@ export default function StarVoyageMaintenance() {
           onPress={() => router.replace('/(tabs)/sky')}
         >
           <Ionicons name="telescope-outline" size={20} color="#06101D" />
-          <Text style={styles.skyButtonText}>SKY LIVE'A DÖN</Text>
+          <Text style={styles.skyButtonText}>SKY LIVE'A DON</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -171,3 +171,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0,
   },
 });
+

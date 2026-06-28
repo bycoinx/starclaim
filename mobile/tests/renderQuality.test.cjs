@@ -55,6 +55,9 @@ test('layer telemetry reports a stable total', () => {
     renderedStars: [{ proper: 'Sirius', owned: true }, { proper: '', owned: false }],
     showGrid: true,
     showNebula: true,
+    showMilkyWay: true,
+    showDeepAtmosphere: true,
+    showShootingStars: true,
     showConstellations: true,
     showConstellationLabels: true,
     showConstellationBoundaries: false,
@@ -72,6 +75,10 @@ test('layer telemetry reports a stable total', () => {
   });
   assert.equal(estimate.layers.stars, 4);
   assert.equal(estimate.layers.grid, 1);
+  assert.equal(estimate.layers.deepAtmosphere, 1);
+  assert.equal(estimate.layers.nebula, 1);
+  assert.equal(estimate.layers.milkyWay, 1);
+  assert.equal(estimate.layers.shootingStars, 1);
   assert.equal(estimate.layers.constellations, 2);
   assert.equal(estimate.layers.boundaries, 0);
   assert.equal(estimate.total, Object.values(estimate.layers).reduce((sum, value) => sum + value, 0));

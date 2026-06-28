@@ -29,7 +29,12 @@ import {
   runOnJS,
   withSpring
 } from 'react-native-reanimated';
-import { radiusForMag, colorForStar } from '../src/utils/astronomy';
+import {
+  buildSkyLayerRenderSet,
+  countSegments,
+  getSkyVisualLayerBudget,
+} from '../src/sky/skyLayerRenderSet';
+import { buildStarRenderSet } from '../src/sky/starRenderSet';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
 import { getPlanetPositions } from '../src/utils/solarSystem';
 import {
@@ -51,8 +56,8 @@ const deg2rad = (deg) => {
 };
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
 const TAP_CELL_SIZE = 56;
-const VIEWPORT_PADDING = 140;
-const STAR_RENDER_BUDGET = { low: 100, medium: 200, high: 300 };
+const GESTURE_UPDATE_DIVISOR = 2;
+const MIN_PROJECTION_COSINE = 0.08;
 const GALACTIC_PLANE = Array.from({ length: 73 }, (_, index) => {
   const longitude = index * 5 * Math.PI / 180;
   const galacticX = Math.cos(longitude);
@@ -76,12 +81,35 @@ function normalizeRaDelta(delta) {
   return value;
 }
 
+function normalizeLongitude(value) {
+  'worklet';
+  let normalized = Number(value) || 0;
+  while (normalized < 0) normalized += 360;
+  while (normalized >= 360) normalized -= 360;
+  return normalized;
+}
+
+function safeCosDeclination(decDegrees) {
+  'worklet';
+  const value = Math.cos(deg2rad(decDegrees));
+  if (Math.abs(value) >= MIN_PROJECTION_COSINE) return value;
+  return value < 0 ? -MIN_PROJECTION_COSINE : MIN_PROJECTION_COSINE;
+}
+
+function getWorkletStarDistanceParsec(star) {
+  'worklet';
+  if (star && Number.isFinite(star.distanceParsec)) return star.distanceParsec;
+  if (star && Number.isFinite(star.dist)) return star.dist;
+  if (star && Number.isFinite(star.distance)) return star.distance;
+  return 100;
+}
+
 // Calculate parallax offset for a star based on its distance and view movement
 // Returns { raOffset, decOffset } in degrees to add to star's position
 function calculateParallaxOffset(star, prevRa, prevDec, currRa, currDec, layoutWidth, layoutHeight, zoomValue) {
   'worklet';
   // Get star distance in parsecs
-  const distanceParsec = getStarDistanceParsec(star);
+  const distanceParsec = getWorkletStarDistanceParsec(star);
 
   // Calculate how much the view center has moved (in degrees)
   const raMove = normalizeRaDelta(currRa - prevRa);
@@ -201,13 +229,15 @@ function projectWithParallax(
   coordinateMode,
   observerLatitude,
   lstDegrees,
+  prevRa,
+  prevDec,
 ) {
   'worklet';
   // Calculate parallax offset based on view movement
   const parallaxOffset = calculateParallaxOffset(
     star,
-    prevRaRef.current,
-    prevDecRef.current,
+    prevRa,
+    prevDec,
     centerRa,
     centerDec,
     width,
@@ -250,52 +280,8 @@ function projectWithParallax(
   return { x: projected.x, y: projected.y, skyAltitude: null };
 }
 
-function magnitudeLimitForZoom(zoom) {
-  if (zoom < 0.8) return 6.2;
-  if (zoom < 1.5) return 7.2;
-  if (zoom < 3) return 8.4;
-  return 9.5;
-}
-
-function isCoarselyVisible(ra, dec, virtualCenter, zoom, layout) {
-  'worklet';
-  const fovDegrees = 90 / Math.max(0.1, zoom);
-  const padding = 15;
-  const halfFovX = (fovDegrees / 2) + padding;
-  const halfFovY = (fovDegrees / 2) + padding;
-
-  const decDiff = Math.abs(dec - virtualCenter.dec);
-  if (decDiff > halfFovY) return false;
-
-  let raDiff = Math.abs(ra * 15 - virtualCenter.ra);
-  while (raDiff > 180) raDiff = 360 - raDiff;
-
-  const cosDec = Math.cos((virtualCenter.dec * Math.PI) / 180);
-  // Avoid division by zero or near-zero
-  const cosDecAdjusted = Math.max(0.001, cosDec);
-  const maxRaDiff = halfFovX / cosDecAdjusted;
-
-  return raDiff <= maxRaDiff;
-}
-
 function getCellKey(x, y) {
   return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
-}
-
-function isSelectedConstellation(feature, selectedStar) {
-  'worklet';
-  if (!selectedStar) return false;
-  const targetValues = [selectedStar.con, selectedStar.constellation]
-    .filter(Boolean)
-    .map((value) => String(value).toLowerCase());
-  if (!targetValues.length) return false;
-  const featureValues = [
-    feature.id,
-    feature.properties?.id,
-    feature.properties?.name,
-    feature.properties?.iau,
-  ].filter(Boolean).map((value) => String(value).toLowerCase());
-  return targetValues.some((target) => featureValues.includes(target));
 }
 
 function NebulaBackground({ ra, dec, layout, qualityLevel }) {
@@ -357,11 +343,21 @@ function MilkyWayDensity({
   lstDegrees,
   qualityLevel,
   nightVision,
+  sampleStep = 1,
 }) {
+  const sampledGalacticPlane = useMemo(() => {
+    const step = Math.max(1, Math.floor(sampleStep));
+    if (step === 1) return GALACTIC_PLANE;
+    const sampled = GALACTIC_PLANE.filter((_, index) => index % step === 0);
+    const lastPoint = GALACTIC_PLANE[GALACTIC_PLANE.length - 1];
+    if (sampled[sampled.length - 1] !== lastPoint) sampled.push(lastPoint);
+    return sampled;
+  }, [sampleStep]);
+
   const path = useDerivedValue(() => {
     const result = Skia.Path.Make();
     let previous = null;
-    GALACTIC_PLANE.forEach((point) => {
+    sampledGalacticPlane.forEach((point) => {
       const projected = project(
         point.ra,
         point.dec,
@@ -438,7 +434,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   showConstellationLabels = true,
   showConstellationBoundaries = false,
   showGrid = true,
-  constellations = [],
+  constellations = {
+    lines: { features: [] },
+    labels: { features: [] },
+    boundaries: { features: [] },
+  },
   showMythology = false,
   showLabels = false,
   showPlanets = true,
@@ -460,8 +460,6 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const [dsoData, setDsoData] = useState([]);
   const [virtualCenter, setVirtualCenter] = useState({ ra: initialRa, dec: initialDec });
   const virtualCenterRef = useRef({ ra: initialRa, dec: initialDec });
-  // For parallax effect: track reference center to calculate movement
-  const refCenterRef = useRef({ ra: initialRa, dec: initialDec });
 
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
@@ -469,27 +467,30 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const time = useSharedValue(0);
   const fpsShared = useSharedValue(0);
   const readyShared = useSharedValue(false);
-  const gestureFrame = useSharedValue(0);
   const frameCountRef = useRef(0);
   const lastTimeRef = useRef(0);
   const lastVisualTickRef = useRef(0);
+  const lastRenderSetLogAtRef = useRef(0);
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
   // For parallax effect: track previous center to calculate movement delta
-  const prevRaRef = useRef(initialRa);
-  const prevDecRef = useRef(initialDec);
+  const prevRa = useSharedValue(initialRa);
+  const prevDec = useSharedValue(initialDec);
+  const panFrame = useSharedValue(0);
+  const pinchFrame = useSharedValue(0);
   const qualityRef = useRef({ level: 'high', maximum: 'high', lowSamples: 0, highSamples: 0 });
 
   useImperativeHandle(ref, () => ({
     setView(nextRa, nextDec) {
       if (!Number.isFinite(nextRa) || !Number.isFinite(nextDec)) return;
-      ra.value = nextRa;
-      dec.value = Math.max(-90, Math.min(90, nextDec));
+      const nextRaNormalized = normalizeLongitude(nextRa);
       const nextDecClamped = Math.max(-90, Math.min(90, nextDec));
+      ra.value = nextRaNormalized;
+      dec.value = nextDecClamped;
       const current = virtualCenterRef.current;
-      if (Math.abs(normalizeRaDelta(nextRa - current.ra)) >= 8 || Math.abs(nextDecClamped - current.dec) >= 6) {
-        const next = { ra: nextRa, dec: nextDecClamped };
+      if (Math.abs(normalizeRaDelta(nextRaNormalized - current.ra)) >= 8 || Math.abs(nextDecClamped - current.dec) >= 6) {
+        const next = { ra: nextRaNormalized, dec: nextDecClamped };
         virtualCenterRef.current = next;
         setVirtualCenter(next);
       }
@@ -580,8 +581,8 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       time.value = now / 1000;
     }
     // Update previous center values for parallax calculation
-    prevRaRef.current = ra.value;
-    prevDecRef.current = dec.value;
+    prevRa.value = ra.value;
+    prevDec.value = dec.value;
   }, active);
 
   useEffect(() => {
@@ -598,13 +599,13 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       if (onInteractionStateChange) runOnJS(onInteractionStateChange)(true);
     })
     .onUpdate((e) => {
-      gestureFrame.value = (gestureFrame.value + 1) % 2;
-      if (gestureFrame.value !== 0) return;
+      panFrame.value = (panFrame.value + 1) % GESTURE_UPDATE_DIVISOR;
+      if (panFrame.value !== 0) return;
       const field = 90 / zoom.value;
       const scale = layout.width / field;
-      const raMove = (e.changeX / scale) / Math.cos(deg2rad(dec.value));
+      const raMove = (e.changeX / scale) / safeCosDeclination(dec.value);
       const decMove = (e.changeY / scale);
-      ra.value -= raMove;
+      ra.value = normalizeLongitude(ra.value - raMove);
       dec.value += decMove;
       if (dec.value > 90) dec.value = 90;
       if (dec.value < -90) dec.value = -90;
@@ -621,6 +622,8 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       if (onInteractionStateChange) runOnJS(onInteractionStateChange)(true);
     })
     .onUpdate((e) => {
+      pinchFrame.value = (pinchFrame.value + 1) % GESTURE_UPDATE_DIVISOR;
+      if (pinchFrame.value !== 0) return;
       const newZoom = zoom.value * e.scaleChange;
       zoom.value = Math.max(0.2, Math.min(15, newZoom));
     })
@@ -637,74 +640,19 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   );
 
   const renderedStars = useMemo(() => {
-    const qualityMagnitudeOffset = qualityLevel === 'low' ? -0.5 : qualityLevel === 'medium' ? -0.2 : 0;
-    const magnitudeLimit = magnitudeLimitForZoom(initialZoom) + qualityMagnitudeOffset;
-    const poolLimit = STAR_RENDER_BUDGET[qualityLevel] || STAR_RENDER_BUDGET.medium;
-    const importantStars = [];
-    const regularStars = [];
-
-    stars.forEach((star) => {
-      const owned = (
-        ownedIdSet.has(String(star.id))
-        || ownedIdSet.has(String(star.hip))
-      );
-      const important = owned || String(selectedStar?.id) === String(star.id);
-      if (!important && Number(star.mag) > magnitudeLimit) return;
-
-      const prepared = {
-        ...star,
-        radius: radiusForMag(star.mag, star.spect),
-        color: nightVision ? '#FF514A' : colorForStar(star),
-        owned,
-      };
-      if (coordinateMode === 'horizontal') {
-        const horizontal = equatorialToHorizontal(
-          star.ra,
-          star.dec,
-          observerLatitude,
-          lstDegrees,
-        );
-        prepared.horizontalAz = horizontal.az;
-        prepared.horizontalAlt = horizontal.alt;
-      }
-      const projected = coordinateMode === 'horizontal'
-        ? projectDegrees(
-          prepared.horizontalAz,
-          prepared.horizontalAlt,
-          virtualCenter.ra,
-          virtualCenter.dec,
-          layout.width,
-          layout.height,
-          initialZoom,
-        )
-        : projectDegrees(
-          star.ra * 15,
-          star.dec,
-          virtualCenter.ra,
-          virtualCenter.dec,
-          layout.width,
-          layout.height,
-          initialZoom,
-        );
-      const inVirtualViewport = projected.x >= -VIEWPORT_PADDING
-        && projected.x <= layout.width + VIEWPORT_PADDING
-        && projected.y >= -VIEWPORT_PADDING
-        && projected.y <= layout.height + VIEWPORT_PADDING;
-      if (!important && !inVirtualViewport) return;
-      if (important) importantStars.push(prepared);
-      else regularStars.push(prepared);
+    return buildStarRenderSet({
+      stars,
+      selectedStar,
+      ownedIdSet,
+      qualityLevel,
+      zoom: initialZoom,
+      nightVision,
+      coordinateMode,
+      observerLatitude,
+      lstDegrees,
+      virtualCenter,
+      layout,
     });
-
-    // Sort regular stars by magnitude (brightest first), handling invalid values
-    regularStars.sort((a, b) => {
-      const magA = Number(a.mag);
-      const magB = Number(b.mag);
-      // Treat invalid magnitudes as infinity so they appear at the end
-      const safeA = isNaN(magA) ? Infinity : magA;
-      const safeB = isNaN(magB) ? Infinity : magB;
-      return safeA - safeB;
-    });
-    return [...importantStars, ...regularStars.slice(0, poolLimit)];
   }, [
     initialZoom,
     nightVision,
@@ -715,6 +663,8 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     lstDegrees,
     layout.height,
     layout.width,
+    selectedStar?.canonicalId,
+    selectedStar?.hip,
     selectedStar?.id,
     stars,
     virtualCenter.dec,
@@ -737,161 +687,69 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     .filter((star) => star.owned || (star.proper && (showLabels || initialZoom > 2.8)))
     .slice(0, 24), [initialZoom, renderedStars, showLabels]);
 
-  const visibleDSOs = useMemo(() => {
-    if (!showDSOs) return [];
+  const {
+    visibleDSOs,
+    visiblePlanets,
+    visibleConstellationLabels,
+    visibleConstellationLineSegments,
+    visibleBoundarySegments,
+    visibleMythologyKeys,
+  } = useMemo(() => buildSkyLayerRenderSet({
+    dsoData,
+    planetData,
+    constellations,
+    mythologyAssets: MYTHOLOGY_ASSETS,
+    showDSOs,
+    showPlanets,
+    showConstellations,
+    showConstellationLabels,
+    showConstellationBoundaries,
+    showMythology,
+    selectedStar,
+    qualityLevel,
+    zoom: initialZoom,
+    virtualCenter,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+  }), [
+    constellations.boundaries?.features,
+    constellations.labels?.features,
+    constellations.lines?.features,
+    coordinateMode,
+    dsoData,
+    initialZoom,
+    lstDegrees,
+    observerLatitude,
+    planetData,
+    qualityLevel,
+    showConstellationBoundaries,
+    showConstellationLabels,
+    showConstellations,
+    showDSOs,
+    showMythology,
+    showPlanets,
+    selectedStar?.con,
+    selectedStar?.constellation,
+    virtualCenter.dec,
+    virtualCenter.ra,
+  ]);
 
-    // Pre-calculate viewport bounds for efficiency
-    const fovDegrees = 90 / Math.max(0.1, initialZoom);
-    const halfFovX = (fovDegrees / 2) + 15; // padding
-    const halfFovY = (fovDegrees / 2) + 15; // padding
-
-    return dsoData.filter(dso => {
-      // Simple bounding box check
-      return isCoarselyVisible(dso.ra, dso.dec, virtualCenter, initialZoom, layout);
-    });
-  }, [dsoData, showDSOs, virtualCenter, initialZoom, layout]);
-
-  const visiblePlanets = useMemo(() => {
-    if (!showPlanets) return [];
-
-    // Pre-calculate viewport bounds for efficiency
-    const fovDegrees = 90 / Math.max(0.1, initialZoom);
-    const halfFovX = (fovDegrees / 2) + 15; // padding
-    const halfFovY = (fovDegrees / 2) + 15; // padding
-
-    return planetData.filter(planet => {
-      // Simple bounding box check
-      return isCoarselyVisible(planet.ra, planet.dec, virtualCenter, initialZoom, layout);
-    });
-  }, [planetData, showPlanets, virtualCenter, initialZoom, layout]);
-
-  const visibleConstellationLabels = useMemo(() => {
-    if (!showConstellationLabels || !constellations.labels?.features) return [];
-
-    // Pre-calculate viewport bounds for efficiency
-    const fovDegrees = 90 / Math.max(0.1, initialZoom);
-    const halfFovX = (fovDegrees / 2) + 15; // padding
-    const halfFovY = (fovDegrees / 2) + 15; // padding
-
-    return constellations.labels.features.filter(feature => {
-      const coords = feature.geometry?.coordinates;
-      if (!coords) return false;
-
-      // Simple bounding box check for label position
-      const ra = coords[0] / 15;
-      const dec = coords[1];
-      return isCoarselyVisible(ra, dec, virtualCenter, initialZoom, layout);
-    });
-  }, [constellations.labels?.features, showConstellationLabels, virtualCenter, initialZoom, layout]);
-
-  const visibleConstellationLines = useMemo(() => {
-    if (!showConstellations || !constellations.lines?.features) return [];
-
-    // Pre-calculate viewport bounds for efficiency
-    const fovDegrees = 90 / Math.max(0.1, initialZoom);
-    const halfFovX = (fovDegrees / 2) + 15; // padding
-    const halfFovY = (fovDegrees / 2) + 15; // padding
-
-    return constellations.lines.features.filter(feature => {
-      if (!feature.geometry?.coordinates) return false;
-
-      // First check if feature's bounding box intersects viewport
-      const coords = feature.geometry.coordinates.flat();
-      if (coords.length === 0) return false;
-
-      let minRa = Infinity, maxRa = -Infinity;
-      let minDec = Infinity, maxDec = -Infinity;
-
-      for (let i = 0; i < coords.length; i += 2) {
-        const ra = coords[i] / 15;
-        const dec = coords[i + 1];
-        if (ra < minRa) minRa = ra;
-        if (ra > maxRa) maxRa = ra;
-        if (dec < minDec) minDec = dec;
-        if (dec > maxDec) maxDec = dec;
-      }
-
-      // Normalize RA for wraparound
-      let raDiff = maxRa - minRa;
-      if (raDiff > 180) raDiff = 360 - raDiff;
-
-      // Check if bounding box intersects viewport (simplified)
-      const decIntersects = !(minDec > virtualCenter.dec + halfFovY || maxDec < virtualCenter.dec - halfFovY);
-      const raIntersects = !(minRa > virtualCenter.dec + halfFovX || maxRa < virtualCenter.dec - halfFovX); // Simplified
-
-      if (!decIntersects || !raIntersects) return false;
-
-      // If bounding box intersects, do detailed check
-      return feature.geometry.coordinates.some(linePoints =>
-        linePoints.some(pt => isCoarselyVisible(pt[0] / 15, pt[1], virtualCenter, initialZoom, layout))
-      );
-    });
-  }, [constellations.lines?.features, showConstellations, virtualCenter, initialZoom, layout]);
-
-  const visibleBoundaries = useMemo(() => {
-    if (!showConstellationBoundaries || !constellations.boundaries?.features) return [];
-
-    // Pre-calculate viewport bounds for efficiency
-    const fovDegrees = 90 / Math.max(0.1, initialZoom);
-    const halfFovX = (fovDegrees / 2) + 15; // padding
-    const halfFovY = (fovDegrees / 2) + 15; // padding
-
-    return constellations.boundaries.features.filter(feature => {
-      const paths = getBoundaryPaths(feature);
-
-      // First check if feature's bounding box intersects viewport
-      let intersects = false;
-      for (const pathPoints of paths) {
-        const coords = pathPoints.flat();
-        if (coords.length === 0) continue;
-
-        let minRa = Infinity, maxRa = -Infinity;
-        let minDec = Infinity, maxDec = -Infinity;
-
-        for (let i = 0; i < coords.length; i += 2) {
-          const ra = coords[i] / 15;
-          const dec = coords[i + 1];
-          if (ra < minRa) minRa = ra;
-          if (ra > maxRa) maxRa = ra;
-          if (dec < minDec) minDec = dec;
-          if (dec > maxDec) maxDec = dec;
-        }
-
-        // Normalize RA for wraparound (simplified check)
-        let raDiff = maxRa - minRa;
-        if (raDiff > 180) raDiff = 360 - raDiff;
-
-        // Check if bounding box intersects viewport (simplified)
-        const decIntersects = !(minDec > virtualCenter.dec + halfFovY || maxDec < virtualCenter.dec - halfFovY);
-        const raIntersects = !(minRa > virtualCenter.dec + halfFovX || maxRa < virtualCenter.dec - halfFovX); // Simplified
-
-        if (decIntersects && raIntersects) {
-          // If bounding box intersects, do detailed check
-          intersects = pathPoints.some(pt =>
-            isCoarselyVisible(pt[0] / 15, pt[1], virtualCenter, initialZoom, layout)
-          );
-          if (intersects) break; // Early exit if we found an intersecting path
-        }
-      }
-
-      return intersects;
-    });
-  }, [constellations.boundaries?.features, showConstellationBoundaries, virtualCenter, initialZoom, layout]);
+  const visualLayerBudget = useMemo(
+    () => getSkyVisualLayerBudget(qualityLevel),
+    [qualityLevel],
+  );
 
   const layerNodeEstimate = useMemo(() => {
-    const countSegments = (features = []) => features.reduce((total, feature) => {
-      const coordinates = feature.geometry?.coordinates || [];
-      const paths = feature.geometry?.type === 'MultiPolygon'
-        ? coordinates.flat()
-        : coordinates;
-      return total + paths.reduce((pathTotal, path) => pathTotal + Math.max(0, path.length - 1), 0);
-    }, 0);
     return estimateLayerNodes({
       renderedStars,
       starBatchCount: starBatches.length,
       starOverlayCount: overlayStars.length,
       showGrid,
       showNebula,
+      showMilkyWay: showNebula && visualLayerBudget.milkyWay,
+      showDeepAtmosphere: visualLayerBudget.deepAtmosphere,
+      showShootingStars: visualLayerBudget.shootingStars,
       showConstellations,
       showConstellationLabels,
       showConstellationBoundaries,
@@ -899,12 +757,12 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       showPlanets,
       showMythology,
       coordinateMode,
-      constellationLines: countSegments(visibleConstellationLines),
+      constellationLines: countSegments(visibleConstellationLineSegments),
       constellationLabels: visibleConstellationLabels.length,
-      constellationBoundaries: countSegments(visibleBoundaries),
+      constellationBoundaries: countSegments(visibleBoundarySegments),
       dsoCount: visibleDSOs.length,
       planetCount: visiblePlanets.length,
-      mythologyCount: Object.keys(MYTHOLOGY_ASSETS).length,
+      mythologyCount: visibleMythologyKeys.length,
       quality: qualityLevel,
     });
   }, [
@@ -913,6 +771,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     overlayStars.length,
     showGrid,
     showNebula,
+    visualLayerBudget.deepAtmosphere,
+    visualLayerBudget.milkyWay,
+    visualLayerBudget.shootingStars,
     showConstellations,
     showConstellationLabels,
     showConstellationBoundaries,
@@ -920,11 +781,12 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     showPlanets,
     showMythology,
     coordinateMode,
-    visibleConstellationLines,
+    visibleConstellationLineSegments,
     visibleConstellationLabels,
-    visibleBoundaries,
+    visibleBoundarySegments,
     visibleDSOs,
     visiblePlanets,
+    visibleMythologyKeys,
     qualityLevel,
   ]);
 
@@ -940,6 +802,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
 
   useEffect(() => {
     if (__DEV__) {
+      const now = Date.now();
+      if (now - lastRenderSetLogAtRef.current < 5000) return;
+      lastRenderSetLogAtRef.current = now;
       console.debug(`[StarCanvas] render set: ${renderedStars.length}/${stars.length}`);
     }
   }, [renderedStars.length, stars.length]);
@@ -1022,9 +887,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               </Rect>
             )}
 
-            {!transparentBackground && <DeepSpaceAtmosphere layout={layout} nightVision={nightVision} />}
+            {!transparentBackground && visualLayerBudget.deepAtmosphere && (
+              <DeepSpaceAtmosphere layout={layout} nightVision={nightVision} />
+            )}
 
-            {showNebula && qualityLevel !== 'low' && !transparentBackground && !nightVision && (
+            {showNebula && visualLayerBudget.nebula && !transparentBackground && !nightVision && (
               <NebulaBackground
                 ra={ra}
                 dec={dec}
@@ -1033,7 +900,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             )}
 
-            {showNebula && !transparentBackground && (
+            {showNebula && visualLayerBudget.milkyWay && !transparentBackground && (
               <MilkyWayDensity
                 ra={ra}
                 dec={dec}
@@ -1044,6 +911,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
                 lstDegrees={lstDegrees}
                 qualityLevel={qualityLevel}
                 nightVision={nightVision}
+                sampleStep={visualLayerBudget.milkyWaySampleStep}
               />
             )}
 
@@ -1065,6 +933,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
                 zoom={zoom}
                 layout={layout}
                 font={font}
+                qualityLevel={qualityLevel}
                 coordinateMode={coordinateMode}
                 observerLatitude={observerLatitude}
                 lstDegrees={lstDegrees}
@@ -1072,9 +941,8 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             )}
 
-            {showMythology && qualityLevel === 'high' && Object.keys(MYTHOLOGY_ASSETS).map((key) => {
+            {showMythology && qualityLevel === 'high' && visibleMythologyKeys.map((key) => {
               const data = MYTHOLOGY_ASSETS[key];
-              if (!isCoarselyVisible(data.ra, data.dec, virtualCenter, initialZoom, layout)) return null;
               return (
                 <MythologyFigure key={key} data={data} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
               );
@@ -1086,7 +954,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
 
             {showConstellationBoundaries && (
               <ConstellationBoundariesPath
-                features={visibleBoundaries}
+                segments={visibleBoundarySegments}
                 ra={ra}
                 dec={dec}
                 zoom={zoom}
@@ -1100,8 +968,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
 
             {showConstellations && (
               <ConstellationsPath
-                lines={visibleConstellationLines}
-                selectedStar={selectedStar}
+                segments={visibleConstellationLineSegments}
                 ra={ra}
                 dec={dec}
                 zoom={zoom}
@@ -1114,11 +981,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
             )}
 
             {starBatches.map((batch) => (
-              <StarPointBatch key={batch.key} batch={batch} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} qualityLevel={qualityLevel} />
+              <StarPointBatch key={batch.key} batch={batch} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} qualityLevel={qualityLevel} prevRa={prevRa} prevDec={prevDec} />
             ))}
 
             {overlayStars.map((star) => (
-              <StarCircle key={`overlay-${star.canonicalId || star.id}`} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.canonicalId === star.canonicalId || selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} />
+              <StarCircle key={`overlay-${star.canonicalId || star.id}`} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.canonicalId === star.canonicalId || selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} prevRa={prevRa} prevDec={prevDec} />
             ))}
 
             {showConstellationLabels && qualityLevel !== 'low' && visibleConstellationLabels.map((feature, index) => (
@@ -1141,8 +1008,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {/* Shooting star effect */}
-            <ShootingStar time={time} layout={layout} />
+            {visualLayerBudget.shootingStars && <ShootingStar time={time} layout={layout} />}
 
             {selectedStar && (
               <Group opacity={selectedOpacity}>
@@ -1170,48 +1036,43 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   );
 });
 
-const areEqual = (prevProps, nextProps) => {
-  // Ignore ref prop as it's always a new object
-  if (prevProps.ref !== nextProps.ref) {
-    // Check all other props
-    const prevKeys = Object.keys(prevProps).filter(key => key !== 'ref');
-    const nextKeys = Object.keys(nextProps).filter(key => key !== 'ref');
+const StarCanvas = React.memo(StarCanvasBase);
+StarCanvas.displayName = 'StarCanvas';
 
-    if (prevKeys.length !== nextKeys.length) return false;
+export default StarCanvas;
 
-    for (const key of prevKeys) {
-      if (prevProps[key] !== nextProps[key]) return false;
-    }
-
-    return true;
-  }
-  return true;
-};
-
-export default React.memo(StarCanvas, areEqual);
-
-const CelestialGrid = React.memo(function CelestialGrid({ ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const raSteps = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
-  const decSteps = [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
+const CelestialGrid = React.memo(function CelestialGrid({ ra, dec, zoom, layout, font, qualityLevel, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
+  const raSteps = qualityLevel === 'low'
+    ? [0, 6, 12, 18]
+    : qualityLevel === 'medium'
+      ? [0, 4, 8, 12, 16, 20]
+      : [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+  const decSteps = qualityLevel === 'low'
+    ? [-60, -30, 0, 30, 60]
+    : qualityLevel === 'medium'
+      ? [-75, -45, -15, 15, 45, 75]
+      : [-75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75];
 
   const gridLines = useMemo(() => {
     const lines = [];
     raSteps.forEach((raStep) => {
       const linePoints = [];
-      for (let d = -85; d <= 85; d += 5) {
+      const decStepSize = qualityLevel === 'high' ? 5 : 10;
+      for (let d = -85; d <= 85; d += decStepSize) {
         linePoints.push({ ra: raStep, dec: d });
       }
       lines.push(linePoints);
     });
     decSteps.forEach((decStep) => {
       const linePoints = [];
-      for (let r = 0; r <= 24; r += 1) {
+      const raStepSize = qualityLevel === 'high' ? 1 : 2;
+      for (let r = 0; r <= 24; r += raStepSize) {
         linePoints.push({ ra: r, dec: decStep });
       }
       lines.push(linePoints);
     });
     return lines;
-  }, []);
+  }, [qualityLevel]);
 
   const path = useDerivedValue(() => {
     const p = Skia.Path.Make();
@@ -1366,15 +1227,7 @@ const HorizonDirection = React.memo(function HorizonDirection({ direction, ra, d
   );
 });
 
-function getBoundaryPaths(feature) {
-  'worklet';
-  if (feature.geometry?.type === 'Polygon') return feature.geometry.coordinates;
-  if (feature.geometry?.type === 'MultiPolygon') return feature.geometry.coordinates.flat();
-  return [];
-}
-
-function ConstellationBoundariesPath({ boundaries, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const features = boundaries?.features || [];
+function ConstellationBoundariesPath({ segments = [], ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
 
   const path = useDerivedValue(() => {
     const p = Skia.Path.Make();
@@ -1386,35 +1239,24 @@ function ConstellationBoundariesPath({ boundaries, ra, dec, zoom, layout, coordi
 
     if (z < 0.75) return p;
 
-    features.forEach((feature) => {
-      const paths = getBoundaryPaths(feature);
-      paths.forEach((pathPoints) => {
-        let isDrawing = false;
-        for (let i = 0; i < pathPoints.length - 1; i++) {
-          const segment = projectSkySegment(
-            { ra: pathPoints[i][0] / 15, dec: pathPoints[i][1] },
-            { ra: pathPoints[i + 1][0] / 15, dec: pathPoints[i + 1][1] },
-            rVal,
-            dVal,
-            w,
-            h,
-            z,
-            coordinateMode,
-            observerLatitude,
-            lstDegrees,
-          );
+    segments.forEach((item) => {
+      const segment = projectSkySegment(
+        { ra: item.firstRa, dec: item.firstDec },
+        { ra: item.secondRa, dec: item.secondDec },
+        rVal,
+        dVal,
+        w,
+        h,
+        z,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
 
-          if (isSkySegmentVisible(segment, w, h, 60, coordinateMode, 0)) {
-            if (!isDrawing) {
-              p.moveTo(segment.p1.x, segment.p1.y);
-              isDrawing = true;
-            }
-            p.lineTo(segment.p2.x, segment.p2.y);
-          } else {
-            isDrawing = false;
-          }
-        }
-      });
+      if (isSkySegmentVisible(segment, w, h, 60, coordinateMode, 0)) {
+        p.moveTo(segment.p1.x, segment.p1.y);
+        p.lineTo(segment.p2.x, segment.p2.y);
+      }
     });
 
     return p;
@@ -1471,9 +1313,7 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
   );
 }
 
-function ConstellationsPath({ constellations, selectedStar, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
-  const lines = constellations.lines?.features || [];
-
+function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const paths = useDerivedValue(() => {
     const regularPath = Skia.Path.Make();
     const emphasizedPath = Skia.Path.Make();
@@ -1483,38 +1323,25 @@ function ConstellationsPath({ constellations, selectedStar, ra, dec, zoom, layou
     const rVal = ra.value;
     const dVal = dec.value;
 
-    lines.forEach((feature) => {
-      if (!feature.geometry || feature.geometry.type !== 'MultiLineString') return;
-      const emphasized = isSelectedConstellation(feature, selectedStar);
-      const targetPath = emphasized ? emphasizedPath : regularPath;
+    segments.forEach((item) => {
+      const targetPath = item.emphasized ? emphasizedPath : regularPath;
+      const segment = projectSkySegment(
+        { ra: item.firstRa, dec: item.firstDec },
+        { ra: item.secondRa, dec: item.secondDec },
+        rVal,
+        dVal,
+        w,
+        h,
+        z,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
 
-      feature.geometry.coordinates.forEach((linePoints) => {
-        let isDrawing = false;
-        for (let i = 0; i < linePoints.length - 1; i++) {
-          const segment = projectSkySegment(
-            { ra: linePoints[i][0] / 15, dec: linePoints[i][1] },
-            { ra: linePoints[i + 1][0] / 15, dec: linePoints[i + 1][1] },
-            rVal,
-            dVal,
-            w,
-            h,
-            z,
-            coordinateMode,
-            observerLatitude,
-            lstDegrees,
-          );
-
-          if (isSkySegmentVisible(segment, w, h, 100, coordinateMode, -5, true)) {
-            if (!isDrawing) {
-              targetPath.moveTo(segment.p1.x, segment.p1.y);
-              isDrawing = true;
-            }
-            targetPath.lineTo(segment.p2.x, segment.p2.y);
-          } else {
-            isDrawing = false;
-          }
-        }
-      });
+      if (isSkySegmentVisible(segment, w, h, 100, coordinateMode, -5, true)) {
+        targetPath.moveTo(segment.p1.x, segment.p1.y);
+        targetPath.lineTo(segment.p2.x, segment.p2.y);
+      }
     });
 
     return { regular: regularPath, emphasized: emphasizedPath };
@@ -1546,59 +1373,43 @@ function ConstellationsPath({ constellations, selectedStar, ra, dec, zoom, layou
   );
 }
 
-const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom, layout, time, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel }) {
-  // Pre-calculate star positions when dependencies change, not every frame
-  const starPositions = useMemo(() => {
+const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom, layout, time, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel, prevRa, prevDec }) {
+  // Animate points dynamically based on current values of shared values
+  const points = useDerivedValue(() => {
+    const rVal = ra.value;
+    const dVal = dec.value;
+    const zVal = zoom.value;
+    const prVal = prevRa.value;
+    const pdVal = prevDec.value;
+
     return batch.stars.map((star) => {
-      'worklet';
-      const projected = coordinateMode === 'horizontal'
-        && Number.isFinite(star.horizontalAz)
-        && Number.isFinite(star.horizontalAlt)
-        ? {
-          ...projectWithParallax(
-            star,
-            star.horizontalAz,
-            star.horizontalAlt,
-            ra.value,
-            dec.value,
-            layout.width,
-            layout.height,
-            zoom.value,
-          ),
-          skyAltitude: star.horizontalAlt,
-        }
-        : projectWithParallax(
-          star,
-          star.ra,
-          star.dec,
-          ra.value,
-          dec.value,
-          layout.width,
-          layout.height,
-          zoom.value,
-          coordinateMode,
-          observerLatitude,
-          lstDegrees,
-        );
+      const projected = projectWithParallax(
+        star,
+        star.ra,
+        star.dec,
+        rVal,
+        dVal,
+        layout.width,
+        layout.height,
+        zVal,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+        prVal,
+        pdVal,
+      );
+
       const visible = projected.x > -20
         && projected.x < layout.width + 20
         && projected.y > -20
         && projected.y < layout.height + 20
         && (!hideBelowHorizon || projected.skyAltitude == null || projected.skyAltitude >= 0);
-      return visible
-        ? { x: projected.x, y: projected.y, visible: true }
-        : { x: -1000, y: -1000, visible: false };
-    });
-  }, [batch.stars, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon]);
 
-  // Animate points based on pre-calculated positions
-  const points = useDerivedValue(() =>
-    starPositions.map(starPos =>
-      starPos.visible
-        ? { x: starPos.x, y: starPos.y }
-        : { x: -1000, y: -1000 }
-    )
-  );
+      return visible
+        ? { x: projected.x, y: projected.y }
+        : { x: -1000, y: -1000 };
+    });
+  });
 
   const phase = batch.key.length * 0.41;
   const opacity = useDerivedValue(() => (
@@ -1617,7 +1428,7 @@ const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom
   );
 });
 
-const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel }) {
+const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel, prevRa, prevDec }) {
   const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
   const isBrightStar = Number(star.mag) <= 2;
 
@@ -1627,9 +1438,8 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   const starUniqueScale = 0.95 + (starSeed % 13) / 100; // Value between 0.95-1.07
   const starUniqueHue = (starSeed % 31) / 100; // Value between 0-0.31 for subtle hue shift
 
-  // Pre-calculate star position when dependencies change
-  const starPosition = useMemo(() => {
-    'worklet';
+  // Animate star position dynamically using useDerivedValue
+  const starPosition = useDerivedValue(() => {
     const p = projectWithParallax(
       star,
       star.ra,
@@ -1642,6 +1452,8 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
       coordinateMode,
       observerLatitude,
       lstDegrees,
+      prevRa.value,
+      prevDec.value,
     );
     const isVisible = p.x > -30 && p.x < layout.width + 30 && p.y > -30 && p.y < layout.height + 30 && (!hideBelowHorizon || p.skyAltitude == null || p.skyAltitude >= 0);
     const opacity = qualityLevel === 'low' ? 0.92 : 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
@@ -1652,7 +1464,7 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
       baseOpacity: opacity,
       twinklePhase,
     };
-  }, [star, ra, dec, zoom, layout, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel, time]);
+  });
 
   const cx = useDerivedValue(() => starPosition.value.x);
   const cy = useDerivedValue(() => starPosition.value.y);
@@ -2028,109 +1840,69 @@ function DSOMarker({ dso, ra, dec, zoom, layout, font, coordinateMode, observerL
 
 // Shooting star effect for premium feel
 function ShootingStar({ time, layout }) {
-  // Create a shooting star every 90 seconds on average
-  const shootingStarTime = useDerivedValue(() => {
-    // Use star field as seed for deterministic but seemingly random shooting stars
-    const baseTime = 90000; // 90 seconds in ms
-    const cycleTime = (time.value * 1000) % baseTime;
-    return cycleTime < 100; // Active for 100ms every 90 seconds
-  });
-
-  const [showStar, setShowStar] = useState(false);
-  const [starProgress, setStarProgress] = useState(0);
-  const [starX, setStarX] = useState(0);
-  const [starY, setStarY] = useState(0);
-  const [starLength, setStarLength] = useState(0);
-  const [starAngle, setStarAngle] = useState(0);
+  const [meteor, setMeteor] = useState(null);
 
   useEffect(() => {
-    if (shootingStarTime.value) {
-      // Randomly decide to show a shooting star
-      if (Math.random() < 0.02) { // 2% chance each frame when timing is right
-        setShowStar(true);
-        // Random position across the sky
-        setStarX(Math.random() * layout.width);
-        setStarY(Math.random() * layout.height * 0.8); // Mostly in upper 80% of sky
-        // Random length and angle
-        setStarLength(80 + Math.random() * 120); // 80-200px length
-        setStarAngle(Math.random() * Math.PI * 2); // Random angle
-        setStarProgress(0);
-      }
-    }
-
-    if (showStar) {
-      // Animate the shooting star
-      const timer = setInterval(() => {
-        setStarProgress(prev => {
-          const next = prev + 0.02; // Adjust speed as needed
-          if (next >= 1) {
-            setShowStar(false);
-            return 0;
-          }
-          return next;
+    if (!layout.width || !layout.height) return undefined;
+    let launchTimer;
+    let clearTimer;
+    let cancelled = false;
+    const schedule = () => {
+      const delay = 15000 + Math.random() * 30000;
+      launchTimer = setTimeout(() => {
+        if (cancelled) return;
+        setMeteor({
+          x: Math.random() * layout.width,
+          y: Math.random() * layout.height * 0.75,
+          length: 80 + Math.random() * 120,
+          angle: Math.random() * Math.PI * 2,
+          start: Date.now() / 1000,
         });
-      }, 16); // ~60fps
+        clearTimer = setTimeout(() => {
+          if (cancelled) return;
+          setMeteor(null);
+          schedule();
+        }, 1200);
+      }, delay);
+    };
+    schedule();
+    return () => {
+      cancelled = true;
+      clearTimeout(launchTimer);
+      clearTimeout(clearTimer);
+    };
+  }, [layout.width, layout.height]);
 
-      return () => clearInterval(timer);
-    }
-  }, [showStar, shootingStarTime.value, layout.width, layout.height]);
-
-  if (!showStar) return null;
-
-  // Calculate current position based on progress
-  const progress = Math.min(1, starProgress);
-  const easeOut = 1 - Math.pow(1 - progress, 3); // Smooth easing
-  const currentLength = starLength * easeOut;
-  const endX = starX + Math.cos(starAngle) * currentLength;
-  const endY = starY + Math.sin(starAngle) * currentLength;
-
-  // Create fading tail effect
-  const tailLength = 20;
-  const tailSegments = 5;
+  const activeMeteor = meteor || { x: -1000, y: -1000, length: 0, angle: 0, start: 0 };
+  const progress = useDerivedValue(() => {
+    if (!meteor) return 0;
+    const raw = Math.max(0, Math.min(1, (time.value - activeMeteor.start) / 1.05));
+    return 1 - Math.pow(1 - raw, 3);
+  });
+  const p1 = useMemo(() => vec(activeMeteor.x, activeMeteor.y), [activeMeteor.x, activeMeteor.y]);
+  const p2 = useDerivedValue(() => vec(
+    activeMeteor.x + Math.cos(activeMeteor.angle) * activeMeteor.length * progress.value,
+    activeMeteor.y + Math.sin(activeMeteor.angle) * activeMeteor.length * progress.value,
+  ));
+  const opacity = useDerivedValue(() => (meteor ? Math.max(0, 0.82 * (1 - progress.value * 0.35)) : 0));
+  const headX = useDerivedValue(() => p2.value.x);
+  const headY = useDerivedValue(() => p2.value.y);
 
   return (
     <Group>
-      {/* Main shooting star line */}
       <Line
-        p1={{ x: starX, y: starY }}
-        p2={{ x: endX, y: endY }}
+        p1={p1}
+        p2={p2}
         strokeWidth={2}
         color="#FFFFFF"
-        opacity={0.8}
+        opacity={opacity}
       />
-
-      {/* Tail segments for fading effect */}
-      {[...Array(tailSegments)].map((_, i) => {
-        const segmentProgress = i / tailSegments;
-        const segmentStart = {
-          x: starX + Math.cos(starAngle) * (currentLength * (1 - segmentProgress) - tailLength),
-          y: starY + Math.sin(starAngle) * (currentLength * (1 - segmentProgress) - tailLength)
-        };
-        const segmentEnd = {
-          x: starX + Math.cos(starAngle) * (currentLength * (1 - segmentProgress)),
-          y: starY + Math.sin(starAngle) * (currentLength * (1 - segmentProgress))
-        };
-
-        const segmentOpacity = 0.3 * (1 - segmentProgress);
-        return (
-          <Line
-            key={i}
-            p1={segmentStart}
-            p2={segmentEnd}
-            strokeWidth={1}
-            color="#FFFFFF"
-            opacity={segmentOpacity}
-          );
-        );
-      })}
-
-      {/* Bright head */}
       <Circle
-        cx={endX}
-        cy={endY}
+        cx={headX}
+        cy={headY}
         r={1.5}
         color="#FFFFFF"
-        opacity={0.9}
+        opacity={opacity}
       />
     </Group>
   );

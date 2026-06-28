@@ -53,6 +53,9 @@ export function estimateLayerNodes({
   starOverlayCount = 0,
   showGrid,
   showNebula,
+  showMilkyWay = false,
+  showDeepAtmosphere = true,
+  showShootingStars = false,
   showConstellations,
   showConstellationLabels,
   showConstellationBoundaries,
@@ -74,7 +77,11 @@ export function estimateLayerNodes({
       count + 1 + (star.owned ? 1 : 0) + (star.proper ? 1 : 0)
     ), 0);
   const layers = {
-    background: 1 + (showNebula && quality !== 'low' ? 1 : 0),
+    background: 1,
+    deepAtmosphere: showDeepAtmosphere ? 1 : 0,
+    nebula: showNebula && quality !== 'low' ? 1 : 0,
+    milkyWay: showMilkyWay ? 1 : 0,
+    shootingStars: showShootingStars ? 1 : 0,
     horizon: coordinateMode === 'horizontal' ? 11 : 0,
     grid: showGrid ? 1 : 0,
     stars: starNodes,

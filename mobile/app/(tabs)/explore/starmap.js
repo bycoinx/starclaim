@@ -9,16 +9,12 @@ import StarCanvas from '../../../components/StarCanvas';
 import StarPopup from '../../../components/StarPopup';
 import PurchaseModal from '../../../components/PurchaseModal';
 import { ensureStarData } from '../../../src/data/starLoader';
-import { loadGaiaViewport } from '../../../src/data/remoteGaiaCatalog';
+import { loadSkyCatalogWindow } from '../../../src/data/skyCatalogWindow';
 import { ensureConstellations } from '../../../src/data/constellationLoader';
 import {
   getStarDecDegrees,
-  getStarRaHours,
   getStarRaDegrees,
-  getLocalSiderealTime,
-  altAzToRaDec,
   normalizeAngle,
-  raDecToAltAz,
 } from '../../../src/utils/astronomy';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
@@ -35,7 +31,18 @@ import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 import SkyLiveChrome from '../../../components/SkyLiveChrome';
 import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
 import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
-import { adjustHeadingForScreen, getScreenTilt } from '../../../src/utils/deviceOrientation';
+import {
+  SENSOR_HUD_INTERVAL_MS,
+  SENSOR_RENDER_INTERVAL_MS,
+  createObserverFromLocation,
+  getEquatorialViewportCenter,
+  getHorizontalPositionForObject,
+  getSensorCanvasTarget,
+  getSiderealTimeForObserver,
+  shouldCommitSensorView,
+  smoothHeading,
+  smoothTilt,
+} from '../../../src/sky/skyRuntime';
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -92,9 +99,9 @@ export default function StarMapScreen() {
   const coreStarsRef = useRef([]);
   const gaiaRequestRef = useRef(0);
   const gaiaViewportLoadedRef = useRef(false);
+  const gaiaFallbackWarnedUntilRef = useRef(0);
   const interactionActiveRef = useRef(false);
   const router = useRouter();
-  const ALPHA = 0.15;
   const { heading, tilt } = viewDirection;
 
   useEffect(() => {
@@ -136,34 +143,40 @@ export default function StarMapScreen() {
   useEffect(() => {
     if (loading || mapError || !coreStarsRef.current.length) return undefined;
     if (interactionActiveRef.current) return undefined;
-    if (mode === 'sensor' && gaiaViewportLoadedRef.current) return undefined;
+    if (mode === 'sensor') return undefined;
     const requestId = gaiaRequestRef.current + 1;
     gaiaRequestRef.current = requestId;
     const timer = setTimeout(async () => {
       try {
-        const equatorialCenter = coordinateMode === 'horizontal' && observer
-          ? altAzToRaDec(centerRa, centerDec, observer.latitude, siderealTime)
-          : { raDegrees: centerRa, dec: centerDec };
-        const field = 90 / Math.max(0.8, zoom);
-        const result = await loadGaiaViewport({
+        const equatorialCenter = getEquatorialViewportCenter({
+          coordinateMode,
+          observer,
+          centerRa,
+          centerDec,
+          siderealTime,
+        });
+        const result = await loadSkyCatalogWindow({
           centerRaDegrees: equatorialCenter.raDegrees,
           centerDecDegrees: equatorialCenter.dec,
-          horizontalFovDegrees: field,
-          verticalFovDegrees: field * 0.65,
-          maxStars: 12000,
+          zoom,
+          coreStars: coreStarsRef.current,
+          maxStars: 14000,
+          gaiaMaxStars: 12000,
         });
         if (gaiaRequestRef.current !== requestId || !result.stars.length) return;
-        gaiaViewportLoadedRef.current = true;
-        const gaiaHips = new Set(result.stars.map((star) => String(star.hip || '')).filter(Boolean));
-        const gaiaIds = new Set(result.stars.map((star) => star.canonicalId));
-        const fallback = coreStarsRef.current.filter((star) => (
-          !gaiaIds.has(star.canonicalId)
-          && (!star.hip || !gaiaHips.has(String(star.hip)))
-        ));
-        setStars([...result.stars, ...fallback].slice(0, 14000));
+        gaiaViewportLoadedRef.current = !result.fallback;
+        if (!result.fallback) {
+          setStars(result.stars);
+        }
+        if (result.fallback && result.error && Date.now() > gaiaFallbackWarnedUntilRef.current) {
+          gaiaFallbackWarnedUntilRef.current = Date.now() + 60_000;
+          console.warn('Gaia viewport fallback to embedded HYG core', result.error);
+        }
       } catch (error) {
-        console.warn('Gaia viewport fallback to embedded HYG core', error);
-        if (gaiaRequestRef.current === requestId) setStars(coreStarsRef.current);
+        if (Date.now() > gaiaFallbackWarnedUntilRef.current) {
+          gaiaFallbackWarnedUntilRef.current = Date.now() + 60_000;
+          console.warn('Gaia viewport fallback to embedded HYG core', error);
+        }
       }
     }, 900);
     return () => clearTimeout(timer);
@@ -196,23 +209,17 @@ export default function StarMapScreen() {
   useEffect(() => {
     if (!observer || coordinateMode !== 'horizontal') return undefined;
     const updateSiderealTime = () => {
-      setSiderealTime(getLocalSiderealTime(observer.longitude, new Date()));
+      setSiderealTime(getSiderealTimeForObserver(observer));
     };
     updateSiderealTime();
     const timer = setInterval(updateSiderealTime, 30000);
     return () => clearInterval(timer);
   }, [coordinateMode, observer]);
 
-  const getHorizontalPosition = (object, activeObserver = observer) => {
-    if (!activeObserver) return null;
-    const lst = getLocalSiderealTime(activeObserver.longitude, new Date());
-    return raDecToAltAz(
-      getStarRaHours(object),
-      getStarDecDegrees(object),
-      activeObserver.latitude,
-      lst,
-    );
-  };
+  const getHorizontalPosition = useCallback(
+    (object, activeObserver = observer) => getHorizontalPositionForObject(object, activeObserver),
+    [observer],
+  );
 
   const activateRealSky = async () => {
     try {
@@ -230,11 +237,8 @@ export default function StarMapScreen() {
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
-      const nextObserver = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      };
-      const nextSiderealTime = getLocalSiderealTime(nextObserver.longitude, new Date());
+      const nextObserver = createObserverFromLocation(position);
+      const nextSiderealTime = getSiderealTimeForObserver(nextObserver);
       setObserver(nextObserver);
       setSiderealTime(nextSiderealTime);
       setCoordinateMode('horizontal');
@@ -292,7 +296,6 @@ export default function StarMapScreen() {
       setSelectedStar(null);
     }
   };
-
   const loadPurchases = async () => {
     try {
       setPurchases(await getOwnershipPurchases());
@@ -303,42 +306,41 @@ export default function StarMapScreen() {
     if (mode !== 'sensor' || appState !== 'active') return undefined;
 
     let headingSubscription;
+    let fallbackMagSub;
     let cancelled = false;
     let usingFallback = false;
+    let lastCanvasTarget = null;
 
     const applyHeading = (nextHeading) => {
-      const adjustedHeading = adjustHeadingForScreen(nextHeading, screenOrientation);
-      let diff = adjustedHeading - lastHeading.current;
-      if (diff > 180) diff -= 360;
-      if (diff < -180) diff += 360;
-      const filteredHeading = normalizeAngle(lastHeading.current + diff * ALPHA);
-      lastHeading.current = filteredHeading;
+      lastHeading.current = smoothHeading(lastHeading.current, nextHeading, screenOrientation);
     };
 
-    const fallbackMagSub = Magnetometer.addListener((data) => {
+    const handleMagnetometerData = (data) => {
       if (!usingFallback) return;
       const angle = Math.atan2(data.y, data.x) * (180 / Math.PI);
       applyHeading(normalizeAngle(90 - angle));
-    });
+    };
 
     const motionSub = DeviceMotion.addListener((data) => {
       const betaDegrees = (data.rotation?.beta || 0) * (180 / Math.PI);
       const gammaDegrees = (data.rotation?.gamma || 0) * (180 / Math.PI);
-      const newTilt = getScreenTilt(betaDegrees, gammaDegrees, screenOrientation);
-      const filteredTilt = lastTilt.current + (newTilt - lastTilt.current) * ALPHA;
-      lastTilt.current = filteredTilt;
+      lastTilt.current = smoothTilt(lastTilt.current, betaDegrees, gammaDegrees, screenOrientation);
     });
 
     const startHeading = async () => {
       try {
-        headingSubscription = await Location.watchHeadingAsync((measurement) => {
-          if (cancelled) return;
+        const sub = await Location.watchHeadingAsync((measurement) => {
+          if (cancelled) {
+            sub.remove();
+            return;
+          }
           const trueHeadingAvailable = measurement.trueHeading >= 0;
           applyHeading(trueHeadingAvailable ? measurement.trueHeading : measurement.magHeading);
           lastHeadingAccuracy.current = measurement.accuracy;
           if (measurement.accuracy >= 2) setCalibrationVisible(false);
         });
-        if (cancelled) headingSubscription.remove();
+        headingSubscription = sub;
+        if (cancelled) sub.remove();
       } catch (error) {
         console.warn('Heading sensor error', error);
         recordRenderDiagnostic({
@@ -352,6 +354,10 @@ export default function StarMapScreen() {
         const magnetometerAvailable = await Magnetometer.isAvailableAsync().catch(() => false);
         if (magnetometerAvailable) {
           setCalibrationVisible(true);
+          if (!cancelled) {
+            fallbackMagSub = Magnetometer.addListener(handleMagnetometerData);
+            Magnetometer.setUpdateInterval(120);
+          }
         } else {
           setMode('manual');
           setCapabilityNotice({
@@ -365,39 +371,48 @@ export default function StarMapScreen() {
     startHeading();
     let lastHudCommit = 0;
     let lastUpdateAt = 0;
-    let animationFrameId;
 
     const tick = () => {
       if (cancelled) return;
       const nowMs = Date.now();
-      if (nowMs - lastUpdateAt >= 16) {
+      const nextTarget = getSensorCanvasTarget(lastHeading.current, lastTilt.current);
+      if (shouldCommitSensorView({
+        previousTarget: lastCanvasTarget,
+        nextTarget,
+        lastCommitAt: lastUpdateAt,
+        nowMs,
+        intervalMs: SENSOR_RENDER_INTERVAL_MS,
+      })) {
         lastUpdateAt = nowMs;
-        starCanvasRef.current?.setView(lastHeading.current, lastTilt.current * 0.6);
+        lastCanvasTarget = nextTarget;
+        if (mode === 'sensor' && !interactionActiveRef.current) {
+          starCanvasRef.current?.setView(nextTarget.ra, nextTarget.dec);
+        }
       }
 
-      if (nowMs - lastHudCommit >= 1000) {
+      if (nowMs - lastHudCommit >= SENSOR_HUD_INTERVAL_MS) {
         lastHudCommit = nowMs;
         setViewDirection({ heading: lastHeading.current, tilt: lastTilt.current });
         setHeadingAccuracy((current) => (
           current === lastHeadingAccuracy.current ? current : lastHeadingAccuracy.current
         ));
       }
-
-      animationFrameId = requestAnimationFrame(tick);
     };
 
-    animationFrameId = requestAnimationFrame(tick);
+    const sensorTimer = setInterval(tick, SENSOR_RENDER_INTERVAL_MS);
+    tick();
 
-    Magnetometer.setUpdateInterval(120);
     DeviceMotion.setUpdateInterval(120);
     return () => {
       cancelled = true;
       headingSubscription?.remove();
-      fallbackMagSub.remove();
+      fallbackMagSub?.remove();
       motionSub.remove();
-      cancelAnimationFrame(animationFrameId);
+      clearInterval(sensorTimer);
     };
   }, [appState, mode, screenOrientation]);
+
+  const selectedPurchase = stars.length > 0 && selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
   const selectedHorizontal = selectedStar && observer
@@ -477,6 +492,9 @@ export default function StarMapScreen() {
 
   const handleInteractionStateChange = useCallback((active) => {
     interactionActiveRef.current = active;
+    if (active) {
+      setMode('manual');
+    }
   }, []);
 
   const handleCenterChange = useCallback(({ ra, dec }) => {
