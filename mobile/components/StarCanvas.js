@@ -25,16 +25,16 @@ import {
 import {
   useSharedValue,
   useDerivedValue,
+  useAnimatedReaction,
   useFrameCallback,
   runOnJS,
   withSpring
 } from 'react-native-reanimated';
 import {
-  buildSkyLayerRenderSet,
-  countSegments,
-  getSkyVisualLayerBudget,
-} from '../src/sky/skyLayerRenderSet';
-import { buildStarRenderSet } from '../src/sky/starRenderSet';
+  buildTapStarIndex,
+  findNearestIndexedStar,
+} from '../src/sky/skyInteractionIndex';
+import { buildSkyRenderPlan } from '../src/sky/skyRenderPlan';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
 import { getPlanetPositions } from '../src/utils/solarSystem';
 import {
@@ -42,7 +42,6 @@ import {
   projectSkySegment,
 } from '../src/utils/skyProjection';
 import {
-  estimateLayerNodes,
   getBaseRenderQuality,
   getHeapPressure,
   updateAdaptiveQuality,
@@ -55,7 +54,6 @@ const deg2rad = (deg) => {
   return deg * Math.PI / 180;
 };
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
-const TAP_CELL_SIZE = 56;
 const GESTURE_UPDATE_DIVISOR = 2;
 const MIN_PROJECTION_COSINE = 0.08;
 const GALACTIC_PLANE = Array.from({ length: 73 }, (_, index) => {
@@ -86,6 +84,14 @@ function normalizeLongitude(value) {
   let normalized = Number(value) || 0;
   while (normalized < 0) normalized += 360;
   while (normalized >= 360) normalized -= 360;
+  return normalized;
+}
+
+function normalizeRaHours(value) {
+  'worklet';
+  let normalized = Number(value) || 0;
+  while (normalized < 0) normalized += 24;
+  while (normalized >= 24) normalized -= 24;
   return normalized;
 }
 
@@ -246,7 +252,7 @@ function projectWithParallax(
   );
 
   // Apply parallax offset to star's position
-  const adjustedRa = normalizeRaDelta(starRa + parallaxOffset.raOffset);
+  const adjustedRa = normalizeRaHours(starRa + parallaxOffset.raOffset / 15);
   const adjustedDec = starDec + parallaxOffset.decOffset;
 
   // Project using adjusted position
@@ -278,10 +284,6 @@ function projectWithParallax(
     zoom,
   );
   return { x: projected.x, y: projected.y, skyAltitude: null };
-}
-
-function getCellKey(x, y) {
-  return `${Math.floor(x / TAP_CELL_SIZE)}:${Math.floor(y / TAP_CELL_SIZE)}`;
 }
 
 function NebulaBackground({ ra, dec, layout, qualityLevel }) {
@@ -464,12 +466,15 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const ra = useSharedValue(initialRa);
   const dec = useSharedValue(initialDec);
   const zoom = useSharedValue(initialZoom);
+  const layerRa = useSharedValue(initialRa);
+  const layerDec = useSharedValue(initialDec);
+  const layerZoom = useSharedValue(initialZoom);
   const time = useSharedValue(0);
   const fpsShared = useSharedValue(0);
   const readyShared = useSharedValue(false);
-  const frameCountRef = useRef(0);
-  const lastTimeRef = useRef(0);
-  const lastVisualTickRef = useRef(0);
+  const frameCountShared = useSharedValue(0);
+  const lastTimeShared = useSharedValue(0);
+  const lastVisualTickShared = useSharedValue(0);
   const lastRenderSetLogAtRef = useRef(0);
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
@@ -562,22 +567,46 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     }
   }, [baseQuality]);
 
+  const visualTickMs = qualityLevel === 'high' ? 33 : qualityLevel === 'medium' ? 50 : 100;
+  const layerRaThreshold = qualityLevel === 'high' ? 1.2 : qualityLevel === 'medium' ? 2.2 : 3.5;
+  const layerDecThreshold = qualityLevel === 'high' ? 0.9 : qualityLevel === 'medium' ? 1.6 : 2.5;
+  const layerZoomThreshold = qualityLevel === 'high' ? 0.16 : qualityLevel === 'medium' ? 0.25 : 0.4;
+
+  useAnimatedReaction(
+    () => ({
+      ra: ra.value,
+      dec: dec.value,
+      zoom: zoom.value,
+    }),
+    (next) => {
+      const raChanged = Math.abs(normalizeRaDelta(next.ra - layerRa.value)) >= layerRaThreshold;
+      const decChanged = Math.abs(next.dec - layerDec.value) >= layerDecThreshold;
+      const zoomChanged = Math.abs(next.zoom - layerZoom.value) >= layerZoomThreshold;
+      if (raChanged || decChanged || zoomChanged) {
+        layerRa.value = next.ra;
+        layerDec.value = next.dec;
+        layerZoom.value = next.zoom;
+      }
+    },
+    [layerDecThreshold, layerRaThreshold, layerZoomThreshold],
+  );
+
   useFrameCallback((info) => {
     const now = info.timestamp;
     if (!readyShared.value) {
       readyShared.value = true;
       runOnJS(reportReady)();
     }
-    frameCountRef.current++;
-    if (now - lastTimeRef.current >= 1000) {
-      const measuredFps = Math.round((frameCountRef.current * 1000) / (now - lastTimeRef.current));
+    frameCountShared.value += 1;
+    if (now - lastTimeShared.value >= 1000) {
+      const measuredFps = Math.round((frameCountShared.value * 1000) / (now - lastTimeShared.value));
       fpsShared.value = measuredFps;
-      frameCountRef.current = 0;
-      lastTimeRef.current = now;
+      frameCountShared.value = 0;
+      lastTimeShared.value = now;
       runOnJS(reportTelemetry)(measuredFps);
     }
-    if (now - lastVisualTickRef.current >= 33) {
-      lastVisualTickRef.current = now;
+    if (now - lastVisualTickShared.value >= visualTickMs) {
+      lastVisualTickShared.value = now;
       time.value = now / 1000;
     }
     // Update previous center values for parallax calculation
@@ -589,6 +618,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     ra.value = withSpring(initialRa, SPRING_CONFIG);
     dec.value = withSpring(initialDec, SPRING_CONFIG);
     zoom.value = withSpring(initialZoom, SPRING_CONFIG);
+    layerRa.value = initialRa;
+    layerDec.value = initialDec;
+    layerZoom.value = initialZoom;
     const next = { ra: initialRa, dec: initialDec };
     virtualCenterRef.current = next;
     setVirtualCenter(next);
@@ -639,79 +671,44 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     [ownedStarIds],
   );
 
-  const renderedStars = useMemo(() => {
-    return buildStarRenderSet({
-      stars,
-      selectedStar,
-      ownedIdSet,
-      qualityLevel,
-      zoom: initialZoom,
-      nightVision,
-      coordinateMode,
-      observerLatitude,
-      lstDegrees,
-      virtualCenter,
-      layout,
-    });
-  }, [
-    initialZoom,
-    nightVision,
-    ownedIdSet,
-    qualityLevel,
-    coordinateMode,
-    observerLatitude,
-    lstDegrees,
-    layout.height,
-    layout.width,
-    selectedStar?.canonicalId,
-    selectedStar?.hip,
-    selectedStar?.id,
-    stars,
-    virtualCenter.dec,
-    virtualCenter.ra,
-  ]);
-
-  const starBatches = useMemo(() => {
-    const batches = new Map();
-    renderedStars.forEach((star) => {
-      const radius = Math.max(0.75, Math.min(3, Math.round(star.radius * 2) / 2));
-      const key = `${star.color}:${radius}`;
-      const batch = batches.get(key) || { key, color: star.color, radius, stars: [] };
-      batch.stars.push(star);
-      batches.set(key, batch);
-    });
-    return [...batches.values()];
-  }, [renderedStars]);
-
-  const overlayStars = useMemo(() => renderedStars
-    .filter((star) => star.owned || (star.proper && (showLabels || initialZoom > 2.8)))
-    .slice(0, 24), [initialZoom, renderedStars, showLabels]);
-
   const {
+    renderedStars,
+    starBatches,
+    overlayStars,
     visibleDSOs,
     visiblePlanets,
     visibleConstellationLabels,
     visibleConstellationLineSegments,
     visibleBoundarySegments,
     visibleMythologyKeys,
-  } = useMemo(() => buildSkyLayerRenderSet({
+    enabledLayers,
+    visualLayerBudget,
+    layerNodeEstimate,
+  } = useMemo(() => buildSkyRenderPlan({
+    stars,
+    selectedStar,
+    ownedIdSet,
+    qualityLevel,
+    zoom: initialZoom,
+    nightVision,
+    coordinateMode,
+    observerLatitude,
+    lstDegrees,
+    virtualCenter,
+    layout,
     dsoData,
     planetData,
     constellations,
     mythologyAssets: MYTHOLOGY_ASSETS,
+    showLabels,
+    showGrid,
+    showNebula,
     showDSOs,
     showPlanets,
     showConstellations,
     showConstellationLabels,
     showConstellationBoundaries,
     showMythology,
-    selectedStar,
-    qualityLevel,
-    zoom: initialZoom,
-    virtualCenter,
-    coordinateMode,
-    observerLatitude,
-    lstDegrees,
   }), [
     constellations.boundaries?.features,
     constellations.labels?.features,
@@ -719,75 +716,31 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     coordinateMode,
     dsoData,
     initialZoom,
+    layout.height,
+    layout.width,
     lstDegrees,
+    nightVision,
     observerLatitude,
+    ownedIdSet,
     planetData,
     qualityLevel,
+    selectedStar?.canonicalId,
     showConstellationBoundaries,
     showConstellationLabels,
     showConstellations,
     showDSOs,
+    showGrid,
+    showLabels,
     showMythology,
+    showNebula,
     showPlanets,
     selectedStar?.con,
     selectedStar?.constellation,
+    selectedStar?.hip,
+    selectedStar?.id,
+    stars,
     virtualCenter.dec,
     virtualCenter.ra,
-  ]);
-
-  const visualLayerBudget = useMemo(
-    () => getSkyVisualLayerBudget(qualityLevel),
-    [qualityLevel],
-  );
-
-  const layerNodeEstimate = useMemo(() => {
-    return estimateLayerNodes({
-      renderedStars,
-      starBatchCount: starBatches.length,
-      starOverlayCount: overlayStars.length,
-      showGrid,
-      showNebula,
-      showMilkyWay: showNebula && visualLayerBudget.milkyWay,
-      showDeepAtmosphere: visualLayerBudget.deepAtmosphere,
-      showShootingStars: visualLayerBudget.shootingStars,
-      showConstellations,
-      showConstellationLabels,
-      showConstellationBoundaries,
-      showDSOs,
-      showPlanets,
-      showMythology,
-      coordinateMode,
-      constellationLines: countSegments(visibleConstellationLineSegments),
-      constellationLabels: visibleConstellationLabels.length,
-      constellationBoundaries: countSegments(visibleBoundarySegments),
-      dsoCount: visibleDSOs.length,
-      planetCount: visiblePlanets.length,
-      mythologyCount: visibleMythologyKeys.length,
-      quality: qualityLevel,
-    });
-  }, [
-    renderedStars,
-    starBatches.length,
-    overlayStars.length,
-    showGrid,
-    showNebula,
-    visualLayerBudget.deepAtmosphere,
-    visualLayerBudget.milkyWay,
-    visualLayerBudget.shootingStars,
-    showConstellations,
-    showConstellationLabels,
-    showConstellationBoundaries,
-    showDSOs,
-    showPlanets,
-    showMythology,
-    coordinateMode,
-    visibleConstellationLineSegments,
-    visibleConstellationLabels,
-    visibleBoundarySegments,
-    visibleDSOs,
-    visiblePlanets,
-    visibleMythologyKeys,
-    qualityLevel,
   ]);
 
   readyDetailsRef.current = {
@@ -809,31 +762,43 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     }
   }, [renderedStars.length, stars.length]);
 
-  const selectNearestStar = (x, y) => {
-    if (!onSelect) return;
-    let closestStar = null;
-    let minDistance = 25;
-    renderedStars.forEach((star) => {
-      const p = project(
+  const tapStarIndex = useMemo(() => {
+    return buildTapStarIndex({
+      stars: renderedStars,
+      width: layout.width,
+      height: layout.height,
+      hideBelowHorizon,
+      projectStar: (star) => project(
         star.ra,
         star.dec,
-        ra.value,
-        dec.value,
+        virtualCenter.ra,
+        virtualCenter.dec,
         layout.width,
         layout.height,
-        zoom.value,
+        initialZoom,
         coordinateMode,
         observerLatitude,
         lstDegrees,
-      );
-      const dist = Math.sqrt(Math.pow(p.x - x, 2) + Math.pow(p.y - y, 2));
-      if (dist < minDistance) {
-        minDistance = dist;
-        closestStar = star;
-      }
+      ),
     });
+  }, [
+    coordinateMode,
+    hideBelowHorizon,
+    initialZoom,
+    layout.height,
+    layout.width,
+    lstDegrees,
+    observerLatitude,
+    renderedStars,
+    virtualCenter.dec,
+    virtualCenter.ra,
+  ]);
+
+  const selectNearestStar = useCallback((x, y) => {
+    if (!onSelect) return;
+    const closestStar = findNearestIndexedStar(tapStarIndex, x, y);
     if (closestStar) onSelect(closestStar);
-  };
+  }, [onSelect, tapStarIndex]);
 
   const tapGesture = Gesture.Tap()
     .runOnJS(true)
@@ -887,24 +852,24 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               </Rect>
             )}
 
-            {!transparentBackground && visualLayerBudget.deepAtmosphere && (
+            {!transparentBackground && enabledLayers.deepAtmosphere && (
               <DeepSpaceAtmosphere layout={layout} nightVision={nightVision} />
             )}
 
-            {showNebula && visualLayerBudget.nebula && !transparentBackground && !nightVision && (
+            {enabledLayers.nebula && !transparentBackground && !nightVision && (
               <NebulaBackground
-                ra={ra}
-                dec={dec}
+                ra={layerRa}
+                dec={layerDec}
                 layout={layout}
                 qualityLevel={qualityLevel}
               />
             )}
 
-            {showNebula && visualLayerBudget.milkyWay && !transparentBackground && (
+            {enabledLayers.milkyWay && !transparentBackground && (
               <MilkyWayDensity
-                ra={ra}
-                dec={dec}
-                zoom={zoom}
+                ra={layerRa}
+                dec={layerDec}
+                zoom={layerZoom}
                 layout={layout}
                 coordinateMode={coordinateMode}
                 observerLatitude={observerLatitude}
@@ -926,11 +891,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             )}
 
-            {showGrid && (
+            {enabledLayers.grid && (
               <CelestialGrid
-                ra={ra}
-                dec={dec}
-                zoom={zoom}
+                ra={layerRa}
+                dec={layerDec}
+                zoom={layerZoom}
                 layout={layout}
                 font={font}
                 qualityLevel={qualityLevel}
@@ -941,23 +906,23 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             )}
 
-            {showMythology && qualityLevel === 'high' && visibleMythologyKeys.map((key) => {
+            {enabledLayers.mythology && visibleMythologyKeys.map((key) => {
               const data = MYTHOLOGY_ASSETS[key];
               return (
                 <MythologyFigure key={key} data={data} ra={ra} dec={dec} zoom={zoom} layout={layout} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} />
               );
             })}
 
-            {showDSOs && visibleDSOs.map((dso) => (
+            {enabledLayers.dsos && visibleDSOs.map((dso) => (
               <DSOMarker key={dso.id} dso={dso} ra={ra} dec={dec} zoom={zoom} layout={layout} font={font} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {showConstellationBoundaries && (
+            {enabledLayers.constellationBoundaries && (
               <ConstellationBoundariesPath
                 segments={visibleBoundarySegments}
-                ra={ra}
-                dec={dec}
-                zoom={zoom}
+                ra={layerRa}
+                dec={layerDec}
+                zoom={layerZoom}
                 layout={layout}
                 coordinateMode={coordinateMode}
                 observerLatitude={observerLatitude}
@@ -966,12 +931,12 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             )}
 
-            {showConstellations && (
+            {enabledLayers.constellations && (
               <ConstellationsPath
                 segments={visibleConstellationLineSegments}
-                ra={ra}
-                dec={dec}
-                zoom={zoom}
+                ra={layerRa}
+                dec={layerDec}
+                zoom={layerZoom}
                 layout={layout}
                 coordinateMode={coordinateMode}
                 observerLatitude={observerLatitude}
@@ -988,7 +953,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               <StarCircle key={`overlay-${star.canonicalId || star.id}`} star={star} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} font={font} showLabels={showLabels} suppressLabel={selectedStar?.canonicalId === star.canonicalId || selectedStar?.id === star.id} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} nightVision={nightVision} qualityLevel={qualityLevel} prevRa={prevRa} prevDec={prevDec} />
             ))}
 
-            {showConstellationLabels && qualityLevel !== 'low' && visibleConstellationLabels.map((feature, index) => (
+            {enabledLayers.constellationLabels && visibleConstellationLabels.map((feature, index) => (
               <ConstellationLabel
                 key={`${feature.id || 'label'}-${index}`}
                 feature={feature}
@@ -1004,11 +969,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               />
             ))}
 
-            {showPlanets && visiblePlanets.map((planet) => (
+            {enabledLayers.planets && visiblePlanets.map((planet) => (
               <PlanetMarker key={planet.id} planet={planet} ra={ra} dec={dec} zoom={zoom} layout={layout} font={boldFont} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} nightVision={nightVision} time={time} />
             ))}
 
-            {visualLayerBudget.shootingStars && <ShootingStar time={time} layout={layout} />}
+            {enabledLayers.shootingStars && <ShootingStar time={time} layout={layout} />}
 
             {selectedStar && (
               <Group opacity={selectedOpacity}>
@@ -1374,6 +1339,8 @@ function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMo
 }
 
 const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom, layout, time, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, qualityLevel, prevRa, prevDec }) {
+  const enableParallax = qualityLevel === 'high' && coordinateMode !== 'horizontal';
+
   // Animate points dynamically based on current values of shared values
   const points = useDerivedValue(() => {
     const rVal = ra.value;
@@ -1383,21 +1350,34 @@ const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom
     const pdVal = prevDec.value;
 
     return batch.stars.map((star) => {
-      const projected = projectWithParallax(
-        star,
-        star.ra,
-        star.dec,
-        rVal,
-        dVal,
-        layout.width,
-        layout.height,
-        zVal,
-        coordinateMode,
-        observerLatitude,
-        lstDegrees,
-        prVal,
-        pdVal,
-      );
+      const projected = enableParallax
+        ? projectWithParallax(
+          star,
+          star.ra,
+          star.dec,
+          rVal,
+          dVal,
+          layout.width,
+          layout.height,
+          zVal,
+          coordinateMode,
+          observerLatitude,
+          lstDegrees,
+          prVal,
+          pdVal,
+        )
+        : project(
+          star.ra,
+          star.dec,
+          rVal,
+          dVal,
+          layout.width,
+          layout.height,
+          zVal,
+          coordinateMode,
+          observerLatitude,
+          lstDegrees,
+        );
 
       const visible = projected.x > -20
         && projected.x < layout.width + 20
@@ -1431,6 +1411,7 @@ const StarPointBatch = React.memo(function StarPointBatch({ batch, ra, dec, zoom
 const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout, time, font, showLabels, suppressLabel, coordinateMode, observerLatitude, lstDegrees, hideBelowHorizon, nightVision, qualityLevel, prevRa, prevDec }) {
   const twinklePhase = (parseFloat(star.id || 0) % 17) * 0.37;
   const isBrightStar = Number(star.mag) <= 2;
+  const enableParallax = qualityLevel === 'high' && coordinateMode !== 'horizontal';
 
   // Add slight uniqueness to each star based on its ID for premium feel
   const starSeed = parseFloat(star.id || 0);
@@ -1440,21 +1421,34 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
 
   // Animate star position dynamically using useDerivedValue
   const starPosition = useDerivedValue(() => {
-    const p = projectWithParallax(
-      star,
-      star.ra,
-      star.dec,
-      ra.value,
-      dec.value,
-      layout.width,
-      layout.height,
-      zoom.value,
-      coordinateMode,
-      observerLatitude,
-      lstDegrees,
-      prevRa.value,
-      prevDec.value,
-    );
+    const p = enableParallax
+      ? projectWithParallax(
+        star,
+        star.ra,
+        star.dec,
+        ra.value,
+        dec.value,
+        layout.width,
+        layout.height,
+        zoom.value,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+        prevRa.value,
+        prevDec.value,
+      )
+      : project(
+        star.ra,
+        star.dec,
+        ra.value,
+        dec.value,
+        layout.width,
+        layout.height,
+        zoom.value,
+        coordinateMode,
+        observerLatitude,
+        lstDegrees,
+      );
     const isVisible = p.x > -30 && p.x < layout.width + 30 && p.y > -30 && p.y < layout.height + 30 && (!hideBelowHorizon || p.skyAltitude == null || p.skyAltitude >= 0);
     const opacity = qualityLevel === 'low' ? 0.92 : 0.9 + Math.sin(time.value * 1.8 + twinklePhase) * 0.08;
     return {
@@ -1532,6 +1526,17 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
   const labelX = useDerivedValue(() => starPosition.value.x + star.radius + 6);
   const labelY1 = useDerivedValue(() => starPosition.value.y - star.radius - 4);
   const labelY2 = useDerivedValue(() => starPosition.value.y - star.radius + 8);
+  const showDiffractionSpike = isBrightStar && Number(star.mag) < 1.5 && qualityLevel !== 'low';
+  const spikeOpacity = useDerivedValue(() => (zoom.value > 2 ? 0.3 : 0));
+  const spikeSoftOpacity = useDerivedValue(() => (zoom.value > 2 ? 0.2 : 0));
+  const verticalSpikeP1 = useDerivedValue(() => vec(starPosition.value.x, starPosition.value.y - haloRadius * 0.8));
+  const verticalSpikeP2 = useDerivedValue(() => vec(starPosition.value.x, starPosition.value.y + haloRadius * 0.8));
+  const horizontalSpikeP1 = useDerivedValue(() => vec(starPosition.value.x - haloRadius * 0.8, starPosition.value.y));
+  const horizontalSpikeP2 = useDerivedValue(() => vec(starPosition.value.x + haloRadius * 0.8, starPosition.value.y));
+  const diagonalSpikeP1 = useDerivedValue(() => vec(starPosition.value.x - haloRadius * 0.6, starPosition.value.y - haloRadius * 0.6));
+  const diagonalSpikeP2 = useDerivedValue(() => vec(starPosition.value.x + haloRadius * 0.6, starPosition.value.y + haloRadius * 0.6));
+  const diagonalSpikeP3 = useDerivedValue(() => vec(starPosition.value.x + haloRadius * 0.6, starPosition.value.y - haloRadius * 0.6));
+  const diagonalSpikeP4 = useDerivedValue(() => vec(starPosition.value.x - haloRadius * 0.6, starPosition.value.y + haloRadius * 0.6));
 
   return (
     <Group opacity={groupOpacity}>
@@ -1570,38 +1575,38 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
 
           {/* Very low level diffraction spike for bright stars */}
           {/* Only visible on very bright stars (mag < 1.5) and only at higher zoom */}
-          {Number(star.mag) < 1.5 && zoom.value > 2 && (
+          {showDiffractionSpike && (
             <>
               {/* Vertical spike */}
               <Line
-                p1={{ x: cx, y: cy - haloRadius * 0.8 }}
-                p2={{ x: cx, y: cy + haloRadius * 0.8 }}
+                p1={verticalSpikeP1}
+                p2={verticalSpikeP2}
                 strokeWidth={0.5}
                 color={nightVision ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)'}
-                opacity={0.3}
+                opacity={spikeOpacity}
               />
               {/* Horizontal spike */}
               <Line
-                p1={{ x: cx - haloRadius * 0.8, y: cy }}
-                p2={{ x: cx + haloRadius * 0.8, y: cy }}
+                p1={horizontalSpikeP1}
+                p2={horizontalSpikeP2}
                 strokeWidth={0.5}
                 color={nightVision ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.15)'}
-                opacity={0.3}
+                opacity={spikeOpacity}
               />
               {/* Diagonal spikes */}
               <Line
-                p1={{ x: cx - haloRadius * 0.6, y: cy - haloRadius * 0.6 }}
-                p2={{ x: cx + haloRadius * 0.6, y: cy + haloRadius * 0.6 }}
+                p1={diagonalSpikeP1}
+                p2={diagonalSpikeP2}
                 strokeWidth={0.3}
                 color={nightVision ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'}
-                opacity={0.2}
+                opacity={spikeSoftOpacity}
               />
               <Line
-                p1={{ x: cx + haloRadius * 0.6, y: cy - haloRadius * 0.6 }}
-                p2={{ x: cx - haloRadius * 0.6, y: cy + haloRadius * 0.6 }}
+                p1={diagonalSpikeP3}
+                p2={diagonalSpikeP4}
                 strokeWidth={0.3}
                 color={nightVision ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.12)'}
-                opacity={0.2}
+                opacity={spikeSoftOpacity}
               />
             </>
           )}

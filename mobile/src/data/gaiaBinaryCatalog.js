@@ -1,3 +1,5 @@
+import { createCanonicalStar } from './canonicalStar';
+
 const HEADER_BYTES = 16;
 const RECORD_BYTES = 40;
 const MAGIC = 'SCB1';
@@ -42,38 +44,26 @@ export function parseGaiaBinaryTile(buffer, names = {}) {
     const magnitude = view.getFloat32(offset + 28, true);
     const colorIndex = finiteOrNull(view.getFloat32(offset + 32, true));
     const distanceParsec = finiteOrNull(view.getFloat32(offset + 36, true));
-    stars[index] = {
-      schemaVersion: 1,
-      canonicalId: `gaia-dr3:${gaiaSourceId}`,
-      source: 'gaia-dr3',
-      sourceId: gaiaSourceId,
-      sourceCatalogVersion: 'Gaia DR3',
+    stars[index] = createCanonicalStar({
+      id: gaiaSourceId,
       gaiaSourceId,
       hip: hip || '',
       hd: hd || '',
-      id: gaiaSourceId,
-      proper: metadata.properName || '',
       properName: metadata.properName || '',
-      ra: raDegrees / 15,
-      raHours: raDegrees / 15,
       raDegrees,
-      dec: decDegrees,
       decDegrees,
-      parallax: parallaxMas,
       parallaxMas,
-      dist: distanceParsec || 0,
       distanceParsec,
-      mag: magnitude,
       magnitude,
       colorIndex,
-      spect: metadata.spectralType || '',
       spectralType: metadata.spectralType || '',
-      con: metadata.constellation || '',
       constellation: metadata.constellation || '',
       epoch: 'J2016.0',
-      coordinateFrame: 'ICRS',
-      type: 'star',
-    };
+    }, {
+      source: 'gaia-dr3',
+      sourceId: gaiaSourceId,
+      sourceCatalogVersion: 'Gaia DR3',
+    });
   }
   return stars;
 }

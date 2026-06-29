@@ -13,8 +13,26 @@ function loadApplicationModule(relativePath) {
   const loaded = new Module(filename, module);
   loaded.filename = filename;
   loaded.paths = Module._nodeModulePaths(path.dirname(filename));
-  loaded._compile(transformed.code, filename);
-  return loaded.exports;
+  const previousLoader = Module._extensions['.js'];
+  Module._extensions['.js'] = function transformApplicationDependency(moduleInstance, dependencyFilename) {
+    const normalized = dependencyFilename.replace(/\\/g, '/');
+    if (normalized.includes('/mobile/src/')) {
+      const dependencySource = fs.readFileSync(dependencyFilename, 'utf8');
+      const dependencyTransformed = transformSync(dependencySource, {
+        filename: dependencyFilename,
+        plugins: ['@babel/plugin-transform-modules-commonjs'],
+      });
+      moduleInstance._compile(dependencyTransformed.code, dependencyFilename);
+      return;
+    }
+    previousLoader(moduleInstance, dependencyFilename);
+  };
+  try {
+    loaded._compile(transformed.code, filename);
+    return loaded.exports;
+  } finally {
+    Module._extensions['.js'] = previousLoader;
+  }
 }
 
 const { parseGaiaBinaryTile, getVisibleGaiaSectorIds } = loadApplicationModule('../src/data/gaiaBinaryCatalog.js');
@@ -39,8 +57,11 @@ test('binary tile preserves 64-bit Gaia identity and astronomy fields', () => {
   const stars = parseGaiaBinaryTile(buffer, { [sourceId.toString()]: { properName: 'Fixture' } });
   assert.equal(stars[0].gaiaSourceId, sourceId.toString());
   assert.equal(stars[0].canonicalId, `gaia-dr3:${sourceId}`);
+  assert.equal(stars[0].catalogId, `gaia-dr3:${sourceId}`);
+  assert.equal(stars[0].gaiaId, sourceId.toString());
+  assert.equal(stars[0].slug, `fixture-gaia-dr3-${sourceId}`);
   assert.equal(stars[0].properName, 'Fixture');
-  assert.equal(stars[0].hip, 42);
+  assert.equal(stars[0].hip, '42');
 });
 
 test('visible sectors wrap cleanly across zero RA', () => {

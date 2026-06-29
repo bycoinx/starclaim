@@ -19,7 +19,10 @@ function loadApplicationModule(relativePath) {
 
 const {
   createCanonicalStar,
+  createStarSlug,
   normalizeDistanceParsec,
+  DEFAULT_OWNERSHIP_STATUS,
+  DEFAULT_STAR_ASSET_VERSION,
   STAR_COORDINATE_FRAME,
   STAR_EPOCH,
 } = loadApplicationModule('../src/data/canonicalStar.js');
@@ -39,6 +42,13 @@ test('HYG record is normalized to the canonical ICRS/J2000 contract', () => {
   assert.equal(star.raDegrees, 6.752481 * 15);
   assert.equal(star.distanceParsec, 2.6371);
   assert.equal(star.magnitude, -1.44);
+  assert.equal(star.slug, 'sirius-hip-32349');
+  assert.equal(star.catalogId, 'hip:32349');
+  assert.equal(star.displayName, 'Sirius');
+  assert.equal(star.category, 'star');
+  assert.equal(star.rarity, 'legendary');
+  assert.equal(star.ownershipStatus, DEFAULT_OWNERSHIP_STATUS);
+  assert.equal(star.assetVersion, DEFAULT_STAR_ASSET_VERSION);
 });
 
 test('Gaia identity takes priority and distance can be derived from parallax', () => {
@@ -53,6 +63,47 @@ test('Gaia identity takes priority and distance can be derived from parallax', (
   assert.equal(star.distanceParsec, 50);
   assert.equal(star.distanceSource, 'parallax');
   assert.equal(star.colorIndex, 0.65);
+  assert.equal(star.gaiaId, '123456789');
+  assert.equal(star.catalogId, 'gaia-dr3:123456789');
+});
+
+test('platform identity fields accept ownership and story metadata without renderer coupling', () => {
+  const star = createCanonicalStar({
+    id: 'vega-row',
+    hip: '91262',
+    properName: 'Vega',
+    raHours: 18.615649,
+    decDegrees: 38.78369,
+    distanceParsec: 7.68,
+    magnitude: 0.03,
+    spectralType: 'A0V',
+    constellation: 'Lyr',
+    temperature: 9602,
+    luminosity: 40.12,
+    ownerCount: 2,
+    storyCount: 4,
+    certificateCount: 1,
+    ownershipStatus: 'owned',
+    assetVersion: 'v2',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-02T00:00:00.000Z',
+  }, { source: 'hyg' });
+
+  assert.equal(star.slug, 'vega-hip-91262');
+  assert.equal(star.temperature, 9602);
+  assert.equal(star.luminosity, 40.12);
+  assert.equal(star.ownerCount, 2);
+  assert.equal(star.storyCount, 4);
+  assert.equal(star.certificateCount, 1);
+  assert.equal(star.ownershipStatus, 'owned');
+  assert.equal(star.assetVersion, 'v2');
+  assert.equal(star.createdAt, '2026-01-01T00:00:00.000Z');
+  assert.equal(star.updatedAt, '2026-01-02T00:00:00.000Z');
+});
+
+test('slug generation is stable and URL-safe', () => {
+  assert.equal(createStarSlug({ name: 'Alpha Centauri A', catalogId: 'hip:71683' }), 'alpha-centauri-a-hip-71683');
+  assert.equal(createStarSlug({ slug: '  Custom Star! ' }), 'custom-star');
 });
 
 test('HYG sentinel and invalid distances become unknown', () => {
