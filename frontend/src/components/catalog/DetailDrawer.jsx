@@ -1,16 +1,17 @@
 import React from "react";
-import { Shield, Globe, Sparkles, BookOpen } from "lucide-react";
-import { StarAssetManager } from "../../lib/StarAssetManager";
+import { Shield, Globe } from "lucide-react";
+import { StarRepository } from "../../lib/StarRepository";
+import { formatDistance, formatMagnitude, formatSpectralType, formatTemperature, formatOwnershipStatus } from "../../lib/formatters";
 import StarAssetImage from "./StarAssetImage";
+import ActionBar from "./ActionBar";
 
 export default function DetailDrawer({ 
-  star, 
-  onClose, 
-  onClaim = () => {}, 
-  onReadStory = () => {} 
+  selectedStarId, 
+  onClose,
+  onReadStory = null
 }) {
-  const asset = StarAssetManager.getStarAsset(star);
-  if (!asset) return null;
+  const star = StarRepository.getStarById(selectedStarId);
+  if (!star) return null;
 
   return (
     <div className="w-full lg:w-96 shrink-0 bg-[#050814]/95 border-l border-white/5 h-[calc(100vh-8.5rem)] sticky top-28 overflow-y-auto flex flex-col z-20 custom-scrollbar animate-slide-in-right">
@@ -39,9 +40,9 @@ export default function DetailDrawer({
 
         {/* Title and Constellation */}
         <div>
-          <h2 className="font-display text-3xl font-semibold text-white tracking-tight">{asset.name}</h2>
+          <h2 className="font-display text-3xl font-semibold text-white tracking-tight">{star.name}</h2>
           <div className="text-xs text-sc-gold font-mono uppercase mt-1 tracking-wider">
-            {asset.constellation} Takımyıldızı
+            {star.constellation} Takımyıldızı
           </div>
         </div>
 
@@ -52,13 +53,13 @@ export default function DetailDrawer({
           </div>
           <div className="flex flex-col gap-2 font-mono text-xs">
             {[
-              { label: "Parlaklık (Kadirm)", value: asset.magnitude !== undefined ? `${asset.magnitude.toFixed(2)} mag` : "N/A" },
-              { label: "Uzaklık", value: asset.distance ? `${asset.distance.toLocaleString()} ışık yılı` : "N/A" },
-              { label: "Spektral Tip", value: asset.spectralType },
-              { label: "Kütle", value: asset.tier === "legendary" ? "2.02 Güneş" : "1.4 Güneş" },
-              { label: "Yarıçap", value: asset.tier === "legendary" ? "1.71 Güneş" : "1.2 Güneş" },
-              { label: "Sıcaklık", value: asset.tier === "legendary" ? "9.940 K" : "6.200 K" },
-              { label: "Katalog Kodu", value: asset.code || "N/A" }
+              { label: "Parlaklık (Kadirm)", value: formatMagnitude(star.magnitude) },
+              { label: "Uzaklık", value: formatDistance(star.distance, true) },
+              { label: "Spektral Tip", value: formatSpectralType(star.spectralType) },
+              { label: "Kütle", value: star.tier === "legendary" ? "2.02 Güneş" : "1.4 Güneş" },
+              { label: "Yarıçap", value: star.tier === "legendary" ? "1.71 Güneş" : "1.2 Güneş" },
+              { label: "Sıcaklık", value: formatTemperature(star.tier === "legendary" ? 9940 : 6200) },
+              { label: "Katalog Kodu", value: star.code || "N/A" }
             ].map((metric, index) => (
               <div key={index} className="flex justify-between py-1.5 border-b border-white/[0.03]">
                 <span className="text-[#8fa0c4]/70">{metric.label}</span>
@@ -74,7 +75,7 @@ export default function DetailDrawer({
             Hakkında
           </div>
           <p className="text-xs text-[#a9b6d6] leading-relaxed font-sans">
-            {star.description || `${asset.name}, ${asset.constellation} takımyıldızında yer alan ${asset.tierLabel} sınıfı bir yıldızdır. Antik çağlardan beri astronomi kataloglarında özel bir öneme sahip olan bu kozmik oluşum, olağanüstü parlaklığı ve benzersiz spektral yapısıyla bilinmektedir.`}
+            {star.description || `${star.name}, ${star.constellation} takımyıldızında yer alan ${star.tierLabel} sınıfı bir yıldızdır. Antik çağlardan beri astronomi kataloglarında özel bir öneme sahip olan bu kozmik oluşum, olağanüstü parlaklığı ve benzersiz spektral yapısıyla bilinmektedir.`}
           </p>
         </div>
 
@@ -84,11 +85,9 @@ export default function DetailDrawer({
             Sahiplik Durumu
           </div>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${asset.isClaimed ? "bg-sc-blue animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
+            <span className={`w-2 h-2 rounded-full ${star.isClaimed ? "bg-sc-blue animate-pulse" : "bg-emerald-400 animate-pulse"}`} />
             <span className="text-xs text-white font-mono">
-              {asset.isClaimed 
-                ? `Bu yıldız ${asset.ownerName || "başka bir pilot"} tarafından sahiplenilmiştir.`
-                : "Bu yıldız şu anda sahiplenilebilir durumdadır."}
+              {formatOwnershipStatus(star.isClaimed, star.ownerName, true)}
             </span>
           </div>
 
@@ -99,32 +98,9 @@ export default function DetailDrawer({
         </div>
       </div>
 
-      {/* CTA Buttons Sticky to Bottom of panel */}
+      {/* CTA Buttons Sticky to Bottom of panel - Decoupled to ActionBar */}
       <div className="mt-auto p-5 border-t border-white/5 bg-[#030612]/90 flex flex-col gap-3">
-        {!asset.isClaimed ? (
-          <button
-            onClick={() => onClaim(star)}
-            className="w-full py-3.5 rounded-xl bg-sc-gold hover:bg-sc-gold/90 text-[#050814] text-xs font-mono font-bold uppercase tracking-widest hover:shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all flex items-center justify-center gap-2"
-          >
-            <Sparkles className="w-4 h-4" />
-            Sahiplen
-          </button>
-        ) : (
-          <button
-            disabled
-            className="w-full py-3.5 rounded-xl border border-white/5 bg-white/[0.02] text-white/30 text-xs font-mono uppercase tracking-widest cursor-not-allowed flex items-center justify-center"
-          >
-            Sahiplenildi
-          </button>
-        )}
-        
-        <button
-          onClick={() => onReadStory(star)}
-          className="w-full py-3.5 rounded-xl border border-white/10 hover:border-white/20 hover:bg-white/5 text-white/80 hover:text-white text-xs font-mono uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-        >
-          <BookOpen className="w-4 h-4" />
-          Hikayesini Oku
-        </button>
+        <ActionBar starId={star.starId} layout="drawer" onReadStory={onReadStory} />
       </div>
     </div>
   );
