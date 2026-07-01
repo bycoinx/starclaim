@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import StarAssetImage from "../components/catalog/StarAssetImage";
+import { PageShell, SectionHeader, SurfacePanel } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
 import { VaultEncryption } from "../components/vault/VaultEncryption";
 import { VaultDecryption } from "../components/vault/VaultDecryption";
@@ -119,26 +120,6 @@ const navItems = [
   { label: "Ayarlar", Icon: Settings },
 ];
 
-function SectionHeader({ title, action = "Tumunu Gor" }) {
-  return (
-    <div className="mb-5 flex items-center justify-between gap-4">
-      <h2 className="text-sm font-bold uppercase tracking-[0.18em] text-sc-gold">{title}</h2>
-      <button className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-sc-gold/80 hover:text-sc-gold">
-        {action}
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
-
-function VaultPanel({ children, className = "" }) {
-  return (
-    <section className={`rounded-2xl border border-white/10 bg-[#070b18]/78 p-5 shadow-xl backdrop-blur-xl ${className}`}>
-      {children}
-    </section>
-  );
-}
-
 function OwnedStarCard({ star }) {
   return (
     <article className="group rounded-xl border border-white/10 bg-[#070b18]/80 p-3 transition-all duration-300 hover:-translate-y-1 hover:border-sc-gold/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
@@ -192,7 +173,7 @@ function SecurityVault() {
   const [activeTab, setActiveTab] = useState("encrypt");
 
   return (
-    <VaultPanel className="lg:col-span-2">
+    <SurfacePanel className="lg:col-span-2">
       <SectionHeader title="Guvenlik Kasasi" action="Aegis Protokolu" />
       <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
         <button
@@ -231,7 +212,7 @@ function SecurityVault() {
           {activeTab === "encrypt" ? <VaultEncryption onComplete={() => {}} /> : <VaultDecryption />}
         </motion.div>
       </AnimatePresence>
-    </VaultPanel>
+    </SurfacePanel>
   );
 }
 
@@ -241,11 +222,7 @@ export default function Vault() {
   }, []);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#02040a] px-4 pb-20 pt-28 text-white md:px-8">
-      <div className="absolute inset-0 nebula-bg opacity-25 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(77,124,255,0.12),transparent_32%),radial-gradient(circle_at_90%_30%,rgba(122,92,255,0.12),transparent_28%)] pointer-events-none" />
-
-      <main className="relative z-10 mx-auto flex max-w-[1500px] flex-col gap-6">
+    <PageShell>
         <VaultHero
           stats={{
             ownedStars: "12",
@@ -295,7 +272,7 @@ export default function Vault() {
           </aside>
 
           <div className="grid gap-6">
-            <VaultPanel>
+            <SurfacePanel>
               <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <SectionHeader title="Yildizlarim" action="Tumunu Gor" />
                 <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/45">
@@ -308,19 +285,19 @@ export default function Vault() {
                   <OwnedStarCard key={star.starId} star={star} />
                 ))}
               </div>
-            </VaultPanel>
+            </SurfacePanel>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <VaultPanel>
+              <SurfacePanel>
                 <SectionHeader title="Sertifikalarim" />
                 <div className="grid gap-4 sm:grid-cols-3">
                   {certificates.map((item) => (
                     <CertificateCard key={item.id} item={item} />
                   ))}
                 </div>
-              </VaultPanel>
+              </SurfacePanel>
 
-              <VaultPanel>
+              <SurfacePanel>
                 <SectionHeader title="Hikayelerim" />
                 <div className="space-y-3">
                   {stories.map((story, index) => (
@@ -336,11 +313,11 @@ export default function Vault() {
                     </div>
                   ))}
                 </div>
-              </VaultPanel>
+              </SurfacePanel>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-              <VaultPanel>
+              <SurfacePanel>
                 <SectionHeader title="Basarilarim" />
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {achievements.map((achievement) => {
@@ -356,9 +333,9 @@ export default function Vault() {
                     );
                   })}
                 </div>
-              </VaultPanel>
+              </SurfacePanel>
 
-              <VaultPanel>
+              <SurfacePanel>
                 <SectionHeader title="Zaman Cizelgesi" />
                 <div className="space-y-4">
                   {timeline.map((entry) => {
@@ -374,13 +351,13 @@ export default function Vault() {
                     );
                   })}
                 </div>
-              </VaultPanel>
+              </SurfacePanel>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-3">
               <SecurityVault />
 
-              <VaultPanel>
+              <SurfacePanel>
                 <SectionHeader title="Paylasim ve Yedek" action="Yonet" />
                 <div className="space-y-3">
                   {[
@@ -401,7 +378,7 @@ export default function Vault() {
                     );
                   })}
                 </div>
-              </VaultPanel>
+              </SurfacePanel>
             </div>
 
             <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#090d1a] p-8">
@@ -415,7 +392,6 @@ export default function Vault() {
             </section>
           </div>
         </div>
-      </main>
-    </div>
+    </PageShell>
   );
 }
