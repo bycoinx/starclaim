@@ -27,7 +27,7 @@ export default function CatalogGrid({
         
         return (
           <StarCard
-            key={item.star_id || item.code || index}
+            key={item.starId || item.star_id || item.code || index}
             star={item}
             onClaim={onClaim}
             onSelect={() => onSelect(item)}

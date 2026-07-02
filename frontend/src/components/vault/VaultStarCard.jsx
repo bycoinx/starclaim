@@ -1,6 +1,6 @@
 import React from "react";
 import { SurfacePanel, StatusBadge } from "../shell";
-import { Globe2, ShieldCheck, BookOpen, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 export default function VaultStarCard({ star, selected, onSelect }) {
   return (

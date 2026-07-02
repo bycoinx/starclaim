@@ -323,6 +323,7 @@ function CatalogPageOrchestrator() {
     null;
 
   const handleSelect = (star) => {
+    if (!star?.starId) return;
     store.setSelectedStarId(star.starId);
   };
 

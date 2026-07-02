@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
-  Award,
   BookOpen,
-  Globe2,
   Palette,
   ShieldCheck,
   Sparkles,
   Star,
-  Telescope,
-  Trophy,
 } from "lucide-react";
 import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
@@ -172,51 +168,6 @@ const collections = [
   },
 ];
 
-const achievements = [
-  {
-    title: "First Star",
-    detail: "Your first claim made the universe personal.",
-    status: "Unlocked",
-    Icon: Star,
-    tone: "gold",
-  },
-  {
-    title: "Explorer",
-    detail: "Discoveries earned through quiet curiosity.",
-    status: "Unlocked",
-    Icon: Telescope,
-    tone: "blue",
-  },
-  {
-    title: "Galaxy Collector",
-    detail: "A growing premium collection of distant stars.",
-    status: "Unlocked",
-    Icon: Globe2,
-    tone: "emerald",
-  },
-  {
-    title: "Constellation Master",
-    detail: "Your stars form meaningful clusters.",
-    status: "Locked",
-    Icon: Sparkles,
-    tone: "purple",
-  },
-  {
-    title: "Story Creator",
-    detail: "Personal narratives authored in StarVault.",
-    status: "Unlocked",
-    Icon: BookOpen,
-    tone: "amber",
-  },
-  {
-    title: "Legendary Owner",
-    detail: "A rare tier reserved for the most prized stars.",
-    status: "Locked",
-    Icon: Trophy,
-    tone: "gold",
-  },
-];
-
 const timelineEvents = [
   {
     title: "Star Claimed",
@@ -257,56 +208,6 @@ const timelineEvents = [
     star: "Pending",
     status: "Reserved",
     Icon: Sparkles,
-  },
-];
-
-const securityItems = [
-  {
-    title: "Encrypted Vault",
-    description: "Core documents and collectibles are stored in private encryption.",
-    status: "Protected",
-    tone: "gold",
-  },
-  {
-    title: "Recovery Status",
-    description: "Recovery keys are ready, yet kept in secure reserve.",
-    status: "Ready",
-    tone: "blue",
-  },
-  {
-    title: "Cloud Backup",
-    description: "Encrypted backups are safely mirrored offsite.",
-    status: "Synced",
-    tone: "emerald",
-  },
-  {
-    title: "Offline Archive",
-    description: "A private offline copy safeguards your most precious stars.",
-    status: "Available",
-    tone: "purple",
-  },
-];
-
-const recommendations = [
-  {
-    title: "Visit the Celestial Market",
-    description: "Browse curated drops that complement your existing collection.",
-    type: "Stars",
-  },
-  {
-    title: "Create a Story Arc",
-    description: "Turn your favorite stars into a connected narrative series.",
-    type: "Stories",
-  },
-  {
-    title: "Secure Your Archive",
-    description: "Add an extra private key layer to your premium vault.",
-    type: "Security",
-  },
-  {
-    title: "Expand Your Constellation",
-    description: "Claim the next rare star available for your universe.",
-    type: "Collection",
   },
 ];
 

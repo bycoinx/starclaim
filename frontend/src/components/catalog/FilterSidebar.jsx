@@ -98,7 +98,7 @@ export default function FilterSidebar({
           onClick={() => toggleSection("magnitude")}
           className="w-full flex items-center justify-between text-xs text-white uppercase tracking-wider font-mono font-bold py-1.5"
         >
-          <span>✦ Parlaklık (Kadirm)</span>
+          <span>✦ Parlaklık (Kadir)</span>
           {collapsedSections.magnitude ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
         </button>
         {!collapsedSections.magnitude && (
