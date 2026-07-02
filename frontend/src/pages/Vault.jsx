@@ -11,10 +11,19 @@ import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
 import VaultSidebar from "../components/vault/VaultSidebar";
 import VaultStarsSection from "../components/vault/VaultStarsSection";
+import VaultNFTGrid from "../components/vault/VaultNFTGrid";
+import ListingPreviewDrawer from "../components/catalog/ListingPreviewDrawer";
+import { useCatalogStore } from "../lib/CatalogStore";
 import VaultCertificatesSection from "../components/vault/VaultCertificatesSection";
 import VaultStoriesSection from "../components/vault/VaultStoriesSection";
 import VaultCollectionsSection from "../components/vault/VaultCollectionsSection";
 import VaultTimelineSection from "../components/vault/VaultTimelineSection";
+import VaultWalletPanel from "../components/vault/VaultWalletPanel";
+import WalletConnectModal from "../components/vault/WalletConnectModal";
+import VaultActions from "../components/vault/VaultActions";
+import VaultEmptyState from "../components/vault/VaultEmptyState";
+import { api, uploadToArweave } from "../lib/api";
+import { toast } from "sonner";
 
 
 const myStars = [
@@ -256,6 +265,9 @@ export default function Vault() {
     vaults: "1",
     totalValue: "$0 XCX",
   });
+  const [wallet, setWallet] = useState(null);
+  const [connectOpen, setConnectOpen] = useState(false);
+    const store = useCatalogStore();
 
   useEffect(() => {
     document.title = "StarVault - StarClaim";
@@ -302,10 +314,18 @@ export default function Vault() {
         actions={["Open My Constellation", "Explore Memories"]}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.75fr_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.75fr_1fr]">
         <div className="space-y-6">
           <section id="my-constellation">
-            <VaultStarsSection stars={vaultStars} selectedStar={selectedStar} onSelectStar={setSelectedStar} />
+            <VaultNFTGrid
+              stars={vaultStars}
+              selectedStar={selectedStar}
+              onSelectStar={setSelectedStar}
+              onPreview={(st) => {
+                // open shared Listing/Detail drawer by setting catalog store selected id
+                store.setSelectedStarId(st.starId || st.starId);
+              }}
+            />
           </section>
 
           <section id="memories">
@@ -325,34 +345,8 @@ export default function Vault() {
           </section>
 
           <section id="legacy-actions">
-            <div className="rounded-[2rem] border border-white/10 bg-[#060a16]/88 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
-              <div className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr] lg:items-center">
-                <div>
-                  <p className="text-sm uppercase tracking-[0.32em] text-sc-gold/70">Legacy Actions</p>
-                  <h2 className="mt-4 text-3xl font-semibold leading-tight text-white md:text-4xl">
-                    Protect your premium collection for the long term.
-                  </h2>
-                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-                    These are the high-value actions that preserve your star legacy across time and ownership.
-                  </p>
-                </div>
-                <div className="grid gap-3">
-                  {[
-                    "Secure Vault",
-                    "Create Time Capsule",
-                    "Publish Certificate",
-                    "Authorize Transfer",
-                    "Invite Keeper",
-                  ].map((label) => (
-                    <button
-                      key={label}
-                      className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-sc-gold/30 hover:bg-white/10"
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="grid gap-6 lg:grid-cols-[1fr]">
+              <VaultActions selectedStar={selectedStar} wallet={wallet} />
             </div>
           </section>
 
@@ -391,6 +385,12 @@ export default function Vault() {
 
         <VaultSidebar selectedStar={selectedStar} highlights={sidebarHighlights} />
       </div>
+      <div className="fixed bottom-6 left-6 z-40 hidden lg:block">
+        <VaultWalletPanel wallet={wallet} onOpenConnect={() => setConnectOpen(true)} onDisconnect={() => setWallet(null)} />
+      </div>
+
+      <WalletConnectModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={(w) => setWallet(w)} />
+      <ListingPreviewDrawer />
     </PageShell>
   );
 }
