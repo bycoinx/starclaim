@@ -1,9 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
+import VaultListModal from "./VaultListModal";
+import { toast } from "sonner";
 
-export default function VaultNFTCard({ star, onSelect, selected }) {
+export default function VaultNFTCard({ star, onSelect, onPreview, onList, selected }) {
+  const [openList, setOpenList] = useState(false);
+
+  const handlePreview = () => {
+    if (onPreview) return onPreview(star);
+    if (onSelect) return onSelect(star);
+  };
+
+  const handleConfirmList = (price) => {
+    if (onList) {
+      onList(star, price);
+    } else {
+      // mock listing: mutate local object for UI demo
+      try {
+        star.price = price;
+      } catch (e) {
+        // ignore
+      }
+      toast.success(`${star.name} listed for $${price}`);
+    }
+  };
+
   return (
     <div
-      onClick={() => onSelect && onSelect(star)}
       className={`cursor-pointer rounded-xl border border-white/6 bg-gradient-to-b from-[#051026] to-[#061226] p-4 shadow-lg transition-transform hover:scale-[1.01] ${
         selected ? "ring-2 ring-sc-gold/50" : ""
       }`}
@@ -31,8 +53,26 @@ export default function VaultNFTCard({ star, onSelect, selected }) {
             <div className="text-xs text-slate-300">Owner: {star.owner}</div>
             <div className="text-sm font-semibold text-white">{star.price ? `$${star.price}` : "—"}</div>
           </div>
+
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={handlePreview}
+              className="rounded-full border border-white/10 bg-white/3 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/5"
+            >
+              Preview
+            </button>
+
+            <button
+              onClick={() => setOpenList(true)}
+              className="rounded-full bg-sc-gold px-3 py-1 text-xs font-semibold text-black transition hover:brightness-95"
+            >
+              List for sale
+            </button>
+          </div>
         </div>
       </div>
+
+      <VaultListModal open={openList} onClose={() => setOpenList(false)} star={star} onConfirm={handleConfirmList} />
     </div>
   );
 }
