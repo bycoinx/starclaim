@@ -10,7 +10,6 @@ import { StarRepository } from "../lib/StarRepository";
 import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
 import VaultSidebar from "../components/vault/VaultSidebar";
-import VaultStarsSection from "../components/vault/VaultStarsSection";
 import VaultNFTGrid from "../components/vault/VaultNFTGrid";
 import VaultCertificatesSection from "../components/vault/VaultCertificatesSection";
 import VaultStoriesSection from "../components/vault/VaultStoriesSection";
@@ -19,10 +18,6 @@ import VaultTimelineSection from "../components/vault/VaultTimelineSection";
 import VaultWalletPanel from "../components/vault/VaultWalletPanel";
 import WalletConnectModal from "../components/vault/WalletConnectModal";
 import VaultActions from "../components/vault/VaultActions";
-import VaultEmptyState from "../components/vault/VaultEmptyState";
-import { api, uploadToArweave } from "../lib/api";
-import { toast } from "sonner";
-import DetailDrawer from "../components/catalog/DetailDrawer";
 
 
 const myStars = [
@@ -266,7 +261,6 @@ export default function Vault() {
   });
   const [wallet, setWallet] = useState(null);
   const [connectOpen, setConnectOpen] = useState(false);
-  const [previewStarId, setPreviewStarId] = useState(null);
   const [previewStar, setPreviewStar] = useState(null);
 
   useEffect(() => {
@@ -322,7 +316,6 @@ export default function Vault() {
               selectedStar={selectedStar}
               onSelectStar={setSelectedStar}
               onPreview={(st) => {
-                setPreviewStarId(st.starId);
                 setPreviewStar(st);
               }}
             />
