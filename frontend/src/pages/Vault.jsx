@@ -12,8 +12,6 @@ import VaultHero from "../components/vault/VaultHero";
 import VaultSidebar from "../components/vault/VaultSidebar";
 import VaultStarsSection from "../components/vault/VaultStarsSection";
 import VaultNFTGrid from "../components/vault/VaultNFTGrid";
-import ListingPreviewDrawer from "../components/catalog/ListingPreviewDrawer";
-import { useCatalogStore } from "../lib/CatalogStore";
 import VaultCertificatesSection from "../components/vault/VaultCertificatesSection";
 import VaultStoriesSection from "../components/vault/VaultStoriesSection";
 import VaultCollectionsSection from "../components/vault/VaultCollectionsSection";
@@ -24,6 +22,7 @@ import VaultActions from "../components/vault/VaultActions";
 import VaultEmptyState from "../components/vault/VaultEmptyState";
 import { api, uploadToArweave } from "../lib/api";
 import { toast } from "sonner";
+import DetailDrawer from "../components/catalog/DetailDrawer";
 
 
 const myStars = [
@@ -267,7 +266,8 @@ export default function Vault() {
   });
   const [wallet, setWallet] = useState(null);
   const [connectOpen, setConnectOpen] = useState(false);
-    const store = useCatalogStore();
+  const [previewStarId, setPreviewStarId] = useState(null);
+  const [previewStar, setPreviewStar] = useState(null);
 
   useEffect(() => {
     document.title = "StarVault - StarClaim";
@@ -322,8 +322,8 @@ export default function Vault() {
               selectedStar={selectedStar}
               onSelectStar={setSelectedStar}
               onPreview={(st) => {
-                // open shared Listing/Detail drawer by setting catalog store selected id
-                store.setSelectedStarId(st.starId || st.starId);
+                setPreviewStarId(st.starId);
+                setPreviewStar(st);
               }}
             />
           </section>
@@ -390,7 +390,48 @@ export default function Vault() {
       </div>
 
       <WalletConnectModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={(w) => setWallet(w)} />
-      <ListingPreviewDrawer />
+      {previewStar && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+          <div className="absolute inset-0 bg-black/60" onClick={() => { setPreviewStar(null); setPreviewStarId(null); }} />
+          <div className="relative w-full max-w-4xl rounded-[2rem] overflow-hidden border border-white/10 bg-[#050814]/95 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 p-4">
+              <div className="text-lg font-semibold text-white">Yıldız Önizlemesi</div>
+              <button onClick={() => { setPreviewStar(null); setPreviewStarId(null); }} className="text-white/70 hover:text-white">✕</button>
+            </div>
+            <div className="p-6">
+              <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
+                <div className="rounded-3xl bg-[#020614]/90 p-4 border border-white/5">
+                  <div className="flex justify-center py-6">
+                    <img src={previewStar.raw?.heroImage || previewStar.heroImage || "https://via.placeholder.com/300x300"} alt={previewStar.name} className="h-64 w-full max-w-sm rounded-3xl object-cover" />
+                  </div>
+                </div>
+                <div className="rounded-3xl bg-[#020614]/90 p-6 border border-white/5">
+                  <h2 className="text-3xl font-semibold text-white">{previewStar.name}</h2>
+                  <p className="mt-2 text-sm text-slate-400">{previewStar.constellation} • {previewStar.spectralType || previewStar.spect}</p>
+                  <div className="mt-6 grid gap-3">
+                    <div className="rounded-2xl bg-[#04091d]/80 p-4">
+                      <div className="text-xs uppercase tracking-[0.24em] text-slate-500">Fiyat</div>
+                      <div className="mt-2 text-xl font-semibold text-white">{previewStar.price ? `$${previewStar.price}` : "Not listed"}</div>
+                    </div>
+                    <div className="rounded-2xl bg-[#04091d]/80 p-4">
+                      <div className="grid gap-2 text-xs text-slate-400">
+                        <div><strong>Spektral Tip:</strong> {previewStar.spectralType || previewStar.spect || "N/A"}</div>
+                        <div><strong>Parlaklık:</strong> {previewStar.magnitude || "N/A"}</div>
+                        <div><strong>Uzaklık:</strong> {previewStar.distance}</div>
+                        <div><strong>Owner:</strong> {previewStar.owner || previewStar.ownerName || "Unknown"}</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-3">
+                      <button className="flex-1 rounded-full bg-sc-gold px-4 py-3 text-sm font-semibold text-black">List for Sale</button>
+                      <button className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white">View Story</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 }
