@@ -1,121 +1,23 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Award,
   BookOpen,
   Globe2,
   Palette,
-  Settings,
   ShieldCheck,
   Sparkles,
   Star,
-  Telescope,
   Trophy,
 } from "lucide-react";
 import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
 import VaultSidebar from "../components/vault/VaultSidebar";
-import VaultUniverseSummary from "../components/vault/VaultUniverseSummary";
-import VaultQuickActions from "../components/vault/VaultQuickActions";
 import VaultStarsSection from "../components/vault/VaultStarsSection";
 import VaultCertificatesSection from "../components/vault/VaultCertificatesSection";
 import VaultStoriesSection from "../components/vault/VaultStoriesSection";
 import VaultCollectionsSection from "../components/vault/VaultCollectionsSection";
-import VaultAchievementsSection from "../components/vault/VaultAchievementsSection";
 import VaultTimelineSection from "../components/vault/VaultTimelineSection";
-import VaultSecuritySection from "../components/vault/VaultSecuritySection";
-import VaultRecommendationsSection from "../components/vault/VaultRecommendationsSection";
 
-const universeSummary = [
-  {
-    label: "Owned Stars",
-    value: "12",
-    caption: "A private constellation in your universe.",
-    Icon: Star,
-    tone: "gold",
-  },
-  {
-    label: "Certificates",
-    value: "9",
-    caption: "Verified claim artifacts.",
-    Icon: ShieldCheck,
-    tone: "blue",
-  },
-  {
-    label: "Stories",
-    value: "6",
-    caption: "Personal memories and journeys.",
-    Icon: BookOpen,
-    tone: "purple",
-  },
-  {
-    label: "Achievements",
-    value: "14",
-    caption: "Milestones unlocked across your vault.",
-    Icon: Award,
-    tone: "emerald",
-  },
-  {
-    label: "Constellations",
-    value: "5",
-    caption: "Connected celestial families.",
-    Icon: Sparkles,
-    tone: "amber",
-  },
-  {
-    label: "Favorite Star",
-    value: "Sirius",
-    caption: "The brightest treasure in your sky.",
-    Icon: Star,
-    tone: "gold",
-  },
-  {
-    label: "Total Collection",
-    value: "27 items",
-    caption: "Stars, certificates, and stories.",
-    Icon: Globe2,
-    tone: "blue",
-  },
-  {
-    label: "Future Assets",
-    value: "7",
-    caption: "Reserved spaces for what’s next.",
-    Icon: Sparkles,
-    tone: "purple",
-  },
-];
-
-const quickActions = [
-  {
-    title: "Explore Stars",
-    description: "Wander your personal constellation.",
-    Icon: Telescope,
-  },
-  {
-    title: "Manage Certificates",
-    description: "Review verified ownership artifacts.",
-    Icon: ShieldCheck,
-  },
-  {
-    title: "Read Stories",
-    description: "Return to meaningful star journeys.",
-    Icon: BookOpen,
-  },
-  {
-    title: "Visit Marketplace",
-    description: "Discover rare additions for your vault.",
-    Icon: Globe2,
-  },
-  {
-    title: "Open Cosmos",
-    description: "Step into the broader StarClaim universe.",
-    Icon: Sparkles,
-  },
-  {
-    title: "Vault Settings",
-    description: "Adjust private access and experience.",
-    Icon: Settings,
-  },
-];
 
 const myStars = [
   {
@@ -128,6 +30,12 @@ const myStars = [
     distance: "8.6 ly",
     rarity: "Legendary",
     acquired: "20 May 2026",
+    ownedSince: "May 20, 2026",
+    ownershipStatus: "Private Reserve",
+    certificateStatus: "Verified",
+    storyCount: 3,
+    memoryCount: 12,
+    sharedStatus: "Private",
     owner: "Ali & Zeynep",
   },
   {
@@ -140,6 +48,12 @@ const myStars = [
     distance: "642 ly",
     rarity: "Supernova",
     acquired: "14 Feb 2026",
+    ownedSince: "Feb 14, 2026",
+    ownershipStatus: "Collector Tier",
+    certificateStatus: "Verified",
+    storyCount: 2,
+    memoryCount: 8,
+    sharedStatus: "Private",
     owner: "StarSeeker",
   },
   {
@@ -152,6 +66,12 @@ const myStars = [
     distance: "25 ly",
     rarity: "Legendary",
     acquired: "05 Mar 2026",
+    ownedSince: "Mar 05, 2026",
+    ownershipStatus: "Legacy Vault",
+    certificateStatus: "Verified",
+    storyCount: 4,
+    memoryCount: 15,
+    sharedStatus: "Shared",
     owner: "Eda",
   },
   {
@@ -164,6 +84,12 @@ const myStars = [
     distance: "860 ly",
     rarity: "Supernova",
     acquired: "12 Jan 2026",
+    ownedSince: "Jan 12, 2026",
+    ownershipStatus: "Premium Tier",
+    certificateStatus: "Verified",
+    storyCount: 1,
+    memoryCount: 7,
+    sharedStatus: "Private",
     owner: "Pilot One",
   },
 ];
@@ -405,6 +331,8 @@ const sidebarHighlights = [
 ];
 
 export default function Vault() {
+  const [selectedStar, setSelectedStar] = useState(myStars[0]);
+
   useEffect(() => {
     document.title = "StarVault - StarClaim";
   }, []);
@@ -416,75 +344,100 @@ export default function Vault() {
           ownedStars: "12",
           certificates: "9",
           stories: "6",
-          rank: "Explorer",
+          vaults: "4",
           totalValue: "12,450 XCX",
         }}
-        actions={["Explore StarVault", "Open Certificate Vault"]}
+        actions={["Open My Constellation", "Explore Memories"]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.75fr_1fr]">
         <div className="space-y-6">
-          <section id="universe-summary">
-            <VaultUniverseSummary metrics={universeSummary} />
+          <section id="my-constellation">
+            <VaultStarsSection stars={myStars} selectedStar={selectedStar} onSelectStar={setSelectedStar} />
           </section>
 
-          <section id="quick-actions">
-            <VaultQuickActions actions={quickActions} />
-          </section>
-
-          <section id="my-stars">
-            <VaultStarsSection stars={myStars} />
+          <section id="memories">
+            <VaultStoriesSection stories={stories} />
           </section>
 
           <section id="certificates">
             <VaultCertificatesSection certificates={certificates} />
           </section>
 
-          <section id="stories">
-            <VaultStoriesSection stories={stories} />
+          <section id="timeline">
+            <VaultTimelineSection events={timelineEvents} />
           </section>
 
           <section id="collections">
             <VaultCollectionsSection collections={collections} />
           </section>
 
-          <section id="achievements">
-            <VaultAchievementsSection achievements={achievements} />
-          </section>
-
-          <section id="timeline">
-            <VaultTimelineSection events={timelineEvents} />
-          </section>
-
-          <section id="security">
-            <VaultSecuritySection items={securityItems} />
-          </section>
-
-          <section id="recommendations">
-            <VaultRecommendationsSection recommendations={recommendations} />
+          <section id="legacy-actions">
+            <div className="rounded-[2rem] border border-white/10 bg-[#060a16]/88 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+              <div className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr] lg:items-center">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.32em] text-sc-gold/70">Legacy Actions</p>
+                  <h2 className="mt-4 text-3xl font-semibold leading-tight text-white md:text-4xl">
+                    Protect your premium collection for the long term.
+                  </h2>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+                    These are the high-value actions that preserve your star legacy across time and ownership.
+                  </p>
+                </div>
+                <div className="grid gap-3">
+                  {[
+                    "Secure Vault",
+                    "Create Time Capsule",
+                    "Publish Certificate",
+                    "Authorize Transfer",
+                    "Invite Keeper",
+                  ].map((label) => (
+                    <button
+                      key={label}
+                      className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-sc-gold/30 hover:bg-white/10"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </section>
 
           <section>
             <div className="rounded-[2rem] border border-white/10 bg-[#060a16]/88 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.18)] backdrop-blur-xl">
               <div className="grid gap-6 lg:grid-cols-[1.7fr_0.9fr] lg:items-center">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.32em] text-sc-gold/70">StarVault Private Universe</p>
+                  <p className="text-sm uppercase tracking-[0.32em] text-sc-gold/70">Long-term Ownership</p>
                   <h2 className="mt-4 text-3xl font-semibold leading-tight text-white md:text-4xl">
-                    Your universe is already waiting. The next chapter is just one step away.
+                    Every star in StarVault is part of your legacy.
                   </h2>
                   <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
-                    This page is the foundation for every star, certificate, story and secure memory you will own in StarClaim.
+                    Share, secure and pass forward your collection with confidence. These are the actions that keep your universe alive.
                   </p>
                 </div>
-                <button className="inline-flex items-center justify-center rounded-full bg-sc-gold px-8 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black shadow-[0_0_40px_rgba(212,175,55,0.18)] transition hover:bg-[#d4aa2a]">
-                  Enter StarVault
-                </button>
+                <div className="grid gap-3">
+                  {[
+                    "Share",
+                    "Backup",
+                    "Encrypt",
+                    "Legacy",
+                    "Transfer",
+                  ].map((label) => (
+                    <button
+                      key={label}
+                      className="rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-sc-gold/30 hover:bg-white/10"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </section>
         </div>
 
-        <VaultSidebar metrics={universeSummary} highlights={sidebarHighlights} />
+        <VaultSidebar selectedStar={selectedStar} highlights={sidebarHighlights} />
       </div>
     </PageShell>
   );
