@@ -1,3 +1,14 @@
+import React from 'react'
+
+export default function VaultActions({ selectedStar, wallet, onList = () => {}, onRefresh = () => {}, onConnect = () => {} }) {
+  return (
+    <div className="flex gap-2">
+      <button onClick={() => onConnect()} className="px-3 py-1 bg-gray-200 rounded">{wallet ? 'Manage Wallet' : 'Connect'}</button>
+      <button onClick={() => onRefresh()} className="px-3 py-1 bg-gray-200 rounded">Refresh</button>
+      <button onClick={() => onList(selectedStar)} disabled={!selectedStar} className="px-3 py-1 bg-indigo-600 text-white rounded disabled:opacity-50">List Selected</button>
+    </div>
+  )
+}
 import React from "react";
 import { Shield, Clock, Zap, Users } from "lucide-react";
 

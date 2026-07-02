@@ -1,3 +1,21 @@
+import React from 'react'
+import { Link } from 'react-router-dom'
+
+export default function VaultHero({ title = 'StarVault', subtitle = 'Your stars, your story', cta = 'Open Vault' }) {
+  return (
+    <header className="p-6 bg-gradient-to-r from-sky-900 to-indigo-800 text-white rounded-md mb-6">
+      <div className="max-w-5xl mx-auto">
+        <h1 className="text-3xl font-bold">{title}</h1>
+        <p className="mt-2 text-sm opacity-90">{subtitle}</p>
+        <div className="mt-4">
+          <Link to="/vault" className="inline-block bg-white text-indigo-800 px-4 py-2 rounded shadow">
+            {cta}
+          </Link>
+        </div>
+      </div>
+    </header>
+  )
+}
 import React from "react";
 import { ShieldAlert } from "lucide-react";
 import VaultStats from "./VaultStats";
