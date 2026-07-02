@@ -206,7 +206,6 @@ export default function Marketplace() {
             {isTR ? "Fiyatlama protokolleri kullanıcı tarafından belirlenir — her işlem Aegis Akıllı Kontratları tarafından doğrulanır." : "Pricing protocols are user-defined — every transaction is verified by Aegis Smart Contracts."}
           </div>
         </motion.div>
-      </main>
     </PageShell>
   );
 }
