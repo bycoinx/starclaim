@@ -199,6 +199,7 @@ export default function Marketplace() {
             </AnimatePresence>
           </div>
         )}
+      </SurfacePanel>
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-24 pt-12 border-t border-white/5 text-center opacity-30">
           <div className="text-[8px] font-mono text-slate-400 max-w-3xl mx-auto uppercase tracking-widest leading-loose">

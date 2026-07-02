@@ -4,6 +4,7 @@ import {
   BookOpen,
   ChevronRight,
   Globe2,
+  Palette,
   Settings,
   ShieldCheck,
   Sparkles,
