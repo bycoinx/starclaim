@@ -19,17 +19,17 @@ export default function MetricCard({
   const toneClass = toneClasses[tone] || toneClasses.gold;
 
   return (
-    <div className={cx("rounded-2xl border border-white/10 bg-[#070b18]/70 p-4 backdrop-blur-xl transition-all duration-300 hover:border-sc-gold/30", className)}>
-      <div className="flex items-center gap-3">
+    <div className={cx("rounded-3xl border border-white/10 bg-[#050614]/80 p-5 backdrop-blur-xl transition-all duration-300 hover:border-sc-gold/30", className)}>
+      <div className="flex items-center gap-4">
         {Icon ? (
-          <div className={cx("flex h-11 w-11 items-center justify-center rounded-xl border", toneClass)}>
+          <div className={cx("flex h-12 w-12 items-center justify-center rounded-3xl border border-white/10 bg-white/5", toneClass)}>
             <Icon className="h-5 w-5" />
           </div>
         ) : null}
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/45">{label}</p>
-          <div className="mt-1 text-2xl font-semibold text-white">{value}</div>
-          {caption ? <p className="mt-1 text-xs text-white/45">{caption}</p> : null}
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/50">{label}</p>
+          <div className="mt-2 text-3xl font-semibold text-white">{value}</div>
+          {caption ? <p className="mt-2 text-xs text-white/50">{caption}</p> : null}
         </div>
       </div>
     </div>

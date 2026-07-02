@@ -5,7 +5,7 @@ const toneClasses = {
   amber: "border-amber-400/20 bg-amber-400/10 text-amber-300",
   blue: "border-sc-blue/20 bg-sc-blue/10 text-sc-blue",
   emerald: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
-  gold: "border-sc-gold/20 bg-sc-gold/10 text-sc-gold",
+  gold: "border-sc-gold/20 bg-sc-gold/12 text-sc-gold",
   purple: "border-purple-400/20 bg-purple-400/10 text-purple-300",
   red: "border-red-400/20 bg-red-400/10 text-red-300",
 };

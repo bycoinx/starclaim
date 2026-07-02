@@ -3,17 +3,13 @@ import {
   Award,
   BookOpen,
   ChevronRight,
-  Clock,
   Globe2,
-  Lock,
-  Palette,
   Settings,
   ShieldCheck,
   Sparkles,
   Star,
   Telescope,
   Trophy,
-  Users,
 } from "lucide-react";
 import StarAssetImage from "../components/catalog/StarAssetImage";
 import { PageShell, SectionHeader, SurfacePanel, MetricCard, StatusBadge } from "../components/shell";
@@ -334,7 +330,7 @@ const securityItems = [
 function ActionCard({ action }) {
   const { Icon, title, description } = action;
   return (
-    <button className="group flex h-full flex-col justify-between rounded-[1.75rem] border border-white/10 bg-[#050815]/75 p-6 text-left shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-sc-gold/30 hover:bg-white/5 hover:shadow-[0_25px_70px_rgba(212,175,55,0.18)]">
+    <button className="group flex h-full flex-col justify-between rounded-[2rem] border border-white/10 bg-[#050815]/80 p-6 text-left shadow-[0_22px_60px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-sc-gold/30 hover:bg-white/5 hover:shadow-[0_28px_80px_rgba(212,175,55,0.18)]">
       <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-sc-gold transition duration-300 group-hover:border-sc-gold/20 group-hover:bg-sc-gold/10">
         <Icon className="h-6 w-6" />
       </div>
@@ -343,7 +339,7 @@ function ActionCard({ action }) {
         <p className="text-sm leading-6 text-slate-400">{description}</p>
       </div>
       <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-sc-gold/80 transition duration-300 group-hover:text-sc-gold">
-        Open
+        View
         <ChevronRight className="h-4 w-4" />
       </span>
     </button>
@@ -352,7 +348,7 @@ function ActionCard({ action }) {
 
 function StarVaultCard({ star }) {
   return (
-    <article className="group overflow-hidden rounded-[2rem] border border-white/10 bg-[#050712]/90 shadow-[0_28px_80px_rgba(0,0,0,0.25)] transition hover:-translate-y-1 hover:border-sc-gold/25 hover:shadow-[0_36px_120px_rgba(212,175,55,0.16)]">
+    <article className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#050814]/90 shadow-[0_24px_70px_rgba(0,0,0,0.24)] transition duration-300 hover:-translate-y-1 hover:border-sc-gold/25 hover:shadow-[0_34px_90px_rgba(212,175,55,0.18)]">
       <div className="relative pb-[62%]">
         <StarAssetImage star={star} variant="hero" className="absolute inset-0 h-full w-full" />
         <div className="absolute left-5 top-5 flex flex-wrap gap-2">
@@ -360,35 +356,35 @@ function StarVaultCard({ star }) {
           <StatusBadge tone="blue">{star.spectralType}</StatusBadge>
         </div>
       </div>
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between gap-4">
+      <div className="space-y-5 p-6">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm uppercase tracking-[0.24em] text-sc-gold/80">{star.constellation}</p>
-            <h3 className="mt-2 text-2xl font-semibold text-white">{star.name}</h3>
+            <p className="text-xs uppercase tracking-[0.3em] text-white/40">{star.constellation}</p>
+            <h3 className="mt-3 text-2xl font-semibold text-white">{star.name}</h3>
           </div>
           <StatusBadge tone="emerald">Owned</StatusBadge>
         </div>
 
-        <p className="text-sm leading-6 text-slate-400">A rare premium star, reserved for your most meaningful collection moments.</p>
+        <p className="text-sm leading-7 text-slate-400">Nadir koleksiyonunuzdaki parlak bir yıldız. Bilimsel detaylar ve sahiplik durumu burada korunuyor.</p>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Magnitude</p>
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Magnitude</p>
             <p className="mt-2 font-semibold text-white">{star.magnitude}</p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Distance</p>
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Distance</p>
             <p className="mt-2 font-semibold text-white">{star.distance}</p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Acquired</p>
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/50">Acquired</p>
             <p className="mt-2 font-semibold text-white">{star.acquired}</p>
           </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <button className="rounded-full bg-sc-gold px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-[#d4aa2a]">View Details</button>
-          <button className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-sc-gold/30">Show in Sky Map</button>
+          <button className="btn-gold">View Details</button>
+          <button className="btn-ghost">Show in Sky Map</button>
         </div>
       </div>
     </article>
