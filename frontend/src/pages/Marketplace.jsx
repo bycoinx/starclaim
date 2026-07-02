@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { TrendingUp, Shield, Activity, ArrowUpDown, Search, Loader2, Globe2, Star, Sparkles } from "lucide-react";
+import { TrendingUp, Shield, Search, Loader2, Globe2, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PageShell, SectionHeader, SurfacePanel, MetricCard, StatusBadge } from "../components/shell";
+import { PageShell, SectionHeader, SurfacePanel, MetricCard } from "../components/shell";
 
 export default function Marketplace() {
   const { lang } = useT();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState({ vol: 0, cap: 0, avg: 0 });
-  const [sortBy, setSortBy] = useState("default");
+  const [sortBy] = useState("default");
   const isTR = lang === "TR";
 
   useEffect(() => {
