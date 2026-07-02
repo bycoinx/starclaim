@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Telescope,
   Trophy,
 } from "lucide-react";
 import { PageShell } from "../components/shell";
