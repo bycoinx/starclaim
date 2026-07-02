@@ -385,11 +385,11 @@ export default function Vault() {
       <WalletConnectModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={(w) => setWallet(w)} />
       {previewStar && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => { setPreviewStar(null); setPreviewStarId(null); }} />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setPreviewStar(null)} />
           <div className="relative w-full max-w-4xl rounded-[2rem] overflow-hidden border border-white/10 bg-[#050814]/95 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 p-4">
               <div className="text-lg font-semibold text-white">Yıldız Önizlemesi</div>
-              <button onClick={() => { setPreviewStar(null); setPreviewStarId(null); }} className="text-white/70 hover:text-white">✕</button>
+              <button onClick={() => setPreviewStar(null)} className="text-white/70 hover:text-white">✕</button>
             </div>
             <div className="p-6">
               <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
