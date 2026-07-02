@@ -4,6 +4,7 @@ import { cx } from "./utils";
 
 export default function SectionHeader({
   title,
+  description,
   action = "Tumunu Gor",
   onAction,
   className = "",
@@ -11,10 +12,15 @@ export default function SectionHeader({
   actionClassName = "",
 }) {
   return (
-    <div className={cx("mb-5 flex items-center justify-between gap-4", className)}>
-      <h2 className={cx("text-sm font-bold uppercase tracking-[0.18em] text-sc-gold", titleClassName)}>
-        {title}
-      </h2>
+    <div className={cx("mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between", className)}>
+      <div className="max-w-2xl">
+        <h2 className={cx("text-sm font-bold uppercase tracking-[0.18em] text-sc-gold", titleClassName)}>
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>
+        ) : null}
+      </div>
       {action ? (
         <button
           type="button"

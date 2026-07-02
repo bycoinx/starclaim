@@ -1,45 +1,128 @@
-import React, { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import React, { useEffect } from "react";
 import {
-  Archive,
   Award,
   BookOpen,
-  CalendarClock,
   ChevronRight,
   Clock,
-  Database,
-  FileText,
-  Heart,
+  Globe2,
   Lock,
-  Search,
+  Palette,
   Settings,
-  Share2,
   ShieldCheck,
+  Sparkles,
   Star,
-  Terminal as TerminalIcon,
-  Unlock,
+  Telescope,
+  Trophy,
   Users,
 } from "lucide-react";
 import StarAssetImage from "../components/catalog/StarAssetImage";
-import { PageShell, SectionHeader, SurfacePanel } from "../components/shell";
+import { PageShell, SectionHeader, SurfacePanel, MetricCard, StatusBadge } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
-import { VaultEncryption } from "../components/vault/VaultEncryption";
-import { VaultDecryption } from "../components/vault/VaultDecryption";
-import "./Console.css";
 
-const ownedStars = [
+const universeSummary = [
+  {
+    label: "Owned Stars",
+    value: "12",
+    caption: "A private constellation in your universe.",
+    Icon: Star,
+    tone: "gold",
+  },
+  {
+    label: "Certificates",
+    value: "9",
+    caption: "Verified claim artifacts.",
+    Icon: ShieldCheck,
+    tone: "blue",
+  },
+  {
+    label: "Stories",
+    value: "6",
+    caption: "Personal memories and journeys.",
+    Icon: BookOpen,
+    tone: "purple",
+  },
+  {
+    label: "Achievements",
+    value: "14",
+    caption: "Milestones unlocked across your vault.",
+    Icon: Award,
+    tone: "emerald",
+  },
+  {
+    label: "Constellations",
+    value: "5",
+    caption: "Connected celestial families.",
+    Icon: Sparkles,
+    tone: "amber",
+  },
+  {
+    label: "Favorite Star",
+    value: "Sirius",
+    caption: "The brightest treasure in your sky.",
+    Icon: Star,
+    tone: "gold",
+  },
+  {
+    label: "Total Collection",
+    value: "27 items",
+    caption: "Stars, certificates, and stories.",
+    Icon: Globe2,
+    tone: "blue",
+  },
+  {
+    label: "Future Assets",
+    value: "7",
+    caption: "Reserved spaces for what’s next.",
+    Icon: Sparkles,
+    tone: "purple",
+  },
+];
+
+const quickActions = [
+  {
+    title: "Explore Stars",
+    description: "Wander your personal constellation.",
+    Icon: Telescope,
+  },
+  {
+    title: "Manage Certificates",
+    description: "Review verified ownership artifacts.",
+    Icon: ShieldCheck,
+  },
+  {
+    title: "Read Stories",
+    description: "Return to meaningful star journeys.",
+    Icon: BookOpen,
+  },
+  {
+    title: "Visit Marketplace",
+    description: "Discover rare additions for your vault.",
+    Icon: Globe2,
+  },
+  {
+    title: "Open Cosmos",
+    description: "Step into the broader StarClaim universe.",
+    Icon: Sparkles,
+  },
+  {
+    title: "Vault Settings",
+    description: "Adjust private access and experience.",
+    Icon: Settings,
+  },
+];
+
+const myStars = [
   {
     starId: "SCX-0001",
     name: "Sirius",
     code: "SIR-CMA",
     constellation: "Canis Major",
     spectralType: "A1V",
-    magnitude: -1.46,
-    distance: 8.6,
-    tier: "legendary",
-    isClaimed: true,
-    ownerName: "Ali & Zeynep",
-    storyCount: 2,
+    magnitude: "-1.46",
+    distance: "8.6 ly",
+    rarity: "Legendary",
+    acquired: "20 May 2026",
+    owner: "Ali & Zeynep",
   },
   {
     starId: "SCX-0002",
@@ -47,12 +130,11 @@ const ownedStars = [
     code: "BET-ORI",
     constellation: "Orion",
     spectralType: "M1-2Ia",
-    magnitude: 0.5,
-    distance: 642.5,
-    tier: "supernova",
-    isClaimed: true,
-    ownerName: "StarSeeker",
-    storyCount: 1,
+    magnitude: "0.5",
+    distance: "642 ly",
+    rarity: "Supernova",
+    acquired: "14 Feb 2026",
+    owner: "StarSeeker",
   },
   {
     starId: "SCX-0003",
@@ -60,12 +142,11 @@ const ownedStars = [
     code: "VEG-LYR",
     constellation: "Lyra",
     spectralType: "A0V",
-    magnitude: 0.03,
-    distance: 25.04,
-    tier: "legendary",
-    isClaimed: true,
-    ownerName: "Eda",
-    storyCount: 3,
+    magnitude: "0.03",
+    distance: "25 ly",
+    rarity: "Legendary",
+    acquired: "05 Mar 2026",
+    owner: "Eda",
   },
   {
     starId: "SCX-0004",
@@ -73,146 +154,374 @@ const ownedStars = [
     code: "RIG-ORI",
     constellation: "Orion",
     spectralType: "B8Ia",
-    magnitude: 0.18,
-    distance: 860,
-    tier: "supernova",
-    isClaimed: true,
-    ownerName: "Pilot One",
-    storyCount: 1,
+    magnitude: "0.18",
+    distance: "860 ly",
+    rarity: "Supernova",
+    acquired: "12 Jan 2026",
+    owner: "Pilot One",
   },
 ];
 
 const certificates = [
-  { id: "CERT-0001", star: "Sirius", status: "Onaylandi", tone: "from-blue-500/30" },
-  { id: "CERT-0002", star: "Vega", status: "Onaylandi", tone: "from-purple-500/30" },
-  { id: "CERT-0003", star: "Betelgeuse", status: "Zaman kilitli", tone: "from-amber-500/30" },
+  {
+    id: "SCX-2026-0001",
+    star: "Sirius",
+    issued: "20 May 2026",
+    type: "Star Claim Certificate",
+    owner: "Ali & Zeynep",
+    status: "Verified",
+  },
+  {
+    id: "SCX-2026-0002",
+    star: "Vega",
+    issued: "14 Feb 2026",
+    type: "Star Claim Certificate",
+    owner: "Eda",
+    status: "Verified",
+  },
+  {
+    id: "SCX-2026-0003",
+    star: "Betelgeuse",
+    issued: "05 Mar 2026",
+    type: "Time Capsule Certificate",
+    owner: "StarSeeker",
+    status: "Verified",
+  },
 ];
 
 const stories = [
-  { title: "Sirius'un Yolculugu", desc: "Sirius hakkinda yazdigin hikaye", time: "2 gun once" },
-  { title: "Vega ve Lyra Efsanesi", desc: "Lyra takimyildizinin en parlak yildizi", time: "5 gun once" },
-  { title: "Betelgeuse: Kirmizi Dev", desc: "Bir devin yasami ve sonu", time: "1 hafta once" },
+  {
+    title: "Sirius’un Yolculuğu",
+    star: "Sirius",
+    category: "Private Odyssey",
+    reading: "4 min read",
+    created: "May 20, 2026",
+    excerpt: "A luminous memory of the first star that became your own, written as a private testament.",
+  },
+  {
+    title: "Vega ve Lyra Efsanesi",
+    star: "Vega",
+    category: "Constellation Tale",
+    reading: "5 min read",
+    created: "Feb 14, 2026",
+    excerpt: "The brightest jewel of Lyra reveals its ancient myth and your place within it.",
+  },
+  {
+    title: "Betelgeuse: Kırmızı Dev",
+    star: "Betelgeuse",
+    category: "Cosmic Journey",
+    reading: "6 min read",
+    created: "Mar 05, 2026",
+    excerpt: "A dramatic narrative of change, endurance, and the promise of distant light.",
+  },
 ];
 
 const achievements = [
-  { label: "Ilk Yildiz", desc: "1 yildiz sahiplen", Icon: Star },
-  { label: "10 Yildiz", desc: "10 yildiz sahiplen", Icon: Award },
-  { label: "Hikaye Yazari", desc: "Ilk hikayeni yaz", Icon: BookOpen },
-  { label: "Koleksiyoncu", desc: "5 sertifika kazan", Icon: Archive },
+  {
+    title: "First Star",
+    detail: "Your first claim made the universe personal.",
+    status: "Unlocked",
+    Icon: Star,
+    tone: "gold",
+  },
+  {
+    title: "Explorer",
+    detail: "Discoveries earned through quiet curiosity.",
+    status: "Unlocked",
+    Icon: Telescope,
+    tone: "blue",
+  },
+  {
+    title: "Galaxy Collector",
+    detail: "A growing premium collection of distant stars.",
+    status: "Unlocked",
+    Icon: Globe2,
+    tone: "emerald",
+  },
+  {
+    title: "Constellation Master",
+    detail: "Your stars form meaningful clusters.",
+    status: "Locked",
+    Icon: Sparkles,
+    tone: "purple",
+  },
+  {
+    title: "Story Creator",
+    detail: "Personal narratives authored in StarVault.",
+    status: "Unlocked",
+    Icon: BookOpen,
+    tone: "amber",
+  },
+  {
+    title: "Legendary Owner",
+    detail: "A rare tier reserved for the most prized stars.",
+    status: "Locked",
+    Icon: Trophy,
+    tone: "gold",
+  },
 ];
 
-const timeline = [
-  { label: "Sirius yildizini sahiplendin", time: "2 gun once", Icon: Star },
-  { label: "Vega icin yeni hikaye yazdin", time: "5 gun once", Icon: BookOpen },
-  { label: "Betelgeuse sertifikasi kazandin", time: "1 hafta once", Icon: FileText },
-  { label: "Procyon yildizini sahiplendin", time: "2 hafta once", Icon: ShieldCheck },
+const timelineEvents = [
+  {
+    title: "Star Claimed",
+    date: "20 May 2026",
+    description: "Sirius entered your private vault as your first owned star.",
+    star: "Sirius",
+    status: "Complete",
+    Icon: Star,
+  },
+  {
+    title: "Certificate Generated",
+    date: "21 May 2026",
+    description: "A premium claim certificate was minted for your new star.",
+    star: "Sirius",
+    status: "Verified",
+    Icon: ShieldCheck,
+  },
+  {
+    title: "Story Published",
+    date: "22 May 2026",
+    description: "Your first personal star story was added to the vault library.",
+    star: "Sirius",
+    status: "Live",
+    Icon: BookOpen,
+  },
+  {
+    title: "Vault Updated",
+    date: "27 May 2026",
+    description: "The StarVault interface received a premium experience refresh.",
+    star: "Vault",
+    status: "Complete",
+    Icon: Palette,
+  },
+  {
+    title: "Future Asset Reserved",
+    date: "Soon",
+    description: "A reserved slot is waiting for your next premium collectible.",
+    star: "Pending",
+    status: "Reserved",
+    Icon: Sparkles,
+  },
 ];
 
-const navItems = [
-  { label: "Genel Bakis", Icon: Archive, active: true },
-  { label: "Yildizlarim", Icon: Star },
-  { label: "Sertifikalarim", Icon: FileText },
-  { label: "Hikayelerim", Icon: BookOpen },
-  { label: "Basarilarim", Icon: Award },
-  { label: "Zaman Cizelgesi", Icon: Clock },
-  { label: "Favoriler", Icon: Heart },
-  { label: "Paylasilanlar", Icon: Users },
-  { label: "Ayarlar", Icon: Settings },
+const securityItems = [
+  {
+    title: "Encrypted Vault",
+    description: "Core documents and collectibles are stored in private encryption.",
+    status: "Protected",
+    tone: "gold",
+  },
+  {
+    title: "Recovery Status",
+    description: "Recovery keys are ready, yet kept in secure reserve.",
+    status: "Ready",
+    tone: "blue",
+  },
+  {
+    title: "Cloud Backup",
+    description: "Encrypted backups are safely mirrored offsite.",
+    status: "Synced",
+    tone: "emerald",
+  },
+  {
+    title: "Offline Archive",
+    description: "A private offline copy safeguards your most precious stars.",
+    status: "Available",
+    tone: "purple",
+  },
 ];
 
-function OwnedStarCard({ star }) {
+function ActionCard({ action }) {
+  const { Icon, title, description } = action;
   return (
-    <article className="group rounded-xl border border-white/10 bg-[#070b18]/80 p-3 transition-all duration-300 hover:-translate-y-1 hover:border-sc-gold/40 hover:shadow-[0_0_30px_rgba(212,175,55,0.1)]">
-      <div className="relative overflow-hidden rounded-lg border border-white/10">
-        <StarAssetImage star={star} variant="preview" className="aspect-[4/3] w-full" />
-        <div className="absolute left-3 top-3 rounded-md bg-sc-gold px-2 py-1 text-[10px] text-black">
-          <Star className="h-3 w-3 fill-current" />
+    <button className="group flex h-full flex-col justify-between rounded-[1.75rem] border border-white/10 bg-[#050815]/75 p-6 text-left shadow-[0_18px_45px_rgba(0,0,0,0.18)] transition duration-300 hover:-translate-y-1 hover:border-sc-gold/30 hover:bg-white/5 hover:shadow-[0_25px_70px_rgba(212,175,55,0.18)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-sc-gold transition duration-300 group-hover:border-sc-gold/20 group-hover:bg-sc-gold/10">
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="mt-6 space-y-2">
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <p className="text-sm leading-6 text-slate-400">{description}</p>
+      </div>
+      <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-sc-gold/80 transition duration-300 group-hover:text-sc-gold">
+        Open
+        <ChevronRight className="h-4 w-4" />
+      </span>
+    </button>
+  );
+}
+
+function StarVaultCard({ star }) {
+  return (
+    <article className="group overflow-hidden rounded-[2rem] border border-white/10 bg-[#050712]/90 shadow-[0_28px_80px_rgba(0,0,0,0.25)] transition hover:-translate-y-1 hover:border-sc-gold/25 hover:shadow-[0_36px_120px_rgba(212,175,55,0.16)]">
+      <div className="relative pb-[62%]">
+        <StarAssetImage star={star} variant="hero" className="absolute inset-0 h-full w-full" />
+        <div className="absolute left-5 top-5 flex flex-wrap gap-2">
+          <StatusBadge tone="gold">{star.rarity}</StatusBadge>
+          <StatusBadge tone="blue">{star.spectralType}</StatusBadge>
         </div>
       </div>
-      <div className="pt-4">
-        <div className="flex items-start justify-between gap-3">
+      <div className="space-y-4 p-6">
+        <div className="flex items-center justify-between gap-4">
           <div>
-            <h3 className="font-display text-xl text-white group-hover:text-sc-gold">{star.name}</h3>
-            <p className="text-xs text-white/45">{star.constellation}</p>
+            <p className="text-sm uppercase tracking-[0.24em] text-sc-gold/80">{star.constellation}</p>
+            <h3 className="mt-2 text-2xl font-semibold text-white">{star.name}</h3>
           </div>
-          <span className="text-[10px] uppercase tracking-[0.16em] text-sc-gold/70">{star.code}</span>
+          <StatusBadge tone="emerald">Owned</StatusBadge>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 text-[11px] text-white/55">
-          <span>{star.distance} isik yili</span>
-          <span className="text-right">{star.spectralType}</span>
+
+        <p className="text-sm leading-6 text-slate-400">A rare premium star, reserved for your most meaningful collection moments.</p>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Magnitude</p>
+            <p className="mt-2 font-semibold text-white">{star.magnitude}</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Distance</p>
+            <p className="mt-2 font-semibold text-white">{star.distance}</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
+            <p className="text-xs uppercase tracking-[0.24em] text-white/50">Acquired</p>
+            <p className="mt-2 font-semibold text-white">{star.acquired}</p>
+          </div>
         </div>
-        <button className="mt-4 w-full rounded-lg bg-sc-gold/90 px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-black transition hover:bg-sc-gold">
-          Sahiplenildi
-        </button>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <button className="rounded-full bg-sc-gold px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-black transition hover:bg-[#d4aa2a]">View Details</button>
+          <button className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:border-sc-gold/30">Show in Sky Map</button>
+        </div>
       </div>
     </article>
   );
 }
 
-function CertificateCard({ item }) {
+function VaultCertificateCard({ item }) {
   return (
-    <div className={`min-h-[190px] rounded-xl border border-white/10 bg-gradient-to-br ${item.tone} via-[#10182d] to-[#050814] p-4`}>
-      <div className="flex h-full flex-col justify-between rounded-lg border border-sc-gold/25 p-4">
-        <div className="text-center">
-          <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded-full border border-sc-gold/40 text-sc-gold">
-            <ShieldCheck className="h-4 w-4" />
+    <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#050712]/90 shadow-[0_20px_50px_rgba(0,0,0,0.2)] transition duration-300 hover:-translate-y-0.5 hover:border-sc-gold/25 hover:shadow-[0_26px_70px_rgba(212,175,55,0.18)]">
+      <div className="relative overflow-hidden rounded-t-[2rem] bg-gradient-to-br from-slate-950 via-[#090c18] to-[#111627] p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.18),transparent_35%)]" />
+        <div className="relative z-10 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.28em] text-sc-gold/70">{item.type}</p>
+              <h3 className="mt-3 text-2xl font-semibold text-white">{item.star}</h3>
+            </div>
+            <StatusBadge tone="blue">{item.status}</StatusBadge>
           </div>
-          <p className="text-[9px] uppercase tracking-[0.28em] text-sc-gold/70">StarClaim Certificate</p>
-          <h3 className="mt-3 font-display text-2xl text-white">{item.star}</h3>
+          <div className="rounded-[1.5rem] border border-white/10 bg-white/5 p-4 text-sm text-slate-300 shadow-[0_10px_30px_rgba(0,0,0,0.18)]">
+            Certificate preview placeholder with elegant emboss styling.
+          </div>
         </div>
-        <div className="flex items-center justify-between text-[10px] text-white/55">
-          <span>{item.id}</span>
-          <span>{item.status}</span>
+      </div>
+      <div className="space-y-4 px-6 pb-6 pt-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/50">Certificate #</p>
+            <p className="mt-2 text-sm font-semibold text-white">{item.id}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/50">Issued</p>
+            <p className="mt-2 text-sm font-semibold text-white">{item.issued}</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.24em] text-white/50">Owner</p>
+            <p className="mt-2 text-sm font-semibold text-white">{item.owner}</p>
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <button className="btn-ghost">Open</button>
+          <button className="btn-ghost">Verify</button>
+          <button className="btn-ghost">Download</button>
         </div>
       </div>
     </div>
   );
 }
 
-function SecurityVault() {
-  const [activeTab, setActiveTab] = useState("encrypt");
-
+function StoryCard({ story }) {
   return (
-    <SurfacePanel className="lg:col-span-2">
-      <SectionHeader title="Guvenlik Kasasi" action="Aegis Protokolu" />
-      <div className="mb-6 flex flex-wrap gap-2 rounded-xl border border-white/10 bg-white/5 p-1">
-        <button
-          onClick={() => setActiveTab("encrypt")}
-          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-            activeTab === "encrypt" ? "bg-sc-gold text-black" : "text-white/45 hover:text-white"
-          }`}
-        >
-          <Lock className="h-3.5 w-3.5" />
-          Encrypt
-        </button>
-        <button
-          onClick={() => setActiveTab("decrypt")}
-          className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-[10px] font-bold uppercase tracking-[0.16em] transition ${
-            activeTab === "decrypt" ? "bg-sc-blue text-white" : "text-white/45 hover:text-white"
-          }`}
-        >
-          <Unlock className="h-3.5 w-3.5" />
-          Decrypt
-        </button>
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.22 }}
-          className="terminal-frame p-5 md:p-7"
-        >
-          <div className="mb-5 flex items-center gap-2 text-[9px] font-bold uppercase tracking-[0.22em] text-sc-gold/60">
-            <TerminalIcon className="h-3.5 w-3.5" />
-            VAULT_INTERFACE // SYSTEM_READY
+    <article className="overflow-hidden rounded-[2rem] border border-white/10 bg-[#050712]/90 shadow-[0_18px_50px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-0.5 hover:border-sc-gold/25 hover:shadow-[0_24px_60px_rgba(212,175,55,0.18)]">
+      <div className="relative overflow-hidden rounded-t-[2rem] bg-gradient-to-br from-indigo-950 via-[#080c19] to-[#111827] p-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_35%)]" />
+        <div className="relative z-10 grid gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.26em] text-white/60">{story.category}</span>
+            <span className="text-[10px] uppercase tracking-[0.26em] text-white/40">{story.reading}</span>
           </div>
-          {activeTab === "encrypt" ? <VaultEncryption onComplete={() => {}} /> : <VaultDecryption />}
-        </motion.div>
-      </AnimatePresence>
-    </SurfacePanel>
+          <h3 className="text-2xl font-semibold text-white">{story.title}</h3>
+          <p className="text-sm leading-6 text-slate-400">{story.excerpt}</p>
+        </div>
+      </div>
+      <div className="space-y-4 px-6 pb-6 pt-5">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
+          <span>{story.star}</span>
+          <span className="h-1 w-1 rounded-full bg-white/20" />
+          <span>{story.created}</span>
+        </div>
+        <button className="btn-gold">Open Story</button>
+      </div>
+    </article>
+  );
+}
+
+function AchievementCard({ achievement }) {
+  const { Icon, title, detail, status, tone } = achievement;
+  const locked = status !== "Unlocked";
+  return (
+    <div className={`overflow-hidden rounded-[2rem] border border-white/10 bg-[#050712]/85 p-6 transition hover:-translate-y-0.5 hover:border-sc-gold/25 ${locked ? "opacity-80" : ""}`}>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-white/5 text-sc-gold">
+          <Icon className="h-6 w-6" />
+        </div>
+        <StatusBadge tone={locked ? "red" : tone}>{status}</StatusBadge>
+      </div>
+      <div className="mt-6 space-y-3">
+        <h3 className="text-xl font-semibold text-white">{title}</h3>
+        <p className="text-sm leading-6 text-slate-400">{detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function TimelineEvent({ event }) {
+  const { Icon, title, date, description, star, status } = event;
+  return (
+    <div className="relative flex gap-5">
+      <div className="flex flex-col items-center">
+        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-sc-gold text-black shadow-[0_0_15px_rgba(212,175,55,0.25)]">
+          <Icon className="h-3.5 w-3.5" />
+        </span>
+        <span className="mt-2 h-full w-px bg-white/10" />
+      </div>
+      <div className="flex-1 rounded-[2rem] border border-white/10 bg-[#050712]/90 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-white">{title}</h3>
+            <p className="text-sm text-slate-400">{description}</p>
+          </div>
+          <span className="text-xs uppercase tracking-[0.22em] text-white/50">{status}</span>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-400">
+          <span>{date}</span>
+          <span className="h-1 w-1 rounded-full bg-white/10" />
+          <span>{star}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SecurityCard({ item }) {
+  return (
+    <div className="glass rounded-[2rem] border border-white/10 bg-[#050712]/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.14)] transition duration-300 hover:-translate-y-0.5 hover:border-sc-gold/25 hover:shadow-[0_24px_60px_rgba(212,175,55,0.18)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-white">{item.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">{item.description}</p>
+        </div>
+        <StatusBadge tone={item.tone}>{item.status}</StatusBadge>
+      </div>
+    </div>
   );
 }
 
@@ -223,175 +532,152 @@ export default function Vault() {
 
   return (
     <PageShell>
-        <VaultHero
-          stats={{
-            ownedStars: "12",
-            certificates: "9",
-            stories: "6",
-            rank: "Explorer",
-            totalValue: "12,450 XCX",
-          }}
-        />
+      <VaultHero
+        stats={{
+          ownedStars: "12",
+          certificates: "9",
+          stories: "6",
+          rank: "Explorer",
+          totalValue: "12,450 XCX",
+        }}
+        actions={["Explore StarVault", "Open Certificate Vault"]}
+      />
 
-        <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-          <aside className="hidden rounded-2xl border border-white/10 bg-[#070b18]/80 p-4 backdrop-blur-xl lg:block">
-            <nav className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.Icon;
-                return (
-                  <button
-                    key={item.label}
-                    className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition ${
-                      item.active
-                        ? "bg-sc-gold/15 text-sc-gold"
-                        : "text-white/65 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {item.label}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div className="mt-10 rounded-2xl border border-white/10 bg-black/30 p-4">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-sc-gold/30 bg-sc-gold/10 text-sc-gold">
-                  <Award className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">Explorer</p>
-                  <p className="text-xs text-white/45">Seviye 3</p>
-                </div>
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-sc-gold to-purple-500" />
-              </div>
-              <p className="mt-3 text-[11px] text-white/50">1,250 / 2,000 XP</p>
-            </div>
-          </aside>
-
-          <div className="grid gap-6">
-            <SurfacePanel>
-              <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <SectionHeader title="Yildizlarim" action="Tumunu Gor" />
-                <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-white/45">
-                  <Search className="h-4 w-4" />
-                  <span className="text-xs">Yildiz ara...</span>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {ownedStars.map((star) => (
-                  <OwnedStarCard key={star.starId} star={star} />
-                ))}
-              </div>
-            </SurfacePanel>
-
-            <div className="grid gap-6 xl:grid-cols-2">
-              <SurfacePanel>
-                <SectionHeader title="Sertifikalarim" />
-                <div className="grid gap-4 sm:grid-cols-3">
-                  {certificates.map((item) => (
-                    <CertificateCard key={item.id} item={item} />
-                  ))}
-                </div>
-              </SurfacePanel>
-
-              <SurfacePanel>
-                <SectionHeader title="Hikayelerim" />
-                <div className="space-y-3">
-                  {stories.map((story, index) => (
-                    <div key={story.title} className="flex items-center gap-4 border-b border-white/10 pb-3 last:border-0">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-sc-gold">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-semibold text-white">{story.title}</h3>
-                        <p className="truncate text-xs text-white/45">{story.desc}</p>
-                      </div>
-                      <span className="text-[11px] text-white/40">{story.time}</span>
-                    </div>
-                  ))}
-                </div>
-              </SurfacePanel>
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-2">
-              <SurfacePanel>
-                <SectionHeader title="Basarilarim" />
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {achievements.map((achievement) => {
-                    const Icon = achievement.Icon;
-                    return (
-                      <div key={achievement.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
-                        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-sc-gold/30 bg-sc-gold/10 text-sc-gold">
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <h3 className="text-xs font-semibold text-white">{achievement.label}</h3>
-                        <p className="mt-1 text-[10px] text-white/40">{achievement.desc}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </SurfacePanel>
-
-              <SurfacePanel>
-                <SectionHeader title="Zaman Cizelgesi" />
-                <div className="space-y-4">
-                  {timeline.map((entry) => {
-                    const Icon = entry.Icon;
-                    return (
-                      <div key={entry.label} className="flex items-center gap-4">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-sc-gold">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <p className="min-w-0 flex-1 text-sm text-white/75">{entry.label}</p>
-                        <span className="text-[11px] text-white/40">{entry.time}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </SurfacePanel>
-            </div>
-
-            <div className="grid gap-6 xl:grid-cols-3">
-              <SecurityVault />
-
-              <SurfacePanel>
-                <SectionHeader title="Paylasim ve Yedek" action="Yonet" />
-                <div className="space-y-3">
-                  {[
-                    { label: "Aile paylasimi", Icon: Users },
-                    { label: "Zaman kilitleri", Icon: CalendarClock },
-                    { label: "Arweave yedekleri", Icon: Database },
-                    { label: "Guvenli link", Icon: Share2 },
-                  ].map((item) => {
-                    const Icon = item.Icon;
-                    return (
-                      <button key={item.label} className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70 hover:border-sc-gold/30 hover:text-white">
-                        <span className="flex items-center gap-3">
-                          <Icon className="h-4 w-4 text-sc-gold" />
-                          {item.label}
-                        </span>
-                        <ChevronRight className="h-4 w-4 text-white/30" />
-                      </button>
-                    );
-                  })}
-                </div>
-              </SurfacePanel>
-            </div>
-
-            <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#090d1a] p-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_45%,rgba(122,92,255,0.22),transparent_35%)] pointer-events-none" />
-              <div className="relative max-w-3xl">
-                <p className="font-display text-2xl leading-relaxed text-white md:text-3xl">
-                  "Yildizlara sahip olamazsin, ama onlarin hikayelerine ortak olabilirsin."
-                </p>
-                <p className="mt-4 text-sm font-semibold text-sc-gold">- StarClaimX</p>
-              </div>
-            </section>
+      <SurfacePanel className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
+        <div>
+          <SectionHeader
+            title="Universe Summary"
+            description="A premium overview of your personal StarVault universe."
+            action="Explore Full Vault"
+          />
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {universeSummary.map((metric) => (
+              <MetricCard
+                key={metric.label}
+                label={metric.label}
+                value={metric.value}
+                caption={metric.caption}
+                icon={metric.Icon}
+                tone={metric.tone}
+                className="min-h-[150px]"
+              />
+            ))}
           </div>
         </div>
+
+        <div>
+          <SectionHeader
+            title="Quick Actions"
+            description="Premium shortcuts to move through your StarVault experience."
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {quickActions.map((action) => (
+              <ActionCard key={action.title} action={action} />
+            ))}
+          </div>
+        </div>
+      </SurfacePanel>
+
+      <SurfacePanel>
+        <SectionHeader
+          title="My Stars"
+          description="The heart of StarVault: premium star cards that communicate ownership and rarity."
+          action="Manage Collection"
+        />
+        <div className="grid gap-6 xl:grid-cols-2">
+          {myStars.map((star) => (
+            <StarVaultCard key={star.starId} star={star} />
+          ))}
+        </div>
+      </SurfacePanel>
+
+      <SurfacePanel>
+        <SectionHeader
+          title="Certificates"
+          description="Premium certificates that feel like collectible artifacts."
+          action="Open Gallery"
+        />
+        <div className="grid gap-6 xl:grid-cols-3">
+          {certificates.map((item) => (
+            <VaultCertificateCard key={item.id} item={item} />
+          ))}
+        </div>
+      </SurfacePanel>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <SurfacePanel>
+          <SectionHeader
+            title="Stories"
+            description="A premium story library for emotional star journeys."
+            action="View Library"
+          />
+          <div className="grid gap-6">
+            {stories.map((story) => (
+              <StoryCard key={story.title} story={story} />
+            ))}
+          </div>
+        </SurfacePanel>
+
+        <SurfacePanel>
+          <SectionHeader
+            title="Achievements"
+            description="Meaningful milestone cards that celebrate your StarVault progress."
+            action="See Achievements"
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            {achievements.map((achievement) => (
+              <AchievementCard key={achievement.title} achievement={achievement} />
+            ))}
+          </div>
+        </SurfacePanel>
+      </div>
+
+      <SurfacePanel>
+        <SectionHeader
+          title="Timeline"
+          description="Your StarVault history rendered as an elegant vertical journey."
+          action="Review Timeline"
+        />
+        <div className="space-y-5">
+          {timelineEvents.map((event) => (
+            <TimelineEvent key={event.title} event={event} />
+          ))}
+        </div>
+      </SurfacePanel>
+
+      <SurfacePanel>
+        <SectionHeader
+          title="Security Vault"
+          description="A luxury archive of trust, recovery and private storage."
+          action="View Security"
+        />
+        <div className="grid gap-4 sm:grid-cols-2">
+          {securityItems.map((item) => (
+            <SecurityCard key={item.title} item={item} />
+          ))}
+        </div>
+      </SurfacePanel>
+
+      <SurfacePanel variant="strong" className="overflow-hidden p-10">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[#060a16]/90 p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(212,175,55,0.16),transparent_32%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_85%_30%,rgba(102,126,234,0.14),transparent_34%)]" />
+          <div className="relative z-10 grid gap-6 lg:grid-cols-[1.7fr_0.9fr] lg:items-center">
+            <div>
+              <p className="text-sm uppercase tracking-[0.32em] text-sc-gold/70">StarVault Private Universe</p>
+              <h2 className="mt-4 text-3xl font-semibold leading-tight text-white md:text-4xl">
+                Your universe is already waiting. The next chapter is just one step away.
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+                This page is the foundation for every star, certificate, story and secure memory you will own in StarClaim.
+              </p>
+            </div>
+            <button className="inline-flex items-center justify-center rounded-full bg-sc-gold px-8 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-black shadow-[0_0_40px_rgba(212,175,55,0.18)] transition hover:bg-[#d4aa2a]">
+              Enter StarVault
+            </button>
+          </div>
+        </div>
+      </SurfacePanel>
     </PageShell>
   );
 }
