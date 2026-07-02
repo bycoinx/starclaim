@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+﻿import React, { useEffect, useState, useRef } from 'react';
 import { Text, StyleSheet, View, TouchableOpacity, FlatList, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
@@ -10,302 +10,294 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
-export default function VaultHomeScreen(){
+const quickActions = [
+  { label: 'Yıldızları Keşfet', icon: 'star' },
+  { label: 'Sertifikalar', icon: 'shield-check' },
+  { label: 'Hikayeler', icon: 'book-open-outline' },
+  { label: 'Pazaryeri', icon: 'globe' },
+  { label: 'Güvenlik', icon: 'shield-lock-outline' },
+  { label: 'Ayarlar', icon: 'cog-outline' },
+];
+
+const vaultStats = [
+  { label: 'Sahip Yıldız', value: '12' },
+  { label: 'Sertifika', value: '9' },
+  { label: 'Hikaye', value: '6' },
+];
+
+export default function VaultHomeScreen() {
   const [messages, setMessages] = useState([]);
   const [unlocked, setUnlocked] = useState([]);
   const [playingId, setPlayingId] = useState(null);
   const soundRef = useRef(null);
   const router = useRouter();
 
-  useEffect(()=>{ load(); },[])
+  useEffect(() => {
+    load();
+  }, []);
 
-  const load = async ()=>{
-    try{
+  const load = async () => {
+    try {
       const raw = await AsyncStorage.getItem('@vault_messages');
       const arr = raw ? JSON.parse(raw) : [];
       setMessages(arr);
       const uRaw = await AsyncStorage.getItem('@vault_unlocked');
       const uArr = uRaw ? JSON.parse(uRaw) : [];
       setUnlocked(uArr);
-    }catch(e){ console.warn(e); }
-  }
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
-  const isUnlocked = (item)=>{
-    if(unlocked.includes(item.id)) return true;
-    if(item.lockType === 'date' && item.lockValue){
+  const isUnlocked = (item) => {
+    if (unlocked.includes(item.id)) return true;
+    if (item.lockType === 'date' && item.lockValue) {
       const ts = Number(item.lockValue) || Date.parse(item.lockValue);
-      if(!isNaN(ts) && Date.now() >= ts) return true;
+      return !isNaN(ts) && Date.now() >= ts;
     }
     return false;
-  }
+  };
 
-  const setUnlockedFor = async (id)=>{
-    try{
+  const setUnlockedFor = async (id) => {
+    try {
       const next = Array.from(new Set([id, ...unlocked]));
       setUnlocked(next);
       await AsyncStorage.setItem('@vault_unlocked', JSON.stringify(next));
-    }catch(e){ console.warn(e); }
-  }
+    } catch (e) {
+      console.warn(e);
+    }
+  };
 
-  const tryUnlock = async (item)=>{
-    if(item.lockType === 'date'){
+  const tryUnlock = async (item) => {
+    if (item.lockType === 'date') {
       const ts = Number(item.lockValue) || Date.parse(item.lockValue);
-      if(!isNaN(ts) && Date.now() >= ts){
+      if (!isNaN(ts) && Date.now() >= ts) {
         await setUnlockedFor(item.id);
-        Alert.alert('SİSTEM ONAYI','Kilit açıldı. Veri erişilebilir.');
+        Alert.alert('Sistem Onayı', 'Kilit açıldı. Veri erişilebilir.');
       } else {
-        const remaining = new Date(ts - Date.now());
-        Alert.alert('ERİŞİM REDDİ',`Kilit süresi henüz dolmadı.`);
+        Alert.alert('Erişim Reddi', 'Kilit süresi henüz dolmadı.');
       }
       return;
     }
 
-    if(item.lockType === 'person'){
-      try{
-        const res = await LocalAuthentication.authenticateAsync({promptMessage:'Biyometrik doğrulama gerekli'});
-        if(res.success) { 
-          await setUnlockedFor(item.id); 
-          Alert.alert('YETKİ VERİLDİ','Kimlik doğrulandı.'); 
+    if (item.lockType === 'person') {
+      try {
+        const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Biyometrik doğrulama gerekli' });
+        if (res.success) {
+          await setUnlockedFor(item.id);
+          Alert.alert('Yetki Verildi', 'Kimlik doğrulandı.');
+        } else {
+          Alert.alert('Hata', 'Doğrulama başarısız.');
         }
-        else Alert.alert('HATA','Doğrulama başarısız.');
-      }catch(e){ Alert.alert('SİSTEM HATASI',String(e)); }
+      } catch (e) {
+        Alert.alert('Sistem Hatası', String(e));
+      }
       return;
     }
 
-    Alert.alert('GÜVENLİ ERİŞİM', 'Bu veriyi manuel olarak açmak istiyor musunuz?', [
-      {text:'İPTAL'},
-      {text:'EVET', onPress: async ()=>{ await setUnlockedFor(item.id); Alert.alert('VERİ AÇILDI'); }}
-    ])
-  }
+    Alert.alert('Güvenli Erişim', 'Bu veriyi manuel olarak açmak istiyor musunuz?', [
+      { text: 'İptal' },
+      {
+        text: 'Evet',
+        onPress: async () => {
+          await setUnlockedFor(item.id);
+          Alert.alert('Veri Açıldı');
+        },
+      },
+    ]);
+  };
 
-  const stopAndUnload = async ()=>{
-    try{
-      if(soundRef.current){
+  const stopAndUnload = async () => {
+    try {
+      if (soundRef.current) {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
         soundRef.current = null;
       }
-    }catch(e){ console.warn(e); }
+    } catch (e) {
+      console.warn(e);
+    }
     setPlayingId(null);
-  }
+  };
 
-  const playAudio = async (item)=>{
-    if(!isUnlocked(item)) return tryUnlock(item);
-    try{
-      if(soundRef.current){ await stopAndUnload(); }
+  const playAudio = async (item) => {
+    if (!isUnlocked(item)) return tryUnlock(item);
+    try {
+      if (soundRef.current) {
+        await stopAndUnload();
+      }
       const { sound } = await Audio.Sound.createAsync({ uri: item.audioUri }, { shouldPlay: true });
       soundRef.current = sound;
       setPlayingId(item.id);
-      sound.setOnPlaybackStatusUpdate((status)=>{
-        if(status.didJustFinish) stopAndUnload();
-      })
-    }catch(e){ console.warn(e); Alert.alert('SİSTEM HATASI', String(e)); }
-  }
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) stopAndUnload();
+      });
+    } catch (e) {
+      console.warn(e);
+      Alert.alert('Sistem Hatası', String(e));
+    }
+  };
 
-  const renderItem = ({item}) => {
+  const renderMessage = ({ item }) => {
     const unlockedState = isUnlocked(item);
-    const borderColor = unlockedState ? THEME.colors.primary + '40' : THEME.colors.secondary + '40';
-    
     return (
-      <View style={[styles.cardContainer, { borderColor }]}>
-        <LinearGradient 
-          colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} 
-          style={styles.card}
-        >
-          <View style={styles.cardHeader}>
-            <View style={[styles.iconBox, { backgroundColor: unlockedState ? THEME.colors.primary + '15' : THEME.colors.secondary + '15' }]}>
-              <MaterialCommunityIcons 
-                name={item.type === 'audio' ? "waveform" : "text-box-outline"} 
-                size={20} 
-                color={unlockedState ? THEME.colors.primary : THEME.colors.secondary} 
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardType}>{item.type === 'audio' ? 'VOICE_LOG' : 'DATA_ENTRY'}</Text>
-              <Text style={styles.cardId}>ENTRY_ID: {item.id.slice(0, 8).toUpperCase()}</Text>
-            </View>
-            <View style={[styles.statusTag, { borderColor: unlockedState ? THEME.colors.primary + '60' : THEME.colors.danger + '60' }]}>
-              <View style={[styles.statusDot, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.danger }]} />
-              <Text style={[styles.statusTagText, { color: unlockedState ? THEME.colors.primary : THEME.colors.danger }]}>
-                {unlockedState ? 'DECRYPTED' : 'LOCKED'}
-              </Text>
-            </View>
+      <View style={[styles.messageCard, { borderColor: unlockedState ? THEME.colors.primary + '30' : THEME.colors.secondary + '20' }]}>
+        <View style={styles.messageHeader}>
+          <Text style={styles.messageType}>{item.type === 'audio' ? 'VOICE LOG' : 'DATA ENTRY'}</Text>
+          <View style={[styles.messageBadge, { backgroundColor: unlockedState ? THEME.colors.primary + '12' : THEME.colors.secondary + '12' }]}>
+            <Text style={[styles.messageBadgeText, { color: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}>
+              {unlockedState ? 'AÇIK' : 'KİLİTLİ'}
+            </Text>
           </View>
-
-          <Text style={[styles.cardTitle, !unlockedState && styles.lockedText]}>
-            {unlockedState ? (item.type === 'text' ? item.text : 'ACTIVE_AUDIO_BROADCAST') : 'ENCRYPTED_DATA_BLOCK_PROTECTED'}
-          </Text>
-          
-          <View style={styles.cardFooter}>
-            <View style={styles.metaRow}>
-              <MaterialCommunityIcons name="security" size={12} color={THEME.colors.textMuted} />
-              <Text style={styles.metaText}>PROTOCOL: {item.lockType.toUpperCase()}</Text>
-            </View>
-            
-            {unlockedState ? (
-              item.type === 'audio' && (
-                <TouchableOpacity 
-                  style={[styles.actionBtn, { backgroundColor: THEME.colors.primary }]} 
-                  onPress={playingId === item.id ? stopAndUnload : () => playAudio(item)}
-                >
-                  <Ionicons name={playingId === item.id ? "square" : "play"} size={14} color="#000" />
-                  <Text style={styles.actionBtnText}>{playingId === item.id ? 'STOP' : 'ACCESS_LOG'}</Text>
-                </TouchableOpacity>
-              )
-            ) : (
-              <TouchableOpacity 
-                style={[styles.actionBtn, { backgroundColor: THEME.colors.secondary }]} 
-                onPress={()=>tryUnlock(item)}
-              >
-                <MaterialCommunityIcons name="key-variant" size={16} color="#000" />
-                <Text style={styles.actionBtnText}>DECRYPT</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Card corners */}
-          <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]} />
-          <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]} />
-        </LinearGradient>
+        </View>
+        <Text numberOfLines={2} style={[styles.messageTitle, !unlockedState && styles.lockedText]}>
+          {unlockedState ? (item.type === 'text' ? item.text : 'ACTIVE_AUDIO_BROADCAST') : 'Şifrelenmiş içerik gizlendi'}
+        </Text>
+        <View style={styles.messageFooter}>
+          <Text style={styles.messageMeta}>PROTOKOL: {item.lockType.toUpperCase()}</Text>
+          <TouchableOpacity
+            style={[styles.decryptBtn, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}
+            onPress={() => (unlockedState ? (item.type === 'audio' ? playAudio(item) : null) : tryUnlock(item))}
+          >
+            <Text style={styles.decryptBtnText}>
+              {unlockedState ? (item.type === 'audio' ? (playingId === item.id ? 'DURDUR' : 'İÇERİĞİ OYNAT') : 'GÖRÜNTÜLE') : 'DEKRİPT'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
-  }
+  };
 
   return (
     <View style={styles.container}>
       <SpaceBackground />
       <LinearGradient
-        colors={['rgba(0,0,0,0.8)', 'transparent', 'rgba(0,0,0,0.9)']}
+        colors={['rgba(0,0,0,0.95)', 'transparent', 'rgba(0,0,0,0.98)']}
         style={StyleSheet.absoluteFillObject}
       />
-      
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-              <TouchableOpacity onPress={() => router.replace('/(tabs)/claim')} style={styles.backBtn}>
-                <Ionicons name="chevron-back" size={24} color={THEME.colors.primary} />
-              </TouchableOpacity>
-              <View>
-                <Text style={styles.header}>STAR_VAULT</Text>
-                <View style={styles.statusRow}>
-                  <View style={styles.onlineDot} />
-                  <Text style={styles.subHeader}>SECURE_STORAGE_CONNECTED</Text>
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMessage}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.heroCard}>
+                <View style={styles.heroHeader}>
+                  <View style={styles.heroBadge}>
+                    <Text style={styles.heroBadgeText}>STARCLAIM X</Text>
+                  </View>
+                  <TouchableOpacity style={styles.heroAction} onPress={() => router.push('/(tabs)/vault/newmessage')}>
+                    <Text style={styles.heroActionText}>YENİ</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.heroTitle}>STARVAULT</Text>
+                <Text style={styles.heroSubtitle}>Mobil yıldız koleksiyonun, sertifikaların ve hikayelerin için premium bir uzay kasası deneyimi.</Text>
+                <View style={styles.metricsRow}>
+                  {vaultStats.map((stat) => (
+                    <View key={stat.label} style={styles.metricCard}>
+                      <Text style={styles.metricValue}>{stat.value}</Text>
+                      <Text style={styles.metricLabel}>{stat.label}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-            </View>
-            <TouchableOpacity style={styles.newBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
-              <MaterialCommunityIcons name="plus" size={28} color="#000" />
-            </TouchableOpacity>
-          </View>
 
-          {messages.length === 0 ? (
-            <View style={styles.empty}>
-              <View style={styles.emptyIconCircle}>
-                <MaterialCommunityIcons name="database-off-outline" size={48} color={THEME.colors.primary + '40'} />
+              <View style={styles.sectionBlock}>
+                <Text style={styles.sectionTitle}>Kısa Yollar</Text>
+                <Text style={styles.sectionDesc}>StarVault’a hızlıca erişebileceğin premium menü.</Text>
+                <View style={styles.actionGrid}>
+                  {quickActions.map((action) => (
+                    <TouchableOpacity key={action.label} style={styles.actionTile}>
+                      <MaterialCommunityIcons name={action.icon} size={18} color={THEME.colors.primary} />
+                      <Text style={styles.actionTileText}>{action.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
-              <Text style={styles.emptyText}>BİR MESAJ BIRAKILMADI</Text>
-              <Text style={styles.emptySubText}>Geleceğe bir zaman kapsülü mühürlemek için butona dokun.</Text>
-              <TouchableOpacity style={styles.emptyBtn} onPress={()=>router.push('/(tabs)/vault/newmessage')}>
-                <Text style={styles.emptyBtnText}>YENİ KAYIT OLUŞTUR</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <FlatList 
-              data={messages} 
-              keyExtractor={m=>m.id} 
-              renderItem={renderItem} 
-              contentContainerStyle={{paddingBottom: 120}} 
-              showsVerticalScrollIndicator={false}
-            />
-          )}
-        </View>
-      </SafeAreaView>
 
-      {/* Screen HUD Overlay */}
-      <View style={styles.screenHud} pointerEvents="none">
-        <View style={[styles.hudCorner, { top: 40, left: 20, borderTopWidth: 1, borderLeftWidth: 1 }]} />
-        <View style={[styles.hudCorner, { top: 40, right: 20, borderTopWidth: 1, borderRightWidth: 1 }]} />
-        <View style={[styles.hudCorner, { bottom: 40, left: 20, borderBottomWidth: 1, borderLeftWidth: 1 }]} />
-        <View style={[styles.hudCorner, { bottom: 40, right: 20, borderBottomWidth: 1, borderRightWidth: 1 }]} />
-      </View>
+              <View style={styles.sectionBlock}>
+                <View style={styles.sectionHeadingRow}>
+                  <Text style={styles.sectionTitle}>Güvenlik Durumu</Text>
+                  <Text style={styles.sectionBadge}>Premium</Text>
+                </View>
+                <View style={styles.securityGrid}>
+                  {[
+                    { label: 'Şifreleme', value: 'Aktif' },
+                    { label: 'Yedekleme', value: 'Senkr.' },
+                    { label: 'Kilit', value: 'Hazır' },
+                  ].map((item) => (
+                    <View key={item.label} style={[styles.securityCard, { borderColor: THEME.colors.primary + '20' }]}>
+                      <Text style={styles.securityValue}>{item.value}</Text>
+                      <Text style={styles.securityLabel}>{item.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.ctaCard}>
+                <Text style={styles.ctaTitle}>Yıldızlarından özel hikayeler oluştur</Text>
+                <Text style={styles.ctaText}>Koleksiyonunu genişlettikçe StarVault deneyimin derinleşir ve yeni mobil keşifler açılır.</Text>
+                <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/(tabs)/vault/newmessage')}>
+                  <Text style={styles.ctaButtonText}>Hikaye Ekle</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          }
+          ListEmptyComponent={<View style={styles.listEmptySpacing} />}
+        />
+      </SafeAreaView>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#000' },
   safeArea: { flex: 1 },
-  content: { flex: 1, padding: 24 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: 4 },
-  header: { 
-    color: '#fff', 
-    fontSize: 26, 
-    fontWeight: '900', 
-    letterSpacing: 4,
-    fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-  },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  onlineDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: THEME.colors.success },
-  subHeader: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
-  backBtn: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 12, 
-    backgroundColor: 'rgba(25, 25, 35, 0.7)', 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0, 242, 254, 0.3)'
-  },
-  newBtn: { 
-    backgroundColor: THEME.colors.primary, 
-    width: 48, 
-    height: 48, 
-    borderRadius: 12, 
-    justifyContent: 'center', 
-    alignItems: 'center',
-    shadowColor: THEME.colors.primary,
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-  },
-  cardContainer: {
-    marginBottom: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  card: { padding: 20, minHeight: 140 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
-  iconBox: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  cardType: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1.5 },
-  cardId: { color: 'rgba(255,255,255,0.3)', fontSize: 8, fontFamily: 'monospace', marginTop: 2 },
-  statusTag: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 6, 
-    paddingHorizontal: 8, 
-    paddingVertical: 4, 
-    borderRadius: 6,
-    borderWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)'
-  },
-  statusDot: { width: 4, height: 4, borderRadius: 2 },
-  statusTagText: { fontSize: 8, fontWeight: '900', letterSpacing: 1 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 20, lineHeight: 22 },
-  lockedText: { color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  metaText: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
-  actionBtnText: { color: '#000', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
-  cardCorner: { position: 'absolute', width: 10, height: 10 },
-  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 10 },
-  emptyIconCircle: { width: 76, height: 76, borderRadius: 38, backgroundColor: 'rgba(25, 25, 35, 0.5)', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  emptyText: { color: '#fff', fontSize: 14, fontWeight: '900', marginTop: 16, letterSpacing: 3 },
-  emptySubText: { color: THEME.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 8, paddingHorizontal: 40, lineHeight: 18 },
-  emptyBtn: { marginTop: 18, backgroundColor: 'rgba(0, 242, 254, 0.1)', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, borderWidth: 1, borderColor: THEME.colors.primary },
-  emptyBtnText: { color: THEME.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
+  listContent: { padding: 20, paddingBottom: 40 },
+  heroCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 22, padding: 24, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  heroHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  heroBadge: { backgroundColor: 'rgba(119,191,255,0.12)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  heroBadgeText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 },
+  heroAction: { backgroundColor: THEME.colors.primary, borderRadius: 16, paddingHorizontal: 18, paddingVertical: 12 },
+  heroActionText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.7 },
+  heroTitle: { color: '#fff', fontSize: 34, fontWeight: '900', lineHeight: 40, letterSpacing: 2 },
+  heroSubtitle: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 14, marginBottom: 22 },
+  metricsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  metricCard: { flex: 1, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 18, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  metricValue: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  metricLabel: { color: THEME.colors.textMuted, fontSize: 9, marginTop: 8, letterSpacing: 1.5 },
+  sectionBlock: { marginBottom: 20 },
+  sectionHeadingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 1.5 },
+  sectionBadge: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
+  sectionDesc: { color: THEME.colors.textMuted, fontSize: 11, lineHeight: 18, marginBottom: 14 },
+  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
+  actionTile: { width: '50%', padding: 8, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, marginBottom: 12 },
+  actionTileText: { color: '#fff', fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
+  securityGrid: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  securityCard: { flex: 1, borderRadius: 18, padding: 18, backgroundColor: 'rgba(255,255,255,0.03)' },
+  securityValue: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  securityLabel: { color: THEME.colors.textMuted, fontSize: 9, marginTop: 8, letterSpacing: 1.5 },
+  ctaCard: { backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  ctaTitle: { color: '#fff', fontSize: 18, fontWeight: '900', marginBottom: 10, letterSpacing: 1.5 },
+  ctaText: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 16 },
+  ctaButton: { backgroundColor: THEME.colors.primary, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
+  ctaButtonText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1.8 },
+  messageCard: { borderWidth: 1, borderRadius: 18, padding: 18, marginBottom: 14, backgroundColor: 'rgba(255,255,255,0.03)' },
+  messageHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  messageType: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1.8 },
+  messageBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  messageBadgeText: { fontSize: 9, fontWeight: '900', letterSpacing: 1.2 },
+  messageTitle: { color: '#fff', fontSize: 14, lineHeight: 20 },
+  lockedText: { color: THEME.colors.textMuted },
+  messageFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
+  messageMeta: { color: THEME.colors.textMuted, fontSize: 9, letterSpacing: 1.6 },
+  decryptBtn: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  decryptBtnText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
+  listEmptySpacing: { height: 24 },
   screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
-  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' }
-})
+  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' },
+});
