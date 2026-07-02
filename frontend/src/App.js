@@ -6,6 +6,7 @@ import { Toaster, toast } from "sonner";
 import { AuthProvider } from "./lib/auth";
 import { LanguageProvider, useT } from "./lib/i18n";
 import { api } from "./lib/api";
+import { CatalogProvider } from "./lib/CatalogStore";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -40,7 +41,9 @@ const VaultWithWallet = lazy(async () => {
     default: function VaultRoute() {
       return (
         <SolanaWalletProvider>
-          <Vault />
+          <CatalogProvider>
+            <Vault />
+          </CatalogProvider>
         </SolanaWalletProvider>
       );
     },
