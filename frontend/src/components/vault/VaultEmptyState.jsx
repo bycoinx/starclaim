@@ -1,0 +1,13 @@
+import React from "react";
+
+export default function VaultEmptyState({ onExplore }) {
+  return (
+    <div className="rounded-[2rem] border border-white/10 bg-[#050814]/90 p-8 text-center">
+      <h3 className="text-2xl font-semibold text-white mb-2">Vault is Empty</h3>
+      <p className="text-sm text-slate-300 mb-4">You don't have any stars in your Vault yet. Explore the Marketplace to claim your first star.</p>
+      <div className="flex justify-center">
+        <button onClick={onExplore} className="btn-gold">Explore Marketplace</button>
+      </div>
+    </div>
+  );
+}
