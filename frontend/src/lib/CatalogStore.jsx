@@ -4,7 +4,7 @@ import { useT } from "./i18n";
 
 const CatalogContext = createContext(null);
 
-export function CatalogProvider({ children, onClaim }) {
+export function CatalogProvider({ children, onClaim, starLoader }) {
   const { lang } = useT();
   const isTR = lang === "TR";
 
@@ -59,7 +59,7 @@ export function CatalogProvider({ children, onClaim }) {
     setLoading(true);
     setError("");
     try {
-      const list = await StarRepository.loadAll(forceReload);
+      const list = starLoader ? await starLoader(forceReload) : await StarRepository.loadAll(forceReload);
       setStars(list);
     } catch (err) {
       setError(
@@ -70,7 +70,7 @@ export function CatalogProvider({ children, onClaim }) {
     } finally {
       setLoading(false);
     }
-  }, [isTR]);
+  }, [isTR, starLoader]);
 
   useEffect(() => {
     loadCatalog();

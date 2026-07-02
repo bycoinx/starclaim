@@ -2,22 +2,26 @@ import React from "react";
 import { Sparkles, BookOpen, Shield, Share2, Wallet, Heart } from "lucide-react";
 import { useCatalogStore } from "../../lib/CatalogStore";
 import { StarRepository } from "../../lib/StarRepository";
+import { useT } from "../../lib/i18n";
 
 export default function ActionBar({ 
   starId, 
   layout = "card",
   onReadStory = null
 }) {
+  const { lang } = useT();
+  const isTR = lang === "TR";
   const store = useCatalogStore();
   const star = StarRepository.getStarById(starId);
   
   if (!star) return null;
 
   const isFavorite = store.isFavorite(starId);
+  const isForSale = !!star.forSale || !!star.askingPrice;
   
   const handleClaim = (e) => {
     e.stopPropagation();
-    store.onClaim?.(star.raw || star);
+    store.onClaim?.(star);
   };
 
   const handleFavorite = (e) => {
@@ -65,13 +69,13 @@ export default function ActionBar({
         </button>
 
         {/* Claim / Owned button */}
-        {!star.isClaimed ? (
+        {!star.isClaimed || isForSale ? (
           <button
             onClick={handleClaim}
             className="px-4 py-2 rounded-lg bg-sc-gold hover:bg-sc-gold/90 text-[#050814] text-[10px] font-mono font-bold uppercase tracking-widest hover:shadow-[0_0_15px_rgba(201,168,76,0.3)] transition-all flex items-center gap-1.5"
           >
             <Sparkles className="w-3 h-3" />
-            Sahiplen
+            {isForSale ? (isTR ? "Satın Al" : "Buy Now") : (isTR ? "Sahiplen" : "Claim")}
           </button>
         ) : (
           <button
@@ -79,7 +83,7 @@ export default function ActionBar({
             className="px-4 py-2 rounded-lg border border-white/5 bg-white/[0.02] text-white/30 text-[10px] font-mono uppercase tracking-widest cursor-not-allowed flex items-center gap-1.5"
           >
             <Shield className="w-3 h-3" />
-            Sahipli
+            {isTR ? "Sahipli" : "Owned"}
           </button>
         )}
       </div>

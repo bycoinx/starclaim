@@ -6,6 +6,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { StarRepository } from "../lib/StarRepository";
 import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
 import VaultSidebar from "../components/vault/VaultSidebar";
@@ -91,125 +92,108 @@ const myStars = [
   },
 ];
 
-const certificates = [
-  {
-    id: "SCX-2026-0001",
-    star: "Sirius",
-    issued: "20 May 2026",
-    type: "Star Claim Certificate",
-    owner: "Ali & Zeynep",
-    status: "Verified",
-  },
-  {
-    id: "SCX-2026-0002",
-    star: "Vega",
-    issued: "14 Feb 2026",
-    type: "Star Claim Certificate",
-    owner: "Eda",
-    status: "Verified",
-  },
-  {
-    id: "SCX-2026-0003",
-    star: "Betelgeuse",
-    issued: "05 Mar 2026",
-    type: "Time Capsule Certificate",
-    owner: "StarSeeker",
-    status: "Verified",
-  },
-];
+const buildVaultCertificates = (stars) => {
+  return stars.map((star, index) => ({
+    id: `${star.starId || `vault-${index}`}-cert`,
+    star: star.name,
+    issued: star.ownedSince || "Unknown",
+    type: star.hasCertificate ? "Star Claim Certificate" : "Claim Pending Certificate",
+    owner: star.owner || "Pilot",
+    status: star.certificateStatus || (star.hasCertificate ? "Verified" : "Pending"),
+  }));
+};
 
-const stories = [
-  {
-    title: "Sirius’un Yolculuğu",
-    star: "Sirius",
-    category: "Private Odyssey",
-    reading: "4 min read",
-    created: "May 20, 2026",
-    excerpt: "A luminous memory of the first star that became your own, written as a private testament.",
-  },
-  {
-    title: "Vega ve Lyra Efsanesi",
-    star: "Vega",
-    category: "Constellation Tale",
-    reading: "5 min read",
-    created: "Feb 14, 2026",
-    excerpt: "The brightest jewel of Lyra reveals its ancient myth and your place within it.",
-  },
-  {
-    title: "Betelgeuse: Kırmızı Dev",
-    star: "Betelgeuse",
-    category: "Cosmic Journey",
-    reading: "6 min read",
-    created: "Mar 05, 2026",
-    excerpt: "A dramatic narrative of change, endurance, and the promise of distant light.",
-  },
-];
+const buildVaultStories = (stars) => {
+  return stars.slice(0, 3).map((star, index) => ({
+    title: `${star.name} ile Yeni Anılar`,
+    star: star.name,
+    category: star.rarity === "Legendary" ? "Legendary Memoir" : "Vault Chronicle",
+    reading: `${4 + index} min read`,
+    created: star.ownedSince || "Recently",
+    excerpt: `${star.name}'in koleksiyonundaki yeri, takımyıldızı ${star.constellation} içinde yeni bir ışık olarak kaydedildi.`,
+  }));
+};
 
-const collections = [
-  {
-    title: "Constellation Vault",
-    subtitle: "Curated clusters",
-    description: "Group your star holdings into themed collections for easier storytelling.",
-  },
-  {
-    title: "Legendary Archive",
-    subtitle: "Rare holdings",
-    description: "Hold your most legendary stars in a distinct premium collection.",
-  },
-  {
-    title: "Storyline Deck",
-    subtitle: "Narrative favorites",
-    description: "Keep your most emotional and historic star stories in one place.",
-  },
-  {
-    title: "Future Reserves",
-    subtitle: "Reserved slots",
-    description: "Plan the next additions to your private universe before they arrive.",
-  },
-];
+const buildVaultCollections = (stars) => {
+  const constellations = Array.from(new Set(stars.map((star) => star.constellation).filter(Boolean)));
+  const legendaryCount = stars.filter((star) => star.tier?.toLowerCase() === "legendary").length;
+  const storyCount = stars.filter((star) => star.storyCount).length;
 
-const timelineEvents = [
-  {
-    title: "Star Claimed",
-    date: "20 May 2026",
-    description: "Sirius entered your private vault as your first owned star.",
-    star: "Sirius",
-    status: "Complete",
-    Icon: Star,
-  },
-  {
-    title: "Certificate Generated",
-    date: "21 May 2026",
-    description: "A premium claim certificate was minted for your new star.",
-    star: "Sirius",
-    status: "Verified",
-    Icon: ShieldCheck,
-  },
-  {
-    title: "Story Published",
-    date: "22 May 2026",
-    description: "Your first personal star story was added to the vault library.",
-    star: "Sirius",
-    status: "Live",
-    Icon: BookOpen,
-  },
-  {
-    title: "Vault Updated",
-    date: "27 May 2026",
-    description: "The StarVault interface received a premium experience refresh.",
-    star: "Vault",
-    status: "Complete",
-    Icon: Palette,
-  },
-  {
-    title: "Future Asset Reserved",
-    date: "Soon",
-    description: "A reserved slot is waiting for your next premium collectible.",
-    star: "Pending",
-    status: "Reserved",
-    Icon: Sparkles,
-  },
-];
+  return [
+    {
+      title: "Constellation Vault",
+      subtitle: "Curated clusters",
+      description: `${constellations.length} takımyıldızı koleksiyonunuza sanatçı titizliğiyle yerleştirir.`,
+    },
+    {
+      title: "Legendary Archive",
+      subtitle: "Rare holdings",
+      description: `${legendaryCount} efsanevi yıldız, özel bir premium arşivde saklanır.`,
+    },
+    {
+      title: "Storyline Deck",
+      subtitle: "Narrative favorites",
+      description: `${storyCount} yıldız için hikaye önizlemesi, duygusal koleksiyonu güçlendirir.`,
+    },
+    {
+      title: "Future Reserves",
+      subtitle: "Reserved slots",
+      description: `Yeni premium yıldızlar için ${stars.length + 1} rezervasyon alanı planlandı.`,
+    },
+  ];
+};
+
+const buildVaultTimeline = (stars) => {
+  const events = stars.flatMap((star, index) => {
+    const acquiredDate = star.ownedSince || "Unknown";
+    return [
+      {
+        title: "Star Claimed",
+        date: acquiredDate,
+        description: `${star.name} koleksiyonunuza eklendi ve özel Vault kaydı oluşturuldu.`,
+        star: star.name,
+        status: "Complete",
+        Icon: Star,
+      },
+      {
+        title: "Certificate Generated",
+        date: acquiredDate,
+        description: `${star.name} için onaylı sertifika başarıyla üretildi.`,
+        star: star.name,
+        status: star.hasCertificate ? "Verified" : "Pending",
+        Icon: ShieldCheck,
+      },
+      {
+        title: "Story Published",
+        date: acquiredDate,
+        description: `${star.name} için premium hikaye içeriği Vault'ta yayınlandı.`,
+        star: star.name,
+        status: "Live",
+        Icon: BookOpen,
+      },
+    ];
+  });
+
+  return [
+    ...events,
+    {
+      title: "Vault Updated",
+      date: "Recently",
+      description: "StarVault koleksiyonunuz yeni bir premium yönetim deneyimi kazandı.",
+      star: "Vault",
+      status: "Complete",
+      Icon: Palette,
+    },
+    {
+      title: "Future Asset Reserved",
+      date: "Soon",
+      description: "Bir sonraki premium yıldız için rezervasyon sırası hazır tutuluyor.",
+      star: "Pending",
+      status: "Reserved",
+      Icon: Sparkles,
+    },
+  ];
+};
 
 const sidebarHighlights = [
   {
@@ -232,46 +216,112 @@ const sidebarHighlights = [
   },
 ];
 
+function normalizeVaultStar(star) {
+  const displayName = star.name || star.code || "Untitled Star";
+  const constellation = star.constellation || "Unknown";
+  const spectralType = star.spectralType || star.spect || "G";
+  const tierLabel = star.tierLabel || (star.tier ? star.tier.charAt(0).toUpperCase() + star.tier.slice(1) : "Standard");
+  const isClaimed = !!star.isClaimed;
+
+  return {
+    starId: star.starId || star.code || star.id || `star-${Math.random().toString(36).slice(2, 8)}`,
+    name: displayName,
+    code: star.code || star.starId || "UNKNOWN",
+    constellation,
+    spectralType,
+    magnitude: star.magnitude !== undefined ? star.magnitude : star.raw?.magnitude || "N/A",
+    distance: star.distance || star.raw?.distance || "N/A",
+    rarity: tierLabel,
+    acquired: star.raw?.acquired || star.acquired || "Unknown",
+    ownedSince: star.ownedSince || star.raw?.ownedSince || "Unknown",
+    ownershipStatus: isClaimed ? "Private Reserve" : "Available",
+    certificateStatus: star.hasCertificate ? "Verified" : "Pending",
+    storyCount: star.storyCount || 0,
+    memoryCount: star.memoryCount || (star.storyCount ? star.storyCount * 3 : 0),
+    sharedStatus: isClaimed ? "Private" : "Available",
+    owner: star.ownerName || star.raw?.owner_name || "Pilot",
+    price: star.price || 0,
+    hasCertificate: star.hasCertificate || false,
+    raw: star,
+  };
+}
+
 export default function Vault() {
-  const [selectedStar, setSelectedStar] = useState(myStars[0]);
+  const [vaultStars, setVaultStars] = useState([]);
+  const [selectedStar, setSelectedStar] = useState(null);
+  const [vaultStats, setVaultStats] = useState({
+    ownedStars: "0",
+    certificates: "0",
+    stories: "0",
+    vaults: "1",
+    totalValue: "$0 XCX",
+  });
 
   useEffect(() => {
     document.title = "StarVault - StarClaim";
   }, []);
 
+  useEffect(() => {
+    const loadVault = async () => {
+      try {
+        const allStars = await StarRepository.loadAll();
+        const owned = allStars.filter((star) => star.isClaimed).map(normalizeVaultStar);
+        const displayStars = owned.length ? owned : myStars.map(normalizeVaultStar);
+
+        setVaultStars(displayStars);
+        setSelectedStar((prev) => displayStars.find((star) => star.starId === prev?.starId) || displayStars[0] || null);
+        setVaultStats({
+          ownedStars: displayStars.length.toString(),
+          certificates: displayStars.filter((star) => star.certificateStatus === "Verified").length.toString(),
+          stories: displayStars.reduce((sum, star) => sum + (star.storyCount || 0), 0).toString(),
+          vaults: "1",
+          totalValue: `$${displayStars.reduce((sum, star) => sum + Number(star.price || 0), 0).toLocaleString()} XCX`,
+        });
+      } catch (error) {
+        console.warn("Vault: Failed to load repository stars, using static fallback.", error);
+        const fallbackStars = myStars.map(normalizeVaultStar);
+        setVaultStars(fallbackStars);
+        setSelectedStar(fallbackStars[0] || null);
+        setVaultStats({
+          ownedStars: fallbackStars.length.toString(),
+          certificates: fallbackStars.filter((star) => star.certificateStatus === "Verified").length.toString(),
+          stories: fallbackStars.reduce((sum, star) => sum + (star.storyCount || 0), 0).toString(),
+          vaults: "1",
+          totalValue: `$${fallbackStars.reduce((sum, star) => sum + Number(star.price || 0), 0).toLocaleString()} XCX`,
+        });
+      }
+    };
+
+    loadVault();
+  }, []);
+
   return (
     <PageShell>
       <VaultHero
-        stats={{
-          ownedStars: "12",
-          certificates: "9",
-          stories: "6",
-          vaults: "4",
-          totalValue: "12,450 XCX",
-        }}
+        stats={vaultStats}
         actions={["Open My Constellation", "Explore Memories"]}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1.75fr_1fr]">
         <div className="space-y-6">
           <section id="my-constellation">
-            <VaultStarsSection stars={myStars} selectedStar={selectedStar} onSelectStar={setSelectedStar} />
+            <VaultStarsSection stars={vaultStars} selectedStar={selectedStar} onSelectStar={setSelectedStar} />
           </section>
 
           <section id="memories">
-            <VaultStoriesSection stories={stories} />
+            <VaultStoriesSection stories={buildVaultStories(vaultStars)} />
           </section>
 
           <section id="certificates">
-            <VaultCertificatesSection certificates={certificates} />
+            <VaultCertificatesSection certificates={buildVaultCertificates(vaultStars)} />
           </section>
 
           <section id="timeline">
-            <VaultTimelineSection events={timelineEvents} />
+            <VaultTimelineSection events={buildVaultTimeline(vaultStars)} />
           </section>
 
           <section id="collections">
-            <VaultCollectionsSection collections={collections} />
+            <VaultCollectionsSection collections={buildVaultCollections(vaultStars)} />
           </section>
 
           <section id="legacy-actions">

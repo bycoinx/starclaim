@@ -129,6 +129,33 @@ function AppShell() {
         });
       return;
     }
+
+    if (star.forSale || star.listing_id) {
+      const listingId = star.listing_id || star.listingId;
+      if (!listingId) {
+        toast.error(lang === "TR" ? "Satın alma için listeleme bilgisi gerekli." : "Listing data is required to purchase.");
+        return;
+      }
+
+      toast.loading(lang === "TR" ? "Pazar yeri satın alma seansı hazırlanıyor..." : "Preparing marketplace purchase...");
+      api.post("/marketplace/checkout/session", {
+        listing_id: listingId,
+        origin_url: window.location.origin,
+      })
+        .then(({ data }) => {
+          if (data?.url) {
+            window.location.href = data.url;
+          } else {
+            toast.error(lang === "TR" ? "Satın alma oturumu oluşturulamadı." : "Could not create purchase session.");
+          }
+        })
+        .catch((err) => {
+          console.error("Marketplace checkout error:", err);
+          toast.error(err?.response?.data?.detail || (lang === "TR" ? "Satın alma başarısız." : "Purchase failed."));
+        });
+      return;
+    }
+
     setActiveStar(star);
     setCheckoutOpen(true);
   }, [lang]);
@@ -175,7 +202,7 @@ function AppShell() {
             <Route path="/" element={<Home onOpenClaim={() => openClaim()} stats={stats} />} />
             <Route path="/stars" element={<StarPicker onClaim={openClaim} />} />
             <Route path="/cosmos" element={<Cosmos onClaim={openClaim} />} />
-            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/marketplace" element={<Marketplace onClaim={openClaim} />} />
             <Route path="/stories" element={<Stories />} />
             <Route path="/about" element={<About />} />
             <Route path="/vision" element={<Vision />} />

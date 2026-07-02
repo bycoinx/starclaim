@@ -69,14 +69,19 @@ export function StarMetadata({ star }) {
 
 // 3. CardFooter Component
 export function CardFooter({ star, onDetailClick }) {
+  const isListing = !!star.forSale || !!star.askingPrice;
+  const priceDisplay = isListing ? formatPrice(star.askingPrice ?? star.price) : formatPrice(star.price);
+  const labelText = isListing ? "LISTED" : star.isClaimed ? "SAHİBİ" : "BEDEL";
+  const valueText = isListing ? priceDisplay : star.isClaimed ? (star.ownerName || "Pilot") : priceDisplay;
+
   return (
     <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/5 mt-auto">
       <div>
         <span className="block text-[8px] font-mono text-[#8fa0c4]/60 uppercase tracking-widest">
-          {star.isClaimed ? "SAHİBİ" : "BEDEL"}
+          {labelText}
         </span>
         <span className="font-display font-bold text-base text-sc-gold truncate max-w-[120px] block">
-          {star.isClaimed ? (star.ownerName || "Pilot") : formatPrice(star.price)}
+          {valueText}
         </span>
       </div>
 

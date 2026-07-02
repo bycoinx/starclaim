@@ -49,9 +49,15 @@ export class StarRepository {
     
     return rawArray.filter(Boolean).map((item, index) => {
       const asset = StarAssetManager.getStarAsset(item);
+      const slugSource = (asset.code || asset.name || `star-${index}`).toString().toLowerCase();
+      const slug = slugSource
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || `star-${index}`;
+
       return {
         // Core Identity fields
         starId: asset.starId || `star-${index}`,
+        slug,
         code: asset.code || `SC-${index + 1}`,
         name: asset.name,
         constellation: asset.constellation,
@@ -94,6 +100,41 @@ export class StarRepository {
    */
   static getStars() {
     return this.cache;
+  }
+
+  static getStarBySlug(slug) {
+    if (!slug) return null;
+    return (
+      this.cache.find((s) => s.slug === slug || s.starId === slug || s.code === slug) ||
+      null
+    );
+  }
+
+  static getOwnedStars() {
+    return this.cache.filter((star) => star.isClaimed);
+  }
+
+  static searchStars(query) {
+    if (!query || typeof query !== "string") return [];
+    const normalized = query.toLowerCase().trim();
+    return this.cache.filter((star) => {
+      return (
+        star.name?.toLowerCase().includes(normalized) ||
+        star.code?.toLowerCase().includes(normalized) ||
+        star.constellation?.toLowerCase().includes(normalized) ||
+        star.slug?.toLowerCase().includes(normalized)
+      );
+    });
+  }
+
+  static queryStars(params = {}) {
+    return this.cache.filter((star) => {
+      if (params.isClaimed !== undefined && star.isClaimed !== params.isClaimed) return false;
+      if (params.constellation && star.constellation !== params.constellation) return false;
+      if (params.spectralType && star.spectralType?.charAt(0).toUpperCase() !== params.spectralType.toUpperCase()) return false;
+      if (params.tier && star.tier !== params.tier) return false;
+      return true;
+    });
   }
 
   /**

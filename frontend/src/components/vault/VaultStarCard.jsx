@@ -1,6 +1,7 @@
 import React from "react";
 import { SurfacePanel, StatusBadge } from "../shell";
 import { Sparkles } from "lucide-react";
+import StarAssetImage from "../catalog/StarAssetImage";
 
 export default function VaultStarCard({ star, selected, onSelect }) {
   return (
@@ -26,6 +27,9 @@ export default function VaultStarCard({ star, selected, onSelect }) {
               <Sparkles className="h-7 w-7" />
             </div>
           </div>
+        </div>
+        <div className="mb-5">
+          <StarAssetImage star={star} variant="preview" className="h-44 rounded-[1.75rem] w-full" />
         </div>
 
         <div className="mb-5 flex flex-wrap gap-2">
