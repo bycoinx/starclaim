@@ -138,7 +138,7 @@ export default function Home({ onOpenClaim, stats }) {
                 <Star className="w-5 h-5 fill-current" strokeWidth={1.5} /> {t("hero_cta_pick")}
               </span>
             </Link>
-            <Link to="/vision" className="btn-ghost px-10 py-4 text-lg border-white/10 hover:border-sc-gold/40 transition-all">
+            <Link to="/vault" className="btn-ghost px-10 py-4 text-lg border-white/10 hover:border-sc-gold/40 transition-all">
               <span className="inline-flex items-center gap-3">
                 <Zap className="w-5 h-5" /> {lang === "TR" ? "StarVault Vizyonu" : "StarVault Vision"}
               </span>

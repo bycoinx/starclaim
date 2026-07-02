@@ -24,7 +24,6 @@ const Cosmos = lazy(() => import("./pages/Cosmos"));
 const Marketplace = lazy(() => import("./pages/Marketplace"));
 const Stories = lazy(() => import("./pages/Stories"));
 const About = lazy(() => import("./pages/About"));
-const Vision = lazy(() => import("./pages/Vision"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const PaymentCancel = lazy(() => import("./pages/PaymentCancel"));
@@ -208,7 +207,7 @@ function AppShell() {
             <Route path="/marketplace" element={<Marketplace onClaim={openClaim} />} />
             <Route path="/stories" element={<Stories />} />
             <Route path="/about" element={<About />} />
-            <Route path="/vision" element={<Vision />} />
+            <Route path="/vision" element={<VaultWithWallet />} />
             <Route path="/vault" element={<VaultWithWallet />} />
             <Route path="/dashboard" element={<DashboardWithWallet />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
