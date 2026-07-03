@@ -1,14 +1,3 @@
-import React from 'react'
-
-export default function VaultActions({ selectedStar, wallet, onList = () => {}, onRefresh = () => {}, onConnect = () => {} }) {
-  return (
-    <div className="flex gap-2">
-      <button onClick={() => onConnect()} className="px-3 py-1 bg-gray-200 rounded">{wallet ? 'Manage Wallet' : 'Connect'}</button>
-      <button onClick={() => onRefresh()} className="px-3 py-1 bg-gray-200 rounded">Refresh</button>
-      <button onClick={() => onList(selectedStar)} disabled={!selectedStar} className="px-3 py-1 bg-indigo-600 text-white rounded disabled:opacity-50">List Selected</button>
-    </div>
-  )
-}
 import React from "react";
 import { Shield, Clock, Zap, Users } from "lucide-react";
 
@@ -16,10 +5,10 @@ export default function VaultActions({ selectedStar, wallet }) {
   const disabled = !wallet;
 
   return (
-    <div className="rounded-[2rem] border border-white/10 bg-[#060a16]/88 p-6">
+    <div className="rounded-[2rem] border border-white/10 bg-[#060a16]/88 p-6" role="region" aria-label="Legacy vault actions">
       <h4 className="text-sm font-semibold text-white mb-3">Legacy Actions</h4>
       <div className="grid gap-3">
-        <button disabled={disabled} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40">
+        <button disabled={disabled} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <Shield className="w-5 h-5 text-sc-gold" />
           <div className="text-left">
             <div className="font-semibold text-white">Secure Vault</div>
@@ -27,7 +16,7 @@ export default function VaultActions({ selectedStar, wallet }) {
           </div>
         </button>
 
-        <button disabled={disabled} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40">
+        <button disabled={disabled} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <Clock className="w-5 h-5 text-sc-gold" />
           <div className="text-left">
             <div className="font-semibold text-white">Create Time Capsule</div>
@@ -35,7 +24,7 @@ export default function VaultActions({ selectedStar, wallet }) {
           </div>
         </button>
 
-        <button disabled={!selectedStar} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40">
+        <button disabled={!selectedStar} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <Zap className="w-5 h-5 text-sc-gold" />
           <div className="text-left">
             <div className="font-semibold text-white">Authorize Transfer</div>
@@ -43,7 +32,7 @@ export default function VaultActions({ selectedStar, wallet }) {
           </div>
         </button>
 
-        <button className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8">
+        <button className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/8 focus:outline-none focus:ring-2 focus:ring-indigo-400">
           <Users className="w-5 h-5 text-sc-gold" />
           <div className="text-left">
             <div className="font-semibold text-white">Invite Keeper</div>

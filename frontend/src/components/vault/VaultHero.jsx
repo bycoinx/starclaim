@@ -1,28 +1,10 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-
-export default function VaultHero({ title = 'StarVault', subtitle = 'Your stars, your story', cta = 'Open Vault' }) {
-  return (
-    <header className="p-6 bg-gradient-to-r from-sky-900 to-indigo-800 text-white rounded-md mb-6">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold">{title}</h1>
-        <p className="mt-2 text-sm opacity-90">{subtitle}</p>
-        <div className="mt-4">
-          <Link to="/vault" className="inline-block bg-white text-indigo-800 px-4 py-2 rounded shadow">
-            {cta}
-          </Link>
-        </div>
-      </div>
-    </header>
-  )
-}
 import React from "react";
 import { ShieldAlert } from "lucide-react";
 import VaultStats from "./VaultStats";
 
 export default function VaultHero({ stats = {}, actions = [] }) {
   return (
-    <section className="hero-cosmos-shell relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#030812] px-6 py-10 shadow-[0_30px_90px_rgba(0,0,0,0.22)] md:px-10">
+    <section className="hero-cosmos-shell relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#030812] px-6 py-10 shadow-[0_30px_90px_rgba(0,0,0,0.22)] md:px-10" role="banner" aria-label="StarVault hero">
       <div className="absolute inset-0 nebula-bg opacity-42 pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,56,0.8),transparent_48%)] pointer-events-none" />
       <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_60%_35%,rgba(88,109,181,0.18),transparent_42%)] pointer-events-none" />
