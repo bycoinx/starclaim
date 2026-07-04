@@ -127,6 +127,20 @@ export default function VaultHomeScreen() {
     }
   };
 
+  const viewMessage = (item) => {
+    if (item.type === 'text') {
+      Alert.alert(item.title || 'Vault Metni', item.text || 'Bu içerik şu anda görüntülenemiyor.');
+      return;
+    }
+
+    if (item.type === 'audio') {
+      playAudio(item);
+      return;
+    }
+
+    Alert.alert('Bilgi', 'Bu öğe için bir işlem yapılamıyor.');
+  };
+
   const renderMessage = ({ item }) => {
     const unlockedState = isUnlocked(item);
     return (
@@ -145,11 +159,11 @@ export default function VaultHomeScreen() {
         <View style={styles.messageFooter}>
           <Text style={styles.messageMeta}>PROTOKOL: {String(item.lockType || 'none').toUpperCase()}</Text>
           <TouchableOpacity
-            style={[styles.decryptBtn, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}
-            onPress={() => (unlockedState ? (item.type === 'audio' ? playAudio(item) : null) : tryUnlock(item))}
+            style={[styles.actionBtn, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}
+            onPress={() => (unlockedState ? viewMessage(item) : tryUnlock(item))}
           >
-            <Text style={styles.decryptBtnText}>
-              {unlockedState ? (item.type === 'audio' ? (playingId === item.id ? 'DURDUR' : 'ICERIGI OYNAT') : 'GORUNTULE') : 'DEKRIPT'}
+            <Text style={styles.actionBtnText}>
+              {unlockedState ? (item.type === 'audio' ? (playingId === item.id ? 'DURDUR' : 'ICERIGI OYNAT') : 'GORUNTULE') : 'KILIDI AC'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -284,7 +298,7 @@ const styles = StyleSheet.create({
   lockedText: { color: THEME.colors.textMuted },
   messageFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 },
   messageMeta: { color: THEME.colors.textMuted, fontSize: 9, letterSpacing: 1.6 },
-  decryptBtn: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
-  decryptBtnText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
+  actionBtn: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
+  actionBtnText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
   listEmptySpacing: { height: 24 },
 });

@@ -4,12 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import LanguagePicker from '../../../components/LanguagePicker';
 import { Audio } from 'expo-av';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useVaultStore } from '../../../src/platform/vault/vaultStore';
 
 export default function NewMessageScreen(){
   const [text, setText] = useState('');
@@ -19,6 +18,7 @@ export default function NewMessageScreen(){
   const [lockValue, setLockValue] = useState('');
   const [recipient, setRecipient] = useState('');
   const router = useRouter();
+  const addMessage = useVaultStore((state) => state.addMessage);
 
   const startRecording = async ()=>{
     try{
@@ -48,22 +48,19 @@ export default function NewMessageScreen(){
     }
 
     const id = Date.now().toString();
-    const msg = { 
-      id, 
-      type: audioUri ? 'audio' : 'text', 
-      text, 
-      audioUri, 
-      lockType, 
-      lockValue, 
+    const msg = {
+      id,
+      type: audioUri ? 'audio' : 'text',
+      text,
+      audioUri,
+      lockType,
+      lockValue,
       recipient,
-      createdAt: Date.now() 
+      createdAt: Date.now(),
     };
 
     try{
-      const raw = await AsyncStorage.getItem('@vault_messages');
-      const arr = raw ? JSON.parse(raw) : [];
-      arr.unshift(msg);
-      await AsyncStorage.setItem('@vault_messages', JSON.stringify(arr));
+      await addMessage(msg);
       Alert.alert('BAŞARILI', 'Mesajınız StarVault\'a güvenli bir şekilde kaydedildi.');
       router.back();
     }catch(e){ Alert.alert('HATA', String(e)); }
@@ -76,15 +73,15 @@ export default function NewMessageScreen(){
         <TouchableOpacity style={styles.backBtn} onPress={()=>router.back()}>
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>YENİ_KAYIT</Text>
+        <Text style={styles.headerTitle}>STARVAULT KAYDI</Text>
         <View style={{width: 44}} />
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>MESAJ İÇERİĞİ</Text>
+        <Text style={styles.label}>MESAJ / SES</Text>
         <TextInput 
           style={styles.input} 
-          placeholder="Ebedi mesajınızı buraya yazın..." 
+          placeholder="StarVault için bir anı veya mesaj yazın..." 
           placeholderTextColor="rgba(255,255,255,0.2)"
           value={text} 
           onChangeText={setText} 
@@ -103,7 +100,7 @@ export default function NewMessageScreen(){
           {audioUri && (
             <View style={styles.audioBadge}>
               <Ionicons name="checkmark-circle" size={14} color={THEME.colors.accent} />
-              <Text style={styles.audioBadgeText}>SES_VERİSİ_HAZIR</Text>
+              <Text style={styles.audioBadgeText}>SES KAYDI HAZIR</Text>
             </View>
           )}
         </View>

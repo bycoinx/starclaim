@@ -29,7 +29,7 @@ export default function StarClaimTabBar() {
               accessibilityState={{ selected: active }}
               activeOpacity={0.72}
               style={styles.item}
-              onPress={() => router.replace(item.href)}
+              onPress={() => router.push(item.href)}
             >
               <Ionicons
                 name={active ? item.icon : item.iconOutline}
