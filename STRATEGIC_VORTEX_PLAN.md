@@ -1,3 +1,9 @@
+﻿# Superseded Notice
+
+This file is now an archived reference for the mobile 2D/3D execution history. The current source of truth is `STARCLAIM_UNIFIED_EXECUTION_PLAN.md`.
+
+---
+
 # StarCalimX Strategic Vortex Plan
 
 Bu belge StarCalimX'in mevcut kod tabanına göre hazırlanmış uygulama planıdır. Öncelik, mobil uygulamada önce güvenilir bir 2D gökyüzü haritası, ardından aynı astronomik veri motorunu kullanan Celestia tarzı 3D yıldız yolculuğu geliştirmektir.

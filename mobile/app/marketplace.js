@@ -1,22 +1,24 @@
-﻿import React from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useCallback } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { THEME } from '../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SpaceBackground from '../components/SpaceBackground';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ROUTES } from '../src/platform/navigation/routes';
+import { useMarketplaceStore } from '../src/platform/marketplace/marketplaceStore';
 
-const mockItems = [
-  { id: 1, name: 'Sirius A', price: 450, tier: 'Supernova', constellation: 'Canis Major' },
-  { id: 2, name: 'Betelgeuse', price: 320, tier: 'Supernova', constellation: 'Orion' },
-  { id: 3, name: 'Vega', price: 180, tier: 'Nova', constellation: 'Lyra' },
-  { id: 4, name: 'Altair', price: 150, tier: 'Nova', constellation: 'Aquila' },
+const fallbackItems = [
+  { id: 'demo-sirius', name: 'Sirius A', price: 450, status: 'demo', constellation: 'Canis Major' },
+  { id: 'demo-betelgeuse', name: 'Betelgeuse', price: 320, status: 'demo', constellation: 'Orion' },
+  { id: 'demo-vega', name: 'Vega', price: 180, status: 'demo', constellation: 'Lyra' },
+  { id: 'demo-altair', name: 'Altair', price: 150, status: 'demo', constellation: 'Aquila' },
 ];
 
 const actionItems = [
   { label: 'Trendler', icon: 'trending-up' },
-  { label: 'Hızlı Filtre', icon: 'filter-variant' },
+  { label: 'Hizli Filtre', icon: 'filter-variant' },
   { label: 'Favoriler', icon: 'heart' },
   { label: 'Yeni Ekle', icon: 'plus' },
 ];
@@ -27,6 +29,16 @@ export default function Marketplace() {
   const insets = useSafeAreaInsets();
   const availableWidth = width - insets.left - insets.right - 48;
   const twoColumns = availableWidth >= 720;
+  const listings = useMarketplaceStore((state) => state.listings);
+  const metrics = useMarketplaceStore((state) => state.metrics);
+  const loading = useMarketplaceStore((state) => state.loading);
+  const error = useMarketplaceStore((state) => state.error);
+  const loadMarketplace = useMarketplaceStore((state) => state.load);
+  const visibleItems = listings.length > 0 ? listings : fallbackItems;
+
+  useFocusEffect(useCallback(() => {
+    loadMarketplace({ limit: 24 });
+  }, [loadMarketplace]));
 
   return (
     <View style={styles.container}>
@@ -48,7 +60,7 @@ export default function Marketplace() {
               <Text style={styles.subtitle}>PREMIUM EXCHANGE</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/(tabs)/vault/home')}>
+          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push(ROUTES.vaultHome)}>
             <Ionicons name="lock-closed" size={18} color="#000" />
           </TouchableOpacity>
         </View>
@@ -57,8 +69,10 @@ export default function Marketplace() {
           <View style={styles.heroPanel}>
             <View>
               <Text style={styles.heroBadge}>TOP MARKET</Text>
-              <Text style={styles.heroTitle}>Nadir yıldızları keşfet ve koleksiyonunu zenginleştir.</Text>
-              <Text style={styles.heroText}>StarClaim mobil pazaryeri, özel NFT tarzı yıldız tekliflerini premium bir vitrinle sunar.</Text>
+              <Text style={styles.heroTitle}>Nadir yildizlari kesfet ve koleksiyonunu zenginlestir.</Text>
+              <Text style={styles.heroText}>
+                {error ? 'Canli pazar verisi alinamadi; son gosterim korunuyor.' : 'StarClaim mobil pazaryeri, dogrulanmis yildiz tekliflerini premium bir vitrinle sunar.'}
+              </Text>
             </View>
             <TouchableOpacity style={styles.heroAction}>
               <Text style={styles.heroActionText}>PAZARI GEZ</Text>
@@ -77,45 +91,52 @@ export default function Marketplace() {
           <View style={styles.summaryGrid}>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>24s Hacim</Text>
-              <Text style={styles.statValue}>$2.4M</Text>
+              <Text style={styles.statValue}>{formatCurrency(metrics.volume24h)}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Pazar Değeri</Text>
-              <Text style={styles.statValue}>$18.9M</Text>
+              <Text style={styles.statLabel}>Pazar Degeri</Text>
+              <Text style={styles.statValue}>{formatCurrency(metrics.marketCap)}</Text>
             </View>
             <View style={styles.statCard}>
               <Text style={styles.statLabel}>Ortalama</Text>
-              <Text style={styles.statValue}>$248</Text>
+              <Text style={styles.statValue}>{formatCurrency(metrics.averagePrice)}</Text>
             </View>
           </View>
 
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeadingRow}>
               <Text style={styles.sectionTitle}>Premium Liste</Text>
-              <Text style={styles.sectionBadge}>4 Ürün</Text>
+              <Text style={styles.sectionBadge}>{loading ? 'SYNC' : `${visibleItems.length} Urun`}</Text>
             </View>
-            <Text style={styles.sectionDesc}>En seçkin yıldız teklifler ve özel fırsatlar.</Text>
+            <Text style={styles.sectionDesc}>En seckin yildiz teklifleri ve ozel firsatlar.</Text>
           </View>
 
+          {loading && listings.length === 0 ? (
+            <View style={styles.loadingPanel}>
+              <ActivityIndicator color={THEME.colors.primary} />
+              <Text style={styles.loadingText}>PAZAR VERISI ALINIYOR</Text>
+            </View>
+          ) : null}
+
           <View style={styles.grid}>
-            {mockItems.map((item) => (
+            {visibleItems.map((item) => (
               <View key={item.id} style={[styles.cardWrapper, { width: twoColumns ? '50%' : '100%' }]}>
                 <LinearGradient colors={['rgba(25,25,35,0.86)', 'rgba(8,10,18,0.9)']} style={styles.card}>
                   <View style={styles.cardHeader}>
-                    <Text style={styles.tierText}>{item.tier.toUpperCase()}</Text>
+                    <Text style={styles.tierText}>{String(item.tier || item.status || 'active').toUpperCase()}</Text>
                     <View style={styles.priceBadge}>
-                      <Text style={styles.priceText}>${item.price}</Text>
+                      <Text style={styles.priceText}>{formatCurrency(item.price)}</Text>
                     </View>
                   </View>
-                  <Text style={styles.nameText}>{item.name.toUpperCase()}</Text>
+                  <Text style={styles.nameText}>{String(item.name || 'StarClaim Star').toUpperCase()}</Text>
                   <View style={styles.metaRow}>
                     <MaterialCommunityIcons name="star-four-points" size={12} color={THEME.colors.textMuted} />
-                    <Text style={styles.constellationText}>{item.constellation.toUpperCase()}</Text>
+                    <Text style={styles.constellationText}>{String(item.constellation || item.currency || 'STARCLAIM').toUpperCase()}</Text>
                   </View>
-                  <Text style={styles.cardNote}>Bu yıldız, koleksiyonunuzun parlaklığa en yakın parçasıdır.</Text>
+                  <Text style={styles.cardNote}>Bu yildiz, koleksiyonunuzun parlakliga en yakin parcasidir.</Text>
                   <TouchableOpacity style={styles.buyBtn}>
                     <LinearGradient colors={[THEME.colors.primary, '#63b8ff']} style={styles.buyGradient}>
-                      <Text style={styles.buyBtnText}>KAÇIRMAYIN</Text>
+                      <Text style={styles.buyBtnText}>INCELE</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </LinearGradient>
@@ -133,6 +154,14 @@ export default function Marketplace() {
       </View>
     </View>
   );
+}
+
+function formatCurrency(value) {
+  const amount = Number(value || 0);
+  if (!Number.isFinite(amount) || amount <= 0) return '$0';
+  if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+  if (amount >= 1000) return `$${(amount / 1000).toFixed(1)}K`;
+  return `$${Math.round(amount)}`;
 }
 
 const styles = StyleSheet.create({
@@ -165,6 +194,8 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 1.5 },
   sectionBadge: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
   sectionDesc: { color: THEME.colors.textMuted, fontSize: 11, lineHeight: 18 },
+  loadingPanel: { minHeight: 72, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 },
+  loadingText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
   cardWrapper: { padding: 8 },
   card: { borderRadius: 18, padding: 20, minHeight: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },

@@ -105,3 +105,4 @@ export async function syncOwnershipSnapshot() {
 }
 
 export const OWNERSHIP_SNAPSHOT_KEY = SNAPSHOT_KEY;
+export const OWNERSHIP_PURCHASES_KEY = PURCHASES_KEY;

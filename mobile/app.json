@@ -3,7 +3,7 @@
     "name": "StarCalimX Mobile",
     "slug": "starcalimx-mobile",
     "version": "1.0.0",
-    "icon": "./assets/starcalimx-logo.png",
+    "icon": "./assets/starcalimx-icon-square.png",
     "userInterfaceStyle": "dark",
     "orientation": "landscape",
     "scheme": "starcalimx",
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/starcalimx-logo.png",
+        "foregroundImage": "./assets/starcalimx-icon-square.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

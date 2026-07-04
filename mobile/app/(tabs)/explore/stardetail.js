@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Dimensions, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import SpaceBackground from '../../../components/SpaceBackground';
 import { THEME } from '../../../constants/Theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,7 +9,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
-import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
+import { downloadCertificatePdf } from '../../../src/platform/certificates/certificateRepository';
+import { starMapRoute, starVoyageRoute } from '../../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
 
 const { width } = Dimensions.get('window');
 
@@ -29,38 +30,35 @@ export default function StarDetailScreen() {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const records = useOwnershipStore((state) => state.records);
+  const loadOwnership = useOwnershipStore((state) => state.load);
+  const updateOwnershipMessage = useOwnershipStore((state) => state.updateMessage);
 
   useEffect(() => {
-    loadData();
-  }, [starId]);
+    let mounted = true;
+    setLoading(true);
+    loadOwnership()
+      .catch((error) => console.warn('Load data error', error))
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [loadOwnership, starId]);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const list = await getOwnershipPurchases();
-      // starId could be from HIP or custom ID
-      const found = list.find(p => p.starId === starId || p.starId?.toString() === starId);
-      if (found) {
-        setPurchase(found);
-        setMessage(found.message || '');
-      }
-    } catch (e) {
-      console.warn('Load data error', e);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    const found = records.find((record) => recordMatchesId(record, starId));
+    setPurchase(found || null);
+    if (found) {
+      setMessage(found.message || '');
     }
-  };
+  }, [records, starId]);
 
   const handleSaveMessage = async () => {
     try {
-      let list = await getOwnershipPurchases();
-      list = list.map(p => {
-        if (p.starId === starId || p.starId?.toString() === starId) {
-          return { ...p, message };
-        }
-        return p;
-      });
-      await AsyncStorage.setItem('@purchases', JSON.stringify(list));
+      const next = await updateOwnershipMessage(starId, message);
+      setPurchase(next.find((record) => recordMatchesId(record, starId)) || purchase);
       Alert.alert('BAŞARILI', 'Ebedi mesajınız güncellendi.');
     } catch (e) {
       Alert.alert('HATA', 'Mesaj kaydedilemedi.');
@@ -70,6 +68,12 @@ export default function StarDetailScreen() {
   const handleCertificate = async () => {
     if (!purchase) return;
     try {
+      const serverPdfUri = await downloadCertificatePdf(purchase.orderId);
+      if (serverPdfUri) {
+        await Sharing.shareAsync(serverPdfUri, { mimeType: 'application/pdf' });
+        return;
+      }
+
       const certificateName = escapeCertificateText(purchase.name || initialName || 'StarClaim Yıldızı');
       const html = `<!doctype html><html><body style="margin:0;background:#03060d;color:#fff;font-family:Arial;padding:48px;text-align:center"><main style="border:8px double #C9A84C;padding:44px;min-height:620px"><p style="color:#C9A84C;letter-spacing:5px">STARCLAIM</p><h1 style="font-size:42px">${certificateName}</h1><p>Bu kayıt, aşağıdaki yıldızın doğrulanmış sahiplik snapshot'ını temsil eder.</p><hr style="border-color:#C9A84C;margin:40px 0"><p>STARCLAIM KODU: ${escapeCertificateText(purchase.starClaimCode || purchase.code || 'N/A')}</p><p>YILDIZ ID: ${escapeCertificateText(purchase.starId || starId)}</p><p>KOORDİNATLAR: RA ${escapeCertificateText(purchase.ra ?? 'N/A')} / DEC ${escapeCertificateText(purchase.dec ?? 'N/A')}</p><p>TAKIMYILDIZI: ${escapeCertificateText(purchase.constellation || 'N/A')}</p><p>TARİH: ${new Date(purchase.createdAt || purchase.date).toLocaleDateString('tr-TR')}</p><p style="margin-top:60px;color:#C9A84C">${purchase.verified ? 'SUNUCU DOĞRULAMALI ÇEVRİMDIŞI KAYIT' : 'YEREL KAYIT'}</p></main></body></html>`;
       const { uri } = await Print.printToFileAsync({ html });
@@ -168,7 +172,7 @@ export default function StarDetailScreen() {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={styles.actionBtn} 
-            onPress={() => router.push({ pathname: '/(tabs)/explore/starmap', params: { starId, name: purchase?.name || initialName } })}
+            onPress={() => router.push(starMapRoute({ starId, name: purchase?.name || initialName }))}
           >
             <Ionicons name="map-outline" size={20} color={THEME.colors.primary} />
             <Text style={styles.actionBtnText}>HARİTADA GÖR</Text>
@@ -176,7 +180,7 @@ export default function StarDetailScreen() {
 
           <TouchableOpacity 
             style={[styles.actionBtn, styles.voyageBtn]} 
-            onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(purchase || { id: starId, properName: initialName, name: initialName })) } })}
+            onPress={() => router.push(starVoyageRoute(createStarTargetFromStar(purchase || { id: starId, properName: initialName, name: initialName })))}
           >
             <Ionicons name="rocket-outline" size={20} color={THEME.colors.accent} />
             <Text style={[styles.actionBtnText, { color: THEME.colors.accent }]}>3D YOLCULUK</Text>
@@ -196,6 +200,13 @@ export default function StarDetailScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function recordMatchesId(record, starId) {
+  const target = String(starId ?? '');
+  if (!target) return false;
+  return [record.starId, record.id, record.orderId, record.hip, record.hd, record.starClaimCode]
+    .some((value) => String(value ?? '') === target);
 }
 
 const styles = StyleSheet.create({

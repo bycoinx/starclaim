@@ -18,6 +18,7 @@ import VaultTimelineSection from "../components/vault/VaultTimelineSection";
 import VaultWalletPanel from "../components/vault/VaultWalletPanel";
 import WalletConnectModal from "../components/vault/WalletConnectModal";
 import VaultActions from "../components/vault/VaultActions";
+import MobileDeepLinkPanel from "../components/catalog/MobileDeepLinkPanel";
 
 
 const myStars = [
@@ -417,6 +418,9 @@ export default function Vault() {
                     <div className="mt-4 flex gap-3">
                       <button className="flex-1 rounded-full bg-sc-gold px-4 py-3 text-sm font-semibold text-black">List for Sale</button>
                       <button className="flex-1 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white">View Story</button>
+                    </div>
+                    <div className="mt-4">
+                      <MobileDeepLinkPanel star={previewStar} mode="vault" />
                     </div>
                   </div>
                 </div>

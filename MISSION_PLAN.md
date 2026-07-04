@@ -1,3 +1,9 @@
+﻿# Superseded Notice
+
+This file is now an archived historical roadmap. The current source of truth is `STARCLAIM_UNIFIED_EXECUTION_PLAN.md`.
+
+---
+
 # 🛰️ StarCalimX: Mission Plan (Infinite Voyage Edition)
 
 Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana yol haritasıdır. Yeni vizyonumuzla birlikte Web tarafı sinematik bir "Gözlemci", Mobil tarafı ise yüksek kaliteli bir "3D Kokpit" olarak konumlandırılmıştır.
@@ -59,3 +65,68 @@ Bu döküman, projenin "Hatasız ve Kusursuz" ilerlemesi için hazırlanan ana y
 ---
 
 *Not: Bu dosya her başarılı görevden sonra cerrahi bir titizlikle güncellenecektir.*
+
+---
+
+## **StarVault — Görsel Mimari (MVP)**
+
+Amaç: Web tarafında `StarVault` bölümünün görsel mimarisini tamamlamak; kullanıcı oturum/konneksiyon durumlarına göre gösterimleri planlamak ve UI bileşenlerini oluşturmak. Blockchain ve tam on-chain entegrasyonları daha sonra bağlanacak şekilde, MVP olarak görsel katmanı ve etkileşim yer tutucularını hazır hale getireceğiz.
+
+### 1) Temel UX Durumları
+- **Ziyaretçi / Oturum Açılmamış (Guest):**
+    - Hero bölümünde kısa tanıtım, `Sign in with Google` CTA ve `Marketplace` erişimi.
+    - İstatistikler örnek/placeholder değerlerle gösterilir.
+    - Yıldız kartlarında aksiyon düğmeleri yerdeyken butonlar `Sign in to claim/view` gibi yönlendirici mesaj içerir.
+
+- **Oturum Açmış / Cüzdan Bağlı Değil:**
+    - Hesap bilgisi (avatar, isim/email) görünür.
+    - Sağ tarafta `VaultWalletPanel` ile `Connect Wallet` butonu ve desteklenen cüzdan ikonları (Phantom, Solflare, MetaMask) gösterilir.
+    - Zincir-üst (on-chain) aksiyonlar (Mint, Transfer) devre dışı olur; tooltip ile `Connect wallet to enable` gösterilir.
+
+- **Cüzdan Bağlı (Wallet Connected):**
+    - Cüzdan adresi (kısaltılmış), ağ bilgisi ve bakiye (SOL/XCX) gösterilir.
+    - `VaultNFTGrid` sahibi olunan NFTleri/ yıldızları listeler; her kartta on-chain durum (minted / not minted), sertifika ve listeleme aksiyonları görünür.
+    - `VaultActions` tamamen etkinleşir: Secure Vault, Time Capsule, Publish Certificate, Authorize Transfer, Invite Keeper.
+
+- **Gelişmiş: Cüzdan + Backend Hesap Eşlenmiş:**
+    - Cüzdan ve kullanıcı hesabı linklenmiş gösterilir; `Sync ownership` butonu ile on-chain ve backend sahiplik kaydı senkronize edilebilir.
+
+### 2) Masaüstü Görünüm Düzeni
+- Üst: `VaultHero` (geniş görsel + istatistik satırı).
+- Ana alan: iki kolonlu düzen (sol: NFT ızgarası ve içerik; sağ: sticky `VaultWalletPanel`, Featured Star, quick-links).
+- Alt bölümler: Sertifikalar carousel, Hikayeler/Timeline, Legacy Actions kart grubu.
+
+### 3) Mobil Uyarlama
+- Tek sütun: Hero → Wallet Panel → NFT Grid → Sertifikalar (yatay scroller) → Actions.
+- Ekranın altında yüzen bir CTA (floating) — `Connect Wallet` veya `Open Vault Actions`.
+
+### 4) Gerekli Bileşenler (MVP)
+- `VaultHero` (mevcut geliştirme: CTA durumları ile)
+- `VaultWalletPanel` (connect / status / balances)
+- `VaultNFTGrid` ve `VaultNFTCard` (on-chain durum, sertifika, listeleme)
+- `VaultActions` (legacy action düğmeleri, tooltip ve durum kontrolleri)
+- `VaultEmptyState` (kullanıcıya ne yapacağı anlatan rehber)
+- `WalletConnectModal` (MVP için mock-connect özellikli)
+
+### 5) Veri Şeması (frontend mock)
+- Star/NFT: `{ starId, name, code, tier, previewImage, isClaimed, ownerName, price, forSale, askingPrice, certificateUrl, storyCount, raw }`
+- Wallet: `{ provider, address, network, balances: { sol, xcx }, connectedAt }`
+
+### 6) Entegrasyon Yer Tutucuları (API'ler)
+- `GET /api/stars/mine/list` — sahip olunan yıldızlar (var)
+- `POST /api/vault/upload` — vault blob yükleme (demo endpoint eklendi)
+- `POST /api/marketplace/list` — listeleme (var)
+- `GET /api/orders/certificate/{orderId}` — sertifika indir (var)
+
+### 7) Adım Adım Uygulama Planı (önceliklendirilmiş)
+1. `VaultWalletPanel`, `VaultNFTGrid`, `VaultActions` bileşenlerinin iskeletini oluştur (mock verilerle). (1-2 saat)
+2. `WalletConnectModal` ekle ve lokal mock bağlanma (localStorage/session) sağlayarak üç durumu test et (guest / signed-in / wallet-connected). (1 saat)
+3. `Vault.jsx` içinde yeni bileşenleri entegre et; `StarRepository.getOwnedStars()` ile gerçek veri bağla (fallback sample varsa kullan). (1 saat)
+4. Stil ve responsive düzenlemeler, erişilebilirlik kısa kontrolleri. (2 saat)
+5. Manuel QA — seninle birlikte görsel onay + küçük düzeltmeler. (1 saat)
+
+Tahmini MVP toplam çalışma: 6–8 saat (parçalanabilir sprintlere bölünebilir).
+
+---
+
+Eğer onaylarsan, 1. adımı şimdi uygulamaya başlıyorum: `VaultWalletPanel`, `VaultNFTGrid`, `WalletConnectModal` iskeletlerini oluşturacağım ve `Vault.jsx` içine yerleştirip mock durumlarla test edeceğim. İlerlemesini adım adım paylaşırım.

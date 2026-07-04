@@ -10,8 +10,8 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { Cinzel_400Regular, Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { ensureStarData } from '../src/data/starLoader';
-import { createStarTargetFromStar, resolveStarTarget } from '../src/utils/starIdentity';
 import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
+import { resolveParsedDeepLinkRoute } from '../src/platform/navigation/deepLinks';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_400Regular, Cinzel_700Bold });
@@ -60,48 +60,15 @@ export default function RootLayout() {
 
   const handleDeepLink = (url) => {
     try {
-      const { hostname, path } = Linking.parse(url);
-      // Expecting starcalimx://star/{starClaimCode} or starcalimx://hip/{hipId}
-      // hostname is 'star' or 'hip', path is the identifier
-      const type = hostname;
-      const identifier = path;
-
-      if (!type || !identifier) return;
-
-      // Ensure star data is loaded
+      const parsedLink = Linking.parse(url);
+      const immediateRoute = resolveParsedDeepLinkRoute(parsedLink, []);
+      if (immediateRoute) {
+        router.replace(immediateRoute);
+        return;
+      }
       ensureStarData().then((stars) => {
-        let target = {};
-        if (type === 'star') {
-          target.starClaimCode = identifier;
-        } else if (type === 'hip') {
-          target.hip = identifier;
-        } else {
-          return; // unsupported type
-        }
-
-        const foundStar = resolveStarTarget(stars, target);
-        if (foundStar) {
-          const starTarget = createStarTargetFromStar(foundStar);
-          // Navigate to 2D map screen with starTarget as params
-          router.replace({
-            pathname: '/(tabs)/explore/starmap',
-            params: {
-              starId: starTarget.id,
-              hip: starTarget.hip,
-              hd: starTarget.hd,
-              properName: starTarget.properName,
-              name: starTarget.name,
-              starClaimCode: starTarget.starClaimCode,
-              raHours: starTarget.raHours,
-              raDegrees: starTarget.raDegrees,
-              decDegrees: starTarget.decDegrees,
-              distanceParsec: starTarget.distanceParsec,
-              magnitude: starTarget.magnitude,
-              spectralType: starTarget.spectralType,
-              constellation: starTarget.constellation,
-            }
-          });
-        }
+        const route = resolveParsedDeepLinkRoute(parsedLink, stars);
+        if (route) router.replace(route);
       });
     } catch (e) {
       console.warn('Failed to parse deep link:', url, e);

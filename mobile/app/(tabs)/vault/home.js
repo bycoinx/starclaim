@@ -1,107 +1,96 @@
-﻿import React, { useEffect, useState, useRef } from 'react';
-import { Text, StyleSheet, View, TouchableOpacity, FlatList, Alert, Platform } from 'react-native';
+import React, { useRef } from 'react';
+import { Text, StyleSheet, View, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useRouter } from 'expo-router';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
 import { LinearGradient } from 'expo-linear-gradient';
+import { ROUTES } from '../../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
+import { useVaultStore } from '../../../src/platform/vault/vaultStore';
 
 const quickActions = [
-  { label: 'Yıldızları Keşfet', icon: 'star' },
-  { label: 'Sertifikalar', icon: 'shield-check' },
-  { label: 'Hikayeler', icon: 'book-open-outline' },
-  { label: 'Pazaryeri', icon: 'globe' },
-  { label: 'Güvenlik', icon: 'shield-lock-outline' },
-  { label: 'Ayarlar', icon: 'cog-outline' },
-];
-
-const vaultStats = [
-  { label: 'Sahip Yıldız', value: '12' },
-  { label: 'Sertifika', value: '9' },
-  { label: 'Hikaye', value: '6' },
+  { label: 'Yildiz Al', icon: 'star', href: ROUTES.claim },
+  { label: 'Sertifikalar', icon: 'shield-check', href: ROUTES.vaultPurchases },
+  { label: 'Hikaye Ekle', icon: 'book-plus-outline', href: ROUTES.vaultNewMessage },
+  { label: 'Pazaryeri', icon: 'globe', href: ROUTES.marketplace },
+  { label: 'Guvenlik', icon: 'shield-lock-outline', href: ROUTES.vaultLockSettings },
+  { label: 'Profil', icon: 'account-circle-outline', href: ROUTES.profile },
 ];
 
 export default function VaultHomeScreen() {
-  const [messages, setMessages] = useState([]);
-  const [unlocked, setUnlocked] = useState([]);
-  const [playingId, setPlayingId] = useState(null);
   const soundRef = useRef(null);
   const router = useRouter();
+  const ownershipSummary = useOwnershipStore((state) => state.summary);
+  const loadOwnership = useOwnershipStore((state) => state.load);
+  const messages = useVaultStore((state) => state.messages);
+  const unlocked = useVaultStore((state) => state.unlockedIds);
+  const vaultSummary = useVaultStore((state) => state.summary);
+  const loadVault = useVaultStore((state) => state.load);
+  const unlockVault = useVaultStore((state) => state.unlock);
+  const playingId = useVaultStore((state) => state.playingId);
+  const setPlayingId = useVaultStore((state) => state.setPlayingId);
 
-  useEffect(() => {
-    load();
-  }, []);
+  const stats = [
+    { label: 'Sahip Yildiz', value: String(ownershipSummary.ownedStars || 0) },
+    { label: 'Sertifika', value: String(ownershipSummary.certificates || 0) },
+    { label: 'Vault Kaydi', value: String(vaultSummary.totalItems || 0) },
+  ];
 
-  const load = async () => {
-    try {
-      const raw = await AsyncStorage.getItem('@vault_messages');
-      const arr = raw ? JSON.parse(raw) : [];
-      setMessages(arr);
-      const uRaw = await AsyncStorage.getItem('@vault_unlocked');
-      const uArr = uRaw ? JSON.parse(uRaw) : [];
-      setUnlocked(uArr);
-    } catch (e) {
-      console.warn(e);
-    }
-  };
+  useFocusEffect(
+    React.useCallback(() => {
+      loadOwnership();
+      loadVault();
+    }, [loadOwnership, loadVault])
+  );
 
   const isUnlocked = (item) => {
-    if (unlocked.includes(item.id)) return true;
+    if (unlocked.includes(String(item.id))) return true;
+    if (!item.lockType || item.lockType === 'none') return true;
     if (item.lockType === 'date' && item.lockValue) {
       const ts = Number(item.lockValue) || Date.parse(item.lockValue);
-      return !isNaN(ts) && Date.now() >= ts;
+      return !Number.isNaN(ts) && Date.now() >= ts;
     }
     return false;
-  };
-
-  const setUnlockedFor = async (id) => {
-    try {
-      const next = Array.from(new Set([id, ...unlocked]));
-      setUnlocked(next);
-      await AsyncStorage.setItem('@vault_unlocked', JSON.stringify(next));
-    } catch (e) {
-      console.warn(e);
-    }
   };
 
   const tryUnlock = async (item) => {
     if (item.lockType === 'date') {
       const ts = Number(item.lockValue) || Date.parse(item.lockValue);
-      if (!isNaN(ts) && Date.now() >= ts) {
-        await setUnlockedFor(item.id);
-        Alert.alert('Sistem Onayı', 'Kilit açıldı. Veri erişilebilir.');
+      if (!Number.isNaN(ts) && Date.now() >= ts) {
+        await unlockVault(item.id);
+        Alert.alert('Sistem Onayi', 'Kilit acildi. Veri erisilebilir.');
       } else {
-        Alert.alert('Erişim Reddi', 'Kilit süresi henüz dolmadı.');
+        Alert.alert('Erisim Reddi', 'Kilit suresi henuz dolmadi.');
       }
       return;
     }
 
     if (item.lockType === 'person') {
       try {
-        const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Biyometrik doğrulama gerekli' });
+        const res = await LocalAuthentication.authenticateAsync({ promptMessage: 'Biyometrik dogrulama gerekli' });
         if (res.success) {
-          await setUnlockedFor(item.id);
-          Alert.alert('Yetki Verildi', 'Kimlik doğrulandı.');
+          await unlockVault(item.id);
+          Alert.alert('Yetki Verildi', 'Kimlik dogrulandi.');
         } else {
-          Alert.alert('Hata', 'Doğrulama başarısız.');
+          Alert.alert('Hata', 'Dogrulama basarisiz.');
         }
       } catch (e) {
-        Alert.alert('Sistem Hatası', String(e));
+        Alert.alert('Sistem Hatasi', String(e));
       }
       return;
     }
 
-    Alert.alert('Güvenli Erişim', 'Bu veriyi manuel olarak açmak istiyor musunuz?', [
-      { text: 'İptal' },
+    Alert.alert('Guvenli Erisim', 'Bu veriyi manuel olarak acmak istiyor musunuz?', [
+      { text: 'Iptal' },
       {
         text: 'Evet',
         onPress: async () => {
-          await setUnlockedFor(item.id);
-          Alert.alert('Veri Açıldı');
+          await unlockVault(item.id);
+          Alert.alert('Veri Acildi');
         },
       },
     ]);
@@ -134,7 +123,7 @@ export default function VaultHomeScreen() {
       });
     } catch (e) {
       console.warn(e);
-      Alert.alert('Sistem Hatası', String(e));
+      Alert.alert('Sistem Hatasi', String(e));
     }
   };
 
@@ -146,21 +135,21 @@ export default function VaultHomeScreen() {
           <Text style={styles.messageType}>{item.type === 'audio' ? 'VOICE LOG' : 'DATA ENTRY'}</Text>
           <View style={[styles.messageBadge, { backgroundColor: unlockedState ? THEME.colors.primary + '12' : THEME.colors.secondary + '12' }]}>
             <Text style={[styles.messageBadgeText, { color: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}>
-              {unlockedState ? 'AÇIK' : 'KİLİTLİ'}
+              {unlockedState ? 'ACIK' : 'KILITLI'}
             </Text>
           </View>
         </View>
         <Text numberOfLines={2} style={[styles.messageTitle, !unlockedState && styles.lockedText]}>
-          {unlockedState ? (item.type === 'text' ? item.text : 'ACTIVE_AUDIO_BROADCAST') : 'Şifrelenmiş içerik gizlendi'}
+          {unlockedState ? (item.type === 'text' ? item.text : 'ACTIVE_AUDIO_BROADCAST') : 'Sifrelenmis icerik gizlendi'}
         </Text>
         <View style={styles.messageFooter}>
-          <Text style={styles.messageMeta}>PROTOKOL: {item.lockType.toUpperCase()}</Text>
+          <Text style={styles.messageMeta}>PROTOKOL: {String(item.lockType || 'none').toUpperCase()}</Text>
           <TouchableOpacity
             style={[styles.decryptBtn, { backgroundColor: unlockedState ? THEME.colors.primary : THEME.colors.secondary }]}
             onPress={() => (unlockedState ? (item.type === 'audio' ? playAudio(item) : null) : tryUnlock(item))}
           >
             <Text style={styles.decryptBtnText}>
-              {unlockedState ? (item.type === 'audio' ? (playingId === item.id ? 'DURDUR' : 'İÇERİĞİ OYNAT') : 'GÖRÜNTÜLE') : 'DEKRİPT'}
+              {unlockedState ? (item.type === 'audio' ? (playingId === item.id ? 'DURDUR' : 'ICERIGI OYNAT') : 'GORUNTULE') : 'DEKRIPT'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -189,14 +178,14 @@ export default function VaultHomeScreen() {
                   <View style={styles.heroBadge}>
                     <Text style={styles.heroBadgeText}>STARCLAIM X</Text>
                   </View>
-                  <TouchableOpacity style={styles.heroAction} onPress={() => router.push('/(tabs)/vault/newmessage')}>
-                    <Text style={styles.heroActionText}>YENİ</Text>
+                  <TouchableOpacity style={styles.heroAction} onPress={() => router.push(ROUTES.vaultNewMessage)}>
+                    <Text style={styles.heroActionText}>YENI</Text>
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.heroTitle}>STARVAULT</Text>
-                <Text style={styles.heroSubtitle}>Mobil yıldız koleksiyonun, sertifikaların ve hikayelerin için premium bir uzay kasası deneyimi.</Text>
+                <Text style={styles.heroSubtitle}>Mobil yildiz koleksiyonun, sertifikalarin ve hikayelerin icin premium bir uzay kasasi deneyimi.</Text>
                 <View style={styles.metricsRow}>
-                  {vaultStats.map((stat) => (
+                  {stats.map((stat) => (
                     <View key={stat.label} style={styles.metricCard}>
                       <Text style={styles.metricValue}>{stat.value}</Text>
                       <Text style={styles.metricLabel}>{stat.label}</Text>
@@ -206,11 +195,11 @@ export default function VaultHomeScreen() {
               </View>
 
               <View style={styles.sectionBlock}>
-                <Text style={styles.sectionTitle}>Kısa Yollar</Text>
-                <Text style={styles.sectionDesc}>StarVault’a hızlıca erişebileceğin premium menü.</Text>
+                <Text style={styles.sectionTitle}>Kisa Yollar</Text>
+                <Text style={styles.sectionDesc}>Yildizlarin, sertifikalarin ve guvenli kayitlarin icin dogrudan erisim.</Text>
                 <View style={styles.actionGrid}>
                   {quickActions.map((action) => (
-                    <TouchableOpacity key={action.label} style={styles.actionTile}>
+                    <TouchableOpacity key={action.label} style={styles.actionTile} onPress={() => router.push(action.href)}>
                       <MaterialCommunityIcons name={action.icon} size={18} color={THEME.colors.primary} />
                       <Text style={styles.actionTileText}>{action.label}</Text>
                     </TouchableOpacity>
@@ -220,14 +209,14 @@ export default function VaultHomeScreen() {
 
               <View style={styles.sectionBlock}>
                 <View style={styles.sectionHeadingRow}>
-                  <Text style={styles.sectionTitle}>Güvenlik Durumu</Text>
+                  <Text style={styles.sectionTitle}>Guvenlik Durumu</Text>
                   <Text style={styles.sectionBadge}>Premium</Text>
                 </View>
                 <View style={styles.securityGrid}>
                   {[
-                    { label: 'Şifreleme', value: 'Aktif' },
+                    { label: 'Sifreleme', value: 'Aktif' },
                     { label: 'Yedekleme', value: 'Senkr.' },
-                    { label: 'Kilit', value: 'Hazır' },
+                    { label: 'Kilit', value: 'Hazir' },
                   ].map((item) => (
                     <View key={item.label} style={[styles.securityCard, { borderColor: THEME.colors.primary + '20' }]}>
                       <Text style={styles.securityValue}>{item.value}</Text>
@@ -238,9 +227,9 @@ export default function VaultHomeScreen() {
               </View>
 
               <View style={styles.ctaCard}>
-                <Text style={styles.ctaTitle}>Yıldızlarından özel hikayeler oluştur</Text>
-                <Text style={styles.ctaText}>Koleksiyonunu genişlettikçe StarVault deneyimin derinleşir ve yeni mobil keşifler açılır.</Text>
-                <TouchableOpacity style={styles.ctaButton} onPress={() => router.push('/(tabs)/vault/newmessage')}>
+                <Text style={styles.ctaTitle}>Ilk guvenli kaydini olustur</Text>
+                <Text style={styles.ctaText}>Mesaj, ses kaydi veya zaman kilitli ani ekleyerek StarVault'unu kullanmaya basla.</Text>
+                <TouchableOpacity style={styles.ctaButton} onPress={() => router.push(ROUTES.vaultNewMessage)}>
                   <Text style={styles.ctaButtonText}>Hikaye Ekle</Text>
                 </TouchableOpacity>
               </View>
@@ -298,6 +287,4 @@ const styles = StyleSheet.create({
   decryptBtn: { borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12 },
   decryptBtnText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
   listEmptySpacing: { height: 24 },
-  screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
-  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' },
 });

@@ -1,3 +1,9 @@
+﻿# Superseded Notice
+
+This file is now an archived reference for the Stars data-flow work. The current source of truth is `STARCLAIM_UNIFIED_EXECUTION_PLAN.md`.
+
+---
+
 # StarClaim - Star Data Flow Refactor Plan
 
 ## Purpose
@@ -350,4 +356,3 @@ Identify where data, assets, filters, card props, and actions are coupled.
 ```
 
 After the audit, implement Phase 2 with the smallest possible repository contract.
-

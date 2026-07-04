@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
-import { TrendingUp, Shield, Search, Loader2, Globe2, Star } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, Shield, Loader2, Globe2, Star } from "lucide-react";
+import { motion } from "framer-motion";
 import { PageShell, SectionHeader, SurfacePanel, MetricCard } from "../components/shell";
 import { CatalogProvider, useCatalogStore } from "../lib/CatalogStore";
 import CatalogSearch from "../components/catalog/CatalogSearch";
@@ -12,6 +12,7 @@ import CatalogGrid from "../components/catalog/CatalogGrid";
 import CatalogPagination from "../components/catalog/CatalogPagination";
 import { NoResultsState, ErrorState } from "../components/catalog/EmptyStates";
 import { StarRepository } from "../lib/StarRepository";
+import ListingPreviewDrawer from "../components/catalog/ListingPreviewDrawer";
 
 function MarketplaceCatalog() {
   const store = useCatalogStore();
@@ -230,6 +231,8 @@ export default function Marketplace({ onClaim }) {
         </div>
 
         <MarketplaceCatalog />
+
+        <ListingPreviewDrawer />
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-24 pt-12 border-t border-white/5 text-center opacity-30">
           <div className="text-[8px] font-mono text-slate-400 max-w-3xl mx-auto uppercase tracking-widest leading-loose">

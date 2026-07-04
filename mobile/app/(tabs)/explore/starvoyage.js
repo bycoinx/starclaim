@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { THEME } from '../../../constants/Theme';
+import { ROUTES } from '../../../src/platform/navigation/routes';
 
 export default function StarVoyageMaintenance() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export default function StarVoyageMaintenance() {
         <TouchableOpacity
           activeOpacity={0.78}
           style={styles.skyButton}
-          onPress={() => router.replace('/(tabs)/sky')}
+          onPress={() => router.replace(ROUTES.sky)}
         >
           <Ionicons name="telescope-outline" size={20} color="#06101D" />
           <Text style={styles.skyButtonText}>SKY LIVE'A DON</Text>

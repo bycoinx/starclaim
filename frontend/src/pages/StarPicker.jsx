@@ -30,6 +30,7 @@ import FilterSidebar from "../components/catalog/FilterSidebar";
 import CatalogPagination from "../components/catalog/CatalogPagination";
 import StarAssetImage from "../components/catalog/StarAssetImage";
 import ActionBar from "../components/catalog/ActionBar";
+import MobileDeepLinkPanel from "../components/catalog/MobileDeepLinkPanel";
 import { NoResultsState, ErrorState } from "../components/catalog/EmptyStates";
 import {
   formatDistance,
@@ -193,6 +194,10 @@ function SelectedStarPanel({ star }) {
 
         <div className="mt-5">
           <ActionBar starId={star.starId} layout="drawer" />
+        </div>
+
+        <div className="mt-5">
+          <MobileDeepLinkPanel star={star} />
         </div>
       </div>
     </SurfacePanel>

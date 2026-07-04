@@ -1,47 +1,34 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
 import { THEME } from '../../constants/Theme';
+import { ROUTES, starDetailRoute } from '../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../src/platform/ownership/ownershipStore';
 
 export default function ClaimHomeScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const compact = width < 760 || height < 390;
-  const [loading, setLoading] = useState(true);
-  const [ownedStars, setOwnedStars] = useState([]);
+  const loading = useOwnershipStore((state) => state.loading);
+  const ownedStars = useOwnershipStore((state) => state.records);
+  const loadOwnership = useOwnershipStore((state) => state.load);
 
   useFocusEffect(useCallback(() => {
-    let active = true;
-    setLoading(true);
-    getOwnershipPurchases()
-      .then((purchases) => {
-        if (active) setOwnedStars(Array.isArray(purchases) ? purchases : []);
-      })
-      .catch(() => {
-        if (active) setOwnedStars([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, []));
+    loadOwnership();
+  }, [loadOwnership]));
 
   const featuredStar = ownedStars[0] || null;
   const featuredName = featuredStar?.name || 'Yildizin';
 
   const openPrimary = () => {
     if (!featuredStar) {
-      router.push('/(tabs)/catalog');
+      router.push(ROUTES.catalog);
       return;
     }
-    router.push({
-      pathname: '/(tabs)/explore/stardetail',
-      params: { starId: featuredStar.starId || featuredStar.id, name: featuredName },
-    });
+    router.push(starDetailRoute({ starId: featuredStar.starId || featuredStar.id, name: featuredName }));
   };
 
   return (
@@ -63,7 +50,7 @@ export default function ClaimHomeScreen() {
             accessibilityRole="button"
             accessibilityLabel="Bildirimler"
             style={styles.iconButton}
-            onPress={() => router.push('/(tabs)/vault/home')}
+            onPress={() => router.push(ROUTES.vaultHome)}
           >
             <Ionicons name="notifications-outline" size={21} color={THEME.colors.text} />
           </TouchableOpacity>
@@ -99,7 +86,7 @@ export default function ClaimHomeScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity accessibilityRole="button" style={styles.secondaryButton} onPress={() => router.push('/(tabs)/sky')}>
+            <TouchableOpacity accessibilityRole="button" style={styles.secondaryButton} onPress={() => router.push(ROUTES.sky)}>
               <Ionicons name="telescope-outline" size={19} color={THEME.colors.primary} />
               <Text style={styles.secondaryText}>SKY LIVE</Text>
             </TouchableOpacity>

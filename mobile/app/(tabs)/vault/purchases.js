@@ -1,19 +1,18 @@
-import React, {useEffect, useState} from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import LanguagePicker from '../../../components/LanguagePicker';
-import { useRouter } from 'expo-router';
-import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
+import { useFocusEffect } from 'expo-router';
+import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
 
 export default function PurchasesScreen(){
-  const [purchases, setPurchases] = useState([]);
-  const router = useRouter();
+  const purchases = useOwnershipStore((state) => state.records);
+  const loadOwnership = useOwnershipStore((state) => state.load);
 
-  useEffect(()=>{ load(); },[])
-  const load = async ()=>{
-    try{ setPurchases(await getOwnershipPurchases()); }catch(e){ console.warn(e); }
-  }
+  useFocusEffect(React.useCallback(() => {
+    loadOwnership();
+  }, [loadOwnership]));
 
   return (
     <SafeAreaView style={styles.container}>

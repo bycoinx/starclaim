@@ -4,6 +4,7 @@ import { StarRepository } from "../../lib/StarRepository";
 import { formatDistance, formatMagnitude, formatSpectralType, formatTemperature, formatOwnershipStatus } from "../../lib/formatters";
 import StarAssetImage from "./StarAssetImage";
 import ActionBar from "./ActionBar";
+import MobileDeepLinkPanel from "./MobileDeepLinkPanel";
 
 export default function DetailDrawer({ 
   selectedStarId, 
@@ -96,6 +97,8 @@ export default function DetailDrawer({
             <span>StarClaim Registry ve Solana Blockchain Güvenceli</span>
           </div>
         </div>
+
+        <MobileDeepLinkPanel star={star} />
       </div>
 
       {/* CTA Buttons Sticky to Bottom of panel - Decoupled to ActionBar */}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Redirect } from 'expo-router';
+import { ROUTES } from '../../../src/platform/navigation/routes';
 
 export default function MyStarsIndex() {
-  return <Redirect href="/(tabs)/mystars/collection" />;
+  return <Redirect href={ROUTES.myStarsCollection} />;
 }

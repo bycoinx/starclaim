@@ -4,29 +4,13 @@ import { usePathname, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { THEME } from '../constants/Theme';
-
-const ITEMS = [
-  { key: 'claim', label: 'Yıldız Al', icon: 'star', iconOutline: 'star-outline', href: '/(tabs)/claim' },
-  { key: 'sky', label: 'Sky Live', icon: 'telescope', iconOutline: 'telescope-outline', href: '/(tabs)/sky' },
-  { key: 'universe', label: '3D Evren', icon: 'cube', iconOutline: 'cube-outline', href: '/(tabs)/universe' },
-  { key: 'vault', label: 'StarVault', icon: 'lock-closed', iconOutline: 'lock-closed-outline', href: '/(tabs)/vault/home' },
-  { key: 'profile', label: 'Profil', icon: 'person-circle', iconOutline: 'person-circle-outline', href: '/(tabs)/profile' },
-];
-
-function getActiveKey(pathname) {
-  if (pathname.includes('/claim') || pathname.includes('/catalog') || pathname === '/stars') return 'claim';
-  if (pathname.includes('/sky') || pathname.includes('/starmap')) return 'sky';
-  if (pathname.includes('/universe') || pathname.includes('/starvoyage')) return 'universe';
-  if (pathname.includes('/vault')) return 'vault';
-  if (pathname.includes('/profile') || pathname.includes('/mystars') || pathname.includes('/stardetail')) return 'profile';
-  return null;
-}
+import { TAB_ITEMS, getActiveTabKey } from '../src/platform/navigation/routes';
 
 export default function StarClaimTabBar() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const activeKey = getActiveKey(pathname);
+  const activeKey = getActiveTabKey(pathname);
 
   return (
     <View style={[
@@ -34,7 +18,7 @@ export default function StarClaimTabBar() {
       { paddingLeft: insets.left, paddingRight: insets.right, paddingBottom: Math.max(6, insets.bottom) },
     ]}>
       <View style={styles.bar}>
-        {ITEMS.map((item) => {
+        {TAB_ITEMS.map((item) => {
           const active = activeKey === item.key;
           const accent = item.key === 'claim' ? THEME.colors.secondary : THEME.colors.primary;
           return (

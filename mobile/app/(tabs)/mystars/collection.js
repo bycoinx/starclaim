@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform, Dimensions } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import SpaceBackground from '../../../components/SpaceBackground';
@@ -8,29 +8,18 @@ import { THEME } from '../../../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getPurchaseMapParams } from '../../../src/utils/starIdentity';
-import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
-
-const { width } = Dimensions.get('window');
+import { ROUTES, starDetailRoute, starMapRoute } from '../../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
 
 export default function CollectionScreen() {
-  const [purchases, setPurchases] = useState([]);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const purchases = useOwnershipStore((state) => state.records);
+  const loading = useOwnershipStore((state) => state.loading);
+  const loadOwnership = useOwnershipStore((state) => state.load);
 
   useFocusEffect(useCallback(() => {
-    loadPurchases();
-  }, []));
-
-  const loadPurchases = async () => {
-    try {
-      const list = await getOwnershipPurchases();
-      setPurchases(list);
-    } catch (error) {
-      console.warn('Purchase load error', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadOwnership();
+  }, [loadOwnership]));
 
   const renderItem = ({ item }) => (
     <View style={styles.cardContainer}>
@@ -65,10 +54,7 @@ export default function CollectionScreen() {
         <View style={styles.cardActions}>
           <TouchableOpacity 
             style={styles.actionBtn} 
-            onPress={() => router.push({
-              pathname: '/(tabs)/explore/starmap',
-              params: getPurchaseMapParams(item),
-            })}
+            onPress={() => router.push(starMapRoute(getPurchaseMapParams(item)))}
           >
             <MaterialCommunityIcons name="target" size={18} color={THEME.colors.primary} />
             <Text style={styles.actionBtnText}>MAP</Text>
@@ -76,7 +62,7 @@ export default function CollectionScreen() {
           
           <TouchableOpacity 
             style={[styles.actionBtn, styles.detailBtn]} 
-            onPress={() => router.push({ pathname: '/(tabs)/explore/stardetail', params: { starId: item.starId, name: item.name } })}
+            onPress={() => router.push(starDetailRoute({ starId: item.starId, name: item.name }))}
           >
             <MaterialCommunityIcons name="information-outline" size={18} color="#fff" />
             <Text style={styles.detailBtnText}>INFO</Text>
@@ -107,7 +93,7 @@ export default function CollectionScreen() {
               <Text style={styles.subtitle}>ACCESSING_SECURE_COLLECTION</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace('/(tabs)/profile')}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.replace(ROUTES.profile)}>
             <Ionicons name="close" size={24} color={THEME.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -124,7 +110,7 @@ export default function CollectionScreen() {
             </View>
             <Text style={styles.emptyText}>BİR YILDIZ SAHİPLENİLMEDİ</Text>
             <Text style={styles.emptySubText}>Evrende izinizi bırakmak için keşfe çıkın.</Text>
-            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.replace('/(tabs)/claim')}>
+            <TouchableOpacity style={styles.exploreBtn} onPress={() => router.replace(ROUTES.claim)}>
               <Text style={styles.exploreBtnText}>KEŞFETMEYE BAŞLA</Text>
             </TouchableOpacity>
           </View>

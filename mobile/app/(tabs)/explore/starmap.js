@@ -27,10 +27,11 @@ import {
 } from '../../../src/utils/starIdentity';
 import { createStarTargetFromStar } from '../../../src/utils/starIdentity';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
 import SkyLiveChrome from '../../../components/SkyLiveChrome';
 import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
 import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
+import { ROUTES, starVoyageRoute } from '../../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
 import {
   SENSOR_HUD_INTERVAL_MS,
   SENSOR_RENDER_INTERVAL_MS,
@@ -70,7 +71,6 @@ export default function StarMapScreen() {
     labels: { features: [] },
     boundaries: { features: [] },
   });
-  const [purchases, setPurchases] = useState([]);
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
   const [showMythology, setShowMythology] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +102,8 @@ export default function StarMapScreen() {
   const gaiaFallbackWarnedUntilRef = useRef(0);
   const interactionActiveRef = useRef(false);
   const router = useRouter();
+  const purchases = useOwnershipStore((state) => state.records);
+  const loadOwnership = useOwnershipStore((state) => state.load);
   const { heading, tilt } = viewDirection;
 
   useEffect(() => {
@@ -137,8 +139,8 @@ export default function StarMapScreen() {
       });
     }).finally(() => setLoading(false));
     ensureConstellations().then(setConstellations).catch(() => {});
-    loadPurchases();
-  }, [loadAttempt, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
+    loadOwnership();
+  }, [loadAttempt, loadOwnership, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
 
   useEffect(() => {
     if (loading || mapError || !coreStarsRef.current.length) return undefined;
@@ -296,12 +298,6 @@ export default function StarMapScreen() {
       setSelectedStar(null);
     }
   };
-  const loadPurchases = async () => {
-    try {
-      setPurchases(await getOwnershipPurchases());
-    } catch (error) { console.warn('Purchase load error', error); }
-  };
-
   useEffect(() => {
     if (mode !== 'sensor' || appState !== 'active') return undefined;
 
@@ -560,7 +556,7 @@ export default function StarMapScreen() {
         <View style={styles.overlay} pointerEvents="box-none">
           {/* HEADER ROW */}
           <View style={styles.headerRow} pointerEvents="box-none">
-            <TouchableOpacity style={styles.glassBtn} onPress={() => router.replace('/(tabs)/claim')}>
+            <TouchableOpacity style={styles.glassBtn} onPress={() => router.replace(ROUTES.claim)}>
               <Ionicons name="close" size={24} color={THEME.colors.primary} />
             </TouchableOpacity>
 
@@ -703,7 +699,7 @@ export default function StarMapScreen() {
                 </View>
                 <View style={styles.selectionActions}>
                   <ActionButton icon="target" onPress={handleCenterOnSelected} color={THEME.colors.primary} />
-                  <ActionButton icon="rocket-launch-outline" onPress={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })} color={THEME.colors.purple} />
+                  <ActionButton icon="rocket-launch-outline" onPress={() => router.push(starVoyageRoute(createStarTargetFromStar(selectedStar)))} color={THEME.colors.purple} />
                   <ActionButton icon="information-variant" onPress={() => setPopupVisible(true)} color="#fff" />
                   <ActionButton icon="close-circle-outline" onPress={() => setSelectedStar(null)} color="rgba(255,255,255,0.4)" />
                 </View>
@@ -732,7 +728,7 @@ export default function StarMapScreen() {
             searchQuery={searchQuery}
             searchResults={searchResults}
             nightVision={nightVision}
-            onExit={() => router.replace('/(tabs)/claim')}
+            onExit={() => router.replace(ROUTES.claim)}
             onSearch={handleSearch}
             onSelectSearchResult={navigateToObject}
             onOpenSettings={() => setLayersVisible(true)}
@@ -742,7 +738,7 @@ export default function StarMapScreen() {
             onSensorMode={enableSensorMode}
             onClearSelection={() => setSelectedStar(null)}
             onOpenDetails={() => setPopupVisible(true)}
-            onVoyage={() => router.push({ pathname: '/(tabs)/explore/starvoyage', params: { target: JSON.stringify(createStarTargetFromStar(selectedStar)) } })}
+            onVoyage={() => router.push(starVoyageRoute(createStarTargetFromStar(selectedStar)))}
           />
 
           {capabilityNotice && (
@@ -764,7 +760,7 @@ export default function StarMapScreen() {
           )}
           
           <StarPopup visible={popupVisible} star={selectedStar} owned={selectedStarOwned} onClose={() => setPopupVisible(false)} onPurchase={() => { setPopupVisible(false); setPurchaseModalVisible(true); }} onProfile={handleViewOwnedStar} />
-          <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadPurchases} />
+          <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} star={selectedStar} onPurchaseSuccess={loadOwnership} />
           
           {/* LAYERS MODAL */}
           <Modal visible={layersVisible} transparent animationType="fade" onRequestClose={() => setLayersVisible(false)}>

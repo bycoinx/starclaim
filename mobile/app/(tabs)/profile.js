@@ -1,39 +1,29 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
 import { THEME } from '../../constants/Theme';
 import MobileHeader from '../../components/MobileHeader';
+import { ROUTES } from '../../src/platform/navigation/routes';
+import { useOwnershipStore } from '../../src/platform/ownership/ownershipStore';
 
 const ACTIONS = [
-  { key: 'collection', label: 'Yıldızlarım', detail: 'Sahiplik kayıtları ve sertifikalar', icon: 'star-outline', href: '/(tabs)/mystars/collection' },
-  { key: 'vault', label: 'StarVault', detail: 'Mesajlar ve anılar', icon: 'lock-closed-outline', href: '/(tabs)/vault/home' },
-  { key: 'about', label: 'StarClaim Hakkında', detail: 'Misyon ve iletişim', icon: 'information-circle-outline', href: '/about' },
-  { key: 'debug', label: 'Hata Ayıklama', detail: '2D render ve sensör tanı kayıtları', icon: 'pulse-outline', href: '/debug' },
+  { key: 'collection', label: 'Yıldızlarım', detail: 'Sahiplik kayıtları ve sertifikalar', icon: 'star-outline', href: ROUTES.myStarsCollection },
+  { key: 'vault', label: 'StarVault', detail: 'Mesajlar ve anılar', icon: 'lock-closed-outline', href: ROUTES.vaultHome },
+  { key: 'about', label: 'StarClaim Hakkında', detail: 'Misyon ve iletişim', icon: 'information-circle-outline', href: ROUTES.about },
+  { key: 'debug', label: 'Hata Ayıklama', detail: '2D render ve sensör tanı kayıtları', icon: 'pulse-outline', href: ROUTES.debug },
 ];
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [ownedCount, setOwnedCount] = useState(0);
+  const loading = useOwnershipStore((state) => state.loading);
+  const ownedCount = useOwnershipStore((state) => state.summary.ownedStars);
+  const loadOwnership = useOwnershipStore((state) => state.load);
 
   useFocusEffect(useCallback(() => {
-    let active = true;
-    setLoading(true);
-    getOwnershipPurchases()
-      .then((purchases) => {
-        if (active) setOwnedCount(Array.isArray(purchases) ? purchases.length : 0);
-      })
-      .catch(() => {
-        if (active) setOwnedCount(0);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, []));
+    loadOwnership();
+  }, [loadOwnership]));
 
   return (
     <View style={styles.container}>
