@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+import time
 import os
 import uuid
 import logging
@@ -105,6 +106,11 @@ client = AsyncIOMotorClient(
     serverSelectionTimeoutMS=int(os.environ.get("MONGO_SERVER_SELECTION_TIMEOUT_MS", "3000")),
 )
 db = client[DB_NAME]
+
+# Simple in-memory cache for count endpoint to avoid expensive count_documents calls
+COUNT_CACHE_TTL = int(os.environ.get("COUNT_CACHE_TTL", "60"))  # seconds
+_COUNT_CACHE = {}
+_COUNT_CACHE_LOCK = asyncio.Lock()
 
 app = FastAPI(title="StarCalimX API")
 api = APIRouter(prefix="/api")
@@ -843,6 +849,87 @@ async def get_3d_catalog_tile(sector_id: str):
     )
 
 
+def _build_star_query(
+    tier: Optional[str] = None,
+    constellation: Optional[str] = None,
+    available: Optional[bool] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    spectral_type: Optional[str] = None,
+    magnitude_min: Optional[float] = None,
+    magnitude_max: Optional[float] = None,
+    distance_min: Optional[float] = None,
+    distance_max: Optional[float] = None,
+    has_stories: Optional[bool] = None,
+    search: Optional[str] = None,
+):
+    conditions = []
+
+    if tier and tier != "all":
+        conditions.append({"tier": tier})
+    if constellation and constellation != "all":
+        conditions.append({"constellation": constellation})
+    if available is True:
+        conditions.append({"owner_id": None, "owner_name": None})
+    elif available is False:
+        conditions.append({"$or": [{"owner_id": {"$ne": None}}, {"owner_name": {"$ne": None}}]})
+
+    if min_price is not None or max_price is not None:
+        price_filter = {}
+        if min_price is not None:
+            price_filter["$gte"] = min_price
+        if max_price is not None:
+            price_filter["$lte"] = max_price
+        if price_filter:
+            conditions.append({"price": price_filter})
+
+    if spectral_type and spectral_type != "all":
+        conditions.append({"spect": {"$regex": f"^{re.escape(spectral_type)}", "$options": "i"}})
+
+    if magnitude_min is not None or magnitude_max is not None:
+        magnitude_filter = {}
+        if magnitude_min is not None:
+            magnitude_filter["$gte"] = magnitude_min
+        if magnitude_max is not None:
+            magnitude_filter["$lte"] = magnitude_max
+        if magnitude_filter:
+            conditions.append({"magnitude": magnitude_filter})
+
+    if distance_min is not None or distance_max is not None:
+        distance_filter = {}
+        if distance_min is not None:
+            distance_filter["$gte"] = distance_min
+        if distance_max is not None:
+            distance_filter["$lte"] = distance_max
+        if distance_filter:
+            conditions.append({"distance": distance_filter})
+
+    if has_stories is True:
+        conditions.append({
+            "$or": [
+                {"stories_count": {"$gt": 0}},
+                {"ai_story": {"$ne": None}},
+                {"ai_story": {"$ne": ""}},
+            ]
+        })
+
+    if search:
+        term = re.escape(search.strip())
+        conditions.append({
+            "$or": [
+                {"name": {"$regex": term, "$options": "i"}},
+                {"code": {"$regex": term, "$options": "i"}},
+                {"constellation": {"$regex": term, "$options": "i"}},
+            ]
+        })
+
+    if not conditions:
+        return {}
+    if len(conditions) == 1:
+        return conditions[0]
+    return {"$and": conditions}
+
+
 @api.get("/stars")
 async def list_stars(
     tier: Optional[str] = None,
@@ -850,35 +937,126 @@ async def list_stars(
     available: Optional[bool] = None,
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
+    spectral_type: Optional[str] = None,
+    magnitude_min: Optional[float] = None,
+    magnitude_max: Optional[float] = None,
+    distance_min: Optional[float] = None,
+    distance_max: Optional[float] = None,
+    has_stories: Optional[bool] = None,
+    search: Optional[str] = None,
+    viewer_ra: Optional[float] = None,
+    viewer_dec: Optional[float] = None,
     sort: str = "price_asc",
     limit: int = 200,
     offset: int = 0,
 ):
-    q = {}
-    if tier and tier != "all":
-        q["tier"] = tier
-    if constellation and constellation != "all":
-        q["constellation"] = constellation
-    if available is True:
-        q["owner_id"] = None
-        q["owner_name"] = None
-    if min_price is not None or max_price is not None:
-        q["price"] = {}
-        if min_price is not None:
-            q["price"]["$gte"] = min_price
-        if max_price is not None:
-            q["price"]["$lte"] = max_price
-        if not q["price"]:
-            q.pop("price")
+    req_start = time.time()
+    q = _build_star_query(
+        tier,
+        constellation,
+        available,
+        min_price,
+        max_price,
+        spectral_type,
+        magnitude_min,
+        magnitude_max,
+        distance_min,
+        distance_max,
+        has_stories,
+        search,
+    )
 
     sort_map = {
         "price_asc": [("price", 1)],
         "price_desc": [("price", -1)],
         "name": [("name", 1)],
         "tier": [("tier", 1), ("price", -1)],
+        "brightest": [("magnitude", 1)],
+        "nearest": [("distance", 1)],
     }
-    cur = db.stars.find(q, {"_id": 0}).sort(sort_map.get(sort, [("price", 1)])).skip(offset).limit(limit)
-    return await cur.to_list(limit)
+    db_start = time.time()
+    # If nearest requested and viewer coords provided, use geoNear aggregation
+    if sort == 'nearest' and viewer_ra is not None and viewer_dec is not None:
+        # Convert viewer RA to longitude range (-180..180) to match stored `loc` coordinates
+        v_lon = viewer_ra if viewer_ra <= 180.0 else (viewer_ra - 360.0)
+        geo_near = {
+            'near': {'type': 'Point', 'coordinates': [v_lon, viewer_dec]},
+            'distanceField': 'dist.calculated',
+            'spherical': True,
+        }
+        pipeline = [{'$geoNear': geo_near}]
+        if q:
+            pipeline.append({'$match': q})
+        pipeline.append({'$project': {'_id': 0, 'dist': 1, 'code': 1, 'name': 1, 'constellation': 1, 'tier': 1, 'price': 1, 'ra': 1, 'dec': 1, 'ra_deg': 1, 'dec_deg': 1, 'magnitude': 1, 'spect': 1, 'hip': 1, 'owner_id': 1, 'owner_name': 1, 'custom_name': 1, 'for_sale': 1, 'asking_price': 1, 'star_id': 1}})
+        pipeline.append({'$limit': limit})
+        try:
+            results = await db.stars.aggregate(pipeline).to_list(length=limit)
+        except Exception as exc:
+            logger.exception(f"Geo aggregation failed: {exc}")
+            raise HTTPException(status_code=500, detail=str(exc))
+    else:
+        cur = db.stars.find(q, {"_id": 0}).sort(sort_map.get(sort, [("price", 1)])).skip(offset).limit(limit)
+        results = await cur.to_list(limit)
+    db_ms = (time.time() - db_start) * 1000
+    total_ms = (time.time() - req_start) * 1000
+    try:
+        logger.info(f"/api/stars q={q} sort={sort} limit={limit} offset={offset} db_ms={db_ms:.1f} total_ms={total_ms:.1f} results={len(results)}")
+    except Exception:
+        logger.info(f"/api/stars executed; db_ms={db_ms:.1f} total_ms={total_ms:.1f}")
+    return results
+
+
+@api.get("/stars/count")
+async def count_stars(
+    tier: Optional[str] = None,
+    constellation: Optional[str] = None,
+    available: Optional[bool] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    spectral_type: Optional[str] = None,
+    magnitude_min: Optional[float] = None,
+    magnitude_max: Optional[float] = None,
+    distance_min: Optional[float] = None,
+    distance_max: Optional[float] = None,
+    has_stories: Optional[bool] = None,
+    search: Optional[str] = None,
+):
+    q = _build_star_query(
+        tier,
+        constellation,
+        available,
+        min_price,
+        max_price,
+        spectral_type,
+        magnitude_min,
+        magnitude_max,
+        distance_min,
+        distance_max,
+        has_stories,
+        search,
+    )
+
+    # Cache by query JSON string
+    try:
+        key = json.dumps(q, sort_keys=True, default=str)
+    except Exception:
+        key = str(q)
+
+    now = time.time()
+    # check cache
+    async with _COUNT_CACHE_LOCK:
+        entry = _COUNT_CACHE.get(key)
+        if entry and entry[1] > now:
+            logger.info(f"/api/stars/count cache hit ttl_remaining={entry[1]-now:.1f}s key={key}")
+            return {"count": entry[0]}
+
+    # compute and store
+    count = await db.stars.count_documents(q)
+    expires = now + COUNT_CACHE_TTL
+    async with _COUNT_CACHE_LOCK:
+        _COUNT_CACHE[key] = (count, expires)
+    logger.info(f"/api/stars/count computed count={count} key={key} ttl={COUNT_CACHE_TTL}s")
+    return {"count": count}
 
 
 @api.get("/stars/constellations")
@@ -1171,6 +1349,34 @@ async def release_star(body: dict, user: User = Depends(get_current_user)):
     })
     
     return {"ok": True}
+
+
+@api.post("/vault/upload")
+async def vault_upload(body: dict, user: User = Depends(get_current_user)):
+    """Accepts encrypted vault blob payload from client and stores a lightweight record.
+    This endpoint returns a simulated tx / url for the uploaded vault data. In production
+    this should proxy to an Arweave or IPFS upload flow and return the authoritative URL.
+    """
+    payload = body.get("encryptedData") or body
+    metadata = body.get("metadata") if isinstance(body, dict) else {}
+
+    if not payload:
+        raise HTTPException(status_code=400, detail="Missing encrypted payload")
+
+    record = {
+        "vault_id": f"vault_{uuid.uuid4().hex[:12]}",
+        "user_id": user.user_id if user else None,
+        "metadata": metadata,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    try:
+        await db.vaults.insert_one(record)
+    except Exception:
+        logger.warning("Vault upload: failed to persist record to DB; continuing with simulated response")
+
+    fake_url = f"https://storage.example.com/{record['vault_id']}"
+    return {"success": True, "txId": record["vault_id"], "url": fake_url}
 
 
 # -------------------- Marketplace --------------------
@@ -2098,18 +2304,12 @@ async def ai_health():
     }
 
 
-raw_origins = os.environ.get("CORS_ORIGINS", "*").strip()
-allow_origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-allow_any_origin = allow_origins == ["*"] or not allow_origins
-allow_credentials = False if allow_any_origin else True
-cors_origins = ["*"] if allow_any_origin else allow_origins
-
 app.add_middleware(
     CORSMiddleware,
-    allow_credentials=allow_credentials,
-    allow_origins=cors_origins,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "http://127.0.0.1:3001", "http://localhost:3001", "http://localhost:8000", "http://127.0.0.1:8000"],
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
 
 @app.options('/{rest_of_path:path}')
@@ -2130,14 +2330,10 @@ async def ensure_cors_headers(request: Request, call_next):
     response = await call_next(request)
     origin = request.headers.get("origin")
     if origin:
-        if allow_any_origin:
-            response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Credentials"] = "false"
-        else:
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
         response.headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Accept,Origin,User-Agent"
+        response.headers["Access-Control-Allow-Credentials"] = "false"
     else:
         response.headers.setdefault("Access-Control-Allow-Origin", "*")
     return response
