@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { StarAssetManager } from "../../lib/StarAssetManager";
 
 // Spectral type glow mapping based on primary class letters
@@ -19,10 +19,12 @@ export default function StarAssetImage({
   className = "",
   showDecorations = true
 }) {
+  const [imgError, setImgError] = useState(false);
   const asset = StarAssetManager.getStarAsset(star);
   if (!asset) return null;
-
   const firstLetter = asset.spectralType ? asset.spectralType.charAt(0).toUpperCase() : "G";
+  const imageUrl = variant === "hero" ? asset.heroImage : asset.previewImage;
+  const showImg = !!imageUrl && !imgError;
   const glowStyle = SPECTRAL_GLOWS[firstLetter] || SPECTRAL_GLOWS.default;
 
   // Decide sizing based on variant
@@ -36,6 +38,16 @@ export default function StarAssetImage({
 
   return (
     <div className={`relative aspect-square w-full rounded-xl bg-[#030615] overflow-hidden flex items-center justify-center border border-white/5 transition-all duration-300 ${className}`}>
+      {/* If a concrete image URL exists, render it as a lazily-loaded img with graceful onError fallback */}
+      {showImg && (
+        <img
+          src={imageUrl}
+          alt={`${asset.name || asset.code} preview`}
+          className="absolute inset-0 w-full h-full object-cover rounded-xl"
+          loading="lazy"
+          onError={() => setImgError(true)}
+        />
+      )}
       {/* Background Reticle grid lines */}
       {showDecorations && (
         <>
