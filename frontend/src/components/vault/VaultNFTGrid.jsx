@@ -2,7 +2,7 @@ import React from 'react'
 import VaultNFTCard from './VaultNFTCard'
 import VaultEmptyState from './VaultEmptyState'
 
-export default function VaultNFTGrid({ stars = [], selectedStar, onSelectStar = () => {}, onPreview = () => {} }) {
+export default function VaultNFTGrid({ stars = [], selectedStar, wallet, onSelectStar = () => {}, onPreview = () => {}, onList = () => {}, onRequireWallet = () => {} }) {
   if (!stars || stars.length === 0) return <VaultEmptyState />
 
   return (
@@ -13,8 +13,11 @@ export default function VaultNFTGrid({ stars = [], selectedStar, onSelectStar = 
             <VaultNFTCard
               star={s}
               selected={selectedStar?.starId === (s.starId || s.id)}
+              wallet={wallet}
               onSelect={() => onSelectStar(s)}
               onPreview={() => onPreview(s)}
+              onList={onList}
+              onRequireWallet={onRequireWallet}
             />
           ) : (
             <div className="p-4 border rounded">{s.name || 'Star'}</div>

@@ -21,6 +21,8 @@ import VaultActions from "../components/vault/VaultActions";
 import MobileDeepLinkPanel from "../components/catalog/MobileDeepLinkPanel";
 
 
+const WALLET_STORAGE_KEY = 'starclaim_mock_wallet'
+
 const myStars = [
   {
     starId: "SCX-0001",
@@ -239,13 +241,17 @@ function normalizeVaultStar(star) {
     acquired: star.raw?.acquired || star.acquired || "Unknown",
     ownedSince: star.ownedSince || star.raw?.ownedSince || "Unknown",
     ownershipStatus: isClaimed ? "Private Reserve" : "Available",
-    certificateStatus: star.hasCertificate ? "Verified" : "Pending",
+    certificateStatus: star.certificateStatus || (star.hasCertificate ? "Verified" : "Pending"),
     storyCount: star.storyCount || 0,
     memoryCount: star.memoryCount || (star.storyCount ? star.storyCount * 3 : 0),
     sharedStatus: isClaimed ? "Private" : "Available",
-    owner: star.ownerName || star.raw?.owner_name || "Pilot",
-    price: star.price || 0,
-    hasCertificate: star.hasCertificate || false,
+    owner: star.ownerName || star.raw?.owner_name || star.raw?.owner || "Pilot",
+    price: star.price || star.raw?.price || 0,
+    hasCertificate: star.hasCertificate || star.certificateStatus === "Verified" || false,
+    isClaimed,
+    tierLabel: star.tierLabel || tierLabel,
+    previewImage: star.previewImage || star.raw?.previewImage || star.raw?.heroImage || "https://via.placeholder.com/240x240?text=Star",
+    heroImage: star.heroImage || star.raw?.heroImage || "https://via.placeholder.com/500x500?text=Star",
     raw: star,
   };
 }
@@ -259,6 +265,7 @@ export default function Vault() {
     stories: "0",
     vaults: "1",
     totalValue: "$0 XCX",
+    rank: "Cadet",
   });
   const [wallet, setWallet] = useState(null);
   const [connectOpen, setConnectOpen] = useState(false);
@@ -269,20 +276,35 @@ export default function Vault() {
   }, []);
 
   useEffect(() => {
+    const savedWallet = localStorage.getItem(WALLET_STORAGE_KEY);
+    if (savedWallet) {
+      try {
+        setWallet(JSON.parse(savedWallet));
+      } catch (error) {
+        console.warn('Vault: invalid saved wallet state', error);
+        localStorage.removeItem(WALLET_STORAGE_KEY);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     const loadVault = async () => {
       try {
-        const allStars = await StarRepository.loadAll();
-        const owned = allStars.filter((star) => star.isClaimed).map(normalizeVaultStar);
+        await StarRepository.loadAll();
+        const owned = StarRepository.getOwnedStars().map(normalizeVaultStar);
         const displayStars = owned.length ? owned : myStars.map(normalizeVaultStar);
+        const starCount = displayStars.length;
+        const totalValueNumber = displayStars.reduce((sum, star) => sum + Number(star.price || 0), 0);
 
         setVaultStars(displayStars);
         setSelectedStar((prev) => displayStars.find((star) => star.starId === prev?.starId) || displayStars[0] || null);
         setVaultStats({
-          ownedStars: displayStars.length.toString(),
+          ownedStars: starCount.toString(),
           certificates: displayStars.filter((star) => star.certificateStatus === "Verified").length.toString(),
           stories: displayStars.reduce((sum, star) => sum + (star.storyCount || 0), 0).toString(),
           vaults: "1",
-          totalValue: `$${displayStars.reduce((sum, star) => sum + Number(star.price || 0), 0).toLocaleString()} XCX`,
+          totalValue: `$${totalValueNumber.toLocaleString()} XCX`,
+          rank: starCount >= 8 ? "Galactic" : starCount >= 5 ? "Voyager" : starCount >= 3 ? "Navigator" : starCount >= 1 ? "Explorer" : "Cadet",
         });
       } catch (error) {
         console.warn("Vault: Failed to load repository stars, using static fallback.", error);
@@ -302,6 +324,17 @@ export default function Vault() {
     loadVault();
   }, []);
 
+  function handleConnect(newWallet) {
+    setWallet(newWallet);
+    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(newWallet));
+    setConnectOpen(false);
+  }
+
+  function handleDisconnect() {
+    setWallet(null);
+    localStorage.removeItem(WALLET_STORAGE_KEY);
+  }
+
   return (
     <PageShell>
       <VaultHero
@@ -315,10 +348,19 @@ export default function Vault() {
             <VaultNFTGrid
               stars={vaultStars}
               selectedStar={selectedStar}
+              wallet={wallet}
               onSelectStar={setSelectedStar}
               onPreview={(st) => {
                 setPreviewStar(st);
               }}
+              onList={(star, price) => {
+                setVaultStars((currentStars) =>
+                  currentStars.map((item) =>
+                    item.starId === star.starId ? { ...item, price } : item
+                  )
+                );
+              }}
+              onRequireWallet={() => setConnectOpen(true)}
             />
           </section>
 
@@ -380,10 +422,10 @@ export default function Vault() {
         <VaultSidebar selectedStar={selectedStar} highlights={sidebarHighlights} />
       </div>
       <div className="fixed bottom-6 left-6 z-40 hidden lg:block">
-        <VaultWalletPanel wallet={wallet} onOpenConnect={() => setConnectOpen(true)} onDisconnect={() => setWallet(null)} />
+        <VaultWalletPanel wallet={wallet} onOpenConnect={() => setConnectOpen(true)} onDisconnect={handleDisconnect} />
       </div>
 
-      <WalletConnectModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={(w) => setWallet(w)} />
+      <WalletConnectModal open={connectOpen} onClose={() => setConnectOpen(false)} onConnect={handleConnect} />
       {previewStar && (
         <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setPreviewStar(null)} />

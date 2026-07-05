@@ -10,8 +10,11 @@ export default function VaultTimelineSection({ events }) {
         action="Review Timeline"
       />
       <div className="space-y-5">
-        {events.map((event) => (
-          <div key={event.title} className="flex gap-5 rounded-[2rem] border border-white/10 bg-[#050814]/90 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.14)]">
+        {events.map((event, index) => (
+          <div
+            key={`${event.title}-${event.star}-${event.date}-${index}`}
+            className="flex gap-5 rounded-[2rem] border border-white/10 bg-[#050814]/90 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.14)]"
+          >
             <div className="flex flex-col items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sc-gold text-black shadow-[0_0_15px_rgba(212,175,55,0.25)]">
                 <event.Icon className="h-5 w-5" />

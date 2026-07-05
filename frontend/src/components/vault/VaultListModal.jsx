@@ -11,10 +11,21 @@ export default function VaultListModal({ open, onClose, star, onConfirm }) {
   if (!open) return null;
 
   const handleConfirm = () => {
-    const p = Number(String(price).replace(",", "."));
-    if (!Number.isFinite(p) || p <= 0) return toast.error("Enter a valid price");
+    const normalized = String(price).trim().replace(/,/g, ".");
+    const p = Number(normalized);
+    if (!normalized || Number.isNaN(p) || p <= 0) {
+      toast.error("Enter a valid price");
+      return;
+    }
     onConfirm && onConfirm(p);
     onClose && onClose();
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleConfirm();
+    }
   };
 
   return (
@@ -30,6 +41,9 @@ export default function VaultListModal({ open, onClose, star, onConfirm }) {
             autoFocus
             value={price}
             onChange={(e) => setPrice(e.target.value)}
+            onKeyDown={handleKeyDown}
+            inputMode="decimal"
+            pattern="[0-9]*([.,][0-9]+)?"
             placeholder="e.g. 199.99"
             className="mt-2 w-full rounded-md border border-white/8 bg-transparent px-3 py-2 text-white outline-none focus:border-sc-gold"
           />

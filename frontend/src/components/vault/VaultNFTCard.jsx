@@ -2,12 +2,21 @@ import React, { useState } from "react";
 import VaultListModal from "./VaultListModal";
 import { toast } from "sonner";
 
-export default function VaultNFTCard({ star, onSelect, onPreview, onList, selected }) {
+export default function VaultNFTCard({ star, wallet, onSelect, onPreview, onList, onRequireWallet, selected }) {
   const [openList, setOpenList] = useState(false);
+  const canList = !!wallet;
 
   const handlePreview = () => {
     if (onPreview) return onPreview(star);
     if (onSelect) return onSelect(star);
+  };
+
+  const handleListClick = () => {
+    if (!canList) {
+      if (onRequireWallet) return onRequireWallet();
+      return;
+    }
+    setOpenList(true);
   };
 
   const handleConfirmList = (price) => {
@@ -58,12 +67,18 @@ export default function VaultNFTCard({ star, onSelect, onPreview, onList, select
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
-            <div className="text-xs text-slate-300">Owner: {star.owner}</div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              <span>Owner: {star.owner}</span>
+              <span className="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase tracking-[0.24em] text-slate-400">{star.ownershipStatus}</span>
+              <span className={`rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.24em] ${star.certificateStatus === 'Verified' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/10 text-amber-200'}`}>
+                {star.certificateStatus}
+              </span>
+            </div>
             <div className="text-sm font-semibold text-white">{star.price ? `$${star.price}` : "—"}</div>
           </div>
 
-            <div className="mt-4 flex gap-3">
+          <div className="mt-4 flex gap-3 flex-wrap">
             <button
               onClick={handlePreview}
               className="rounded-full border border-white/10 bg-white/3 px-3 py-1 text-xs font-semibold text-white transition hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-400"
@@ -73,11 +88,13 @@ export default function VaultNFTCard({ star, onSelect, onPreview, onList, select
             </button>
 
             <button
-              onClick={() => setOpenList(true)}
-              className="rounded-full bg-sc-gold px-3 py-1 text-xs font-semibold text-black transition hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              aria-label={`List ${star.name} for sale`}
+              onClick={handleListClick}
+              type="button"
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-400 ${canList ? 'bg-sc-gold text-black hover:brightness-95' : 'bg-white/10 text-slate-200 hover:bg-white/15'}`}
+              aria-label={canList ? `List ${star.name} for sale` : 'Connect wallet to list this star'}
+              aria-disabled={!canList}
             >
-              List for sale
+              {canList ? 'List for sale' : 'Connect wallet'}
             </button>
           </div>
         </div>
