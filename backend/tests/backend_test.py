@@ -18,8 +18,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 load_dotenv(ROOT_DIR / ".env")
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL",
-                          "https://cosmic-marketplace-5.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get(
+    "REACT_APP_BACKEND_URL",
+    os.environ.get("REACT_APP_API_URL", "http://127.0.0.1:8000"),
+).rstrip("/")
 API = f"{BASE_URL}/api"
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
@@ -141,6 +143,39 @@ class TestStars:
         r = api_client.get(f"{API}/stars/{sid}")
         assert r.status_code == 200
         assert r.json()["star_id"] == sid
+
+    def test_geo_aware_count_nearest(self, api_client):
+        # Use a known observer coordinate and compare stars count with and without spatial limit.
+        # The count endpoint should return a value and not error when viewer coords are provided.
+        count_response = api_client.get(f"{API}/stars/count", params={"viewer_ra": 279.2347, "viewer_dec": 38.7837})
+        assert count_response.status_code == 200
+        count_data = count_response.json()
+        assert isinstance(count_data.get("count"), int)
+        assert count_data["count"] >= 0
+
+        # Confirm the regular count endpoint returns a non-negative integer as well.
+        regular_count_response = api_client.get(f"{API}/stars/count")
+        assert regular_count_response.status_code == 200
+        regular_count_data = regular_count_response.json()
+        assert isinstance(regular_count_data.get("count"), int)
+        assert regular_count_data["count"] >= count_data["count"]
+
+    def test_geo_aware_count_matches_regular_count_with_filters(self, api_client):
+        # Ensure geo-aware count returns the same total as regular count when using the same filters.
+        filter_params = {"available": "true", "tier": "standard"}
+        viewer_params = {**filter_params, "viewer_ra": 279.2347, "viewer_dec": 38.7837}
+
+        geo_count_response = api_client.get(f"{API}/stars/count", params=viewer_params)
+        assert geo_count_response.status_code == 200
+        geo_count_data = geo_count_response.json()
+        assert isinstance(geo_count_data.get("count"), int)
+        assert geo_count_data["count"] >= 0
+
+        regular_count_response = api_client.get(f"{API}/stars/count", params=filter_params)
+        assert regular_count_response.status_code == 200
+        regular_count_data = regular_count_response.json()
+        assert isinstance(regular_count_data.get("count"), int)
+        assert regular_count_data["count"] == geo_count_data["count"]
 
     def test_get_star_not_found(self, api_client):
         r = api_client.get(f"{API}/stars/nonexistent_id")

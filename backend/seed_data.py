@@ -52,6 +52,7 @@ MANUAL_CATALOG = [
     _star("rigel", "Rigel", "Orion", "legendary", 1299, "05h 14m", "-08° 12'", ra_deg=78.63, dec_deg=-8.20, magnitude=0.13, spect="B8Iab", hip="24436"),
     _star("betelgeuse", "Betelgeuse", "Orion", "legendary", 1199, "05h 55m", "+07° 24'", ra_deg=88.79, dec_deg=7.41, magnitude=0.50, spect="M2Iab", hip="27989", owner="Mert T."),
     _star("polaris", "Polaris", "Ursa Minor", "legendary", 2999, "02h 31m", "+89° 15'", ra_deg=37.95, dec_deg=89.26, magnitude=1.97, spect="F7Ib", hip="11767"),
+    _star("aldebaran", "Aldebaran", "Taurus", "legendary", 899, "04h 35m", "+16° 30'", ra_deg=68.98, dec_deg=16.51, magnitude=0.85, spect="K5III", hip="21421"),
     _star("antares", "Antares", "Scorpius", "legendary", 1399, "16h 29m", "-26° 25'", ra_deg=247.35, dec_deg=-26.43, magnitude=1.09, spect="M1.5Iab", hip="80763"),
 ]
 
@@ -177,9 +178,29 @@ else:
 
 SAMPLE_LISTINGS = [
     {"code": "vega", "original": 1499, "asking": 2200, "owner": "Kaan B.", "days_ago": 45, "hops": 2},
+    {"code": "sirius", "original": 1999, "asking": 3200, "owner": "Leyla T.", "days_ago": 12, "hops": 1},
+    {"code": "polaris", "original": 1299, "asking": 2000, "owner": "Mert Y.", "days_ago": 32, "hops": 3},
+    {"code": "betelgeuse", "original": 999, "asking": 1500, "owner": "Derya K.", "days_ago": 8, "hops": 2},
+    {"code": "rigel", "original": 1099, "asking": 1700, "owner": "Sena G.", "days_ago": 21, "hops": 1},
+    {"code": "aldebaran", "original": 899, "asking": 1200, "owner": "Kemal A.", "days_ago": 15, "hops": 2},
+    {"code": "arcturus", "original": 1799, "asking": 2100, "owner": "Lara S.", "days_ago": 6, "hops": 1},
+    {"code": "canopus", "original": 1499, "asking": 1800, "owner": "Ozan U.", "days_ago": 19, "hops": 2},
 ]
 
 SAMPLE_ACTIVITIES = [
     {"activity_id": "act_1", "type": "claim", "user_name": "Ali K.", "star_name": "Sirius", "constellation": "Canis Major"},
     {"activity_id": "act_2", "type": "claim", "user_name": "Zeynep A.", "star_name": "Arcturus", "constellation": "Bootes"},
+    {"activity_id": "act_3", "type": "claim", "user_name": "Murat E.", "star_name": "Vega", "constellation": "Lyra"},
+    {"activity_id": "act_4", "type": "claim", "user_name": "Ebru C.", "star_name": "Polaris", "constellation": "Ursa Minor"},
+    {"activity_id": "act_5", "type": "claim", "user_name": "Can S.", "star_name": "Betelgeuse", "constellation": "Orion"},
+    {"activity_id": "act_6", "type": "claim", "user_name": "Nazan U.", "star_name": "Rigel", "constellation": "Orion"},
+    {"activity_id": "act_7", "type": "claim", "user_name": "Seda M.", "star_name": "Aldebaran", "constellation": "Taurus"},
+    {"activity_id": "act_8", "type": "claim", "user_name": "Baran K.", "star_name": "Altair", "constellation": "Aquila"},
+    {"activity_id": "act_9", "type": "claim", "user_name": "Mina T.", "star_name": "Deneb", "constellation": "Cygnus"},
+    {"activity_id": "act_10", "type": "claim", "user_name": "Ozan R.", "star_name": "Arcturus", "constellation": "Bootes"},
+    {"activity_id": "act_11", "type": "claim", "user_name": "Ece B.", "star_name": "Polaris", "constellation": "Ursa Minor"},
+    {"activity_id": "act_12", "type": "claim", "user_name": "Deniz K.", "star_name": "Rigel", "constellation": "Orion"},
+    {"activity_id": "act_13", "type": "claim", "user_name": "Sami Y.", "star_name": "Betelgeuse", "constellation": "Orion"},
+    {"activity_id": "act_14", "type": "claim", "user_name": "Luna C.", "star_name": "Vega", "constellation": "Lyra"},
+    {"activity_id": "act_15", "type": "claim", "user_name": "Mete P.", "star_name": "Canopus", "constellation": "Carina"},
 ]

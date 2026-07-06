@@ -1,7 +1,6 @@
 """PDF certificate generator using ReportLab — no external font dependency."""
 from io import BytesIO
-from datetime import datetime
-from io import BytesIO
+from datetime import datetime, UTC
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.colors import HexColor, Color
 from reportlab.lib.units import mm
@@ -153,7 +152,7 @@ def generate_certificate(
     c.drawCentredString(width / 2, 130, f"RA  ·  {ra}        DEC  ·  {dec}")
 
     # Owner & date
-    issue = issue_date or datetime.utcnow().strftime("%d %b %Y")
+    issue = issue_date or datetime.now(UTC).strftime("%d %b %Y")
     c.setFont("Times-Roman", 10)
     c.setFillColor(COLOR_GOLD)
     owner_label = "OWNER" if language.upper() == "EN" else "SAHİBİ"
@@ -181,5 +180,3 @@ def generate_certificate(
     c.save()
     return buf.getvalue()
 
-
-from io import BytesIO

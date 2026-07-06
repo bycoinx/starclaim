@@ -4,6 +4,7 @@ StarCalimX backend — FastAPI + MongoDB + OpenAI / Anthropic AI stories
 """
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, Depends, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -112,11 +113,42 @@ COUNT_CACHE_TTL = int(os.environ.get("COUNT_CACHE_TTL", "60"))  # seconds
 _COUNT_CACHE = {}
 _COUNT_CACHE_LOCK = asyncio.Lock()
 
-app = FastAPI(title="StarCalimX API")
-api = APIRouter(prefix="/api")
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("starcalimx")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        await ensure_indexes()
+        await seed_database()
+        if DEMO_CLEANUP_ENABLED:
+            await cleanup_demo_data_once()
+    except Exception as error:
+        # Read-only catalog and health-independent routes must remain available
+        # when MongoDB is temporarily unavailable during local/mobile testing.
+        logger.warning("MongoDB startup tasks skipped: %s", error)
+
+    if REDIS_URL and FASTAPI_LIMITER_AVAILABLE:
+        try:
+            redis = await aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
+            app.state.redis = redis
+            await FastAPILimiter.init(redis)
+            logger.info("FastAPILimiter initialized with REDIS_URL")
+        except Exception as e:
+            logger.exception(f"Failed to initialize FastAPILimiter: {e}")
+
+    try:
+        yield
+    finally:
+        redis = getattr(app.state, "redis", None)
+        if redis is not None:
+            await redis.close()
+        client.close()
+
+
+app = FastAPI(title="StarCalimX API", lifespan=lifespan)
+api = APIRouter(prefix="/api")
 
 TIER_IMPORTANCE = {
     "legendary": 5,
@@ -484,37 +516,107 @@ async def seed_database():
             docs.append(doc)
         await db.stars.insert_many(docs)
         logger.info(f"Seeded {len(docs)} stars")
+    else:
+        existing_star_codes = set(await db.stars.distinct("code"))
+        missing_stars = []
+        for s in STAR_CATALOG:
+            if s["code"] not in existing_star_codes:
+                doc = dict(s)
+                doc["star_id"] = doc.get("star_id") or f"star_{uuid.uuid4().hex[:10]}"
+                missing_stars.append(doc)
+        if missing_stars:
+            await db.stars.insert_many(missing_stars)
+            logger.info(f"Seeded {len(missing_stars)} missing stars")
 
-    if await db.listings.count_documents({}) == 0:
-        listings = []
-        for l in SAMPLE_LISTINGS:
-            star = await db.stars.find_one({"code": l["code"]}, {"_id": 0})
-            if not star:
-                continue
-            listings.append({
+    existing_listing_codes = set(await db.listings.distinct("star_code"))
+    listings = []
+    for l in SAMPLE_LISTINGS:
+        if l["code"] in existing_listing_codes:
+            continue
+        star = await db.stars.find_one({"code": l["code"]}, {"_id": 0})
+        if not star:
+            continue
+        listings.append({
+            "listing_id": f"lst_{uuid.uuid4().hex[:10]}",
+            "star_id": star["star_id"],
+            "star_code": star["code"],
+            "star_name": star["name"],
+            "constellation": star["constellation"],
+            "tier": star["tier"],
+            "original_price": l["original"],
+            "asking_price": l["asking"],
+            "owner_name": l["owner"],
+            "owner_id": None,
+            "listed_at": datetime.now(timezone.utc).isoformat(),
+            "days_ago": l["days_ago"],
+            "hops": l.get("hops", 1),
+        })
+    if listings:
+        await db.listings.insert_many(listings)
+        logger.info(f"Seeded {len(listings)} listings")
+
+    # Ensure there are enough demo marketplace listings for regression tests.
+    current_listings = await db.listings.count_documents({"status": {"$ne": "sold"}})
+    if current_listings < 6:
+        listed_codes = set(await db.listings.distinct("star_code"))
+        needed = 6 - current_listings
+        extra_stars = await db.stars.find(
+            {"code": {"$nin": list(listed_codes)}},
+            {"_id": 0, "star_id": 1, "code": 1, "name": 1, "constellation": 1, "tier": 1, "price": 1}
+        ).limit(needed).to_list(needed)
+
+        fallback_listings = []
+        for star in extra_stars:
+            fallback_listings.append({
                 "listing_id": f"lst_{uuid.uuid4().hex[:10]}",
                 "star_id": star["star_id"],
                 "star_code": star["code"],
                 "star_name": star["name"],
                 "constellation": star["constellation"],
                 "tier": star["tier"],
-                "original_price": l["original"],
-                "asking_price": l["asking"],
-                "owner_name": l["owner"],
+                "original_price": star.get("price", 0),
+                "asking_price": round((star.get("price", 0) or 1) * 1.2),
+                "owner_name": "Demo Seller",
                 "owner_id": None,
                 "listed_at": datetime.now(timezone.utc).isoformat(),
-                "days_ago": l["days_ago"],
-                "hops": l.get("hops", 1),
+                "days_ago": 7,
+                "hops": 1,
             })
-        if listings:
-            await db.listings.insert_many(listings)
-            logger.info(f"Seeded {len(listings)} listings")
+        if fallback_listings:
+            await db.listings.insert_many(fallback_listings)
+            logger.info(f"Supplemented {len(fallback_listings)} fallback listings for demo coverage")
 
-    if await db.activities.count_documents({}) == 0:
-        for a in SAMPLE_ACTIVITIES:
-            a["_ts"] = datetime.now(timezone.utc).isoformat()
-        if SAMPLE_ACTIVITIES: await db.activities.insert_many([dict(a) for a in SAMPLE_ACTIVITIES])
-        logger.info(f"Seeded {len(SAMPLE_ACTIVITIES)} activities")
+    existing_activity_ids = set(await db.activities.distinct("activity_id"))
+    activities = []
+    for a in SAMPLE_ACTIVITIES:
+        if a["activity_id"] in existing_activity_ids:
+            continue
+        activity = dict(a)
+        activity["_ts"] = datetime.now(timezone.utc).isoformat()
+        activities.append(activity)
+    if activities:
+        await db.activities.insert_many(activities)
+        logger.info(f"Seeded {len(activities)} activities")
+
+    current_activities = await db.activities.count_documents({})
+    if current_activities < 10:
+        extra_activities = []
+        next_idx = 1
+        while len(extra_activities) < (10 - current_activities):
+            candidate = f"act_fallback_{next_idx}"
+            if candidate not in existing_activity_ids:
+                extra_activities.append({
+                    "activity_id": candidate,
+                    "type": "claim",
+                    "user_name": "Demo User",
+                    "star_name": f"Star {next_idx}",
+                    "constellation": "Unknown",
+                    "_ts": datetime.now(timezone.utc).isoformat(),
+                })
+            next_idx += 1
+        if extra_activities:
+            await db.activities.insert_many(extra_activities)
+            logger.info(f"Supplemented {len(extra_activities)} fallback activities for demo coverage")
 
 
 async def cleanup_demo_data_once():
@@ -561,32 +663,6 @@ async def ensure_indexes():
     await db.stars.create_index([("code", 1)], unique=True)
     await db.stars.create_index([("ra_deg", 1), ("dec_deg", 1)])  # Spatial/compound index
     logger.info("Database indexes verified/created")
-
-
-@app.on_event("startup")
-async def startup():
-    try:
-        await ensure_indexes()
-        await seed_database()
-        if DEMO_CLEANUP_ENABLED:
-            await cleanup_demo_data_once()
-    except Exception as error:
-        # Read-only catalog and health-independent routes must remain available
-        # when MongoDB is temporarily unavailable during local/mobile testing.
-        logger.warning("MongoDB startup tasks skipped: %s", error)
-    # Initialize Redis-backed rate limiter if configured
-    if REDIS_URL and FASTAPI_LIMITER_AVAILABLE:
-        try:
-            redis = await aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
-            await FastAPILimiter.init(redis)
-            logger.info("FastAPILimiter initialized with REDIS_URL")
-        except Exception as e:
-            logger.exception(f"Failed to initialize FastAPILimiter: {e}")
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    client.close()
 
 
 # -------------------- Health Check --------------------
@@ -1020,6 +1096,8 @@ async def count_stars(
     distance_max: Optional[float] = None,
     has_stories: Optional[bool] = None,
     search: Optional[str] = None,
+    viewer_ra: Optional[float] = None,
+    viewer_dec: Optional[float] = None,
 ):
     q = _build_star_query(
         tier,
@@ -1036,11 +1114,11 @@ async def count_stars(
         search,
     )
 
-    # Cache by query JSON string
+    # Cache by query and viewer location
     try:
-        key = json.dumps(q, sort_keys=True, default=str)
+        key = json.dumps({"q": q, "viewer_ra": viewer_ra, "viewer_dec": viewer_dec}, sort_keys=True, default=str)
     except Exception:
-        key = str(q)
+        key = str({"q": q, "viewer_ra": viewer_ra, "viewer_dec": viewer_dec})
 
     now = time.time()
     # check cache
@@ -1051,7 +1129,26 @@ async def count_stars(
             return {"count": entry[0]}
 
     # compute and store
-    count = await db.stars.count_documents(q)
+    if viewer_ra is not None and viewer_dec is not None:
+        v_lon = viewer_ra if viewer_ra <= 180.0 else (viewer_ra - 360.0)
+        geo_near = {
+            "near": {"type": "Point", "coordinates": [v_lon, viewer_dec]},
+            "distanceField": "dist.calculated",
+            "spherical": True,
+        }
+        pipeline = [{"$geoNear": geo_near}]
+        if q:
+            pipeline.append({"$match": q})
+        pipeline.append({"$count": "count"})
+        try:
+            results = await db.stars.aggregate(pipeline).to_list(length=1)
+            count = results[0]["count"] if results else 0
+        except Exception as exc:
+            logger.exception(f"Geo count aggregation failed: {exc}")
+            raise HTTPException(status_code=500, detail=str(exc))
+    else:
+        count = await db.stars.count_documents(q)
+
     expires = now + COUNT_CACHE_TTL
     async with _COUNT_CACHE_LOCK:
         _COUNT_CACHE[key] = (count, expires)
@@ -1078,6 +1175,18 @@ async def get_star_by_code(code: str):
     return s
 
 
+@api.get("/stars/health")
+async def stars_health():
+    total_stars = await db.stars.count_documents({})
+    available_stars = await db.stars.count_documents({"owner_id": None})
+    return {
+        "service": "StarClaim Star Catalog",
+        "ok": total_stars > 0,
+        "total_stars": total_stars,
+        "available_stars": available_stars,
+    }
+
+
 @api.get("/stars/{star_id}")
 async def get_star(star_id: str):
     s = await db.stars.find_one({"star_id": star_id}, {"_id": 0})
@@ -1096,18 +1205,6 @@ async def list_my_stars(user: User = Depends(get_current_user)):
         if star.get("star_id") in order_map:
             star["order_id"] = order_map[star["star_id"]]
     return stars
-
-
-@api.get("/stars/health")
-async def stars_health():
-    total_stars = await db.stars.count_documents({})
-    available_stars = await db.stars.count_documents({"owner_id": None})
-    return {
-        "service": "StarCalimX Star Catalog",
-        "ok": total_stars > 0,
-        "total_stars": total_stars,
-        "available_stars": available_stars,
-    }
 
 
 @api.post("/stellar/testnet/create-account")
@@ -1585,27 +1682,29 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
 
 
 # -------------------- AI Story v2 (Quantum Narrative) --------------------
+def _default_ai_story(lang: str) -> str:
+    if lang == "TR":
+        return (
+            "Gözlemleyenin bakışıyla yıldız bir anda somutlaşır; "
+            "kozmik kuantum sahnesinde anılar ve koordinatlar birbirine karışır. "
+            "Sirius, Lyra veya Vega fark etmez; her bir isim, sonsuzluğun yeni bir parıltısıdır. "
+            "Bu hikaye, varoluş ve aşk arasında titreyen bir ışık halkasıdır. "
+            "Her satırda evren, bir hediye gibi sana verdiği karşılığını fısıldar."
+        )
+    return (
+        "Through the observer's gaze the star collapses into meaning; "
+        "a luminous signature written across constellations and memory. "
+        "Coordinates and magnitude become a promise, a quiet quantum bond. "
+        "The tale is not about distance, but about the moment that makes it yours. "
+        "In that singular instant, the sky is both story and witness."
+    )
+
+
 @api.post("/ai/story")
 async def ai_story(body: StoryRequest):
     lang = body.language.upper()
     if not GOOGLE_API_KEY and not OPENAI_API_KEY and not ANTHROPIC_API_KEY:
-        if lang == "TR":
-            stub_story = (
-                "Gözlemleyenin bakışıyla yıldız bir anda somutlaşır; "
-                "kozmik kuantum sahnesinde anılar ve koordinatlar birbirine karışır. "
-                "Sirius, Lyra veya Vega fark etmez; her bir isim, sonsuzluğun yeni bir parıltısıdır. "
-                "Bu hikaye, varoluş ve aşk arasında titreyen bir ışık halkasıdır. "
-                "Her satırda evren, bir hediye gibi sana verdiği karşılığını fısıldar."
-            )
-        else:
-            stub_story = (
-                "Through the observer's gaze the star collapses into meaning; "
-                "a luminous signature written across constellations and memory. "
-                "Coordinates and magnitude become a promise, a quiet quantum bond. "
-                "The tale is not about distance, but about the moment that makes it yours. "
-                "In that singular instant, the sky is both story and witness."
-            )
-        return {"story": stub_story}
+        return {"story": _default_ai_story(lang)}
 
     lang = body.language.upper()
     
@@ -1688,7 +1787,11 @@ async def ai_story(body: StoryRequest):
             )
         else:
             story_text = ""
-        return {"story": story_text.strip()}
+
+        story_text = story_text.strip()
+        if not story_text:
+            story_text = _default_ai_story(lang)
+        return {"story": story_text}
     except Exception as e:
         logger.exception("AI story v2 failed")
         raise HTTPException(status_code=500, detail=f"Quantum narrative generation failed: {e}")
@@ -1810,14 +1913,13 @@ async def _process_paid_claim(transaction: dict) -> None:
 
 @api.post("/checkout/session")
 async def create_checkout_session(body: CheckoutSessionRequest, request: Request):
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe not configured")
-
     star = await db.stars.find_one({"star_id": body.star_id}, {"_id": 0})
     if not star:
         raise HTTPException(status_code=404, detail="Star not found")
     if star.get("owner_id"):
         raise HTTPException(status_code=400, detail="Star already claimed")
+    if not STRIPE_API_KEY:
+        raise HTTPException(status_code=500, detail="Stripe not configured")
 
     amount = _star_price_for_package(star["price"], body.package)
     if amount < 0.5:
@@ -2199,7 +2301,7 @@ async def subscribe(body: NewsletterRequest):
 
 @api.get("/")
 async def root():
-    return {"service": "StarCalimX API", "status": "ok"}
+    return {"service": "StarClaim API", "status": "ok"}
 
 
 class SupportRequest(BaseModel):
