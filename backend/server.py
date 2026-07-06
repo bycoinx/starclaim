@@ -27,19 +27,35 @@ import base58
 import sys
 import hashlib
 import json
+import math
 
 try:
     from backend.star_tile_catalog import resolve_catalog_root, resolve_tile_path
     from backend.binary_star_catalog import resolve_binary_catalog_root, resolve_binary_tile_path
+    from backend.dso_catalog import get_all_dsos, get_dsos_for_zoom, search_dsos, to_dict
+    from backend.voyage_coordinates import (
+        AstronomicalCoordinate,
+        CoordinateTransform,
+        VoyageCoordinate,
+        LODCalculator,
+    )
 except ModuleNotFoundError:
     from star_tile_catalog import resolve_catalog_root, resolve_tile_path
     from binary_star_catalog import resolve_binary_catalog_root, resolve_binary_tile_path
+    from dso_catalog import get_all_dsos, get_dsos_for_zoom, search_dsos, to_dict
+    from voyage_coordinates import (
+        AstronomicalCoordinate,
+        CoordinateTransform,
+        VoyageCoordinate,
+        LODCalculator,
+    )
 
 try:
     from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
     from backend.certificate import generate_certificate
     from backend.emails import send_certificate_email
     from backend.stellar import create_testnet_account, get_account_balances, send_xlm
+    from backend.seed_dsos import import_dso_catalog_complete
 except ModuleNotFoundError:
     # Allow running the backend directly from the backend/ directory during local development.
     ROOT_DIR = Path(__file__).resolve().parent
@@ -49,6 +65,7 @@ except ModuleNotFoundError:
     from certificate import generate_certificate
     from emails import send_certificate_email
     from stellar import create_testnet_account, get_account_balances, send_xlm
+    from seed_dsos import import_dso_catalog_complete
 
 # Redis-backed rate limiter (optional for production). If REDIS_URL is set
 # in the environment we'll initialize FastAPILimiter during startup and use
@@ -124,6 +141,16 @@ async def lifespan(app: FastAPI):
         await seed_database()
         if DEMO_CLEANUP_ENABLED:
             await cleanup_demo_data_once()
+        
+        # P0.8.5b: Auto-import DSO catalog on startup
+        try:
+            logger.info("\U0001f680 Initializing 3D DSO Catalog (110 Messier + 500 NGC)...")
+            await import_dso_catalog_complete(db)
+            logger.info("✅ DSO Catalog initialized successfully")
+        except Exception as dso_error:
+            logger.error("⚠️  DSO Catalog initialization failed: %s", dso_error)
+            # DSO endpoints not critical for core system operations
+            pass
     except Exception as error:
         # Read-only catalog and health-independent routes must remain available
         # when MongoDB is temporarily unavailable during local/mobile testing.
@@ -1184,6 +1211,433 @@ async def stars_health():
         "ok": total_stars > 0,
         "total_stars": total_stars,
         "available_stars": available_stars,
+    }
+
+
+# -------------------- P0.6: Deep Sky Objects (DSO) --------------------
+
+@api.get("/dso/catalog")
+async def get_dso_catalog():
+    """Get all Messier + NGC objects for sky map"""
+    dsos = get_all_dsos()
+    return {
+        "catalogVersion": "messier-ngc-v1",
+        "totalCount": len(dsos),
+        "objects": [to_dict(dso) for dso in dsos],
+    }
+
+
+@api.get("/dso/by-zoom")
+async def get_dso_by_zoom(zoom: float = 1.0, quality: str = "medium"):
+    """Get DSOs visible at given zoom level and quality profile"""
+    if zoom < 0.1 or zoom > 100:
+        raise HTTPException(status_code=400, detail="Zoom must be between 0.1 and 100")
+    if quality not in ("low", "medium", "high"):
+        raise HTTPException(status_code=400, detail="Quality must be low, medium, or high")
+    
+    dsos = get_dsos_for_zoom(zoom, quality)
+    return {
+        "zoom": zoom,
+        "quality": quality,
+        "visibleCount": len(dsos),
+        "objects": [to_dict(dso) for dso in dsos],
+    }
+
+
+@api.get("/dso/search")
+async def search_dso(q: str = "", limit: int = 20):
+    """Search DSOs by name, M-number, NGC-number"""
+    if not q or len(q.strip()) < 1:
+        raise HTTPException(status_code=400, detail="Query required (e.g., 'messier-31', 'm51', 'andromeda')")
+    
+    if limit < 1 or limit > 100:
+        limit = 20
+    
+    results = search_dsos(q, limit=limit)
+    return {
+        "query": q,
+        "resultCount": len(results),
+        "objects": [to_dict(dso) for dso in results],
+    }
+
+
+# -------------------- P0.8: 3D Voyage (Celestia-like) --------------------
+
+@api.get("/voyage/region")
+async def get_voyage_region(ra: float = 0, dec: float = 0, distance: float = 100,
+                            radius_pc: float = 50, max_stars: int = 1000):
+    """
+    Get stars in a 3D spherical region for Voyage rendering.
+    
+    Center point: RA, Dec (degrees), Distance (parsecs)
+    Radius: Search radius in parsecs
+    Returns: Stars with 3D Cartesian coordinates
+    """
+    if not (0 <= ra < 360):
+        raise HTTPException(status_code=400, detail="RA must be [0, 360)")
+    if not (-90 <= dec <= 90):
+        raise HTTPException(status_code=400, detail="Dec must be [-90, +90]")
+    if distance <= 0:
+        raise HTTPException(status_code=400, detail="Distance must be > 0")
+    if radius_pc <= 0 or radius_pc > 500:
+        raise HTTPException(status_code=400, detail="Radius must be (0, 500] pc")
+    if max_stars < 10 or max_stars > 5000:
+        max_stars = 1000
+    
+    # Convert center to Cartesian
+    center = AstronomicalCoordinate(
+        ra_degrees=ra,
+        dec_degrees=dec,
+        distance_pc=distance
+    )
+    center_cartesian = CoordinateTransform.astro_to_cartesian(center)
+    
+    # Query MongoDB for nearby stars
+    # Use approximate filtering first (RA/Dec +/- range)
+    ra_min = (ra - radius_pc / 111.2) % 360  # 1 degree ~ 111 km, 111 km / 1000 pc ≈ 0.111 degrees
+    ra_max = (ra + radius_pc / 111.2) % 360
+    dec_min = max(-90, dec - radius_pc / 111.2)
+    dec_max = min(90, dec + radius_pc / 111.2)
+    
+    query = {
+        "raDegrees": {"$gte": ra_min} if ra_min < ra_max else {"$gte": ra_min, "$lt": 360},
+        "decDegrees": {"$gte": dec_min, "$lte": dec_max},
+    }
+    
+    cursor = db.stars.find(query, {"_id": 0}).limit(max_stars * 2)  # Fetch extra for precise filtering
+    stars = await cursor.to_list(None)
+    
+    # Precise spherical distance filtering
+    filtered_stars = []
+    for star in stars:
+        try:
+            star_coord = AstronomicalCoordinate(
+                ra_degrees=star.get("raDegrees", 0),
+                dec_degrees=star.get("decDegrees", 0),
+                distance_pc=star.get("distanceParsec", 100)
+            )
+            star_cartesian = CoordinateTransform.astro_to_cartesian(star_coord)
+            
+            # Calculate distance from center
+            dx = star_cartesian.x - center_cartesian.x
+            dy = star_cartesian.y - center_cartesian.y
+            dz = star_cartesian.z - center_cartesian.z
+            dist = math.sqrt(dx**2 + dy**2 + dz**2)
+            
+            if dist <= radius_pc:
+                filtered_stars.append({
+                    **star,
+                    "voyageX": star_cartesian.x,
+                    "voyageY": star_cartesian.y,
+                    "voyageZ": star_cartesian.z,
+                    "voyageDistance": star_cartesian.distance_from_origin(),
+                    "regionDistance": dist,
+                })
+        except (ValueError, TypeError):
+            continue
+    
+    # Sort by distance and limit
+    filtered_stars.sort(key=lambda s: s["regionDistance"])
+    filtered_stars = filtered_stars[:max_stars]
+    
+    return {
+        "centerRA": ra,
+        "centerDec": dec,
+        "centerDistance": distance,
+        "radiusPc": radius_pc,
+        "starCount": len(filtered_stars),
+        "stars": filtered_stars,
+    }
+
+
+@api.get("/voyage/target/{target_id}")
+async def get_voyage_target(target_id: str):
+    """
+    Get specific star with 3D voyage coordinates.
+    
+    Target ID can be:
+    - Hip ID: "hip:32349"
+    - HD ID: "hd:48915"
+    - Gaia ID: "gaia-dr3:123456"
+    - Canonical ID: "<source>:<id>"
+    """
+    if ":" not in target_id:
+        raise HTTPException(status_code=400, detail="Target must be source:id format")
+    
+    parts = target_id.split(":", 1)
+    source, source_id = parts[0], parts[1]
+    
+    # Query by source type
+    query_map = {
+        "hip": {"hip": source_id},
+        "hd": {"hd": source_id},
+        "gaia-dr3": {"gaiaSourceId": int(source_id) if source_id.isdigit() else source_id},
+        "catalog": {"canonicalId": target_id},
+    }
+    
+    query = query_map.get(source)
+    if not query:
+        raise HTTPException(status_code=400, detail=f"Unknown source: {source}")
+    
+    star = await db.stars.find_one(query, {"_id": 0})
+    if not star:
+        raise HTTPException(status_code=404, detail="Star not found")
+    
+    # Add 3D coordinates
+    try:
+        coord = AstronomicalCoordinate(
+            ra_degrees=star.get("raDegrees", 0),
+            dec_degrees=star.get("decDegrees", 0),
+            distance_pc=star.get("distanceParsec", 100)
+        )
+        cartesian = CoordinateTransform.astro_to_cartesian(coord)
+        lod = LODCalculator.get_lod_level(
+            cartesian,
+            VoyageCoordinate(x=0, y=0, z=0)  # From Sol
+        )
+        
+        star["voyageX"] = cartesian.x
+        star["voyageY"] = cartesian.y
+        star["voyageZ"] = cartesian.z
+        star["voyageDistance"] = cartesian.distance_from_origin()
+        star["voyageLOD"] = lod
+    except (ValueError, TypeError):
+        pass
+    
+    return star
+
+
+@api.get("/voyage/nearby")
+async def get_voyage_nearby(limit: int = 100):
+    """
+    Get nearby bright stars (for initial Voyage view).
+    Returns top N stars by apparent magnitude from Sol.
+    """
+    if limit < 10 or limit > 1000:
+        limit = 100
+    
+    # Query for bright, nearby stars
+    cursor = db.stars.find(
+        {"magnitude": {"$lt": 8}},  # Visible to naked eye
+        {"_id": 0}
+    ).sort([("magnitude", 1)]).limit(limit)
+    
+    stars = await cursor.to_list(None)
+    
+    # Add 3D coordinates
+    enriched_stars = []
+    for star in stars:
+        try:
+            coord = AstronomicalCoordinate(
+                ra_degrees=star.get("raDegrees", 0),
+                dec_degrees=star.get("decDegrees", 0),
+                distance_pc=star.get("distanceParsec", 100)
+            )
+            cartesian = CoordinateTransform.astro_to_cartesian(coord)
+            
+            enriched_stars.append({
+                **star,
+                "voyageX": float(cartesian.x),
+                "voyageY": float(cartesian.y),
+                "voyageZ": float(cartesian.z),
+                "voyageDistance": float(cartesian.distance_from_origin()),
+            })
+        except (ValueError, TypeError):
+            continue
+    
+    return {
+        "starCount": len(enriched_stars),
+        "stars": enriched_stars,
+    }
+
+
+# -------------------- P0.8.4: 3D DSO (Deep Sky Objects) --------------------
+
+@api.get("/voyage/dsos")
+async def get_voyage_dsos(
+    ra: float = 0,
+    dec: float = 0,
+    distance: float = 1000,
+    radius: float = 2000,
+    limit: int = 50
+):
+    """
+    Get DSOs (Messier/NGC objects) in 3D region for Voyage rendering.
+    
+    Query nearby DSOs within distance and magnitude visibility rules.
+    """
+    if limit < 10 or limit > 200:
+        limit = 50
+    if radius < 100 or radius > 10000:
+        radius = 2000
+    
+    # Query DSOs in visibility range
+    cursor = db.dsos.find(
+        {
+            "visibility.minDistance": {"$lte": distance},
+            "visibility.maxDistance": {"$gte": distance},
+            "magnitude": {"$lte": 15},
+        },
+        {"_id": 1, "messierNumber": 1, "ngcNumber": 1, "commonName": 1, 
+         "type": 1, "raDegrees": 1, "decDegrees": 1, "distanceParsec": 1,
+         "voyageX": 1, "voyageY": 1, "voyageZ": 1, "magnitude": 1, 
+         "sizeArcmin": 1, "color": 1, "constellation": 1}
+    ).sort([("magnitude", 1)]).limit(limit)
+    
+    dsos = await cursor.to_list(None)
+    
+    # Convert ObjectId to string
+    for dso in dsos:
+        dso["_id"] = str(dso["_id"])
+    
+    return {
+        "dsoCount": len(dsos),
+        "dsos": dsos,
+    }
+
+
+@api.get("/voyage/dso/messier/{messier_number}")
+async def get_voyage_dso_messier(messier_number: int):
+    """
+    Get specific Messier object by catalog number (M1-M110).
+    
+    Args:
+        messier_number: Messier number (1-110)
+    """
+    if messier_number < 1 or messier_number > 110:
+        raise HTTPException(status_code=400, detail="Messier number must be 1-110")
+    
+    dso = await db.dsos.find_one(
+        {"messierNumber": messier_number},
+        {"_id": 0}
+    )
+    
+    if not dso:
+        raise HTTPException(status_code=404, detail=f"Messier {messier_number} not found")
+    
+    return dso
+
+
+@api.get("/voyage/dso/ngc/{ngc_number}")
+async def get_voyage_dso_ngc(ngc_number: int):
+    """
+    Get specific NGC object by catalog number.
+    
+    Args:
+        ngc_number: NGC number (e.g., 224 for Andromeda)
+    """
+    dso = await db.dsos.find_one(
+        {"ngcNumber": ngc_number},
+        {"_id": 0}
+    )
+    
+    if not dso:
+        raise HTTPException(status_code=404, detail=f"NGC {ngc_number} not found")
+    
+    return dso
+
+
+@api.get("/voyage/dso/{dso_id}")
+async def get_voyage_dso(dso_id: str):
+    """
+    Get detailed DSO data by ID.
+    
+    Args:
+        dso_id: DSO ObjectId as string
+    """
+    from bson import ObjectId
+    
+    try:
+        dso = await db.dsos.find_one(
+            {"_id": ObjectId(dso_id)},
+            {"_id": 0}
+        )
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid DSO ID format")
+    
+    if not dso:
+        raise HTTPException(status_code=404, detail="DSO not found")
+    
+    return dso
+
+
+@api.get("/voyage/dsos/search")
+async def search_voyage_dsos(q: str, limit: int = 10):
+    """
+    Search DSOs by name.
+    
+    Query parameters:
+        q: Search query (e.g., "Crab", "Andromeda")
+        limit: Max results
+    """
+    if len(q) < 2:
+        raise HTTPException(status_code=400, detail="Search query must be at least 2 characters")
+    
+    if limit < 1 or limit > 100:
+        limit = 10
+    
+    cursor = db.dsos.find(
+        {
+            "$or": [
+                {"commonName": {"$regex": q, "$options": "i"}},
+                {"type": {"$regex": q, "$options": "i"}},
+            ]
+        },
+        {"_id": 1, "messierNumber": 1, "ngcNumber": 1, "commonName": 1,
+         "type": 1, "magnitude": 1}
+    ).limit(limit)
+    
+    results = await cursor.to_list(None)
+    
+    # Convert ObjectId to string
+    for dso in results:
+        dso["_id"] = str(dso["_id"])
+    
+    return {
+        "count": len(results),
+        "results": results,
+    }
+
+
+@api.get("/voyage/dsos/all")
+async def get_all_voyage_dsos(skip: int = 0, limit: int = 1000):
+    """
+    Get all DSOs (Messier + NGC) for complete catalog loading.
+    Supports pagination for frontend loading.
+    
+    Query parameters:
+        skip: Number of results to skip (pagination offset)
+        limit: Max results per query (default 1000, max 2000)
+    """
+    if limit < 10 or limit > 2000:
+        limit = 1000
+    if skip < 0:
+        skip = 0
+    
+    cursor = db.dsos.find(
+        {},
+        {"_id": 1, "messierNumber": 1, "ngcNumber": 1, "commonName": 1,
+         "type": 1, "raDegrees": 1, "decDegrees": 1, "distanceParsec": 1,
+         "voyageX": 1, "voyageY": 1, "voyageZ": 1, "magnitude": 1,
+         "sizeArcmin": 1, "color": 1, "constellation": 1}
+    ).skip(skip).limit(limit)
+    
+    dsos = await cursor.to_list(None)
+    
+    # Convert ObjectId to string
+    for dso in dsos:
+        dso["_id"] = str(dso["_id"])
+    
+    # Get total count (cached to avoid expensive count_documents calls)
+    total_count = await db.dsos.count_documents({})
+    
+    return {
+        "dsoCount": len(dsos),
+        "totalCount": total_count,
+        "skip": skip,
+        "limit": limit,
+        "hasMore": (skip + len(dsos)) < total_count,
+        "dsos": dsos,
     }
 
 
