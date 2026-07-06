@@ -109,7 +109,7 @@ test('sky render plan prepares stars, layers, visual budget and node estimate to
   assert.equal(plan.visiblePlanets.length, 1);
   assert.equal(plan.visualLayerBudget.deepAtmosphere, true);
   assert.equal(plan.enabledLayers.dsos, true);
-  assert.equal(plan.layerRenderBudgets.dsos.maxVisible, 12);
+  assert.equal(plan.layerRenderBudgets.dsos.maxVisible, 14);
   assert.ok(plan.layerNodeEstimate.total > 0);
 });
 

@@ -8,7 +8,7 @@ import {
   raDecToAltAz,
 } from '../utils/astronomy';
 
-export const STAR_RENDER_BUDGET = Object.freeze({ low: 100, medium: 200, high: 300 });
+export const STAR_RENDER_BUDGET = Object.freeze({ low: 100, medium: 260, high: 380 });
 export const VIEWPORT_PADDING = 140;
 
 export function magnitudeLimitForZoom(zoom) {

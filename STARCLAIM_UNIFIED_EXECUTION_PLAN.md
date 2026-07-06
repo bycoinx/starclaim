@@ -166,6 +166,41 @@ Zorunlu altyapilar:
 - Pan, zoom, secim, etiket, takim yildizi ve ufuk filtreleri kanonik kimlikle dogrulanacak.
 - Izin reddi, offline katalog, bozuk cache ve uygulama background/foreground senaryolari fiziksel cihazda test edilecek.
 - Dusuk/orta/yuksek Android profillerinde 10 dakikalik FPS, isi, bellek ve crash kaydi alinacak.
+- Sky Live motoru planetarium uygulamalari gibi davranacak: sensorde hiz siniri, olu bolge, kisa-yol RA easing, layer stabilizasyonu ve fiziksel cihaz kalibrasyon kabul testleri zorunlu olacak.
+- Celestia/Stellarium benzeri uygulamalar referans alinabilir; GPL lisansli kod veya veri dogrudan kopyalanmayacak. Gaia, HYG, IAU ve lisansi uyumlu acik kataloglar platform veri sozlesmesine normalize edilerek kullanilacak.
+
+#### P2.1 - Zorunlu Yurutme Sirasi (Kalite Sirasiyla)
+
+Asagidaki siralama bozulmadan ilerlenir. Bir adim kabul kaniti olmadan sonraki adim acilmaz.
+
+Durum (2026-07-06):
+- Otomatik kapilar yeniden dogrulandi (`test:astronomy` ve `expo-doctor` temiz).
+- Aktif is kalemi: 1. adim fiziksel cihaz kabul senaryolari.
+
+1. Uretim guveni ve cihaz kabul kapisi
+  - Fiziksel cihaz senaryolari, lifecycle, tile fallback, 10 dakika dayaniklilik.
+  - Telemetry kayitlari: FPS, frame time, bellek, isi, crash.
+2. Yildiz fotometrisi ve gorunurluk kurallari
+  - Magnitude -> boyut egirisi dogrulamasi.
+  - BP-RP/spektral tip -> renk esleme dogrulamasi.
+  - Parlak yildiz halo esigi ve zoom tabanli etiket gorunurlugu.
+3. Arka plan katmanlari
+  - Deep space gradient, Milky Way bandi, dust/nebula katmani.
+  - Gece gorusu ve kalite profilleriyle tutarli davranis.
+4. Post-process ve ton yonetimi
+  - Bloom ve ton esleme sadece performans butcesi icinde acilir.
+  - Dusuk cihaz profilinde etkiler degrade edilerek kapatilabilir.
+5. Gorsel regresyon ve yayin kapisi
+  - Referans ekran goruntusu karsilastirma seti.
+  - P2 kabul raporu olmadan P5 (3D Voyage) yeniden baslatilmaz.
+
+#### P2.2 - Eklenecek Yeni Backlog Maddeleri
+
+- [ ] Sky telemetry paneli: FPS, frame time, bellek, isi, dropped frame, sensor jitter.
+- [ ] Yildiz boyut/renk/halo spec dokumani: magnitude ve BP-RP tabanli tek sozlesme.
+- [ ] Arka plan spec dokumani: gradient + Milky Way + dust katmanlarinin kalite profili kurallari.
+- [ ] Gorsel regresyon testleri: secilen referans acilarda screenshot karsilastirma.
+- [ ] Fiziksel cihaz kanit kaydi: cihaz modeli, OS, test suresi, sonuc, issue linki.
 
 ### P3 - StarVault Mobil Urunlestirme
 
@@ -308,6 +343,7 @@ Owned star
 
 - [x] Route/deep link, tile cache, offline fallback ve sensor math otomatik kabul testlerine baglanir.
 - [x] Kabul kaniti `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` dokumanina islenir.
+- [x] Sky Live sensor hareketi icin planetarium tarzi smoothing, hiz limiti, RA kisa-yol easing ve constellation layer stabilizasyonu eklenir.
 - [ ] Izin reddi, sensor lifecycle ve 10 dakikalik cihaz testi fiziksel cihazda tamamlanir.
 
 ### Paket 6 - 3D Yeniden Kurulum

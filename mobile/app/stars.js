@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList, TextInput, Platform } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { StyleSheet, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList, TextInput, Platform, InteractionManager } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { DeviceMotion } from 'expo-sensors';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,9 +10,10 @@ import { raDecToAzAlt, getApproximateLST } from '../src/utils/astronomy';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../components/SpaceBackground';
-import { ensureStarData } from '../src/data/starLoader';
+import { useCatalogStore } from '../src/platform/stars/catalogStore';
 
 const { width, height } = Dimensions.get('window');
+const CATALOG_RENDER_LIMIT = 360;
 const CATALOG_FILTERS = [
   { key: 'all', label: 'TÜMÜ' },
   { key: 'named', label: 'İSİMLİ' },
@@ -22,92 +23,65 @@ const CATALOG_FILTERS = [
 export default function Stars() {
   const [permission, requestPermission] = useCameraPermissions();
   const [motion, setMotion] = useState(null);
-  const [stars, setStars] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const {
+    stars,
+    loading,
+    loadCatalog,
+    searchQuery,
+    setSearchQuery,
+    selectedTier,
+    setSelectedTier,
+    getFilteredStars
+  } = useCatalogStore();
+
   const [selectedStar, setSelectedStar] = useState(null);
   const [activeTab, setActiveTab] = useState('catalog'); // 'tarama' (AR) or 'catalog' (list)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTier, setSelectedTier] = useState('all');
   const router = useRouter();
 
   useEffect(() => {
-    const fetchStars = async () => {
-      setLoading(true);
-      const lst = getApproximateLST();
-
-      try {
-        const localCatalog = await ensureStarData();
-        const localStars = localCatalog
-          .slice(0, 100)
-          .map((star) => {
-            const ra = star.raHours ?? star.ra;
-            const dec = star.decDegrees ?? star.dec;
-            const { az, alt } = raDecToAzAlt(ra, dec, lst);
-
-            return {
-              ...star,
-              star_id: star.id,
-              name: star.properName || star.proper || `HYG ${star.id}`,
-              tier: 'catalog',
-              price: null,
-              az,
-              alt,
-              localCatalog: true,
-              catalogNamed: Boolean(star.properName || star.proper),
-            };
-          });
-
-        setStars(localStars);
-        setLoading(false);
-      } catch (error) {
-        console.warn('Embedded catalog failed:', error);
-      }
-
-      const apiUrls = CONFIG.getCandidateAPIUrls();
-
-      for (const url of apiUrls) {
-        try {
-          const timeoutMs = url === CONFIG.PRODUCTION_URL ? 12000 : 1800;
-          const response = await Promise.race([
-            fetch(`${url}/api/stars?limit=100&sort=price_desc`),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs)),
-          ]);
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          const data = await response.json();
-          
-          const mapped = data.map((s) => {
-            const { az, alt } = raDecToAzAlt(s.ra, s.dec, lst);
-            return { ...s, az, alt };
-          });
-          if (mapped.length) setStars(mapped);
-          setLoading(false);
-          return;
-        } catch (err) { console.warn(`API ${url} failed:`, err.message); }
-      }
-      
-      setLoading(false);
-    };
-    fetchStars();
-  }, []);
+    const task = InteractionManager.runAfterInteractions(() => {
+      loadCatalog();
+    });
+    return () => task.cancel?.();
+  }, [loadCatalog]);
 
   useEffect(() => {
     let subscription;
     const startMotion = async () => {
-      await DeviceMotion.setUpdateInterval(16);
+      await DeviceMotion.setUpdateInterval(66);
       subscription = DeviceMotion.addListener((data) => { setMotion(data); });
     };
     if (permission?.granted) startMotion();
     return () => { subscription && subscription.remove(); };
   }, [permission]);
 
-  const filteredStars = stars.filter(star => {
-    const matchesSearch = String(star.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const distance = Number(star.distanceParsec ?? star.dist);
-    const matchesFilter = selectedTier === 'all'
-      || (selectedTier === 'named' && (star.catalogNamed || !star.localCatalog))
-      || (selectedTier === 'nearby' && Number.isFinite(distance) && distance > 0 && distance <= 20);
-    return matchesSearch && matchesFilter;
-  });
+  const lst = getApproximateLST();
+
+  const starsWithCoordinates = useMemo(() => {
+    if (activeTab !== 'tarama') return [];
+    return stars.map((star) => {
+      const ra = star.raHours ?? star.ra;
+      const dec = star.decDegrees ?? star.dec;
+      const { az, alt } = raDecToAzAlt(ra, dec, lst);
+      return {
+        ...star,
+        az,
+        alt,
+        star_id: star.id,
+      };
+    });
+  }, [activeTab, lst, stars]);
+
+  const filteredStars = useMemo(() => {
+    const base = getFilteredStars();
+    const shouldCap = !searchQuery.trim() && selectedTier === 'all';
+    const visible = shouldCap ? base.slice(0, CATALOG_RENDER_LIMIT) : base;
+    return visible.map((star) => ({
+      ...star,
+      star_id: star.id,
+    }));
+  }, [getFilteredStars, searchQuery, selectedTier, stars]);
 
   const renderARMode = () => {
     if (loading) return null;
@@ -117,7 +91,7 @@ export default function Stars() {
     const deviceAz = (alpha * 180) / Math.PI;
     const deviceAlt = (beta * 180) / Math.PI;
 
-    return stars.map((star) => {
+    return starsWithCoordinates.map((star) => {
       let diffAz = star.az - deviceAz;
       if (diffAz > 180) diffAz -= 360;
       if (diffAz < -180) diffAz += 360;
@@ -278,11 +252,16 @@ export default function Stars() {
 
           <FlatList
             data={filteredStars}
-            keyExtractor={item => item.star_id?.toString()}
+            keyExtractor={(item, index) => item.star_id?.toString() || item.id?.toString() || `${item.name || 'star'}-${index}`}
             renderItem={renderCatalogItem}
             numColumns={3}
             contentContainerStyle={styles.catalogList}
             showsVerticalScrollIndicator={false}
+            initialNumToRender={18}
+            maxToRenderPerBatch={18}
+            windowSize={7}
+            updateCellsBatchingPeriod={40}
+            removeClippedSubviews
           />
 
         </View>

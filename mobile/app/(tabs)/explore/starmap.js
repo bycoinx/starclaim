@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { AppState, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { AppState, InteractionManager, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
@@ -40,10 +41,17 @@ import {
   getHorizontalPositionForObject,
   getSensorCanvasTarget,
   getSiderealTimeForObserver,
+  limitSensorCanvasTarget,
   shouldCommitSensorView,
   smoothHeading,
   smoothTilt,
 } from '../../../src/sky/skyRuntime';
+
+const IS_EXPO_GO = Constants?.appOwnership === 'expo';
+const EXPO_GO_SENSOR_STAR_LIMIT = 2400;
+const EXPO_GO_MANUAL_STAR_LIMIT = 3200;
+const SENSOR_HEADING_SPIKE_LIMIT_DEGREES = 45;
+const SENSOR_HEADING_STALE_MS = 1500;
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -58,8 +66,8 @@ export default function StarMapScreen() {
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [showConstellations, setShowConstellations] = useState(false);
-  const [showConstellationLabels, setShowConstellationLabels] = useState(false);
+  const [showConstellations, setShowConstellations] = useState(true);
+  const [showConstellationLabels, setShowConstellationLabels] = useState(true);
   const [showConstellationBoundaries, setShowConstellationBoundaries] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showLabels, setShowLabels] = useState(false);
@@ -90,6 +98,7 @@ export default function StarMapScreen() {
   const lastTilt = useRef(0);
   const lastHeadingAccuracy = useRef(0);
   const autoTrackingStartedRef = useRef(false);
+  const headingUpdatedAtRef = useRef(0);
   const openedAtRef = useRef(Date.now());
   const canvasReadyDataRef = useRef(null);
   const starCanvasRef = useRef(null);
@@ -162,8 +171,8 @@ export default function StarMapScreen() {
           centerDecDegrees: equatorialCenter.dec,
           zoom,
           coreStars: coreStarsRef.current,
-          maxStars: 14000,
-          gaiaMaxStars: 12000,
+          maxStars: IS_EXPO_GO ? 8000 : 14000,
+          gaiaMaxStars: IS_EXPO_GO ? 6000 : 12000,
         });
         if (gaiaRequestRef.current !== requestId || !result.stars.length) return;
         gaiaViewportLoadedRef.current = !result.fallback;
@@ -308,7 +317,16 @@ export default function StarMapScreen() {
     let lastCanvasTarget = null;
 
     const applyHeading = (nextHeading) => {
-      lastHeading.current = smoothHeading(lastHeading.current, nextHeading, screenOrientation);
+      const previousHeading = lastHeading.current;
+      let headingCandidate = normalizeAngle(nextHeading);
+      const rawDelta = normalizeAngle(headingCandidate - previousHeading + 180) - 180;
+      if (Math.abs(rawDelta) > SENSOR_HEADING_SPIKE_LIMIT_DEGREES) {
+        headingCandidate = normalizeAngle(
+          previousHeading + Math.sign(rawDelta) * SENSOR_HEADING_SPIKE_LIMIT_DEGREES,
+        );
+      }
+      lastHeading.current = smoothHeading(previousHeading, headingCandidate, screenOrientation);
+      headingUpdatedAtRef.current = Date.now();
     };
 
     const handleMagnetometerData = (data) => {
@@ -371,7 +389,17 @@ export default function StarMapScreen() {
     const tick = () => {
       if (cancelled) return;
       const nowMs = Date.now();
-      const nextTarget = getSensorCanvasTarget(lastHeading.current, lastTilt.current);
+      const headingStale = nowMs - headingUpdatedAtRef.current > SENSOR_HEADING_STALE_MS;
+      if (headingStale) return;
+      const rawTarget = getSensorCanvasTarget(lastHeading.current, lastTilt.current);
+      const nextTarget = limitSensorCanvasTarget(
+        lastCanvasTarget,
+        rawTarget,
+        lastUpdateAt ? nowMs - lastUpdateAt : SENSOR_RENDER_INTERVAL_MS,
+        IS_EXPO_GO
+          ? { maxHeadingDegreesPerSecond: 28, maxTiltDegreesPerSecond: 20 }
+          : undefined,
+      );
       if (shouldCommitSensorView({
         previousTarget: lastCanvasTarget,
         nextTarget,
@@ -408,7 +436,63 @@ export default function StarMapScreen() {
     };
   }, [appState, mode, screenOrientation]);
 
-  const selectedPurchase = stars.length > 0 && selectedStar
+  const ownedStarIds = useMemo(
+    () => purchases
+      .flatMap((item) => [item.starId, item.hip])
+      .filter((id) => id !== null && id !== undefined && id !== ''),
+    [purchases],
+  );
+
+  const renderStars = useMemo(() => {
+    const hardLimit = IS_EXPO_GO
+      ? (mode === 'sensor' ? EXPO_GO_SENSOR_STAR_LIMIT : EXPO_GO_MANUAL_STAR_LIMIT)
+      : (mode === 'sensor' ? 6000 : 10000);
+
+    if (stars.length <= hardLimit) return stars;
+
+    const dynamicMagnitudeLimit = mode === 'sensor'
+      ? (zoom < 1.3 ? 6.4 : zoom < 2 ? 7.1 : 7.8)
+      : (zoom < 1.3 ? 7.1 : zoom < 2 ? 7.8 : 8.6);
+
+    const important = [];
+    const regular = [];
+    const selectedId = selectedStar?.id != null ? String(selectedStar.id) : null;
+    const selectedCanonicalId = selectedStar?.canonicalId != null ? String(selectedStar.canonicalId) : null;
+    const selectedHip = selectedStar?.hip != null ? String(selectedStar.hip) : null;
+
+    for (const star of stars) {
+      const starId = star?.id != null ? String(star.id) : null;
+      const canonicalId = star?.canonicalId != null ? String(star.canonicalId) : null;
+      const hip = star?.hip != null ? String(star.hip) : null;
+      const owned = (
+        (starId && ownedStarIds.includes(starId))
+        || (canonicalId && ownedStarIds.includes(canonicalId))
+        || (hip && ownedStarIds.includes(hip))
+      );
+      const selected = (
+        (selectedId && starId === selectedId)
+        || (selectedCanonicalId && canonicalId === selectedCanonicalId)
+        || (selectedHip && hip === selectedHip)
+      );
+
+      if (owned || selected) {
+        important.push(star);
+        continue;
+      }
+
+      const mag = Number(star?.mag ?? star?.magnitude);
+      if (!Number.isFinite(mag) || mag <= dynamicMagnitudeLimit) {
+        regular.push(star);
+      }
+    }
+
+    regular.sort((a, b) => Number(a?.mag ?? a?.magnitude ?? 99) - Number(b?.mag ?? b?.magnitude ?? 99));
+    const remainingSlots = Math.max(0, hardLimit - important.length);
+    const capped = [...important.slice(0, hardLimit), ...regular.slice(0, remainingSlots)];
+    return capped.length ? capped : stars.slice(0, hardLimit);
+  }, [mode, ownedStarIds, selectedStar?.canonicalId, selectedStar?.hip, selectedStar?.id, stars, zoom]);
+
+  const selectedPurchase = renderStars.length > 0 && selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
   const selectedStarOwned = Boolean(selectedPurchase);
   const selectedHorizontal = selectedStar && observer
@@ -418,12 +502,6 @@ export default function StarMapScreen() {
   const displayAltitude = selectedHorizontal?.alt ?? (mode === 'sensor' ? tilt * 0.6 : centerDec);
   const cardinalDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const cardinal = cardinalDirections[Math.round(displayAzimuth / 45) % cardinalDirections.length];
-  const ownedStarIds = useMemo(
-    () => purchases
-      .flatMap((item) => [item.starId, item.hip])
-      .filter((id) => id !== null && id !== undefined && id !== ''),
-    [purchases],
-  );
 
   const handleViewOwnedStar = () => {
     if (selectedStar) {
@@ -482,8 +560,12 @@ export default function StarMapScreen() {
 
   useEffect(() => {
     if (loading || stars.length === 0 || selectedStar || autoTrackingStartedRef.current) return;
+    if (IS_EXPO_GO) return;
     autoTrackingStartedRef.current = true;
-    enableSensorMode();
+    const task = InteractionManager.runAfterInteractions(() => {
+      enableSensorMode();
+    });
+    return () => task.cancel?.();
   }, [loading, selectedStar, stars.length]);
 
   const handleInteractionStateChange = useCallback((active) => {
@@ -645,7 +727,7 @@ export default function StarMapScreen() {
                 <StarCanvas
                   ref={starCanvasRef}
                   key={`sky-live-${loadAttempt}`}
-                  stars={stars}
+                  stars={renderStars}
                   selectedStar={selectedStar}
                   centerRa={centerRa}
                   centerDec={centerDec}
@@ -711,7 +793,7 @@ export default function StarMapScreen() {
           </View>
 
           <SkyLiveChrome
-            surfaceAvailable={!loading && !mapError && stars.length > 0}
+            surfaceAvailable={!loading && !mapError && renderStars.length > 0}
             cardinal={cardinal}
             previousCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 7) % 8]}
             nextCardinal={cardinalDirections[(cardinalDirections.indexOf(cardinal) + 1) % 8]}
