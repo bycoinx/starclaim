@@ -53,6 +53,10 @@ export function purchaseMatchesStar(purchase, star) {
   if (!purchase || !star) return false;
 
   const purchaseTokens = [
+    purchase.canonicalId,
+    purchase.catalogId,
+    purchase.sourceId,
+    purchase.gaiaSourceId,
     purchase.starId,
     purchase.hip,
     purchase.hd,
@@ -127,6 +131,28 @@ export function resolveStarTarget(stars, target) {
  * @param {Object} star - Full star record from catalog or API
  * @returns {Object} StarTarget-compatible object
  */
+export function getPurchaseMapParams(purchase = {}) {
+  const params = {
+    starId: purchase.starId ?? purchase.id ?? purchase.orderId ?? purchase.starClaimCode,
+    hip: purchase.hip,
+    hd: purchase.hd,
+    properName: purchase.properName ?? purchase.proper ?? purchase.name,
+    name: purchase.name ?? purchase.properName ?? purchase.proper,
+    starClaimCode: purchase.starClaimCode ?? purchase.code,
+    raHours: purchase.raHours,
+    raDegrees: purchase.raDegrees,
+    decDegrees: purchase.decDegrees,
+    distanceParsec: purchase.distanceParsec,
+    magnitude: purchase.magnitude ?? purchase.mag,
+    spectralType: purchase.spectralType ?? purchase.spect,
+    constellation: purchase.constellation ?? purchase.con,
+  };
+
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+  );
+}
+
 export function createStarTargetFromStar(star) {
   if (!star) return createEmptyStarTarget();
   return {

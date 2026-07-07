@@ -312,6 +312,7 @@ export default function StarMapScreen() {
 
     let headingSubscription;
     let fallbackMagSub;
+    let motionSub;
     let cancelled = false;
     let usingFallback = false;
     let lastCanvasTarget = null;
@@ -335,11 +336,23 @@ export default function StarMapScreen() {
       applyHeading(normalizeAngle(90 - angle));
     };
 
-    const motionSub = DeviceMotion.addListener((data) => {
-      const betaDegrees = (data.rotation?.beta || 0) * (180 / Math.PI);
-      const gammaDegrees = (data.rotation?.gamma || 0) * (180 / Math.PI);
-      lastTilt.current = smoothTilt(lastTilt.current, betaDegrees, gammaDegrees, screenOrientation);
-    });
+    try {
+      motionSub = DeviceMotion.addListener((data) => {
+        const betaDegrees = (data.rotation?.beta || 0) * (180 / Math.PI);
+        const gammaDegrees = (data.rotation?.gamma || 0) * (180 / Math.PI);
+        lastTilt.current = smoothTilt(lastTilt.current, betaDegrees, gammaDegrees, screenOrientation);
+      });
+      DeviceMotion.setUpdateInterval(120);
+    } catch (error) {
+      console.warn('DeviceMotion unavailable, continuing without tilt', error);
+      recordRenderDiagnostic({
+        surface: '2d',
+        status: 'sensor-fallback',
+        stage: 'device-motion',
+        message: error?.message || 'Cihaz hareket sensörü kullanılamıyor.',
+      });
+      motionSub = null;
+    }
 
     const startHeading = async () => {
       try {
@@ -426,22 +439,31 @@ export default function StarMapScreen() {
     const sensorTimer = setInterval(tick, SENSOR_RENDER_INTERVAL_MS);
     tick();
 
-    DeviceMotion.setUpdateInterval(120);
     return () => {
       cancelled = true;
       headingSubscription?.remove();
       fallbackMagSub?.remove();
-      motionSub.remove();
+      motionSub?.remove?.();
       clearInterval(sensorTimer);
     };
   }, [appState, mode, screenOrientation]);
 
-  const ownedStarIds = useMemo(
-    () => purchases
-      .flatMap((item) => [item.starId, item.hip])
-      .filter((id) => id !== null && id !== undefined && id !== ''),
-    [purchases],
-  );
+  const ownedStarIds = useMemo(() => {
+    const ids = purchases
+      .flatMap((item) => [
+        item.starId,
+        item.canonicalId,
+        item.catalogId,
+        item.sourceId,
+        item.gaiaSourceId,
+        item.hip,
+        item.hd,
+        item.starClaimCode,
+      ])
+      .filter((id) => id !== null && id !== undefined && id !== '')
+      .map((id) => String(id));
+    return new Set(ids);
+  }, [purchases]);
 
   const renderStars = useMemo(() => {
     const hardLimit = IS_EXPO_GO
@@ -465,9 +487,9 @@ export default function StarMapScreen() {
       const canonicalId = star?.canonicalId != null ? String(star.canonicalId) : null;
       const hip = star?.hip != null ? String(star.hip) : null;
       const owned = (
-        (starId && ownedStarIds.includes(starId))
-        || (canonicalId && ownedStarIds.includes(canonicalId))
-        || (hip && ownedStarIds.includes(hip))
+        (starId && ownedStarIds.has(starId))
+        || (canonicalId && ownedStarIds.has(canonicalId))
+        || (hip && ownedStarIds.has(hip))
       );
       const selected = (
         (selectedId && starId === selectedId)

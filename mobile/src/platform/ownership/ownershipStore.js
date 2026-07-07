@@ -6,6 +6,7 @@ import {
   summarizeOwnership,
   updateLocalOwnershipMessage,
 } from './ownershipRepository';
+import { emitOwnershipSync, onOwnershipSync, OWNERSHIP_SYNC_EVENT } from './ownershipSyncEvents';
 
 export const useOwnershipStore = create((set, get) => ({
   records: [],
@@ -56,6 +57,11 @@ export const useOwnershipStore = create((set, get) => ({
       summary: summarizeOwnership(records),
       loadedAt: Date.now(),
     });
+    emitOwnershipSync(OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED, {
+      starId: record?.starId || record?.id,
+      canonicalId: record?.canonicalId,
+      starClaimCode: record?.starClaimCode,
+    });
     return records;
   },
 
@@ -69,3 +75,17 @@ export const useOwnershipStore = create((set, get) => ({
     return records;
   },
 }));
+
+let ownershipSyncBound = false;
+
+function bindOwnershipSyncBridge() {
+  if (ownershipSyncBound) return;
+  ownershipSyncBound = true;
+  onOwnershipSync((event) => {
+    if (event !== OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED) return;
+    const store = useOwnershipStore.getState();
+    store.refresh();
+  });
+}
+
+bindOwnershipSyncBridge();

@@ -6,6 +6,7 @@ import {
   summarizeVault,
   unlockVaultItem,
 } from './vaultRepository';
+import { onOwnershipSync, OWNERSHIP_SYNC_EVENT } from '../ownership/ownershipSyncEvents';
 
 export const useVaultStore = create((set, get) => ({
   messages: [],
@@ -56,3 +57,17 @@ export const useVaultStore = create((set, get) => ({
     return messages;
   },
 }));
+
+let vaultSyncBound = false;
+
+function bindVaultSyncBridge() {
+  if (vaultSyncBound) return;
+  vaultSyncBound = true;
+  onOwnershipSync((event) => {
+    if (event !== OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED) return;
+    const store = useVaultStore.getState();
+    store.load();
+  });
+}
+
+bindVaultSyncBridge();
