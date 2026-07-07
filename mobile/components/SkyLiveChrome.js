@@ -32,6 +32,8 @@ export default function SkyLiveChrome({
   selectedStar,
   selectedStarOwned,
   selectedHorizontal,
+  observerSource = 'fallback',
+  timeOffsetHours = 0,
   showConstellations,
   showDeepSpace,
   mode,
@@ -47,6 +49,9 @@ export default function SkyLiveChrome({
   onToggleDeepSpace,
   onCenter,
   onSensorMode,
+  onTimeOffsetChange,
+  onTimeOffsetReset,
+  onRefreshObserver,
   onClearSelection,
   onOpenDetails,
   onVoyage,
@@ -54,6 +59,10 @@ export default function SkyLiveChrome({
   const [searchVisible, setSearchVisible] = useState(false);
   const selectedName = selectedStar?.properName || selectedStar?.proper || (selectedStar ? `HIP ${selectedStar.hip || selectedStar.id}` : '');
   const constellation = selectedStar?.constellation || selectedStar?.con || 'Katalog yıldızı';
+  const sourceLabel = observerSource === 'gps' ? 'GPS' : observerSource === 'cache' ? 'CACHE' : 'DEFAULT';
+  const offsetLabel = timeOffsetHours === 0
+    ? 'Simulasyon: Simdi'
+    : `Simulasyon: ${timeOffsetHours > 0 ? '+' : ''}${timeOffsetHours.toFixed(0)}s`;
 
   const closeSearch = () => {
     setSearchVisible(false);
@@ -144,10 +153,26 @@ export default function SkyLiveChrome({
         </View>
       )}
 
-      {surfaceAvailable && <View style={styles.locationPanel} pointerEvents="none">
+      {surfaceAvailable && <View style={styles.locationPanel} pointerEvents="box-none">
         <InfoLine icon="location-outline" text={observer ? `${observer.latitude.toFixed(2)}°, ${observer.longitude.toFixed(2)}°` : 'Konum kapalı'} />
         <InfoLine icon="calendar-outline" text={now.toLocaleDateString('tr-TR')} />
         <InfoLine icon="time-outline" text={now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} />
+        <InfoLine icon="layers-outline" text={`Konum kaynagi: ${sourceLabel}`} />
+        <InfoLine icon="timer-outline" text={offsetLabel} />
+        <View style={styles.miniControls}>
+          <TouchableOpacity style={styles.miniControlButton} onPress={() => onTimeOffsetChange?.(timeOffsetHours - 1)}>
+            <Text style={styles.miniControlText}>-1s</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.miniControlButton} onPress={onTimeOffsetReset}>
+            <Text style={styles.miniControlText}>Simdi</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.miniControlButton} onPress={() => onTimeOffsetChange?.(timeOffsetHours + 1)}>
+            <Text style={styles.miniControlText}>+1s</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.miniControlButton} onPress={onRefreshObserver}>
+            <Ionicons name="refresh" size={12} color="rgba(244,247,255,0.82)" />
+          </TouchableOpacity>
+        </View>
       </View>}
 
       {surfaceAvailable && <View style={styles.rightTools} pointerEvents="box-none">
@@ -211,9 +236,12 @@ const styles = StyleSheet.create({
   selectionMeta: { color: 'rgba(244,247,255,0.68)', fontSize: 10, marginTop: 8 },
   selectionActions: { flexDirection: 'row', gap: 7, marginTop: 10 },
   selectionAction: { width: 34, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(244,247,255,0.06)' },
-  locationPanel: { ...glass, position: 'absolute', left: 18, bottom: 18, width: 190, borderRadius: 10, padding: 12, gap: 8 },
+  locationPanel: { ...glass, position: 'absolute', left: 18, bottom: 18, width: 230, borderRadius: 10, padding: 12, gap: 8 },
   infoLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoText: { flex: 1, color: 'rgba(244,247,255,0.76)', fontSize: 10 },
+  miniControls: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  miniControlButton: { minWidth: 36, height: 24, borderRadius: 12, paddingHorizontal: 8, backgroundColor: 'rgba(244,247,255,0.08)', alignItems: 'center', justifyContent: 'center' },
+  miniControlText: { color: 'rgba(244,247,255,0.82)', fontSize: 10, fontWeight: '700' },
   rightTools: { position: 'absolute', right: 18, top: 78, gap: 9 },
   toolButton: { ...glass, width: 96, minHeight: 62, borderRadius: 10, padding: 8, alignItems: 'center', justifyContent: 'center', gap: 5 },
   toolButtonActive: { borderColor: 'rgba(230,188,74,0.4)' },

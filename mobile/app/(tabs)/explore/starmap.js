@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { AppState, InteractionManager, Modal, ScrollView, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
@@ -52,6 +53,13 @@ const EXPO_GO_SENSOR_STAR_LIMIT = 2400;
 const EXPO_GO_MANUAL_STAR_LIMIT = 3200;
 const SENSOR_HEADING_SPIKE_LIMIT_DEGREES = 45;
 const SENSOR_HEADING_STALE_MS = 1500;
+const OBSERVER_CACHE_KEY = '@sky_observer_v1';
+const DEFAULT_OBSERVER = Object.freeze({
+  latitude: 41.015,
+  longitude: 28.98,
+  label: 'Istanbul',
+  source: 'fallback',
+});
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
@@ -84,8 +92,9 @@ export default function StarMapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [coordinateMode, setCoordinateMode] = useState('equatorial');
-  const [observer, setObserver] = useState(null);
+  const [observer, setObserver] = useState(DEFAULT_OBSERVER);
   const [siderealTime, setSiderealTime] = useState(0);
+  const [timeOffsetHours, setTimeOffsetHours] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
   const [headingAccuracy, setHeadingAccuracy] = useState(0);
   const [calibrationVisible, setCalibrationVisible] = useState(false);
@@ -114,6 +123,10 @@ export default function StarMapScreen() {
   const purchases = useOwnershipStore((state) => state.records);
   const loadOwnership = useOwnershipStore((state) => state.load);
   const { heading, tilt } = viewDirection;
+  const observedNow = useMemo(
+    () => new Date(now.getTime() + timeOffsetHours * 60 * 60 * 1000),
+    [now, timeOffsetHours],
+  );
 
   useEffect(() => {
     openedAtRef.current = Date.now();
@@ -218,39 +231,80 @@ export default function StarMapScreen() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(OBSERVER_CACHE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        const latitude = Number(parsed?.latitude);
+        const longitude = Number(parsed?.longitude);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+        if (cancelled) return;
+        setObserver({
+          latitude,
+          longitude,
+          label: parsed?.label || `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`,
+          source: parsed?.source || 'cache',
+        });
+      } catch (error) {
+        console.warn('Observer cache read failed', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (!observer || coordinateMode !== 'horizontal') return undefined;
-    const updateSiderealTime = () => {
-      setSiderealTime(getSiderealTimeForObserver(observer));
-    };
-    updateSiderealTime();
-    const timer = setInterval(updateSiderealTime, 30000);
-    return () => clearInterval(timer);
-  }, [coordinateMode, observer]);
+    setSiderealTime(getSiderealTimeForObserver(observer, observedNow));
+    return undefined;
+  }, [coordinateMode, observer, observedNow]);
 
   const getHorizontalPosition = useCallback(
-    (object, activeObserver = observer) => getHorizontalPositionForObject(object, activeObserver),
-    [observer],
+    (object, activeObserver = observer) => getHorizontalPositionForObject(object, activeObserver, observedNow),
+    [observer, observedNow],
   );
 
-  const activateRealSky = async () => {
+  const refreshObserver = useCallback(async () => {
     try {
-      const permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) {
-        setMode('manual');
-        setCoordinateMode('equatorial');
-        setCapabilityNotice({
-          title: 'Konum olmadan harita modu',
-          message: 'Gerçek gökyüzü yönü için konum izni gerekir. Yıldız haritasını dokunarak kullanmaya devam edebilirsiniz.',
-        });
-        return null;
-      }
+      let permission = await Location.getForegroundPermissionsAsync();
+      if (!permission.granted) permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) return null;
 
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
       const nextObserver = createObserverFromLocation(position);
-      const nextSiderealTime = getSiderealTimeForObserver(nextObserver);
-      setObserver(nextObserver);
+      if (!nextObserver) return null;
+      const label = `${nextObserver.latitude.toFixed(2)}, ${nextObserver.longitude.toFixed(2)}`;
+      const enriched = {
+        ...nextObserver,
+        label,
+        source: 'gps',
+      };
+      setObserver(enriched);
+      await AsyncStorage.setItem(OBSERVER_CACHE_KEY, JSON.stringify(enriched));
+      return enriched;
+    } catch (error) {
+      console.warn('Observer refresh failed', error);
+      return null;
+    }
+  }, []);
+
+  const activateRealSky = async () => {
+    try {
+      const nextObserver = await refreshObserver();
+      if (!nextObserver) {
+        setMode('manual');
+        setCoordinateMode('horizontal');
+        setCapabilityNotice({
+          title: 'Konum olmadan harita modu',
+          message: 'Gerçek konum izni verilmedi. Varsayılan gözlemci ile yıldız haritasını kullanabilirsiniz.',
+        });
+        return observer;
+      }
+
+      const nextSiderealTime = getSiderealTimeForObserver(nextObserver, observedNow);
       setSiderealTime(nextSiderealTime);
       setCoordinateMode('horizontal');
       setCenterRa(mode === 'sensor' ? heading : 180);
@@ -261,12 +315,12 @@ export default function StarMapScreen() {
     } catch (error) {
       console.warn('Location error', error);
       setMode('manual');
-      setCoordinateMode('equatorial');
+      setCoordinateMode('horizontal');
       setCapabilityNotice({
         title: 'Konum alınamadı',
-        message: 'Konum servisini kontrol edene kadar dokunmatik yıldız haritası kullanılabilir.',
+        message: 'Konum servisini kontrol edene kadar varsayılan gözlemci ile harita kullanılabilir.',
       });
-      return null;
+      return observer;
     }
   };
 
@@ -822,7 +876,7 @@ export default function StarMapScreen() {
             azimuth={displayAzimuth}
             altitude={displayAltitude}
             observer={observer}
-            now={now}
+            now={observedNow}
             selectedStar={selectedStar}
             selectedStarOwned={selectedStarOwned}
             selectedHorizontal={selectedHorizontal}
@@ -836,6 +890,11 @@ export default function StarMapScreen() {
             onSearch={handleSearch}
             onSelectSearchResult={navigateToObject}
             onOpenSettings={() => setLayersVisible(true)}
+            observerSource={observer?.source || 'fallback'}
+            timeOffsetHours={timeOffsetHours}
+            onTimeOffsetChange={(value) => setTimeOffsetHours(Math.max(-12, Math.min(12, value)))}
+            onTimeOffsetReset={() => setTimeOffsetHours(0)}
+            onRefreshObserver={refreshObserver}
             onToggleConstellations={() => { const next = !showConstellations; setShowConstellations(next); setShowConstellationLabels(next); }}
             onToggleDeepSpace={() => { const next = !(showDSOs || showNebula); setShowDSOs(next); setShowNebula(next); }}
             onCenter={selectedStar ? handleCenterOnSelected : activateRealSky}
