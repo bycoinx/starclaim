@@ -28,7 +28,8 @@ import {
   useAnimatedReaction,
   useFrameCallback,
   runOnJS,
-  withSpring
+  withSpring,
+  withTiming
 } from 'react-native-reanimated';
 import {
   buildTapStarIndex,
@@ -54,8 +55,10 @@ const deg2rad = (deg) => {
   return deg * Math.PI / 180;
 };
 const SPRING_CONFIG = { damping: 20, stiffness: 90 };
+const SENSOR_VIEW_TIMING = { duration: 150 };
 const GESTURE_UPDATE_DIVISOR = 2;
 const MIN_PROJECTION_COSINE = 0.08;
+const OWNED_RING_RENDER_LIMIT = 72;
 const GALACTIC_PLANE = Array.from({ length: 73 }, (_, index) => {
   const longitude = index * 5 * Math.PI / 180;
   const galacticX = Math.cos(longitude);
@@ -491,8 +494,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       if (!Number.isFinite(nextRa) || !Number.isFinite(nextDec)) return;
       const nextRaNormalized = normalizeLongitude(nextRa);
       const nextDecClamped = Math.max(-90, Math.min(90, nextDec));
-      ra.value = nextRaNormalized;
-      dec.value = nextDecClamped;
+      const shortestRaTarget = ra.value + normalizeRaDelta(nextRaNormalized - normalizeLongitude(ra.value));
+      ra.value = withTiming(shortestRaTarget, SENSOR_VIEW_TIMING);
+      dec.value = withTiming(nextDecClamped, SENSOR_VIEW_TIMING);
       const current = virtualCenterRef.current;
       if (Math.abs(normalizeRaDelta(nextRaNormalized - current.ra)) >= 8 || Math.abs(nextDecClamped - current.dec) >= 6) {
         const next = { ra: nextRaNormalized, dec: nextDecClamped };
@@ -568,8 +572,9 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   }, [baseQuality]);
 
   const visualTickMs = qualityLevel === 'high' ? 33 : qualityLevel === 'medium' ? 50 : 100;
-  const layerRaThreshold = qualityLevel === 'high' ? 1.2 : qualityLevel === 'medium' ? 2.2 : 3.5;
-  const layerDecThreshold = qualityLevel === 'high' ? 0.9 : qualityLevel === 'medium' ? 1.6 : 2.5;
+  const sensorLayerMultiplier = coordinateMode === 'horizontal' ? 2.4 : 1;
+  const layerRaThreshold = (qualityLevel === 'high' ? 1.2 : qualityLevel === 'medium' ? 2.2 : 3.5) * sensorLayerMultiplier;
+  const layerDecThreshold = (qualityLevel === 'high' ? 0.9 : qualityLevel === 'medium' ? 1.6 : 2.5) * sensorLayerMultiplier;
   const layerZoomThreshold = qualityLevel === 'high' ? 0.16 : qualityLevel === 'medium' ? 0.25 : 0.4;
 
   useAnimatedReaction(
@@ -742,6 +747,26 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     virtualCenter.dec,
     virtualCenter.ra,
   ]);
+
+  const ownedRingStars = useMemo(() => {
+    const selectedCanonical = selectedStar?.canonicalId != null ? String(selectedStar.canonicalId) : null;
+    const selectedId = selectedStar?.id != null ? String(selectedStar.id) : null;
+    const selectedHip = selectedStar?.hip != null ? String(selectedStar.hip) : null;
+
+    return renderedStars
+      .filter((star) => {
+        if (!star?.owned) return false;
+        const canonicalId = star?.canonicalId != null ? String(star.canonicalId) : null;
+        const starId = star?.id != null ? String(star.id) : null;
+        const hip = star?.hip != null ? String(star.hip) : null;
+        if (selectedCanonical && canonicalId && selectedCanonical === canonicalId) return false;
+        if (selectedId && starId && selectedId === starId) return false;
+        if (selectedHip && hip && selectedHip === hip) return false;
+        return true;
+      })
+      .sort((a, b) => Number(a?.mag ?? 99) - Number(b?.mag ?? 99))
+      .slice(0, OWNED_RING_RENDER_LIMIT);
+  }, [renderedStars, selectedStar?.canonicalId, selectedStar?.hip, selectedStar?.id]);
 
   readyDetailsRef.current = {
     catalogStarCount: stars.length,
@@ -947,6 +972,22 @@ const StarCanvasBase = forwardRef(function StarCanvas({
 
             {starBatches.map((batch) => (
               <StarPointBatch key={batch.key} batch={batch} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} qualityLevel={qualityLevel} prevRa={prevRa} prevDec={prevDec} />
+            ))}
+
+            {ownedRingStars.map((star) => (
+              <OwnedStarRing
+                key={`owned-ring-${star.canonicalId || star.id}`}
+                star={star}
+                ra={ra}
+                dec={dec}
+                zoom={zoom}
+                layout={layout}
+                coordinateMode={coordinateMode}
+                observerLatitude={observerLatitude}
+                lstDegrees={lstDegrees}
+                hideBelowHorizon={hideBelowHorizon}
+                nightVision={nightVision}
+              />
             ))}
 
             {overlayStars.map((star) => (
@@ -1633,18 +1674,6 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
         />
       )}
 
-      {star.owned && (
-        <Circle
-          cx={cx}
-          cy={cy}
-          r={star.radius + 6}
-          color={nightVision ? '#FF4A42' : '#C9A84C'}
-          style="stroke"
-          strokeWidth={1.4}
-          opacity={0.85}
-        />
-      )}
-
       {font && star.proper && (
         <Group opacity={labelOpacity}>
            <SkiaText
@@ -1665,6 +1694,72 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
         </Group>
       )}
     </Group>
+  );
+});
+
+function getOwnedRingColor(star, nightVision) {
+  if (nightVision) return '#FF4A42';
+  const mag = Number(star?.mag);
+  if (Number.isFinite(mag) && mag < 1) return '#E6C05A';
+  if (Number.isFinite(mag) && mag < 2.5) return '#7DC7FF';
+  if (Number.isFinite(mag) && mag < 4) return '#79D39B';
+  return '#B5C0D0';
+}
+
+const OwnedStarRing = React.memo(function OwnedStarRing({
+  star,
+  ra,
+  dec,
+  zoom,
+  layout,
+  coordinateMode,
+  observerLatitude,
+  lstDegrees,
+  hideBelowHorizon,
+  nightVision,
+}) {
+  const starPosition = useDerivedValue(() => {
+    const projected = project(
+      star.ra,
+      star.dec,
+      ra.value,
+      dec.value,
+      layout.width,
+      layout.height,
+      zoom.value,
+      coordinateMode,
+      observerLatitude,
+      lstDegrees,
+    );
+
+    const isVisible = projected.x > -30
+      && projected.x < layout.width + 30
+      && projected.y > -30
+      && projected.y < layout.height + 30
+      && (!hideBelowHorizon || projected.skyAltitude == null || projected.skyAltitude >= 0);
+
+    return {
+      x: projected.x,
+      y: projected.y,
+      isVisible,
+    };
+  });
+
+  const cx = useDerivedValue(() => starPosition.value.x);
+  const cy = useDerivedValue(() => starPosition.value.y);
+  const opacity = useDerivedValue(() => (starPosition.value.isVisible ? 0.95 : 0));
+  const ringRadius = Math.max(4.5, Number(star?.radius || 1) + 3.6);
+
+  return (
+    <Circle
+      cx={cx}
+      cy={cy}
+      r={ringRadius}
+      color={getOwnedRingColor(star, nightVision)}
+      style="stroke"
+      strokeWidth={1.25}
+      opacity={opacity}
+    />
   );
 });
 
