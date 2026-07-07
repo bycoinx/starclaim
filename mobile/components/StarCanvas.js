@@ -1280,7 +1280,7 @@ function ConstellationBoundariesPath({ segments = [], ra, dec, zoom, layout, coo
 
 function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMode, observerLatitude, lstDegrees, nightVision }) {
   const coordinates = feature.geometry?.coordinates;
-  const label = feature.properties?.tr || feature.properties?.name || feature.id;
+  const label = feature.properties?.iau || feature.properties?.abbrev || feature.properties?.abbr || feature.id || feature.properties?.tr || feature.properties?.name;
   const rank = Number(feature.properties?.rank || 3);
   const pos = useDerivedValue(() => project(coordinates[0] / 15, coordinates[1], ra.value, dec.value, layout.width, layout.height, zoom.value, coordinateMode, observerLatitude, lstDegrees));
 
@@ -1302,7 +1302,8 @@ function ConstellationLabel({ feature, ra, dec, zoom, layout, font, coordinateMo
     return zoom.value < 1.0 ? 0.4 : 0.8;
   });
 
-  const labelX = useDerivedValue(() => pos.value.x - 40);
+  const labelOffsetX = Math.max(10, String(label || '').length * 3.5);
+  const labelX = useDerivedValue(() => pos.value.x - labelOffsetX);
   const labelY = useDerivedValue(() => pos.value.y);
 
   if (!font || !coordinates) return null;

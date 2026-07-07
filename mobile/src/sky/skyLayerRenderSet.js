@@ -134,6 +134,93 @@ function getFeaturePoints(feature) {
   return [];
 }
 
+function toAbbrevFromName(name) {
+  if (!name) return null;
+  const words = String(name)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!words.length) return null;
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words.slice(0, 3).map((word) => word[0]).join('').toUpperCase();
+}
+
+function getConstellationAbbrev(feature) {
+  const props = feature?.properties || {};
+  const candidates = [
+    props.iau,
+    props.abbrev,
+    props.abbr,
+    props.short,
+    props.code,
+    feature?.id,
+  ];
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const value = String(candidate).trim();
+    if (!value) continue;
+    return value.toUpperCase();
+  }
+  return toAbbrevFromName(props.name);
+}
+
+function normalizeLongitudeDegrees(value) {
+  let longitude = Number(value) || 0;
+  while (longitude < 0) longitude += 360;
+  while (longitude >= 360) longitude -= 360;
+  return longitude;
+}
+
+function centroidFromPoints(points = []) {
+  if (!points.length) return null;
+  let sinSum = 0;
+  let cosSum = 0;
+  let decSum = 0;
+  let count = 0;
+
+  points.forEach((point) => {
+    if (!Array.isArray(point) || point.length < 2) return;
+    const longitude = normalizeLongitudeDegrees(point[0]);
+    const latitude = Number(point[1]);
+    if (!Number.isFinite(latitude)) return;
+    const angle = (longitude * Math.PI) / 180;
+    sinSum += Math.sin(angle);
+    cosSum += Math.cos(angle);
+    decSum += latitude;
+    count += 1;
+  });
+
+  if (!count) return null;
+  let centroidLongitude = Math.atan2(sinSum, cosSum) * (180 / Math.PI);
+  if (centroidLongitude < 0) centroidLongitude += 360;
+  return [centroidLongitude, decSum / count];
+}
+
+function buildCentroidConstellationLabels(constellations = {}) {
+  const features = constellations.lines?.features || [];
+  return features
+    .map((feature) => {
+      const coords = centroidFromPoints(getFeaturePoints(feature));
+      if (!coords) return null;
+      const abbrev = getConstellationAbbrev(feature);
+      if (!abbrev) return null;
+      return {
+        id: abbrev,
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: coords,
+        },
+        properties: {
+          ...(feature.properties || {}),
+          iau: abbrev,
+          rank: Number(feature.properties?.rank || 2),
+        },
+      };
+    })
+    .filter(Boolean);
+}
+
 function getFeatureScore(feature, viewport, options) {
   const points = getFeaturePoints(feature);
   if (!points.length) return Infinity;
@@ -267,6 +354,18 @@ export function buildSkyLayerRenderSet({
   const budget = getBudget(qualityLevel);
   const viewport = getCoarseViewport({ virtualCenter, zoom });
   const visibilityOptions = { coordinateMode, observerLatitude, lstDegrees };
+  const centroidLabels = buildCentroidConstellationLabels(constellations);
+  const explicitLabels = constellations.labels?.features || [];
+  const labelMap = new Map();
+  explicitLabels.forEach((feature) => {
+    const key = getConstellationAbbrev(feature) || String(feature.id || Math.random());
+    labelMap.set(key, feature);
+  });
+  centroidLabels.forEach((feature) => {
+    const key = getConstellationAbbrev(feature) || String(feature.id);
+    if (!labelMap.has(key)) labelMap.set(key, feature);
+  });
+  const labelFeatures = [...labelMap.values()];
 
   const visibleDSOs = showDSOs
     ? limitByScore(
@@ -286,7 +385,7 @@ export function buildSkyLayerRenderSet({
 
   const visibleConstellationLabels = showConstellationLabels
     ? limitByScore(
-      (constellations.labels?.features || []).filter((feature) => {
+      labelFeatures.filter((feature) => {
         const coords = feature.geometry?.coordinates;
         return Array.isArray(coords) && isViewPointVisible(coords[0] / 15, coords[1], viewport, visibilityOptions);
       }),
