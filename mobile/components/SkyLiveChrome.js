@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { THEME } from '../constants/Theme';
 
@@ -60,9 +61,10 @@ export default function SkyLiveChrome({
   const selectedName = selectedStar?.properName || selectedStar?.proper || (selectedStar ? `HIP ${selectedStar.hip || selectedStar.id}` : '');
   const constellation = selectedStar?.constellation || selectedStar?.con || 'Katalog yıldızı';
   const sourceLabel = observerSource === 'gps' ? 'GPS' : observerSource === 'cache' ? 'CACHE' : 'DEFAULT';
-  const offsetLabel = timeOffsetHours === 0
+  const clampedOffset = Math.max(-12, Math.min(12, Number(timeOffsetHours) || 0));
+  const offsetLabel = clampedOffset === 0
     ? 'Simulasyon: Simdi'
-    : `Simulasyon: ${timeOffsetHours > 0 ? '+' : ''}${timeOffsetHours.toFixed(0)}s`;
+    : `Simulasyon: ${clampedOffset > 0 ? '+' : ''}${clampedOffset.toFixed(0)}sa`;
 
   const closeSearch = () => {
     setSearchVisible(false);
@@ -159,17 +161,52 @@ export default function SkyLiveChrome({
         <InfoLine icon="time-outline" text={now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} />
         <InfoLine icon="layers-outline" text={`Konum kaynagi: ${sourceLabel}`} />
         <InfoLine icon="timer-outline" text={offsetLabel} />
+        <View style={styles.sliderHeader}>
+          <Text style={styles.sliderBound}>-12sa</Text>
+          <Text style={styles.sliderCurrent}>{clampedOffset > 0 ? '+' : ''}{clampedOffset.toFixed(0)}sa</Text>
+          <Text style={styles.sliderBound}>+12sa</Text>
+        </View>
+        <Slider
+          minimumValue={-12}
+          maximumValue={12}
+          step={1}
+          value={clampedOffset}
+          minimumTrackTintColor={THEME.colors.secondary}
+          maximumTrackTintColor="rgba(244,247,255,0.25)"
+          thumbTintColor={THEME.colors.primary}
+          onValueChange={(value) => onTimeOffsetChange?.(value)}
+        />
         <View style={styles.miniControls}>
-          <TouchableOpacity style={styles.miniControlButton} onPress={() => onTimeOffsetChange?.(timeOffsetHours - 1)}>
-            <Text style={styles.miniControlText}>-1s</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.miniControlButton} onPress={onTimeOffsetReset}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Zamani simdiye al"
+            style={styles.miniControlButton}
+            onPress={onTimeOffsetReset}
+          >
             <Text style={styles.miniControlText}>Simdi</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.miniControlButton} onPress={() => onTimeOffsetChange?.(timeOffsetHours + 1)}>
-            <Text style={styles.miniControlText}>+1s</Text>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Zamani bir saat geri al"
+            style={styles.miniControlButton}
+            onPress={() => onTimeOffsetChange?.(clampedOffset - 1)}
+          >
+            <Text style={styles.miniControlText}>-1sa</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.miniControlButton} onPress={onRefreshObserver}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Zamani bir saat ileri al"
+            style={styles.miniControlButton}
+            onPress={() => onTimeOffsetChange?.(clampedOffset + 1)}
+          >
+            <Text style={styles.miniControlText}>+1sa</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Konumu yenile"
+            style={styles.miniControlButton}
+            onPress={onRefreshObserver}
+          >
             <Ionicons name="refresh" size={12} color="rgba(244,247,255,0.82)" />
           </TouchableOpacity>
         </View>
@@ -239,7 +276,10 @@ const styles = StyleSheet.create({
   locationPanel: { ...glass, position: 'absolute', left: 18, bottom: 18, width: 230, borderRadius: 10, padding: 12, gap: 8 },
   infoLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoText: { flex: 1, color: 'rgba(244,247,255,0.76)', fontSize: 10 },
-  miniControls: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  sliderHeader: { marginTop: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sliderBound: { color: 'rgba(244,247,255,0.58)', fontSize: 9 },
+  sliderCurrent: { color: '#F4F7FF', fontSize: 10, fontWeight: '700' },
+  miniControls: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   miniControlButton: { minWidth: 36, height: 24, borderRadius: 12, paddingHorizontal: 8, backgroundColor: 'rgba(244,247,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   miniControlText: { color: 'rgba(244,247,255,0.82)', fontSize: 10, fontWeight: '700' },
   rightTools: { position: 'absolute', right: 18, top: 78, gap: 9 },
