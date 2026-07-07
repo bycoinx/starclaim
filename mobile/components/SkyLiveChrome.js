@@ -52,6 +52,8 @@ export default function SkyLiveChrome({
   onSensorMode,
   onTimeOffsetChange,
   onTimeOffsetReset,
+  onApplyEveningPreset,
+  onApplyMorningPreset,
   onRefreshObserver,
   onClearSelection,
   onOpenDetails,
@@ -156,7 +158,7 @@ export default function SkyLiveChrome({
       )}
 
       {surfaceAvailable && <View style={styles.locationPanel} pointerEvents="box-none">
-        <InfoLine icon="location-outline" text={observer ? `${observer.latitude.toFixed(2)}°, ${observer.longitude.toFixed(2)}°` : 'Konum kapalı'} />
+        <InfoLine icon="location-outline" text={observer ? `${observer.label || 'Konum'}  ${observer.latitude.toFixed(2)}°, ${observer.longitude.toFixed(2)}°` : 'Konum kapalı'} />
         <InfoLine icon="calendar-outline" text={now.toLocaleDateString('tr-TR')} />
         <InfoLine icon="time-outline" text={now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })} />
         <InfoLine icon="layers-outline" text={`Konum kaynagi: ${sourceLabel}`} />
@@ -208,6 +210,24 @@ export default function SkyLiveChrome({
             onPress={onRefreshObserver}
           >
             <Ionicons name="refresh" size={12} color="rgba(244,247,255,0.82)" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.presetControls}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Bu sabah saat dorte git"
+            style={styles.presetButton}
+            onPress={onApplyMorningPreset}
+          >
+            <Text style={styles.presetText}>Bu sabah 04:00</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Bu aksam saat yirmi ikiye git"
+            style={styles.presetButton}
+            onPress={onApplyEveningPreset}
+          >
+            <Text style={styles.presetText}>Bu aksam 22:00</Text>
           </TouchableOpacity>
         </View>
       </View>}
@@ -273,7 +293,7 @@ const styles = StyleSheet.create({
   selectionMeta: { color: 'rgba(244,247,255,0.68)', fontSize: 10, marginTop: 8 },
   selectionActions: { flexDirection: 'row', gap: 7, marginTop: 10 },
   selectionAction: { width: 34, height: 30, borderRadius: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(244,247,255,0.06)' },
-  locationPanel: { ...glass, position: 'absolute', left: 18, bottom: 18, width: 230, borderRadius: 10, padding: 12, gap: 8 },
+  locationPanel: { ...glass, position: 'absolute', left: 18, bottom: 18, width: 252, borderRadius: 10, padding: 12, gap: 8 },
   infoLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   infoText: { flex: 1, color: 'rgba(244,247,255,0.76)', fontSize: 10 },
   sliderHeader: { marginTop: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -282,6 +302,9 @@ const styles = StyleSheet.create({
   miniControls: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
   miniControlButton: { minWidth: 36, height: 24, borderRadius: 12, paddingHorizontal: 8, backgroundColor: 'rgba(244,247,255,0.08)', alignItems: 'center', justifyContent: 'center' },
   miniControlText: { color: 'rgba(244,247,255,0.82)', fontSize: 10, fontWeight: '700' },
+  presetControls: { flexDirection: 'row', gap: 6, marginTop: 2 },
+  presetButton: { flex: 1, minHeight: 24, borderRadius: 12, paddingHorizontal: 8, backgroundColor: 'rgba(191,225,255,0.09)', borderWidth: 1, borderColor: 'rgba(191,225,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  presetText: { color: 'rgba(232,240,252,0.9)', fontSize: 9, fontWeight: '700' },
   rightTools: { position: 'absolute', right: 18, top: 78, gap: 9 },
   toolButton: { ...glass, width: 96, minHeight: 62, borderRadius: 10, padding: 8, alignItems: 'center', justifyContent: 'center', gap: 5 },
   toolButtonActive: { borderColor: 'rgba(230,188,74,0.4)' },

@@ -61,6 +61,12 @@ const DEFAULT_OBSERVER = Object.freeze({
   source: 'fallback',
 });
 
+function buildObserverLabel(placemark, latitude, longitude) {
+  const primary = placemark?.city || placemark?.district || placemark?.subregion || placemark?.region || placemark?.country;
+  if (primary) return primary;
+  return `${latitude.toFixed(2)}, ${longitude.toFixed(2)}`;
+}
+
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
   const [stars, setStars] = useState([]);
@@ -127,6 +133,23 @@ export default function StarMapScreen() {
     () => new Date(now.getTime() + timeOffsetHours * 60 * 60 * 1000),
     [now, timeOffsetHours],
   );
+
+  const applyTimePreset = useCallback((presetKey) => {
+    const base = new Date(now);
+    const target = new Date(base);
+    if (presetKey === 'evening22') {
+      target.setHours(22, 0, 0, 0);
+      if (target.getTime() < base.getTime()) target.setDate(target.getDate() + 1);
+    } else if (presetKey === 'morning04') {
+      target.setHours(4, 0, 0, 0);
+      if (target.getTime() > base.getTime()) target.setDate(target.getDate() - 1);
+    } else {
+      return;
+    }
+
+    const deltaHours = Math.round((target.getTime() - base.getTime()) / (60 * 60 * 1000));
+    setTimeOffsetHours(Math.max(-12, Math.min(12, deltaHours)));
+  }, [now]);
 
   useEffect(() => {
     openedAtRef.current = Date.now();
@@ -276,7 +299,18 @@ export default function StarMapScreen() {
       });
       const nextObserver = createObserverFromLocation(position);
       if (!nextObserver) return null;
-      const label = `${nextObserver.latitude.toFixed(2)}, ${nextObserver.longitude.toFixed(2)}`;
+      let label = `${nextObserver.latitude.toFixed(2)}, ${nextObserver.longitude.toFixed(2)}`;
+      try {
+        const placemarks = await Location.reverseGeocodeAsync({
+          latitude: nextObserver.latitude,
+          longitude: nextObserver.longitude,
+        });
+        if (placemarks?.length) {
+          label = buildObserverLabel(placemarks[0], nextObserver.latitude, nextObserver.longitude);
+        }
+      } catch (error) {
+        // Reverse geocode failure should not block location updates.
+      }
       const enriched = {
         ...nextObserver,
         label,
@@ -894,6 +928,8 @@ export default function StarMapScreen() {
             timeOffsetHours={timeOffsetHours}
             onTimeOffsetChange={(value) => setTimeOffsetHours(Math.max(-12, Math.min(12, value)))}
             onTimeOffsetReset={() => setTimeOffsetHours(0)}
+            onApplyEveningPreset={() => applyTimePreset('evening22')}
+            onApplyMorningPreset={() => applyTimePreset('morning04')}
             onRefreshObserver={refreshObserver}
             onToggleConstellations={() => { const next = !showConstellations; setShowConstellations(next); setShowConstellationLabels(next); }}
             onToggleDeepSpace={() => { const next = !(showDSOs || showNebula); setShowDSOs(next); setShowNebula(next); }}
