@@ -48,7 +48,7 @@ export default function StarVoyageMaintenance() {
         <TouchableOpacity
           activeOpacity={0.78}
           style={styles.skyButton}
-          onPress={() => router.replace(ROUTES.sky)}
+          onPress={() => router.push(ROUTES.sky)}
         >
           <Ionicons name="telescope-outline" size={20} color="#06101D" />
           <Text style={styles.skyButtonText}>SKY LIVE'A DON</Text>

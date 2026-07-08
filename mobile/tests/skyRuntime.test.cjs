@@ -40,6 +40,7 @@ const {
   getEquatorialViewportCenter,
   getHorizontalPositionForObject,
   getSensorCanvasTarget,
+  limitSensorCanvasTarget,
   shouldCommitSensorView,
   smoothHeading,
 } = loadApplicationModule('../src/sky/skyRuntime.js');
@@ -59,6 +60,18 @@ test('heading smoothing follows the shortest path across north', () => {
 test('sensor canvas target clamps altitude and keeps heading normalized', () => {
   assert.deepEqual(getSensorCanvasTarget(370, 200), { ra: 10, dec: 90 });
   assert.deepEqual(getSensorCanvasTarget(-10, -200), { ra: 350, dec: -90 });
+});
+
+test('sensor canvas target is rate limited for planetarium-style motion', () => {
+  const limited = limitSensorCanvasTarget(
+    { ra: 350, dec: 0 },
+    { ra: 20, dec: 40 },
+    100,
+    { maxHeadingDegreesPerSecond: 30, maxTiltDegreesPerSecond: 20 },
+  );
+
+  assert.equal(limited.ra, 353);
+  assert.equal(limited.dec, 2);
 });
 
 test('horizontal viewport center converts to finite equatorial coordinates', () => {

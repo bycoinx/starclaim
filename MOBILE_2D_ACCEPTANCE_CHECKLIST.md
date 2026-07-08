@@ -43,7 +43,11 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 
 - `npm run test:astronomy` -> 88/88 test gecti.
 - `npx expo-doctor` -> 18/18 temiz.
+### 2026-07-08 Otomatik ve Fiziksel Cihaz Guncellemesi
 
+- `npm run test:astronomy` -> 89/89 test gecti.
+- `npx expo-doctor` henüz bu konuda manuel olarak calistirilmadi.
+- Fiziksel cihaz testi yapildi ve emergent ile dogrulandi; 9/9 kabul senaryosunun tamamlandigi kaydedildi.
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 
 Asagidaki sira bozulmadan ilerlenir; bir senaryo sonuc kaydi olmadan sonraki senaryoya gecilmez.

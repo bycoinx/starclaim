@@ -55,6 +55,7 @@ const {
   createDeepLinkTarget,
   resolveParsedDeepLinkRoute,
 } = loadApplicationModule('../src/platform/navigation/deepLinks.js');
+const { getPurchaseMapParams } = loadApplicationModule('../src/utils/starIdentity.js');
 
 const STARS = [
   {
@@ -79,6 +80,8 @@ test('tab routes expose the mobile production shell entry points', () => {
   assert.equal(TAB_ITEMS.find((item) => item.key === 'claim').href, ROUTES.claim);
   assert.equal(TAB_ITEMS.find((item) => item.key === 'vault').href, ROUTES.vaultHome);
   assert.equal(getActiveTabKey('/(tabs)/explore/starmap'), 'sky');
+  assert.equal(getActiveTabKey('/(tabs)/sky'), 'sky');
+  assert.equal(getActiveTabKey('/(tabs)/explore/starvoyage'), 'universe');
   assert.equal(getActiveTabKey('/(tabs)/vault/home'), 'vault');
   assert.equal(getActiveTabKey('/(tabs)/mystars/collection'), 'profile');
 });
@@ -116,8 +119,34 @@ test('deep links resolve star, hip and vault targets to app routes', () => {
   });
 });
 
+test('purchase map params preserve the star identity for direct navigation', () => {
+  const params = getPurchaseMapParams({
+    starId: 'sirius-id',
+    hip: 32349,
+    hd: 48915,
+    name: 'Sirius',
+    starClaimCode: 'SIRIUS-A',
+  });
+  assert.equal(params.starId, 'sirius-id');
+  assert.equal(params.hip, 32349);
+  assert.equal(params.starClaimCode, 'SIRIUS-A');
+});
+
 test('unsupported or unresolved deep links are ignored', () => {
   assert.equal(createDeepLinkTarget('marketplace', 'SIRIUS-A'), null);
   assert.equal(resolveParsedDeepLinkRoute({ hostname: 'star', path: 'UNKNOWN' }, STARS), null);
   assert.equal(resolveParsedDeepLinkRoute({ hostname: '', path: '' }, STARS), null);
+});
+
+test('deep links handle leading slash paths and vault root correctly', () => {
+  const starRoute = resolveParsedDeepLinkRoute({ hostname: 'star', path: '/SIRIUS-A' }, STARS);
+  assert.equal(starRoute.pathname, ROUTES.starMap);
+  assert.equal(starRoute.params.starClaimCode, 'SIRIUS-A');
+
+  assert.deepEqual(resolveParsedDeepLinkRoute({ hostname: 'vault', path: '' }, STARS), {
+    pathname: ROUTES.vaultHome,
+  });
+  assert.deepEqual(resolveParsedDeepLinkRoute({ hostname: 'vault', path: '/item/sirius-id' }, STARS), {
+    pathname: ROUTES.vaultHome,
+  });
 });

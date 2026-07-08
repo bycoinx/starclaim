@@ -1,9 +1,13 @@
 import { createStarTargetFromStar, resolveStarTarget } from '../../utils/starIdentity';
 import { ROUTES, starMapRoute } from './routes';
 
+function normalizeDeepLinkPath(path = '') {
+  return String(path ?? '').trim().replace(/^\/+/, '');
+}
+
 export function resolveParsedDeepLinkRoute(parsedLink = {}, stars = []) {
-  const type = parsedLink.hostname;
-  const identifier = parsedLink.path;
+  const type = String(parsedLink.hostname ?? '').toLocaleLowerCase('en-US');
+  const identifier = normalizeDeepLinkPath(parsedLink.path);
 
   if (type === 'vault') {
     return { pathname: ROUTES.vaultHome };

@@ -212,9 +212,7 @@ export default function StarMapScreen() {
         });
         if (gaiaRequestRef.current !== requestId || !result.stars.length) return;
         gaiaViewportLoadedRef.current = !result.fallback;
-        if (!result.fallback) {
-          setStars(result.stars);
-        }
+        setStars(result.stars);
         if (result.fallback && result.error && Date.now() > gaiaFallbackWarnedUntilRef.current) {
           gaiaFallbackWarnedUntilRef.current = Date.now() + 60_000;
           console.warn('Gaia viewport fallback to embedded HYG core', result.error);
@@ -335,7 +333,7 @@ export default function StarMapScreen() {
           title: 'Konum olmadan harita modu',
           message: 'Gerçek konum izni verilmedi. Varsayılan gözlemci ile yıldız haritasını kullanabilirsiniz.',
         });
-        return observer;
+        return null;
       }
 
       const nextSiderealTime = getSiderealTimeForObserver(nextObserver, observedNow);
@@ -354,7 +352,7 @@ export default function StarMapScreen() {
         title: 'Konum alınamadı',
         message: 'Konum servisini kontrol edene kadar varsayılan gözlemci ile harita kullanılabilir.',
       });
-      return observer;
+      return null;
     }
   };
 
@@ -637,7 +635,7 @@ export default function StarMapScreen() {
   };
 
   const enableSensorMode = async () => {
-    const activeObserver = observer || await activateRealSky();
+    const activeObserver = await activateRealSky();
     if (!activeObserver) return;
 
     const motionAvailable = await DeviceMotion.isAvailableAsync().catch(() => false);
