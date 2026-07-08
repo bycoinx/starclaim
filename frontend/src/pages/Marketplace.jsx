@@ -14,6 +14,26 @@ import { NoResultsState, ErrorState } from "../components/catalog/EmptyStates";
 import { StarRepository } from "../lib/StarRepository";
 import ListingPreviewDrawer from "../components/catalog/ListingPreviewDrawer";
 
+function listingKeys(listing = {}) {
+  return [
+    listing.star_id,
+    listing.starId,
+    listing.star_code,
+    listing.starCode,
+    listing.code,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value));
+}
+
+function buildListingIndex(listings = []) {
+  const index = new Map();
+  listings.forEach((listing) => {
+    listingKeys(listing).forEach((key) => index.set(key, listing));
+  });
+  return index;
+}
+
 function MarketplaceCatalog() {
   const store = useCatalogStore();
   const { lang } = useT();
@@ -36,7 +56,7 @@ function MarketplaceCatalog() {
           starTypes={["all", "legendary", "zodiac", "supernova", "nova", "standard"]}
           isMobileOpen={isMobileFilterOpen}
           onCloseMobile={() => setIsMobileFilterOpen(false)}
-          totalCount={store.filteredStars.length}
+          totalCount={store.totalCount}
         />
       </div>
 
@@ -55,8 +75,10 @@ function MarketplaceCatalog() {
           onFilterChange={(type) => store.updateFilters({ starType: type })}
           sortBy={store.sortBy}
           onSortChange={store.setSortBy}
-          totalCount={store.filteredStars.length}
+          totalCount={store.totalCount}
           onOpenMobileFilters={() => setIsMobileFilterOpen(true)}
+          observerCoords={store.observerCoords}
+          onObserverCoordsChange={store.updateObserverCoords}
           isTR={isTR}
         />
 
@@ -85,14 +107,14 @@ function MarketplaceCatalog() {
           )}
         </SurfacePanel>
 
-        {!store.loading && store.filteredStars.length > 0 && (
+        {!store.loading && store.totalCount > 0 && (
           <CatalogPagination
             currentPage={store.currentPage}
             totalPages={store.totalPages}
             pageSize={store.pageSize}
             setPageSize={store.setPageSize}
             onPageChange={store.setCurrentPage}
-            totalItems={store.filteredStars.length}
+            totalItems={store.totalCount}
           />
         )}
       </div>
@@ -106,19 +128,38 @@ export default function Marketplace({ onClaim }) {
   const isTR = lang === "TR";
 
   const loadMarketplaceListings = useCallback(async (forceReload = false) => {
-    await StarRepository.loadAll(forceReload);
-    const { data: listings } = await api.get("/marketplace/listings");
-    return listings.map((listing) => {
-      const star = StarRepository.getStarById(listing.star_id) || StarRepository.getStarBySlug(listing.star_code) || {};
+    const [catalogStars, listingsResponse] = await Promise.all([
+      StarRepository.loadAll(forceReload),
+      api.get("/marketplace/listings", { params: { limit: 10000 } }).catch(() => ({ data: [] })),
+    ]);
+    const listings = Array.isArray(listingsResponse.data) ? listingsResponse.data : [];
+    const listingIndex = buildListingIndex(listings);
+
+    const enrichedCatalog = catalogStars.map((star) => {
+      const listing =
+        listingIndex.get(star.starId) ||
+        listingIndex.get(star.code) ||
+        listingIndex.get(star.slug) ||
+        null;
+
+      if (!listing) {
+        return {
+          ...star,
+          forSale: !star.isClaimed,
+          askingPrice: star.price,
+          raw: star.raw || star,
+        };
+      }
+
       return {
         ...star,
         ...listing,
         starId: star.starId || listing.star_id || listing.star_code,
-        name: star.name || listing.star_name,
-        code: star.code || listing.star_code,
+        name: star.name || listing.star_name || listing.name,
+        code: star.code || listing.star_code || listing.code,
         constellation: star.constellation || listing.constellation,
         tier: star.tier || listing.tier || "standard",
-        price: star.price || listing.asking_price || 0,
+        price: star.price || listing.asking_price || listing.price || 0,
         isClaimed: true,
         ownerName: listing.owner_name || star.ownerName,
         forSale: true,
@@ -127,6 +168,9 @@ export default function Marketplace({ onClaim }) {
         raw: { ...listing, ...star },
       };
     });
+
+    StarRepository.setCache(enrichedCatalog);
+    return enrichedCatalog;
   }, []);
 
   useEffect(() => {

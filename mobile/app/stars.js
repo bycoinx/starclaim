@@ -33,7 +33,8 @@ export default function Stars() {
     setSearchQuery,
     selectedTier,
     setSelectedTier,
-    getFilteredStars
+    getFilteredStars,
+    getVisibleTotalLabel
   } = useCatalogStore();
 
   const [selectedStar, setSelectedStar] = useState(null);
@@ -86,6 +87,7 @@ export default function Stars() {
 
   const featuredStars = useMemo(() => getFeaturedStars(filteredStars, 6), [filteredStars]);
   const nearbyStars = useMemo(() => getNearbyStars(filteredStars, 3), [filteredStars]);
+  const catalogTotalLabel = getVisibleTotalLabel();
 
   const renderARMode = () => {
     if (loading) return null;
@@ -244,7 +246,7 @@ export default function Stars() {
               <Text style={styles.catalogTitle}>STELLAR_CATALOG</Text>
               <View style={styles.catalogStatusRow}>
                 <View style={styles.statusDot} />
-                <Text style={styles.catalogSub}>{filteredStars.length} OBJECTS_DETECTED</Text>
+                <Text style={styles.catalogSub}>{catalogTotalLabel} OBJECTS_SYNCED · {filteredStars.length} VISIBLE</Text>
               </View>
             </View>
             <View style={styles.catalogSearchGroup}>
@@ -266,8 +268,10 @@ export default function Stars() {
             ListHeaderComponent={(
               <View style={styles.catalogSections}>
                 <View style={styles.heroPanel}>
-                  <Text style={styles.heroTitle}>ÖNE ÇIKAN YILDIZLAR</Text>
-                  <Text style={styles.heroSubtitle}>Seçkin yıldızlar, öne çıkan değer ve yakınlık sıralaması ile öne çıkıyor.</Text>
+                  <Text style={styles.heroTitle}>10.000 YILDIZLIK ATLAS</Text>
+                  <Text style={styles.heroSubtitle}>
+                    Web katalogla aynı registry akışından senkronize edilen {catalogTotalLabel} yıldız. Liste performansı için ilk {Math.min(CATALOG_RENDER_LIMIT, filteredStars.length)} kayıt gösteriliyor.
+                  </Text>
                   <View style={styles.heroCards}>
                     {featuredStars.map((star) => {
                       const tierMeta = getTierMeta(star.tier, true);

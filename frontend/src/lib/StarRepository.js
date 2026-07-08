@@ -147,6 +147,12 @@ export class StarRepository {
     return this.cache;
   }
 
+  static setCache(stars = []) {
+    this.cache = Array.isArray(stars) ? stars : [];
+    this.initialized = true;
+    return this.cache;
+  }
+
   static getStarBySlug(slug) {
     if (!slug) return null;
     return (

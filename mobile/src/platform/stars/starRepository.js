@@ -5,6 +5,7 @@ import { CONFIG } from '../../../constants/Config';
 import { isStarIdentity, resolveStar as resolveStarFromList } from './starIdentity.types';
 
 const LISTING_PRICE_BASE = 250;
+export const CATALOG_TARGET_SIZE = 10000;
 
 function computeListingPrice(star, index) {
   const magnitude = Number(star.magnitude ?? star.mag ?? 5);
@@ -59,23 +60,58 @@ export async function loadLocalStars(forceReload = false) {
   }
 }
 
-export async function fetchRemoteStars(limit = 100) {
+function normalizeRemoteInput(item = {}) {
+  const sourceId = item.sourceId || item.source_id || item.star_id || item.starId || item.id || item.code;
+  return {
+    ...item,
+    id: item.id || item.star_id || item.starId || item.code,
+    sourceId,
+    raHours: item.raHours ?? item.ra_hours ?? item.ra,
+    raDegrees: item.raDegrees ?? item.ra_degrees ?? item.ra_deg,
+    decDegrees: item.decDegrees ?? item.dec_degrees ?? item.dec_deg ?? item.dec,
+    distanceParsec: item.distanceParsec ?? item.distance_parsec ?? item.distance ?? item.dist,
+    magnitude: item.magnitude ?? item.mag,
+    spectralType: item.spectralType ?? item.spectral_type ?? item.spect,
+    properName: item.properName ?? item.proper_name ?? item.proper,
+    displayName: item.displayName ?? item.display_name ?? item.name,
+    gaiaSourceId: item.gaiaSourceId ?? item.gaia_source_id ?? item.gaiaId,
+    colorIndex: item.colorIndex ?? item.color_index,
+    starClaimCode: item.starClaimCode ?? item.code,
+    ownerCount: item.ownerCount ?? (item.owner_id || item.owner_name ? 1 : 0),
+    ownershipStatus: item.ownershipStatus ?? item.status ?? (item.owner_id || item.owner_name ? 'claimed' : 'available'),
+    storyCount: item.storyCount ?? item.stories_count ?? 0,
+    certificateCount: item.certificateCount ?? item.certificate_count ?? 0,
+  };
+}
+
+export async function fetchRemoteStars(params = {}) {
+  const query = typeof params === 'number'
+    ? { limit: params, sort: 'price_asc' }
+    : { limit: CATALOG_TARGET_SIZE, sort: 'price_asc', ...params };
   const baseUrl = await CONFIG.getAPIUrl();
   try {
-    const response = await fetch(`${baseUrl}/api/stars?limit=${limit}&sort=price_desc`);
+    const searchParams = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const response = await fetch(`${baseUrl}/api/stars?${searchParams.toString()}`);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data = await response.json();
     return (data || []).map((item, index) => {
-      const canonical = createCanonicalStar(item, {
+      const normalizedInput = normalizeRemoteInput(item);
+      const canonical = createCanonicalStar(normalizedInput, {
         source: item.source || 'remote',
-        sourceId: item.starId || item.star_id || item.id || item.code,
+        sourceId: normalizedInput.sourceId,
       }) || {
         ...item,
         id: item.star_id || item.starId || item.id || item.code,
         slug: item.slug || item.code || item.star_id,
         name: item.name || item.displayName || item.properName || item.proper || `Star ${item.code || item.star_id}`,
+        canonicalId: item.canonicalId || item.canonical_id || normalizedInput.sourceId,
       };
 
       const asset = createStarAsset({
@@ -89,6 +125,10 @@ export async function fetchRemoteStars(limit = 100) {
         ...canonical,
         asset,
         localCatalog: false,
+        tier: item.tier || canonical.tier || canonical.rarity || 'standard',
+        code: item.code || canonical.starClaimCode,
+        isClaimed: Boolean(item.owner_id || item.owner_name || item.claimed || item.status === 'claimed'),
+        ownerName: item.owner_name || item.ownerName || null,
         price,
       };
     });
@@ -98,30 +138,50 @@ export async function fetchRemoteStars(limit = 100) {
   }
 }
 
-export async function loadAllStars(limit = 10000) {
-  const [local, remote] = await Promise.all([
-    loadLocalStars(),
-    fetchRemoteStars(limit),
-  ]);
+export async function countRemoteStars(params = {}) {
+  const baseUrl = await CONFIG.getAPIUrl();
+  try {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.set(key, String(value));
+      }
+    });
+    const suffix = searchParams.toString();
+    const response = await fetch(`${baseUrl}/api/stars/count${suffix ? `?${suffix}` : ''}`);
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 405) {
+        return null;
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    return Number(data?.count || 0);
+  } catch (error) {
+    console.warn(`starRepository: Failed to count remote stars from ${baseUrl}:`, error);
+    return null;
+  }
+}
 
-  // Combine remote and local stars, removing duplicates by canonicalId
+export async function loadAllStars(limit = CATALOG_TARGET_SIZE) {
+  // Remote registry is the shared source of truth. Local HYG remains an offline fallback.
+  const remote = await fetchRemoteStars({ limit, sort: 'price_asc' });
+  if (remote.length > 0) {
+    return remote.slice(0, limit);
+  }
+
+  const local = await loadLocalStars();
   const seenIds = new Set();
   const combined = [];
-
-  for (const star of remote) {
-    if (star && star.canonicalId) {
-      seenIds.add(star.canonicalId);
-      combined.push(star);
-    }
-  }
 
   for (const star of local) {
     if (star && star.canonicalId && !seenIds.has(star.canonicalId)) {
       combined.push(star);
+      seenIds.add(star.canonicalId);
     }
   }
 
-  return combined;
+  return combined.slice(0, limit);
 }
 
 export function searchStars(query, starsList = []) {

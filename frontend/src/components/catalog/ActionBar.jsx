@@ -85,13 +85,13 @@ export default function ActionBar({
 
   return (
     <div className="flex flex-col gap-2.5 w-full">
-      {!star.isClaimed ? (
+      {!star.isClaimed || isForSale ? (
         <button
           onClick={handleClaim}
           className="w-full py-3 rounded-xl bg-sc-gold hover:bg-sc-gold/90 text-[#050814] text-xs font-mono font-bold uppercase tracking-widest hover:shadow-[0_0_20px_rgba(201,168,76,0.3)] transition-all flex items-center justify-center gap-2"
         >
           <Sparkles className="w-4 h-4" />
-          Yildizi Sahiplen
+          {isForSale ? (isTR ? "Yildizi Satin Al" : "Buy Star") : (isTR ? "Yildizi Sahiplen" : "Claim Star")}
         </button>
       ) : (
         <button

@@ -6,6 +6,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { api } from "../lib/api";
 import { StarRepository } from "../lib/StarRepository";
 import { PageShell } from "../components/shell";
 import VaultHero from "../components/vault/VaultHero";
@@ -222,12 +223,85 @@ const sidebarHighlights = [
   },
 ];
 
+function starLookupKeys(star = {}) {
+  return [
+    star.starId,
+    star.star_id,
+    star.id,
+    star.code,
+    star.star_code,
+    star.slug,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value));
+}
+
+function buildStarIndex(stars = []) {
+  const index = new Map();
+  stars.forEach((star) => {
+    starLookupKeys(star).forEach((key) => index.set(key, star));
+  });
+  return index;
+}
+
+async function fetchMyVaultStars() {
+  try {
+    const { data } = await api.get("/stars/mine/list");
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function mergeVaultOwnership(catalogStars = [], ownedRows = []) {
+  if (!ownedRows.length) return catalogStars;
+
+  const catalogIndex = buildStarIndex(catalogStars);
+  const mergedById = new Map(catalogStars.map((star) => [star.starId, star]));
+
+  ownedRows.forEach((ownedRow) => {
+    const base =
+      starLookupKeys(ownedRow)
+        .map((key) => catalogIndex.get(key))
+        .find(Boolean) || {};
+
+    const merged = {
+      ...base,
+      ...ownedRow,
+      starId: base.starId || ownedRow.star_id || ownedRow.starId || ownedRow.id || ownedRow.code,
+      code: base.code || ownedRow.code || ownedRow.star_code,
+      name: base.name || ownedRow.custom_name || ownedRow.name,
+      constellation: base.constellation || ownedRow.constellation,
+      spectralType: base.spectralType || ownedRow.spect || ownedRow.spectralType,
+      magnitude: base.magnitude ?? ownedRow.magnitude,
+      distance: base.distance ?? ownedRow.dist ?? ownedRow.distance,
+      tier: base.tier || ownedRow.tier || "standard",
+      tierLabel: base.tierLabel,
+      price: base.price || ownedRow.price || 0,
+      isClaimed: true,
+      ownerName: ownedRow.owner_name || base.ownerName,
+      ownerId: ownedRow.owner_id || base.ownerId,
+      hasCertificate: true,
+      certificateStatus: "Verified",
+      ownedSince: ownedRow.claimed_at || ownedRow.ownedSince || base.ownedSince,
+      orderId: ownedRow.order_id,
+      raw: { ...(base.raw || {}), ...ownedRow },
+    };
+
+    if (merged.starId) {
+      mergedById.set(merged.starId, merged);
+    }
+  });
+
+  return Array.from(mergedById.values());
+}
+
 function normalizeVaultStar(star) {
   const displayName = star.name || star.code || "Untitled Star";
   const constellation = star.constellation || "Unknown";
   const spectralType = star.spectralType || star.spect || "G";
   const tierLabel = star.tierLabel || (star.tier ? star.tier.charAt(0).toUpperCase() + star.tier.slice(1) : "Standard");
-  const isClaimed = !!star.isClaimed;
+  const isClaimed = !!(star.isClaimed || star.ownerId || star.owner_id || star.ownerName || star.owner_name);
 
   return {
     starId: star.starId || star.code || star.id || `star-${Math.random().toString(36).slice(2, 8)}`,
@@ -238,14 +312,14 @@ function normalizeVaultStar(star) {
     magnitude: star.magnitude !== undefined ? star.magnitude : star.raw?.magnitude || "N/A",
     distance: star.distance || star.raw?.distance || "N/A",
     rarity: tierLabel,
-    acquired: star.raw?.acquired || star.acquired || "Unknown",
-    ownedSince: star.ownedSince || star.raw?.ownedSince || "Unknown",
+    acquired: star.raw?.acquired || star.acquired || star.raw?.claimed_at || "Unknown",
+    ownedSince: star.ownedSince || star.raw?.ownedSince || star.raw?.claimed_at || "Unknown",
     ownershipStatus: isClaimed ? "Private Reserve" : "Available",
     certificateStatus: star.certificateStatus || (star.hasCertificate ? "Verified" : "Pending"),
     storyCount: star.storyCount || 0,
     memoryCount: star.memoryCount || (star.storyCount ? star.storyCount * 3 : 0),
     sharedStatus: isClaimed ? "Private" : "Available",
-    owner: star.ownerName || star.raw?.owner_name || star.raw?.owner || "Pilot",
+    owner: star.ownerName || star.owner_name || star.raw?.owner_name || star.raw?.owner || "Pilot",
     price: star.price || star.raw?.price || 0,
     hasCertificate: star.hasCertificate || star.certificateStatus === "Verified" || false,
     isClaimed,
@@ -290,8 +364,19 @@ export default function Vault() {
   useEffect(() => {
     const loadVault = async () => {
       try {
-        await StarRepository.loadAll();
-        const owned = StarRepository.getOwnedStars().map(normalizeVaultStar);
+        const catalogStars = await StarRepository.loadAll(true);
+        const myOwnedRows = await fetchMyVaultStars();
+        const mergedCatalog = mergeVaultOwnership(catalogStars, myOwnedRows);
+        StarRepository.setCache(mergedCatalog);
+
+        const ownedSource = myOwnedRows.length
+          ? mergedCatalog.filter((star) =>
+              myOwnedRows.some((ownedRow) =>
+                starLookupKeys(ownedRow).some((key) => starLookupKeys(star).includes(key))
+              )
+            )
+          : StarRepository.getOwnedStars();
+        const owned = ownedSource.map(normalizeVaultStar);
         const displayStars = owned.length ? owned : myStars.map(normalizeVaultStar);
         const starCount = displayStars.length;
         const totalValueNumber = displayStars.reduce((sum, star) => sum + Number(star.price || 0), 0);
