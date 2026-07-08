@@ -59,7 +59,7 @@ export default function CatalogPagination({
             onChange={(e) => setPageSize(parseInt(e.target.value))}
             className="bg-[#0a0f24] border border-white/10 rounded-lg py-1 px-2.5 text-white/80 outline-none focus:border-sc-gold/60 cursor-pointer"
           >
-            {[12, 24, 40, 60, 100].map((size) => (
+            {[24, 48, 72, 120, 240].map((size) => (
               <option key={size} value={size}>{size}</option>
             ))}
           </select>

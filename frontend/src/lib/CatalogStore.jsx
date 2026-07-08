@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { StarRepository } from "./StarRepository";
+import { StarRegistry } from "./StarRegistry";
 import { useT } from "./i18n";
 
 const CatalogContext = createContext(null);
@@ -31,10 +32,22 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
   
   // Navigation / View States
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12);
+  const [pageSize, setPageSize] = useState(24);
+  const [serverTotalCount, setServerTotalCount] = useState(null);
+  const [serverConstellations, setServerConstellations] = useState([]);
   const [selectedStarId, setSelectedStarId] = useState(null);
   const [viewMode, setViewMode] = useState("grid");
+  const [observerCoords, setObserverCoords] = useState({ ra: 279.2347, dec: 38.7837 });
+  const [debouncedObserverCoords, setDebouncedObserverCoords] = useState(observerCoords);
   
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedObserverCoords(observerCoords);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [observerCoords]);
+
   // Favorites persistence
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -55,12 +68,116 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
   }, [favorites]);
 
   // Load Stars Repository cache
+  const buildServerQuery = (filters, sortBy, currentPage, pageSize, searchQuery) => {
+    const query = {
+      limit: pageSize,
+      offset: (currentPage - 1) * pageSize,
+    };
+
+    if (filters.starType && filters.starType !== "all") {
+      query.tier = filters.starType;
+    }
+
+    if (filters.constellation && filters.constellation !== "all") {
+      query.constellation = filters.constellation;
+    }
+
+    if (filters.ownership === "available") {
+      query.available = true;
+    } else if (filters.ownership === "claimed") {
+      query.available = false;
+    }
+
+    if (filters.spectralType && filters.spectralType !== "all") {
+      query.spectral_type = filters.spectralType;
+    }
+
+    if (filters.magnitudeMin !== undefined) {
+      query.magnitude_min = filters.magnitudeMin;
+    }
+    if (filters.magnitudeMax !== undefined) {
+      query.magnitude_max = filters.magnitudeMax;
+    }
+
+    if (filters.distanceMin !== undefined) {
+      query.distance_min = filters.distanceMin;
+    }
+    if (filters.distanceMax !== undefined) {
+      query.distance_max = filters.distanceMax;
+    }
+
+    if (filters.hasStories) {
+      query.has_stories = true;
+    }
+
+    if (searchQuery) {
+      query.search = searchQuery;
+    }
+
+    switch (sortBy) {
+      case "price-high":
+        query.sort = "price_desc";
+        break;
+      case "price-low":
+        query.sort = "price_asc";
+        break;
+      case "name":
+        query.sort = "name";
+        break;
+      case "nearest":
+        query.sort = "nearest";
+        break;
+      case "recommended":
+        query.sort = "tier";
+        break;
+      default:
+        break;
+    }
+
+    return query;
+  };
+
+  const loadConstellations = useCallback(async () => {
+    try {
+      const options = await StarRegistry.fetchConstellations();
+      if (Array.isArray(options)) {
+        setServerConstellations(options);
+      }
+    } catch {
+      // fallback if constellation endpoint not available
+    }
+  }, []);
+
   const loadCatalog = useCallback(async (forceReload = false) => {
     setLoading(true);
     setError("");
     try {
-      const list = starLoader ? await starLoader(forceReload) : await StarRepository.loadAll(forceReload);
-      setStars(list);
+      if (starLoader) {
+        const list = await starLoader(forceReload);
+        setStars(list);
+        setServerTotalCount(null);
+      } else {
+        const query = buildServerQuery(filters, sortBy, currentPage, pageSize, searchQuery);
+        const pageQuery = { ...query };
+        if (sortBy === "nearest" && debouncedObserverCoords?.ra != null && debouncedObserverCoords?.dec != null) {
+          pageQuery.viewer_ra = debouncedObserverCoords.ra;
+          pageQuery.viewer_dec = debouncedObserverCoords.dec;
+        }
+        const countQuery = { ...query };
+        if (sortBy === "nearest" && debouncedObserverCoords?.ra != null && debouncedObserverCoords?.dec != null) {
+          countQuery.viewer_ra = debouncedObserverCoords.ra;
+          countQuery.viewer_dec = debouncedObserverCoords.dec;
+        }
+        delete countQuery.limit;
+        delete countQuery.offset;
+        delete countQuery.sort;
+        const [list, count] = await Promise.all([
+          StarRepository.loadPage(pageQuery),
+          StarRegistry.countStars(countQuery),
+        ]);
+        setStars(list);
+        setServerTotalCount(count);
+      }
     } catch (err) {
       setError(
         isTR 
@@ -70,11 +187,17 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     } finally {
       setLoading(false);
     }
-  }, [isTR, starLoader]);
+  }, [filters, sortBy, currentPage, pageSize, searchQuery, starLoader, isTR, debouncedObserverCoords]);
 
   useEffect(() => {
     loadCatalog();
   }, [loadCatalog]);
+
+  useEffect(() => {
+    if (!starLoader) {
+      loadConstellations();
+    }
+  }, [loadConstellations, starLoader]);
 
   // Action methods
   const toggleFavorite = useCallback((starId) => {
@@ -86,6 +209,11 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
   const isFavorite = useCallback((starId) => {
     return favorites.includes(starId);
   }, [favorites]);
+
+  const updateObserverCoords = useCallback((coords) => {
+    setObserverCoords((prev) => ({ ...prev, ...coords }));
+    setCurrentPage(1);
+  }, []);
 
   const updateFilters = useCallback((updater) => {
     setFilters((prev) => {
@@ -114,6 +242,10 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
 
   // Memoized query selections
   const filteredStars = useMemo(() => {
+    if (serverTotalCount !== null) {
+      return stars;
+    }
+
     return stars.filter((star) => {
       // 1. Search Query Match
       if (searchQuery) {
@@ -164,10 +296,14 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
 
       return true;
     });
-  }, [stars, searchQuery, filters]);
+  }, [stars, searchQuery, filters, serverTotalCount]);
 
   // Sorting
   const sortedStars = useMemo(() => {
+    if (serverTotalCount !== null) {
+      return filteredStars;
+    }
+
     const list = [...filteredStars];
     
     list.sort((a, b) => {
@@ -191,27 +327,28 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     });
 
     return list;
-  }, [filteredStars, sortBy]);
+  }, [filteredStars, sortBy, serverTotalCount]);
 
   // Pagination
   const paginatedStars = useMemo(() => {
+    if (serverTotalCount !== null) {
+      return sortedStars;
+    }
     const startIndex = (currentPage - 1) * pageSize;
     return sortedStars.slice(startIndex, startIndex + pageSize);
-  }, [sortedStars, currentPage, pageSize]);
+  }, [sortedStars, currentPage, pageSize, serverTotalCount]);
 
   const totalPages = useMemo(() => {
-    return Math.ceil(sortedStars.length / pageSize) || 1;
-  }, [sortedStars, pageSize]);
+    const totalCount = serverTotalCount !== null ? serverTotalCount : sortedStars.length;
+    return Math.max(1, Math.ceil(totalCount / pageSize));
+  }, [sortedStars, pageSize, serverTotalCount]);
 
   // Dynamic filter options aggregated from current dataset
   const filterOptions = useMemo(() => {
-    const constellationsSet = new Set();
+    const constellationsSet = new Set(serverConstellations);
     const spectralLettersSet = new Set();
 
     stars.forEach((s) => {
-      if (s.constellation && s.constellation !== "Bilinmiyor") {
-        constellationsSet.add(s.constellation);
-      }
       if (s.spectralType) {
         const primaryLetter = s.spectralType.charAt(0).toUpperCase();
         if (["O", "B", "A", "F", "G", "K", "M"].includes(primaryLetter)) {
@@ -221,26 +358,26 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     });
 
     return {
-      constellations: Array.from(constellationsSet).sort(),
+      constellations: constellationsSet.size > 0 ? Array.from(constellationsSet).sort() : [],
       spectralTypes: Array.from(spectralLettersSet).sort()
     };
-  }, [stars]);
+  }, [stars, serverConstellations]);
 
   // Aggregated catalog totals
   const statsCounters = useMemo(() => {
-    const totalCount = stars.length;
+    const totalCount = serverTotalCount !== null ? serverTotalCount : stars.length;
     const claimedCount = stars.filter(s => s.isClaimed).length;
     const legendCount = stars.filter(s => s.tier === "legendary").length;
     const storyCount = stars.filter(s => s.storyCount).length;
 
     return {
-      total: totalCount > 0 ? `${totalCount}+` : "10.000+",
+      total: totalCount > 0 ? `${totalCount}` : "10.000+",
       claimed: claimedCount > 0 ? claimedCount.toString() : "548",
       available: totalCount > 0 ? (totalCount - claimedCount).toString() : "9.452",
       stories: storyCount > 0 ? storyCount.toString() : "124",
       legendary: legendCount > 0 ? legendCount.toString() : "27"
     };
-  }, [stars]);
+  }, [stars, serverTotalCount]);
 
   const contextValue = {
     // Cache
@@ -252,6 +389,7 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     filteredStars,
     paginatedStars,
     totalPages,
+    totalCount: serverTotalCount !== null ? serverTotalCount : filteredStars.length,
     stats: statsCounters,
     filterOptions,
     
@@ -273,6 +411,9 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     setSelectedStarId,
     viewMode,
     setViewMode,
+    observerCoords,
+    setObserverCoords,
+    updateObserverCoords,
     
     // Actions & Operations
     favorites,

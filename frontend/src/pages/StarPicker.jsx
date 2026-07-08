@@ -39,6 +39,7 @@ import {
   formatSpectralType,
   formatTemperature,
 } from "../lib/formatters";
+import { getFeaturedStars, getNearbyStars, getTierMeta } from "../lib/catalogSelection";
 
 const POPULAR_SEARCHES = ["Sirius", "Vega", "Betelgeuse", "Polaris", "Rigel", "Procyon"];
 
@@ -107,33 +108,80 @@ function StarsHero({ store }) {
   );
 }
 
-function FeaturedStars({ stars, onSelect }) {
-  const featured = stars.slice(0, 4);
+function FeaturedStars({ stars, onSelect, isTR = true }) {
+  const featured = useMemo(() => getFeaturedStars(stars, 6), [stars]);
   if (!featured.length) return null;
 
   return (
     <SurfacePanel variant="strong" className="p-5">
-      <SectionHeader title="One Cikan Yildizlar" action="Atlas Akisini Gor" />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {featured.map((star) => (
-          <button
-            type="button"
-            key={star.starId || star.code}
-            onClick={() => onSelect(star)}
-            className="group rounded-2xl border border-white/10 bg-[#050814]/70 p-3 text-left transition hover:-translate-y-1 hover:border-sc-gold/40 hover:bg-[#0b1026]/85"
-          >
-            <StarAssetImage star={star} variant="preview" className="h-36" />
-            <div className="mt-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="font-display text-lg text-white group-hover:text-sc-gold">{star.name}</div>
-                <div className="mt-1 text-[11px] text-[#8fa0c4]">{star.constellation}</div>
+      <SectionHeader title={isTR ? "Öne Çıkan Yıldızlar" : "Featured Stars"} action={isTR ? "Atlas Akışını Gör" : "View Atlas Flow"} />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {featured.map((star) => {
+          const tierMeta = getTierMeta(star.tier, isTR);
+          return (
+            <button
+              type="button"
+              key={star.starId || star.code}
+              onClick={() => onSelect(star)}
+              className="group rounded-2xl border border-white/10 bg-[#050814]/70 p-3 text-left transition hover:-translate-y-1 hover:border-sc-gold/40 hover:bg-[#0b1026]/85"
+            >
+              <StarAssetImage star={star} variant="preview" className="h-36" />
+              <div className="mt-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-display text-lg text-white group-hover:text-sc-gold">{star.name}</div>
+                  <div className="mt-1 text-[11px] text-[#8fa0c4]">{star.constellation}</div>
+                </div>
+                <StatusBadge tone={star.isClaimed ? "blue" : "emerald"}>
+                  {star.isClaimed ? (isTR ? "Kayitli" : "Claimed") : (isTR ? "Mevcut" : "Available")}
+                </StatusBadge>
               </div>
-              <StatusBadge tone={star.isClaimed ? "blue" : "emerald"}>
-                {star.isClaimed ? "Kayitli" : "Mevcut"}
-              </StatusBadge>
-            </div>
-          </button>
-        ))}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${tierMeta.accent}`}>
+                  {tierMeta.label}
+                </span>
+                <span className="text-[11px] text-[#8fa0c4]">{formatMagnitude(star.magnitude)}</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </SurfacePanel>
+  );
+}
+
+function NearbyStars({ stars, onSelect, isTR = true }) {
+  const nearby = useMemo(() => getNearbyStars(stars, 3), [stars]);
+  if (!nearby.length) return null;
+
+  return (
+    <SurfacePanel variant="subtle" className="p-5">
+      <SectionHeader title={isTR ? "Yakın Yıldızlar" : "Nearby Stars"} action={isTR ? "Konuma Göre" : "By Position"} />
+      <div className="grid gap-4 md:grid-cols-3">
+        {nearby.map((star) => {
+          const tierMeta = getTierMeta(star.tier, isTR);
+          return (
+            <button
+              type="button"
+              key={star.starId || star.code}
+              onClick={() => onSelect(star)}
+              className="rounded-2xl border border-white/10 bg-[#050814]/70 p-3 text-left transition hover:border-sc-blue/40 hover:bg-[#0b1026]/85"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-display text-lg text-white">{star.name}</div>
+                  <div className="mt-1 text-[11px] text-[#8fa0c4]">{star.constellation}</div>
+                </div>
+                <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${tierMeta.accent}`}>
+                  {tierMeta.label}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between text-[11px] text-[#8fa0c4]">
+                <span>{formatDistance(star.distance, true)}</span>
+                <span>{formatPrice(star.price)}</span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </SurfacePanel>
   );
@@ -340,7 +388,7 @@ function CatalogPageOrchestrator() {
       spectralTypes={store.filterOptions.spectralTypes}
       isMobileOpen={isMobileFilterOpen}
       onCloseMobile={() => setIsMobileFilterOpen(false)}
-      totalCount={store.filteredStars.length}
+      totalCount={store.totalCount}
     />
   );
 
@@ -376,7 +424,8 @@ function CatalogPageOrchestrator() {
         </div>
       </PageToolbar>
 
-      <FeaturedStars stars={store.sortedStars || store.filteredStars} onSelect={handleSelect} />
+      <FeaturedStars stars={store.sortedStars || store.filteredStars} onSelect={handleSelect} isTR={isTR} />
+      <NearbyStars stars={store.sortedStars || store.filteredStars} onSelect={handleSelect} isTR={isTR} />
 
       <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)_24rem]">
         <div>{sidebarComponent}</div>
@@ -387,22 +436,24 @@ function CatalogPageOrchestrator() {
             onFilterChange={(type) => store.updateFilters({ starType: type })}
             sortBy={store.sortBy}
             onSortChange={store.setSortBy}
-            totalCount={store.filteredStars.length}
+            totalCount={store.totalCount}
             onOpenMobileFilters={() => setIsMobileFilterOpen(true)}
+            observerCoords={store.observerCoords}
+            onObserverCoordsChange={store.updateObserverCoords}
             isTR={isTR}
           />
           <SurfacePanel variant="subtle" className="p-4">
             <SectionHeader title="Ana Katalog" action={null} />
             {gridComponent}
           </SurfacePanel>
-          {!store.loading && store.filteredStars.length > 0 ? (
+          {!store.loading && store.totalCount > 0 ? (
             <CatalogPagination
               currentPage={store.currentPage}
               totalPages={store.totalPages}
               pageSize={store.pageSize}
               setPageSize={store.setPageSize}
               onPageChange={store.setCurrentPage}
-              totalItems={store.filteredStars.length}
+              totalItems={store.totalCount}
             />
           ) : null}
         </div>

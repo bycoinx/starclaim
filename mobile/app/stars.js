@@ -11,6 +11,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../components/SpaceBackground';
 import { useCatalogStore } from '../src/platform/stars/catalogStore';
+import { getFeaturedStars, getNearbyStars, getTierMeta } from '../src/platform/stars/catalogSelection';
 
 const { width, height } = Dimensions.get('window');
 const CATALOG_RENDER_LIMIT = 360;
@@ -83,6 +84,9 @@ export default function Stars() {
     }));
   }, [getFilteredStars, searchQuery, selectedTier, stars]);
 
+  const featuredStars = useMemo(() => getFeaturedStars(filteredStars, 6), [filteredStars]);
+  const nearbyStars = useMemo(() => getNearbyStars(filteredStars, 3), [filteredStars]);
+
   const renderARMode = () => {
     if (loading) return null;
     if (!motion || !motion.rotation) return null;
@@ -127,28 +131,36 @@ export default function Stars() {
     });
   };
 
-  const renderCatalogItem = ({ item: star }) => (
-    <View style={styles.starCardContainer}>
-      <View style={styles.starCard}>
-        <LinearGradient colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} style={styles.starCardGradient}>
-          <Text style={styles.starCardTier}>{star.localCatalog ? 'GÖZLEM KATALOĞU' : star.tier?.toUpperCase()}</Text>
-          <Text style={styles.starCardName}>{star.name}</Text>
-          <View style={styles.priceRow}>
-            <Text style={styles.starCardPriceValue}>
-              {star.price == null
-                ? (String(star.id) === '0'
-                  ? `${star.spectralType || 'G2V'} · YEREL SİSTEM`
-                  : `${star.constellation || star.spectralType || 'HYG'} · ${Number(star.distanceParsec || 0).toFixed(1)} pc`)
-                : `$${star.price}`}
-            </Text>
-          </View>
-          {/* Card corners */}
-          <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '60' }]} />
-          <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: THEME.colors.secondary + '60' }]} />
-        </LinearGradient>
-      </View>
-    </View>
-  );
+  const renderCatalogItem = ({ item: star }) => {
+    const tierMeta = getTierMeta(star.tier, true);
+    return (
+      <TouchableOpacity style={styles.starCardContainer} onPress={() => setSelectedStar(star)}>
+        <View style={styles.starCard}>
+          <LinearGradient colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} style={styles.starCardGradient}>
+            <View style={styles.starCardHeader}>
+              <Text style={styles.starCardTier}>{star.localCatalog ? 'GÖZLEM KATALOĞU' : tierMeta.label.toUpperCase()}</Text>
+              <View style={[styles.tierPill, { borderColor: tierMeta.accent[0] + '55', backgroundColor: tierMeta.accent[0] + '18' }]}>
+                <Text style={[styles.tierPillText, { color: tierMeta.accent[0] }]}>{tierMeta.label}</Text>
+              </View>
+            </View>
+            <Text style={styles.starCardName}>{star.name}</Text>
+            <Text style={styles.starCardMeta}>{star.constellation || star.spectralType || 'HYG'}</Text>
+            <View style={styles.priceRow}>
+              <Text style={styles.starCardPriceValue}>
+                {star.price == null
+                  ? (String(star.id) === '0'
+                    ? `${star.spectralType || 'G2V'} · YEREL SİSTEM`
+                    : `${Number(star.distanceParsec || 0).toFixed(1)} pc`)
+                  : `$${star.price}`}
+              </Text>
+            </View>
+            <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '60' }]} />
+            <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: THEME.colors.secondary + '60' }]} />
+          </LinearGradient>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (activeTab === 'tarama' && !permission) return <View style={styles.container} />;
   if (activeTab === 'tarama' && !permission.granted) {
@@ -251,6 +263,46 @@ export default function Stars() {
           </View>
 
           <FlatList
+            ListHeaderComponent={(
+              <View style={styles.catalogSections}>
+                <View style={styles.heroPanel}>
+                  <Text style={styles.heroTitle}>ÖNE ÇIKAN YILDIZLAR</Text>
+                  <Text style={styles.heroSubtitle}>Seçkin yıldızlar, öne çıkan değer ve yakınlık sıralaması ile öne çıkıyor.</Text>
+                  <View style={styles.heroCards}>
+                    {featuredStars.map((star) => {
+                      const tierMeta = getTierMeta(star.tier, true);
+                      return (
+                        <TouchableOpacity key={star.star_id || star.id} style={styles.heroCard} onPress={() => setSelectedStar(star)}>
+                          <Text style={styles.heroCardName}>{star.name}</Text>
+                          <Text style={styles.heroCardMeta}>{star.constellation || 'Bilinmeyen'}</Text>
+                          <View style={[styles.tierPill, { borderColor: tierMeta.accent[0] + '55', backgroundColor: tierMeta.accent[0] + '18' }]}> 
+                            <Text style={[styles.tierPillText, { color: tierMeta.accent[0] }]}>{tierMeta.label}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <View style={styles.sectionPanel}>
+                  <Text style={styles.sectionTitle}>YAKIN YILDIZLAR</Text>
+                  <View style={styles.nearbyCards}>
+                    {nearbyStars.map((star) => {
+                      const tierMeta = getTierMeta(star.tier, true);
+                      return (
+                        <TouchableOpacity key={star.star_id || star.id} style={styles.nearbyCard} onPress={() => setSelectedStar(star)}>
+                          <Text style={styles.nearbyCardName}>{star.name}</Text>
+                          <Text style={styles.nearbyCardMeta}>{Number(star.distanceParsec || star.distance || 0).toFixed(1)} pc</Text>
+                          <View style={[styles.tierPill, { borderColor: tierMeta.accent[0] + '55', backgroundColor: tierMeta.accent[0] + '18' }]}> 
+                            <Text style={[styles.tierPillText, { color: tierMeta.accent[0] }]}>{tierMeta.label}</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              </View>
+            )}
             data={filteredStars}
             keyExtractor={(item, index) => item.star_id?.toString() || item.id?.toString() || `${item.name || 'star'}-${index}`}
             renderItem={renderCatalogItem}
@@ -309,6 +361,22 @@ const styles = StyleSheet.create({
   closeArDetailText: { color: THEME.colors.textMuted, fontSize: 10, fontWeight: '900' },
   catalogContainer: { flex: 1, backgroundColor: '#000', padding: 24 },
   catalogHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 24, marginTop: 10 },
+  catalogSections: { gap: 16, marginBottom: 16 },
+  heroPanel: { borderRadius: 20, padding: 16, backgroundColor: 'rgba(10, 16, 32, 0.85)', borderWidth: 1, borderColor: 'rgba(230, 188, 74, 0.25)' },
+  heroTitle: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 2, marginBottom: 6 },
+  heroSubtitle: { color: 'rgba(244,247,255,0.7)', fontSize: 12, lineHeight: 18, marginBottom: 12 },
+  heroCards: { gap: 10 },
+  heroCard: { borderRadius: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  heroCardName: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 4 },
+  heroCardMeta: { color: 'rgba(244,247,255,0.6)', fontSize: 11, marginBottom: 8 },
+  sectionPanel: { borderRadius: 20, padding: 16, backgroundColor: 'rgba(10, 16, 32, 0.85)', borderWidth: 1, borderColor: 'rgba(119, 191, 255, 0.2)' },
+  sectionTitle: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 2, marginBottom: 12 },
+  nearbyCards: { gap: 10 },
+  nearbyCard: { borderRadius: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  nearbyCardName: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 4 },
+  nearbyCardMeta: { color: 'rgba(244,247,255,0.6)', fontSize: 11, marginBottom: 8 },
+  tierPill: { alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 },
+  tierPillText: { fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   catalogIdentity: { flexGrow: 1, flexShrink: 1, minWidth: 170 },
   catalogTitle: { fontSize: 22, fontWeight: '900', color: '#fff', letterSpacing: 3, fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' },
   catalogStatusRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
@@ -327,8 +395,10 @@ const styles = StyleSheet.create({
   starCardContainer: { flex: 1/3, padding: 6 },
   starCard: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   starCardGradient: { padding: 16, minHeight: 120 },
-  starCardTier: { fontSize: 8, color: THEME.colors.secondary, fontWeight: '900', letterSpacing: 1, marginBottom: 4 },
+  starCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 6 },
+  starCardTier: { fontSize: 8, color: THEME.colors.secondary, fontWeight: '900', letterSpacing: 1, flexShrink: 1 },
   starCardName: { fontSize: 16, fontWeight: '900', color: '#fff', letterSpacing: 1, flex: 1 },
+  starCardMeta: { color: 'rgba(244,247,255,0.6)', fontSize: 11, marginTop: 4, marginBottom: 8 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
   starCardPriceValue: { fontSize: 15, fontWeight: '900', color: THEME.colors.primary, fontFamily: 'monospace' },
   cardCorner: { position: 'absolute', width: 10, height: 10 },

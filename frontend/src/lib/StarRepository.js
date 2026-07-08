@@ -12,6 +12,28 @@ const FALLBACK_STARS = [
   { star_id: "fallback-aldebaran", code: "ALDEBARAN-TAU", name: "Aldebaran", constellation: "Taurus", tier: "supernova", price: 1099, spect: "K5III", distance: 65.3, magnitude: 0.85, claimed: false }
 ];
 
+const CATALOG_TARGET_SIZE = 10000;
+const LISTING_PRICE_BASE = 250;
+
+function computeListingPrice(item, index) {
+  const magnitude = Number(item.magnitude ?? item.mag ?? 5);
+  const distance = Number(item.distance ?? item.distanceParsec ?? 1000);
+  const tier = String(item.tier || "standard").toLowerCase();
+  const baseByTier = {
+    legendary: 2800,
+    zodiac: 1650,
+    supernova: 1200,
+    nova: 780,
+    standard: 360,
+  };
+  const base = baseByTier[tier] || baseByTier.standard;
+  const magnitudeAdjustment = magnitude < -0.5 ? 320 : magnitude < 1 ? 200 : magnitude < 3 ? 110 : magnitude < 5 ? 55 : 20;
+  const distanceAdjustment = distance < 15 ? 220 : distance < 60 ? 130 : distance < 300 ? 70 : distance < 1000 ? 25 : 0;
+  const brightnessBand = magnitude < -0.5 ? 140 : magnitude < 1 ? 90 : magnitude < 3 ? 45 : 0;
+  const indexAdjustment = index % 17 === 0 ? 140 : index % 7 === 0 ? 60 : 0;
+  return Math.round(base + magnitudeAdjustment + distanceAdjustment + brightnessBand + indexAdjustment + LISTING_PRICE_BASE);
+}
+
 export class StarRepository {
   static cache = [];
   static initialized = false;
@@ -26,22 +48,36 @@ export class StarRepository {
     }
 
     try {
-      const rawStars = await StarRegistry.fetchStars(500);
+      const rawStars = await StarRegistry.fetchStars({ limit: CATALOG_TARGET_SIZE, sort: "price_asc" });
       if (rawStars && rawStars.length > 0) {
-        const mapped = rawStars.map((r) => this.mapRawStarFields(r));
+        const mapped = rawStars.map((r) => StarAssetManager.normalizeRawStar(r));
         this.cache = this.normalize(mapped);
       } else {
-        const mappedFallback = FALLBACK_STARS.map((r) => this.mapRawStarFields(r));
+        const mappedFallback = FALLBACK_STARS.map((r) => StarAssetManager.normalizeRawStar(r));
         this.cache = this.normalize(mappedFallback);
       }
     } catch (error) {
       console.warn("StarRepository: registry request failed. Initializing with local fallback catalog.");
-      const mappedFallback = FALLBACK_STARS.map((r) => this.mapRawStarFields(r));
+      const mappedFallback = FALLBACK_STARS.map((r) => StarAssetManager.normalizeRawStar(r));
       this.cache = this.normalize(mappedFallback);
     }
-    
+
     this.initialized = true;
     return this.cache;
+  }
+
+  static async loadPage(params = {}) {
+    try {
+      const rawStars = await StarRegistry.fetchStars(params);
+      if (rawStars && rawStars.length > 0) {
+        const mapped = rawStars.map((r) => StarAssetManager.normalizeRawStar(r));
+        return this.normalize(mapped);
+      }
+      return [];
+    } catch (error) {
+      console.warn("StarRepository: registry page fetch failed.", error);
+      return [];
+    }
   }
 
   /**
@@ -56,6 +92,8 @@ export class StarRepository {
       const slug = slugSource
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || `star-${index}`;
+
+      const price = asset.price || computeListingPrice(item, index);
 
       return {
         // Core Identity fields
@@ -79,7 +117,7 @@ export class StarRepository {
         isClaimed: asset.isClaimed,
         ownerName: asset.ownerName,
         ownerId: asset.ownerId,
-        price: asset.price,
+        price,
         hasCertificate: asset.hasCertificate,
         certificateUrl: asset.certificateUrl,
         storyCount: asset.storyCount,
@@ -94,42 +132,6 @@ export class StarRepository {
    * Map a raw incoming star object from various registry payload shapes
    * into a consistent shape expected by the repository and asset manager.
    */
-  static mapRawStarFields(raw = {}) {
-    if (!raw) return {};
-
-    return {
-      // identity
-      star_id: raw.star_id || raw.starId || raw.id || raw.code || null,
-      code: raw.code || raw.star_code || raw.code || raw.star_id || null,
-      name: raw.name || raw.title || raw.displayName || null,
-      constellation: raw.constellation || raw.const || raw.constellation_name || null,
-
-      // asset URLs
-      preview_url: raw.preview_url || raw.preview_image || raw.preview || raw.previewUrl || null,
-      hero_url: raw.hero_url || raw.hero_image || raw.hero || raw.heroUrl || null,
-
-      // spectral / metrics
-      spect: raw.spect || raw.spectralType || raw.spectral_type || null,
-      magnitude: raw.magnitude !== undefined ? Number(raw.magnitude) : raw.mag !== undefined ? Number(raw.mag) : null,
-      distance: raw.distance !== undefined ? Number(raw.distance) : raw.distanceLy || raw.distance_ly || null,
-
-      // ownership
-      claimed: raw.claimed !== undefined ? !!raw.claimed : !!(raw.owner_id || raw.owner_name),
-      owner_name: raw.owner_name || raw.ownerName || raw.owner || null,
-      owner_id: raw.owner_id || raw.ownerId || null,
-
-      // commercial
-      price: raw.price !== undefined ? Number(raw.price) : raw.basePrice || null,
-
-      // misc
-      certificate_url: raw.certificate_url || raw.certificateUrl || null,
-      stories_count: raw.stories_count || raw.storyCount || raw.stories || 0,
-      tier: raw.tier || raw.tierName || null,
-      // keep original raw payload for advanced hooks
-      __raw: raw
-    };
-  }
-
   /**
    * Look up a single normalized star model by its id or code.
    */
