@@ -1,8 +1,33 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "";
-const isVercel = typeof window !== "undefined" && window.location.hostname.endsWith(".vercel.app");
-export const API = isVercel ? "/api" : (BACKEND_URL ? `${BACKEND_URL}/api` : "/api");
+const rawBackendUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "";
+
+function getBrowserHostname() {
+  if (typeof window === "undefined") return "";
+  return window.location.hostname || "";
+}
+
+function normalizeBackendUrl(value) {
+  const trimmed = String(value || "").trim();
+  if (!trimmed || trimmed.includes("<") || trimmed.includes(">")) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsed.protocol)) return "";
+    return parsed.toString().replace(/\/api\/?$/, "").replace(/\/$/, "");
+  } catch {
+    return "";
+  }
+}
+
+const hostname = getBrowserHostname();
+const isHostedFrontend =
+  hostname.endsWith(".vercel.app") ||
+  hostname === "starclaimx.com" ||
+  hostname === "www.starclaimx.com";
+const backendUrl = normalizeBackendUrl(rawBackendUrl);
+
+export const API = isHostedFrontend || !backendUrl ? "/api" : `${backendUrl}/api`;
 
 export const api = axios.create({
   baseURL: API,
