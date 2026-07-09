@@ -29,10 +29,10 @@ export class StarRegistry {
       if (response && typeof response.data === "object" && response.data.count !== undefined) {
         return Number(response.data.count);
       }
-      return 0;
+      return null;
     } catch (error) {
-      console.warn("StarRegistry: Failed to fetch stars count from endpoint.", error);
-      throw error;
+      console.warn("StarRegistry: Stars count endpoint unavailable; falling back to loaded page count.", error);
+      return null;
     }
   }
 

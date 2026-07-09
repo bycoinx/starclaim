@@ -171,12 +171,16 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
         delete countQuery.limit;
         delete countQuery.offset;
         delete countQuery.sort;
-        const [list, count] = await Promise.all([
-          StarRepository.loadPage(pageQuery),
-          StarRegistry.countStars(countQuery),
-        ]);
-        setStars(list);
-        setServerTotalCount(count);
+        const count = await StarRegistry.countStars(countQuery);
+        if (Number.isFinite(count)) {
+          const list = await StarRepository.loadPage(pageQuery);
+          setStars(list);
+          setServerTotalCount(count);
+        } else {
+          const list = await StarRepository.loadAll(true);
+          setStars(list);
+          setServerTotalCount(null);
+        }
       }
     } catch (err) {
       setError(
