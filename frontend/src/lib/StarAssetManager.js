@@ -22,35 +22,66 @@ const TIER_METADATA = {
 };
 
 export class StarAssetManager {
+  static normalizeRawStar(raw = {}) {
+    if (!raw) return {};
+
+    return {
+      star_id: raw.star_id || raw.starId || raw.id || raw.code || null,
+      code: raw.code || raw.star_code || raw.code || raw.star_id || null,
+      name: raw.name || raw.title || raw.displayName || null,
+      constellation: raw.constellation || raw.const || raw.constellation_name || null,
+
+      preview_url: raw.preview_url || raw.preview_image || raw.preview || raw.previewUrl || null,
+      hero_url: raw.hero_url || raw.hero_image || raw.hero || raw.heroUrl || null,
+
+      spect: raw.spect || raw.spectralType || raw.spectral_type || null,
+      magnitude: raw.magnitude !== undefined ? Number(raw.magnitude) : raw.mag !== undefined ? Number(raw.mag) : null,
+      distance: raw.distance !== undefined ? Number(raw.distance) : raw.distanceLy || raw.distance_ly || null,
+      distanceParsec: raw.distanceParsec !== undefined ? Number(raw.distanceParsec) : raw.distanceParsec || null,
+
+      claimed: raw.claimed !== undefined ? !!raw.claimed : !!(raw.owner_id || raw.owner_name || raw.ownerName),
+      owner_name: raw.owner_name || raw.ownerName || raw.owner || null,
+      owner_id: raw.owner_id || raw.ownerId || null,
+
+      price: raw.price !== undefined ? Number(raw.price) : raw.basePrice || null,
+      certificate_url: raw.certificate_url || raw.certificateUrl || null,
+      stories_count: raw.stories_count || raw.storyCount || raw.stories || 0,
+      tier: raw.tier || raw.tierName || null,
+      hasStories: raw.hasStories || false,
+      schemaVersion: raw.schemaVersion || "1.0.0",
+      raw: raw
+    };
+  }
+
   /**
    * Resolves a fully populated asset metadata object from raw star data.
    * This is the main interface used by StarCard and DetailDrawer.
    */
   static getStarAsset(star) {
     if (!star) return null;
+    const normalized = this.normalizeRawStar(star);
 
-    const isClaimed = !!(star.owner_id || star.owner_name || star.claimed);
-    const tier = star.tier?.toLowerCase() || "standard";
+    const isClaimed = !!(normalized.owner_id || normalized.owner_name || normalized.claimed);
+    const tier = normalized.tier?.toLowerCase() || "standard";
     const tierMeta = TIER_METADATA[tier] || TIER_METADATA.standard;
 
-    // Resolve preview & hero image variants (could consume star.preview_webp in the future)
-    const previewImage = star.preview_url || star.preview_image || FALLBACK_ASSETS.preview;
-    const heroImage = star.hero_url || star.hero_image || FALLBACK_ASSETS.hero;
+    const previewImage = normalized.preview_url || normalized.preview_image || FALLBACK_ASSETS.preview;
+    const heroImage = normalized.hero_url || normalized.hero_image || FALLBACK_ASSETS.hero;
 
     return {
-      starId: star.star_id || star.id || star.code,
-      name: star.name || `Star ${star.code}`,
-      code: star.code,
-      constellation: star.constellation || "Bilinmiyor",
+      starId: normalized.star_id || normalized.id || normalized.code,
+      name: normalized.name || `Star ${normalized.code}`,
+      code: normalized.code,
+      constellation: normalized.constellation || "Bilinmiyor",
       
       // Asset parameters
       previewImage,
       heroImage,
       
       // Metrics
-      spectralType: star.spectralType || star.spect || "G",
-      magnitude: star.magnitude !== undefined ? Number(star.magnitude) : 5.0,
-      distance: star.distanceParsec ? Math.round(star.distanceParsec * 3.262) : (star.distance || 0),
+      spectralType: normalized.spectralType || normalized.spect || "G",
+      magnitude: normalized.magnitude !== undefined ? Number(normalized.magnitude) : 5.0,
+      distance: normalized.distanceParsec ? Math.round(normalized.distanceParsec * 3.262) : (normalized.distance || 0),
       
       // Rarity / Classification
       tier: tier,
@@ -59,17 +90,17 @@ export class StarAssetManager {
       
       // Ownership parameters
       isClaimed,
-      ownerName: star.owner_name || (isClaimed ? "Pilot" : null),
-      ownerId: star.owner_id || null,
-      price: Number(star.price || tierMeta.basePrice),
+      ownerName: normalized.owner_name || (isClaimed ? "Pilot" : null),
+      ownerId: normalized.owner_id || null,
+      price: Number(normalized.price || tierMeta.basePrice),
       
       // Custom certifications and stories
-      hasCertificate: isClaimed || !!star.certificate_url,
-      certificateUrl: star.certificate_url || (isClaimed ? FALLBACK_ASSETS.certificate : null),
-      storyCount: star.stories_count || (star.hasStories ? 1 : 0),
+      hasCertificate: isClaimed || !!normalized.certificate_url,
+      certificateUrl: normalized.certificate_url || (isClaimed ? FALLBACK_ASSETS.certificate : null),
+      storyCount: normalized.stories_count || (normalized.hasStories ? 1 : 0),
       
       // System fields
-      schemaVersion: star.schemaVersion || "1.0.0"
+      schemaVersion: normalized.schemaVersion || "1.0.0"
     };
   }
 

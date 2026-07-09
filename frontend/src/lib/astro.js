@@ -33,3 +33,16 @@ export function raDecToVector3(ra, dec, radius = 500) {
     radius * Math.sin(phi) * Math.sin(theta),
   );
 }
+
+export function vector3ToRaDec(vec) {
+  const dir = vec.clone().normalize();
+  const phi = Math.acos(THREE.MathUtils.clamp(dir.y, -1, 1));
+  const declination = 90 - THREE.MathUtils.radToDeg(phi);
+  let theta = Math.atan2(dir.z, dir.x);
+  if (theta < 0) theta += Math.PI * 2;
+  const rightAscensionDeg = THREE.MathUtils.radToDeg(theta);
+  return {
+    ra: rightAscensionDeg,
+    dec: declination,
+  };
+}

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌟 Voyage 3D Star Journey</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      width: 100%;
+      height: 100vh;
+      background: #0f0f1e;
+      font-family: 'Courier New', monospace;
+      color: #00f3ff;
+      overflow: hidden;
+    }
+    
+    #voyage-container {
+      width: 100%;
+      height: 100%;
+    }
+    
+    .voyage-app {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, #1a1a3e 0%, #0f0f1e 100%);
+    }
+    
+    canvas {
+      display: block;
+    }
+    
+    #voyage-hud {
+      user-select: none;
+    }
+    
+    #voyage-info-panel {
+      background: rgba(15, 15, 46, 0.95) !important;
+      border: 2px solid #00f3ff !important;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+      border-radius: 8px !important;
+      padding: 20px !important;
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    #voyage-info-panel h3 {
+      margin-bottom: 10px;
+      color: #00ffff;
+      font-size: 14px;
+    }
+    
+    #voyage-info-panel p {
+      margin: 3px 0;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    
+    #voyage-stats {
+      background: rgba(15, 15, 46, 0.9) !important;
+      border: 1px solid #0099ff !important;
+      box-shadow: 0 0 10px rgba(0, 153, 255, 0.2);
+    }
+    
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      margin: 2px 0;
+    }
+    
+    .stat-label {
+      color: #0099ff;
+    }
+    
+    .stat-value {
+      color: #00ff99;
+      font-weight: bold;
+    }
+    
+    #voyage-reticle {
+      filter: drop-shadow(0 0 5px #00f3ff);
+    }
+    
+    .reticle-line {
+      stroke: #00f3ff;
+      stroke-width: 1;
+      opacity: 0.8;
+    }
+    
+    .reticle-corner {
+      stroke: #00f3ff;
+      stroke-width: 2;
+      fill: none;
+      opacity: 0.9;
+    }
+    
+    /* Loading indicator */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      z-index: 1000;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(0, 243, 255, 0.2);
+      border-top: 3px solid #00f3ff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 14px;
+      color: #00f3ff;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    /* Controls overlay */
+    .controls-overlay {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(15, 15, 46, 0.9);
+      border: 1px solid #00f3ff;
+      border-radius: 4px;
+      padding: 15px;
+      max-width: 250px;
+      font-size: 11px;
+      line-height: 1.6;
+      z-index: 50;
+      pointer-events: auto;
+    }
+    
+    .controls-overlay h4 {
+      color: #00ffff;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    
+    .control-item {
+      margin: 4px 0;
+      color: #00f3ff;
+    }
+    
+    .control-key {
+      color: #ffff00;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="voyage-container"></div>
+  
+  <!-- Loading indicator -->
+  <div id="loading-overlay" class="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Initializing 3D Voyage...</div>
+  </div>
+  
+  <!-- Controls overlay -->
+  <div class="controls-overlay">
+    <h4>🎮 Controls</h4>
+    <div class="control-item"><span class="control-key">Tap</span>: Select star/DSO</div>
+    <div class="control-item"><span class="control-key">Double Tap</span>: Warp to target</div>
+    <div class="control-item"><span class="control-key">Pan</span>: Move view</div>
+    <div class="control-item"><span class="control-key">Pinch</span>: Zoom in/out</div>
+    <div class="control-item"><span class="control-key">Long Press</span>: Show menu</div>
+  </div>
+
+  <script type="module">
+    // Import VoyageApp
+    import { initializeVoyageApp } from './VoyageApp.js';
+    
+    // Remove loading overlay on initialization
+    function hideLoading() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        setTimeout(() => overlay.remove(), 300);
+      }
+    }
+    
+    // Initialize on page load
+    window.addEventListener('load', async () => {
+      try {
+        console.log('🚀 Starting Voyage...');
+        
+        // Initialize VoyageApp
+        const app = await initializeVoyageApp();
+        
+        console.log('✅ Voyage ready!');
+        hideLoading();
+        
+        // Expose app to window for debugging
+        window.voyageApp = app;
+        
+        // Optional: Log performance metrics
+        setInterval(() => {
+          const stats = app.getStats();
+          console.log(`FPS: ${stats.fps}, Stars: ${stats.starCount}, DSOs: ${stats.dsoCount}`);
+        }, 5000);
+        
+      } catch (error) {
+        console.error('❌ Failed to start Voyage:', error);
+        const loading = document.getElementById('loading-overlay');
+        if (loading) {
+          loading.innerHTML = `
+            <div style="color: #ff3333;">❌ Failed to Load</div>
+            <div style="font-size: 10px; margin-top: 10px;">${error.message}</div>
+          `;
+        }
+      }
+    });
+    
+    // Handle window close
+    window.addEventListener('beforeunload', () => {
+      if (window.voyageApp) {
+        window.voyageApp.destroy();
+      }
+    });
+  </script>
+</body>
+</html>

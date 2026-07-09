@@ -1,8 +1,9 @@
 import { Suspense, useMemo, useRef } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Html, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import { vector3ToRaDec } from '../../lib/astro';
 
 const PLANETS = [
   { name: 'MERCURY', orbit: 18, size: 0.65, speed: 0.085, inclination: 7.0, node: 48.3, color: '#b9b3aa', tex: '/tex/mercury.jpg' },
@@ -406,7 +407,25 @@ function SceneRig() {
   );
 }
 
-export default function GalaxyScene() {
+function CameraObserver({ onObserverCoordsChange }) {
+  const { camera } = useThree();
+  const direction = useRef(new THREE.Vector3());
+  const lastUpdate = useRef(0);
+
+  useFrame((state) => {
+    const now = state.clock.getElapsedTime();
+    if (now - lastUpdate.current < 0.8) return;
+    lastUpdate.current = now;
+
+    camera.getWorldDirection(direction.current);
+    const { ra, dec } = vector3ToRaDec(direction.current);
+    onObserverCoordsChange?.({ ra, dec });
+  });
+
+  return null;
+}
+
+export default function GalaxyScene({ onObserverCoordsChange }) {
   return (
     <div style={{ width: '100%', height: '100vh', background: '#000', position: 'relative' }}>
       <Canvas
@@ -435,6 +454,7 @@ export default function GalaxyScene() {
           target={[0, 0, 0]}
           makeDefault
         />
+        {onObserverCoordsChange ? <CameraObserver onObserverCoordsChange={onObserverCoordsChange} /> : null}
         <EffectComposer multisampling={0}>
           <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.78} intensity={1.18} radius={0.68} />
           <Vignette eskil={false} offset={0.18} darkness={0.72} />

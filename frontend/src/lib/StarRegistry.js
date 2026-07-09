@@ -10,9 +10,9 @@ export class StarRegistry {
   /**
    * Fetches raw star rows from the backend registry.
    */
-  static async fetchStars(limit = 500) {
+  static async fetchStars(params = {}) {
     try {
-      const response = await api.get("/stars", { params: { limit } });
+      const response = await api.get("/stars", { params });
       if (response && Array.isArray(response.data)) {
         return response.data;
       }
@@ -20,6 +20,32 @@ export class StarRegistry {
     } catch (error) {
       console.warn("StarRegistry: Failed to fetch stars from endpoint, propagating error.", error);
       throw error;
+    }
+  }
+
+  static async countStars(params = {}) {
+    try {
+      const response = await api.get("/stars/count", { params });
+      if (response && typeof response.data === "object" && response.data.count !== undefined) {
+        return Number(response.data.count);
+      }
+      return 0;
+    } catch (error) {
+      console.warn("StarRegistry: Failed to fetch stars count from endpoint.", error);
+      throw error;
+    }
+  }
+
+  static async fetchConstellations() {
+    try {
+      const response = await api.get("/stars/constellations");
+      if (response && Array.isArray(response.data)) {
+        return response.data;
+      }
+      return [];
+    } catch (error) {
+      console.warn("StarRegistry: Failed to fetch constellation list.", error);
+      return [];
     }
   }
 
