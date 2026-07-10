@@ -14,6 +14,8 @@ export const SENSOR_HUD_INTERVAL_MS = 1000;
 export const SENSOR_VIEW_TILT_SCALE = 0.6;
 export const SENSOR_HEADING_EPSILON = 0.6;
 export const SENSOR_TILT_EPSILON = 0.45;
+export const SENSOR_HEADING_STALE_MS = 1500;
+export const SENSOR_HEADING_STARTUP_GRACE_MS = 4000;
 export const SENSOR_MAX_HEADING_DEGREES_PER_SECOND = 55;
 export const SENSOR_MAX_TILT_DEGREES_PER_SECOND = 34;
 
@@ -21,9 +23,13 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
 export function createObserverFromLocation(position) {
   if (!position?.coords) return null;
+  const latitude = Number(position.coords.latitude);
+  const longitude = Number(position.coords.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
   return {
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude,
+    latitude,
+    longitude,
   };
 }
 
@@ -113,4 +119,19 @@ export function shouldCommitSensorView({
   const tiltDelta = Math.abs(nextTarget.dec - previousTarget.dec);
 
   return headingDelta >= SENSOR_HEADING_EPSILON || tiltDelta >= SENSOR_TILT_EPSILON;
+}
+
+export function isSensorHeadingStale({
+  lastHeadingAt,
+  sensorStartedAt,
+  nowMs,
+  staleMs = SENSOR_HEADING_STALE_MS,
+  startupGraceMs = SENSOR_HEADING_STARTUP_GRACE_MS,
+}) {
+  if (!Number.isFinite(nowMs)) return false;
+  if (!Number.isFinite(sensorStartedAt)) return false;
+  if (!Number.isFinite(lastHeadingAt) || lastHeadingAt <= 0) {
+    return nowMs - sensorStartedAt > startupGraceMs;
+  }
+  return nowMs - lastHeadingAt > staleMs;
 }

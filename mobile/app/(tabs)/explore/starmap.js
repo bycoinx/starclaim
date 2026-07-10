@@ -42,6 +42,7 @@ import {
   getHorizontalPositionForObject,
   getSensorCanvasTarget,
   getSiderealTimeForObserver,
+  isSensorHeadingStale,
   limitSensorCanvasTarget,
   shouldCommitSensorView,
   smoothHeading,
@@ -52,7 +53,6 @@ const IS_EXPO_GO = Constants?.appOwnership === 'expo';
 const EXPO_GO_SENSOR_STAR_LIMIT = 2400;
 const EXPO_GO_MANUAL_STAR_LIMIT = 3200;
 const SENSOR_HEADING_SPIKE_LIMIT_DEGREES = 45;
-const SENSOR_HEADING_STALE_MS = 1500;
 const OBSERVER_CACHE_KEY = '@sky_observer_v1';
 const DEFAULT_OBSERVER = Object.freeze({
   latitude: 41.015,
@@ -290,13 +290,29 @@ export default function StarMapScreen() {
     try {
       let permission = await Location.getForegroundPermissionsAsync();
       if (!permission.granted) permission = await Location.requestForegroundPermissionsAsync();
-      if (!permission.granted) return null;
+      if (!permission.granted) {
+        recordRenderDiagnostic({
+          surface: '2d',
+          status: 'sensor-fallback',
+          stage: 'location-permission',
+          message: 'Konum izni verilmedi; varsayilan gozlemci ile manuel harita kullaniliyor.',
+        });
+        return null;
+      }
 
       const position = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       });
       const nextObserver = createObserverFromLocation(position);
-      if (!nextObserver) return null;
+      if (!nextObserver) {
+        recordRenderDiagnostic({
+          surface: '2d',
+          status: 'sensor-fallback',
+          stage: 'location-payload',
+          message: 'Konum verisi gecersiz; varsayilan gozlemci ile manuel harita kullaniliyor.',
+        });
+        return null;
+      }
       let label = `${nextObserver.latitude.toFixed(2)}, ${nextObserver.longitude.toFixed(2)}`;
       try {
         const placemarks = await Location.reverseGeocodeAsync({
@@ -402,6 +418,8 @@ export default function StarMapScreen() {
     let cancelled = false;
     let usingFallback = false;
     let lastCanvasTarget = null;
+    const sensorStartedAt = Date.now();
+    let staleFallbackReported = false;
 
     const applyHeading = (nextHeading) => {
       const previousHeading = lastHeading.current;
@@ -488,8 +506,28 @@ export default function StarMapScreen() {
     const tick = () => {
       if (cancelled) return;
       const nowMs = Date.now();
-      const headingStale = nowMs - headingUpdatedAtRef.current > SENSOR_HEADING_STALE_MS;
-      if (headingStale) return;
+      const headingStale = isSensorHeadingStale({
+        lastHeadingAt: headingUpdatedAtRef.current,
+        sensorStartedAt,
+        nowMs,
+      });
+      if (headingStale) {
+        if (!staleFallbackReported) {
+          staleFallbackReported = true;
+          recordRenderDiagnostic({
+            surface: '2d',
+            status: 'sensor-fallback',
+            stage: 'heading-stale',
+            message: 'Pusula verisi zamaninda gelmedi; manuel harita moduna gecildi.',
+          });
+          setMode('manual');
+          setCapabilityNotice({
+            title: 'Cihaz takibi durakladi',
+            message: 'Pusula verisi alinamadi. Haritayi surukleyerek kullanabilir veya tekrar takip modunu deneyebilirsiniz.',
+          });
+        }
+        return;
+      }
       const rawTarget = getSensorCanvasTarget(lastHeading.current, lastTilt.current);
       const nextTarget = limitSensorCanvasTarget(
         lastCanvasTarget,

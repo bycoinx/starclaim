@@ -40,6 +40,7 @@ const {
   getEquatorialViewportCenter,
   getHorizontalPositionForObject,
   getSensorCanvasTarget,
+  isSensorHeadingStale,
   limitSensorCanvasTarget,
   shouldCommitSensorView,
   smoothHeading,
@@ -50,6 +51,13 @@ test('creates observer from Expo location payload', () => {
     createObserverFromLocation({ coords: { latitude: 37.01, longitude: 35.31 } }),
     { latitude: 37.01, longitude: 35.31 },
   );
+});
+
+test('rejects invalid observer location payloads', () => {
+  assert.equal(createObserverFromLocation(null), null);
+  assert.equal(createObserverFromLocation({ coords: { latitude: 'x', longitude: 35.31 } }), null);
+  assert.equal(createObserverFromLocation({ coords: { latitude: 95, longitude: 35.31 } }), null);
+  assert.equal(createObserverFromLocation({ coords: { latitude: 37.01, longitude: -190 } }), null);
 });
 
 test('heading smoothing follows the shortest path across north', () => {
@@ -109,5 +117,28 @@ test('sensor view commits are throttled by interval and motion threshold', () =>
     nextTarget: { ra: 11, dec: 5 },
     lastCommitAt: 100,
     nowMs: 200,
+  }), true);
+});
+
+test('sensor heading stale detection waits for startup grace and then trips', () => {
+  assert.equal(isSensorHeadingStale({
+    lastHeadingAt: 0,
+    sensorStartedAt: 1000,
+    nowMs: 3000,
+  }), false);
+  assert.equal(isSensorHeadingStale({
+    lastHeadingAt: 0,
+    sensorStartedAt: 1000,
+    nowMs: 6001,
+  }), true);
+  assert.equal(isSensorHeadingStale({
+    lastHeadingAt: 5000,
+    sensorStartedAt: 1000,
+    nowMs: 6200,
+  }), false);
+  assert.equal(isSensorHeadingStale({
+    lastHeadingAt: 5000,
+    sensorStartedAt: 1000,
+    nowMs: 6601,
   }), true);
 });

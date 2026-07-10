@@ -48,6 +48,13 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - `npm run test:astronomy` -> 89/89 test gecti.
 - `npx expo-doctor` henüz bu konuda manuel olarak calistirilmadi.
 - Fiziksel cihaz testi yapildi ve emergent ile dogrulandi; 9/9 kabul senaryosunun tamamlandigi kaydedildi.
+
+### 2026-07-11 Otomatik Kanit Guncellemesi
+
+- `npm run test:astronomy` -> 97/97 test gecti.
+- `npx expo-doctor` -> 18/18 temiz.
+- Fiziksel cihaz senaryolari bu oturumda yeniden calistirilmadi. Ustteki 9 senaryo, her biri icin cihaz/OS/sonuc satiri eklenene kadar acik tutulacak.
+
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 
 Asagidaki sira bozulmadan ilerlenir; bir senaryo sonuc kaydi olmadan sonraki senaryoya gecilmez.
@@ -98,6 +105,139 @@ Gecme Kriteri:
 - Gecislerde crash yok.
 - Ana ekranlarda beyaz/siyah donuk ekran yok.
 - Her ekranda 5 saniye icinde temel UI etkileşimi alinabiliyor.
+
+### Senaryo 3 Test Scripti (Izin Reddi Davranisi)
+
+Hedef: Konum izni reddedildiginde Sky Live bos ekran veya crash uretmeden manuel harita moduna duser.
+
+1. Uygulamanin konum iznini cihaz ayarlarindan sifirla veya reddedilmis hale getir.
+2. Uygulamayi tamamen kapatip yeniden ac.
+3. `Sky Live` ekranina gec.
+4. Konum izni istendiginde reddet.
+5. 30 saniye icinde su kontrolleri yap:
+	- Harita bos kalmadan yerel/fallback katalogla aciliyor mu?
+	- Kullanici pan/zoom ile manuel haritayi hareket ettirebiliyor mu?
+	- Izin reddi kullaniciya anlasilir bir durum olarak gosteriliyor mu?
+6. `Takibi Surdur` veya sensor takibi butonuna bas; izin yokken crash yerine fallback/durum mesaji gorundugunu dogrula.
+7. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- Crash veya white screen yok.
+- Manuel harita kullanilabilir.
+- Izin reddi kalici kilitlenme yaratmiyor.
+
+### Senaryo 4 Test Scripti (Sensor Lifecycle)
+
+Hedef: Uygulama arka plana gidip geri geldiginde sensor abonelikleri guvenli sekilde kapanir/acilir.
+
+1. `Sky Live` ekranini sensor modunda ac.
+2. Pusula/heading bilgisinin hareketle guncellendigini dogrula.
+3. Uygulamayi arka plana al ve 20 saniye bekle.
+4. Uygulamayi tekrar one getir.
+5. 30 saniye icinde su kontrolleri yap:
+	- Harita kaldigi yerden devam ediyor mu?
+	- Sensor hedefi tekrar akici sekilde guncelleniyor mu?
+	- Donuk ekran, cift hizli heading veya ani ziplamalar var mi?
+6. Bu donguyu 3 kez tekrarla.
+7. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- Arka plan/one donus crash uretmez.
+- Sensor aboneligi tekrar calisir veya manuel fallback temiz gosterilir.
+- UI kontrol kaybetmez.
+
+### Senaryo 5 Test Scripti (Tile Cache ve Offline Fallback)
+
+Hedef: Ag kapali oldugunda Sky Live HYG/offline fallback ile bos ekran gostermeden acilir.
+
+1. Ag acikken `Sky Live` ekranini ac ve katalog yuklemesinin tamamlandigini dogrula.
+2. Haritada 20 saniye pan/zoom yaparak farkli sektorlerin yuklenmesine izin ver.
+3. Uygulamayi kapat.
+4. Cihazi ucak moduna al.
+5. Uygulamayi yeniden ac ve `Sky Live` ekranina gec.
+6. Su kontrolleri yap:
+	- Yildizlar gorunuyor mu?
+	- Tile/cache hatasi kirmizi crash ekranina donusuyor mu?
+	- Pan/zoom sonrasi katalog tamamen kayboluyor mu?
+7. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- Offline acilista gorunur yildiz verisi var.
+- Bozuk/eksik tile uygulamayi dusurmez.
+- Kullanici manuel haritada kalabilir.
+
+### Senaryo 6 Test Scripti (10 Dakika Dayaniklilik)
+
+Hedef: Sky Live sensor modunda uzun sure acik kalinca crash, belirgin FPS dususu veya bellek baskisi uretmez.
+
+1. Cihaz sarji en az %30 olsun ve guc tasarrufu kapali olsun.
+2. `Sky Live` ekranini sensor modunda ac.
+3. Telemetry veya debug ekraninda FPS/frame bilgisi gorunuyorsa baslangic degerini not et.
+4. Uygulamayi 10 dakika acik tut; her 2 dakikada bir cihaz yonunu hafif degistir.
+5. Test sonunda su bilgileri kaydet:
+	- Ortalama/son FPS gozlemi
+	- Belirgin takilma veya donma var mi?
+	- Cihaz asiri isindi mi?
+	- Uygulama crash oldu mu?
+6. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- 10 dakika boyunca crash yok.
+- Orta cihazda hedef 55-60 FPS, dusuk cihazda kararli 30 FPS civari korunur.
+- UI hala dokunma alir.
+
+### Senaryo 7 Test Scripti (Motor Hissi ve 90 Derece Donus)
+
+Hedef: Sensor modunda 90 derece cihaz donusu kontrollu ve okunabilir hizda tamamlanir.
+
+1. `Sky Live` ekranini sensor modunda ac.
+2. Cihazi sabit tut ve yildiz/constellation cizgilerinin titreme seviyesini 10 saniye izle.
+3. Cihazi yaklasik 90 derece saga cevir.
+4. Haritanin yeni yonde sakin sekilde hedefe geldigini gozle.
+5. Ayni islemi sola ve yukari/asagi tilt icin tekrarla.
+6. Su kontrolleri yap:
+	- Ani ziplamalar var mi?
+	- Cizgiler veya etiketler asiri titriyor mu?
+	- Donus sonrasi secim paneli/harita kontrolu calisiyor mu?
+7. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- 90 derece donus okunabilir hizda tamamlanir.
+- Sensor jitter kullanimi bozmaz.
+- Manuel pan/zoom ile devralma hala calisir.
+
+### Senaryo 8 Test Scripti (Webden Mobile Deep Link)
+
+Hedef: Web uzerinden uretilen QR/deep link mobilde dogru yildiz hedefini acar.
+
+1. Web `Marketplace` veya `Yildiz Al` sayfasinda bir yildiz sec.
+2. QR veya deep link aksiyonunu ac.
+3. Linki mobil cihazda ac.
+4. Mobil uygulamanin dogru ekrana yonlendigini dogrula.
+5. Hedef yildiz kodu/adinin mobilde korundugunu kontrol et.
+6. Mumkunse `Sky Live` icinde hedefe git veya ilgili detay panelini ac.
+7. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- Link uygulamayi acar.
+- Hedef star identity kaybolmaz.
+- Kullanici manuel arama yapmak zorunda kalmaz.
+
+### Senaryo 9 Test Scripti (StarVault Deep Link)
+
+Hedef: Web StarVault onizlemesinden gelen QR/deep link mobil StarVault akisini acar.
+
+1. Web `StarVault` sayfasinda sahiplik/vault karti veya onizleme deep linkini ac.
+2. Linki mobil cihazda ac.
+3. Mobil uygulamanin StarVault home veya hedef vault item ekranina gittigini dogrula.
+4. Kullanici oturumu veya sahiplik verisi yoksa bos/error state'in anlasilir oldugunu kontrol et.
+5. StarVault'tan ilgili yildiz detayina veya `Sky Live` aksiyonuna gecmeyi dene.
+6. Sonucu `Fiziksel Cihaz Sonuc Kayit Formati` ile kaydet.
+
+Gecme Kriteri:
+- Link StarVault akisini acar.
+- Eksik oturum/sahiplik durumunda crash olmaz.
+- Kullanici geri donus veya satin alma/yildiz secme aksiyonuna ulasir.
 
 ### Fiziksel Cihaz Sonuc Kayit Formati
 
