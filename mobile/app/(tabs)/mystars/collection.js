@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, Modal, TextInput, View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import SpaceBackground from '../../../components/SpaceBackground';
@@ -10,18 +10,71 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { getPurchaseMapParams } from '../../../src/utils/starIdentity';
 import { ROUTES, starDetailRoute, starMapRoute } from '../../../src/platform/navigation/routes';
 import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
+import {
+  listStarOnMarketplace,
+  unlistStarFromMarketplace,
+} from '../../../src/platform/marketplace/marketplaceRepository';
 
 export default function CollectionScreen() {
   const router = useRouter();
   const purchases = useOwnershipStore((state) => state.records);
   const loading = useOwnershipStore((state) => state.loading);
   const loadOwnership = useOwnershipStore((state) => state.load);
+  const refreshOwnership = useOwnershipStore((state) => state.refresh);
+  const [listingDraft, setListingDraft] = useState(null);
+  const [askingPrice, setAskingPrice] = useState('');
+  const [submittingListing, setSubmittingListing] = useState(false);
+  const [localListings, setLocalListings] = useState({});
 
   useFocusEffect(useCallback(() => {
     loadOwnership();
   }, [loadOwnership]));
 
-  const renderItem = ({ item }) => (
+  const openListModal = (item) => {
+    setListingDraft(item);
+    setAskingPrice(String(item.askingPrice || item.asking_price || item.price || ''));
+  };
+
+  const submitListing = async () => {
+    const price = Number(String(askingPrice).replace(',', '.'));
+    if (!listingDraft?.starId || !Number.isFinite(price) || price < 1) {
+      Alert.alert('Marketplace', 'Gecerli bir fiyat gir.');
+      return;
+    }
+    try {
+      setSubmittingListing(true);
+      const listing = await listStarOnMarketplace(listingDraft.starId, price);
+      setLocalListings((current) => ({ ...current, [listingDraft.starId]: listing }));
+      setListingDraft(null);
+      await refreshOwnership();
+      Alert.alert('Marketplace', 'Yildiz marketplace listesine eklendi.');
+    } catch (error) {
+      Alert.alert('Marketplace', error.message || String(error));
+    } finally {
+      setSubmittingListing(false);
+    }
+  };
+
+  const unlistItem = async (item) => {
+    try {
+      const listing = localListings[item.starId] || {};
+      await unlistStarFromMarketplace({ starId: item.starId, listingId: item.listingId || listing.listingId });
+      setLocalListings((current) => {
+        const next = { ...current };
+        delete next[item.starId];
+        return next;
+      });
+      await refreshOwnership();
+      Alert.alert('Marketplace', 'Yildiz marketplace listesinden kaldirildi.');
+    } catch (error) {
+      Alert.alert('Marketplace', error.message || String(error));
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    const localListing = localListings[item.starId] || null;
+    const listed = Boolean(item.forSale || localListing);
+    return (
     <View style={styles.cardContainer}>
       <LinearGradient 
         colors={['rgba(25, 25, 35, 0.7)', 'rgba(10, 10, 20, 0.8)']} 
@@ -69,12 +122,23 @@ export default function CollectionScreen() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={[styles.marketBtn, listed && styles.unlistBtn]}
+          onPress={() => (listed ? unlistItem(item) : openListModal(item))}
+        >
+          <MaterialCommunityIcons name={listed ? 'tag-off-outline' : 'tag-plus-outline'} size={16} color={listed ? THEME.colors.secondary : '#000'} />
+          <Text style={[styles.marketBtnText, listed && styles.unlistBtnText]}>
+            {listed ? 'UNLIST' : 'LIST MARKET'}
+          </Text>
+        </TouchableOpacity>
+
         {/* Card corners */}
         <View style={[styles.cardCorner, { top: -1, left: -1, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '80' }]} />
         <View style={[styles.cardCorner, { bottom: -1, right: -1, borderBottomWidth: 2, borderRightWidth: 2, borderColor: THEME.colors.secondary + '80' }]} />
       </LinearGradient>
     </View>
   );
+  };
 
   return (
     <View style={styles.container}>
@@ -133,6 +197,32 @@ export default function CollectionScreen() {
         <View style={[styles.hudCorner, { bottom: 40, left: 20, borderBottomWidth: 1, borderLeftWidth: 1 }]} />
         <View style={[styles.hudCorner, { bottom: 40, right: 20, borderBottomWidth: 1, borderRightWidth: 1 }]} />
       </View>
+
+      <Modal visible={Boolean(listingDraft)} transparent animationType="fade" onRequestClose={() => setListingDraft(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalPanel}>
+            <Text style={styles.modalEyebrow}>MARKETPLACE LISTING</Text>
+            <Text style={styles.modalTitle}>{listingDraft?.name || 'StarClaim Star'}</Text>
+            <Text style={styles.modalText}>Bu yildizi aktif marketplace listesine eklemek icin USD fiyat gir.</Text>
+            <TextInput
+              value={askingPrice}
+              onChangeText={setAskingPrice}
+              keyboardType="decimal-pad"
+              placeholder="USD fiyat"
+              placeholderTextColor={THEME.colors.textMuted}
+              style={styles.priceInput}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setListingDraft(null)} disabled={submittingListing}>
+                <Text style={styles.cancelBtnText}>IPTAL</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.confirmBtn} onPress={submitListing} disabled={submittingListing}>
+                <Text style={styles.confirmBtnText}>{submittingListing ? 'SYNC' : 'LIST'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -221,6 +311,10 @@ const styles = StyleSheet.create({
   actionBtnText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
   detailBtn: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderColor: 'rgba(255,255,255,0.1)' },
   detailBtnText: { color: '#fff', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  marketBtn: { marginTop: 10, minHeight: 38, borderRadius: 8, backgroundColor: THEME.colors.primary, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  marketBtnText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  unlistBtn: { backgroundColor: 'rgba(243,156,18,0.08)', borderWidth: 1, borderColor: 'rgba(243,156,18,0.24)' },
+  unlistBtnText: { color: THEME.colors.secondary },
   cardCorner: { position: 'absolute', width: 10, height: 10 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   loadingText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', marginTop: 16, letterSpacing: 2 },
@@ -231,5 +325,16 @@ const styles = StyleSheet.create({
   exploreBtn: { marginTop: 32, backgroundColor: THEME.colors.primary, paddingHorizontal: 30, paddingVertical: 14, borderRadius: 10 },
   exploreBtnText: { color: '#000', fontWeight: '900', letterSpacing: 2, fontSize: 12 },
   screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },
-  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' }
+  hudCorner: { position: 'absolute', width: 20, height: 20, borderColor: 'rgba(0, 242, 254, 0.2)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.78)', justifyContent: 'center', padding: 22 },
+  modalPanel: { borderRadius: 20, padding: 22, backgroundColor: '#070b16', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  modalEyebrow: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.8 },
+  modalTitle: { color: '#fff', fontSize: 24, fontWeight: '900', marginTop: 10 },
+  modalText: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 8 },
+  priceInput: { marginTop: 16, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', color: '#fff', paddingHorizontal: 14, paddingVertical: 12, fontWeight: '800' },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 16 },
+  cancelBtn: { flex: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.06)' },
+  cancelBtnText: { color: '#fff', fontSize: 11, fontWeight: '900', letterSpacing: 1.4 },
+  confirmBtn: { flex: 1, borderRadius: 12, paddingVertical: 13, alignItems: 'center', backgroundColor: THEME.colors.primary },
+  confirmBtnText: { color: '#000', fontSize: 11, fontWeight: '900', letterSpacing: 1.4 },
 });

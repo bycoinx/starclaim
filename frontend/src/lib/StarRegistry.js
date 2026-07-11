@@ -27,7 +27,8 @@ export class StarRegistry {
     try {
       const response = await api.get("/stars/count", { params });
       if (response && typeof response.data === "object" && response.data.count !== undefined) {
-        return Number(response.data.count);
+        const count = Number(response.data.count);
+        return Number.isFinite(count) ? count : null;
       }
       return null;
     } catch (error) {

@@ -13,23 +13,15 @@ import CatalogPagination from "../components/catalog/CatalogPagination";
 import { NoResultsState, ErrorState } from "../components/catalog/EmptyStates";
 import { StarRepository } from "../lib/StarRepository";
 import ListingPreviewDrawer from "../components/catalog/ListingPreviewDrawer";
-
-function listingKeys(listing = {}) {
-  return [
-    listing.star_id,
-    listing.starId,
-    listing.star_code,
-    listing.starCode,
-    listing.code,
-  ]
-    .filter(Boolean)
-    .map((value) => String(value));
-}
+import {
+  marketplaceListingKeys,
+  normalizeMarketplaceListings,
+} from "../lib/marketplaceListings";
 
 function buildListingIndex(listings = []) {
   const index = new Map();
   listings.forEach((listing) => {
-    listingKeys(listing).forEach((key) => index.set(key, listing));
+    marketplaceListingKeys(listing).forEach((key) => index.set(key, listing));
   });
   return index;
 }
@@ -132,7 +124,7 @@ export default function Marketplace({ onClaim }) {
       StarRepository.loadAll(forceReload),
       api.get("/marketplace/listings", { params: { limit: 10000 } }).catch(() => ({ data: [] })),
     ]);
-    const listings = Array.isArray(listingsResponse.data) ? listingsResponse.data : [];
+    const listings = normalizeMarketplaceListings(Array.isArray(listingsResponse.data) ? listingsResponse.data : []);
     const listingIndex = buildListingIndex(listings);
 
     const enrichedCatalog = catalogStars.map((star) => {
@@ -154,16 +146,21 @@ export default function Marketplace({ onClaim }) {
       return {
         ...star,
         ...listing,
-        starId: star.starId || listing.star_id || listing.star_code,
-        name: star.name || listing.star_name || listing.name,
-        code: star.code || listing.star_code || listing.code,
+        listingId: listing.listingId,
+        starId: star.starId || listing.starId || listing.starClaimCode,
+        name: star.name || listing.starName || listing.name,
+        code: star.code || listing.starClaimCode || listing.code,
         constellation: star.constellation || listing.constellation,
         tier: star.tier || listing.tier || "standard",
-        price: star.price || listing.asking_price || listing.price || 0,
+        price: star.price || listing.askingPrice || listing.price || 0,
         isClaimed: true,
-        ownerName: listing.owner_name || star.ownerName,
-        forSale: true,
-        askingPrice: listing.asking_price ?? listing.askingPrice ?? star.askingPrice,
+        ownerName: listing.sellerName || star.ownerName,
+        ownerId: listing.sellerId || star.ownerId,
+        forSale: listing.forSale,
+        askingPrice: listing.askingPrice ?? star.askingPrice,
+        marketplaceActions: listing.actions,
+        canBuy: listing.canBuy,
+        canUnlist: listing.canUnlist,
         storyCount: star.storyCount || 0,
         raw: { ...listing, ...star },
       };

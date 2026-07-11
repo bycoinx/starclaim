@@ -203,6 +203,16 @@ class TestMarketplace:
         for l in data:
             assert "percent_increase" in l
             assert l["asking_price"] >= 0
+            assert l["listingId"] == l["listing_id"]
+            assert l["starId"] == l["star_id"]
+            assert l["starClaimCode"] == l["star_code"] == l["code"]
+            assert l["askingPrice"] == l["asking_price"] == l["price"]
+            assert l["sellerName"] == l["seller_name"]
+            assert "viewDetail" in l["actions"]
+            assert "buy" in l["actions"]
+            assert "openVault" in l["actions"]
+            assert "share" in l["actions"]
+            assert l["canBuy"] is True
             assert "_id" not in l
 
     def test_marketplace_metrics(self, api_client):
@@ -340,6 +350,30 @@ class TestClaimFlow:
         assert r_certificate.status_code == 200
         assert r_certificate.headers["content-type"].startswith("application/pdf")
         assert r_certificate.content.startswith(b"%PDF")
+
+        # marketplace owner action contract: owned star can be listed and unlisted.
+        r_listing = requests.post(
+            f"{API}/marketplace/list",
+            headers=auth_headers,
+            json={"star_id": star_id, "asking_price": 123.45},
+        )
+        assert r_listing.status_code == 200, r_listing.text
+        listing = r_listing.json()
+        assert listing["starId"] == star_id
+        assert listing["askingPrice"] == 123.45
+        assert listing["canUnlist"] is True
+        assert "unlist" in listing["actions"]
+
+        r_unlist = requests.post(
+            f"{API}/marketplace/unlist",
+            headers=auth_headers,
+            json={"star_id": star_id},
+        )
+        assert r_unlist.status_code == 200, r_unlist.text
+        unlisted = r_unlist.json()
+        assert unlisted["starId"] == star_id
+        assert unlisted["status"] == "inactive"
+        assert unlisted["canBuy"] is False
 
         # claim again -> 400
         r3 = requests.post(f"{API}/stars/claim", headers=auth_headers, json=payload)

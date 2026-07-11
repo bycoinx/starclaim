@@ -129,6 +129,17 @@ export default function Dashboard() {
   };
 
   const listForSale = async (star) => {
+    if (star.for_sale || star.forSale) {
+      try {
+        await api.post("/marketplace/unlist", { star_id: star.star_id || star.starId });
+        toast.success(lang === "TR" ? "Yildiz marketplace listesinden kaldirildi." : "Star removed from marketplace.");
+        refreshData();
+      } catch (e) {
+        toast.error(e?.response?.data?.detail || (lang === "TR" ? "Listeden kaldirma basarisiz." : "Unlist failed."));
+      }
+      return;
+    }
+
     const input = window.prompt(
       lang === "TR" ? "Satis fiyati (USD)" : "Sale price (USD)",
       star.asking_price || star.price || ""
@@ -321,7 +332,7 @@ export default function Dashboard() {
                           <span className="inline-flex items-center gap-2"><Download className="w-3.5 h-3.5" /> CERT_DL</span>
                         </button>
                         <button onClick={() => listForSale(s)} className="btn-gold text-[10px] py-2.5 flex-1 uppercase tracking-widest font-bold" data-testid={`sell-${s.code}`}>
-                          <span className="inline-flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> {s.for_sale ? "LISTED" : "MARKET"}</span>
+                          <span className="inline-flex items-center gap-2"><Tag className="w-3.5 h-3.5" /> {s.for_sale || s.forSale ? "UNLIST" : "MARKET"}</span>
                         </button>
                       </div>
                       

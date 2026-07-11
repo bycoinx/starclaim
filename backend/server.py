@@ -349,6 +349,11 @@ class ListStarRequest(BaseModel):
     asking_price: float
 
 
+class UnlistStarRequest(BaseModel):
+    star_id: Optional[str] = None
+    listing_id: Optional[str] = None
+
+
 class MarketplaceCheckoutRequest(BaseModel):
     listing_id: str
     origin_url: str
@@ -583,9 +588,10 @@ async def seed_database():
         logger.info(f"Seeded {len(listings)} listings")
 
     # Ensure there are enough demo marketplace listings for regression tests.
-    current_listings = await db.listings.count_documents({"status": {"$ne": "sold"}})
+    active_listing_query = {"$or": [{"status": "active"}, {"status": {"$exists": False}}]}
+    current_listings = await db.listings.count_documents(active_listing_query)
     if current_listings < 6:
-        listed_codes = set(await db.listings.distinct("star_code"))
+        listed_codes = set(await db.listings.distinct("star_code", active_listing_query))
         needed = 6 - current_listings
         extra_stars = await db.stars.find(
             {"code": {"$nin": list(listed_codes)}},
@@ -1973,9 +1979,57 @@ async def vault_upload(body: dict, user: User = Depends(get_current_user)):
 
 
 # -------------------- Marketplace --------------------
+def build_marketplace_listing_record(listing: dict) -> dict:
+    """Return the shared web/mobile marketplace listing contract."""
+    listing_id = listing.get("listing_id") or listing.get("listingId") or listing.get("id") or ""
+    star_id = listing.get("star_id") or listing.get("starId") or ""
+    star_code = listing.get("star_code") or listing.get("starClaimCode") or listing.get("code") or ""
+    asking_price = listing.get("asking_price")
+    if asking_price is None:
+        asking_price = listing.get("askingPrice") or listing.get("price") or 0
+    status = listing.get("status") or ("inactive" if listing.get("forSale") is False else "active")
+    seller_id = listing.get("owner_id") or listing.get("sellerId") or listing.get("seller_id") or ""
+    seller_name = listing.get("owner_name") or listing.get("sellerName") or listing.get("seller") or ""
+    original_price = listing.get("original_price") or listing.get("originalPrice") or 0
+    listed_at = listing.get("listed_at") or listing.get("listedAt") or listing.get("created_at") or ""
+
+    return {
+        **listing,
+        "id": listing_id or star_id,
+        "listing_id": listing_id,
+        "listingId": listing_id,
+        "star_id": star_id,
+        "starId": star_id,
+        "star_code": star_code,
+        "starClaimCode": star_code,
+        "code": star_code,
+        "star_name": listing.get("star_name") or listing.get("starName") or listing.get("name") or "",
+        "starName": listing.get("star_name") or listing.get("starName") or listing.get("name") or "",
+        "asking_price": asking_price,
+        "askingPrice": asking_price,
+        "price": asking_price,
+        "currency": listing.get("currency") or "USD",
+        "seller_id": seller_id,
+        "sellerId": seller_id,
+        "seller_name": seller_name,
+        "sellerName": seller_name,
+        "seller": seller_name,
+        "original_price": original_price,
+        "originalPrice": original_price,
+        "status": status,
+        "forSale": status != "sold",
+        "listed_at": listed_at,
+        "listedAt": listed_at,
+        "actions": ["viewDetail", "buy", "openVault", "share"],
+        "canBuy": status == "active",
+        "canUnlist": False,
+    }
+
+
 @api.get("/marketplace/listings")
 async def get_listings(limit: int = 50, sort: str = "importance"):
-    cur = db.listings.find({"status": {"$ne": "sold"}}, {"_id": 0}).limit(limit)
+    active_query = {"$or": [{"status": "active"}, {"status": {"$exists": False}}]}
+    cur = db.listings.find(active_query, {"_id": 0}).limit(limit)
     rows = await cur.to_list(limit)
     for r in rows:
         orig = r.get("original_price") or 1
@@ -1995,7 +2049,7 @@ async def get_listings(limit: int = 50, sort: str = "importance"):
     else:
         rows.sort(key=lambda r: r.get("listed_at", ""), reverse=True)
 
-    return rows
+    return [build_marketplace_listing_record(row) for row in rows]
 
 
 @api.post("/marketplace/list")
@@ -2007,7 +2061,7 @@ async def list_on_marketplace(body: ListStarRequest, user: User = Depends(get_cu
         raise HTTPException(status_code=403, detail="You do not own this star")
     if body.asking_price < 1:
         raise HTTPException(status_code=400, detail="Asking price must be at least $1")
-    existing = await db.listings.find_one({"star_id": body.star_id, "status": {"$ne": "sold"}}, {"_id": 0})
+    existing = await db.listings.find_one({"star_id": body.star_id, "status": "active"}, {"_id": 0})
     if existing:
         raise HTTPException(status_code=400, detail="Star is already listed")
     listing = {
@@ -2032,7 +2086,39 @@ async def list_on_marketplace(body: ListStarRequest, user: User = Depends(get_cu
         {"$set": {"for_sale": True, "asking_price": body.asking_price}},
     )
     listing.pop("_id", None)
-    return listing
+    record = build_marketplace_listing_record(listing)
+    return {**record, "actions": ["viewDetail", "unlist", "openVault", "share"], "canBuy": False, "canUnlist": True}
+
+
+@api.post("/marketplace/unlist")
+async def unlist_from_marketplace(body: UnlistStarRequest, user: User = Depends(get_current_user)):
+    if not body.star_id and not body.listing_id:
+        raise HTTPException(status_code=400, detail="star_id or listing_id is required")
+
+    query = {"status": "active", "owner_id": user.user_id}
+    if body.listing_id:
+        query["listing_id"] = body.listing_id
+    else:
+        query["star_id"] = body.star_id
+
+    listing = await db.listings.find_one(query, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Active listing not found")
+
+    await db.listings.update_one(
+        {"listing_id": listing["listing_id"]},
+        {"$set": {"status": "inactive", "unlisted_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    await db.stars.update_one(
+        {"star_id": listing["star_id"], "owner_id": user.user_id},
+        {"$set": {"for_sale": False, "asking_price": None}},
+    )
+
+    listing["status"] = "inactive"
+    listing["forSale"] = False
+    listing["unlisted_at"] = datetime.now(timezone.utc).isoformat()
+    record = build_marketplace_listing_record(listing)
+    return {**record, "actions": ["viewDetail", "list", "openVault", "share"], "canBuy": False, "canUnlist": False}
 
 
 async def _process_paid_marketplace_purchase(transaction: dict) -> None:
@@ -2125,7 +2211,7 @@ async def create_marketplace_checkout_session(body: MarketplaceCheckoutRequest, 
     if not STRIPE_API_KEY:
         raise HTTPException(status_code=500, detail="Stripe not configured")
     user = await get_current_user(request)
-    listing = await db.listings.find_one({"listing_id": body.listing_id, "status": {"$ne": "sold"}}, {"_id": 0})
+    listing = await db.listings.find_one({"listing_id": body.listing_id, "status": "active"}, {"_id": 0})
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     if listing.get("owner_id") == user.user_id:

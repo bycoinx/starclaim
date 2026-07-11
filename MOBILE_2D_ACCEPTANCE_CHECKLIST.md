@@ -101,6 +101,28 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - `npm run test:visual-snapshots` -> 1/1 test gecti.
 - `node -e "...@babel/parser..."` ile `mobile/app/(tabs)/vault/home.js` parse kontrolu -> basarili.
 
+### 2026-07-12 Marketplace Ortak Contract Kaniti
+
+- Backend marketplace listing response'u `listingId`, `starId`, `starClaimCode`, `askingPrice`, `sellerId`, `sellerName`, `actions`, `canBuy` alanlarini doner.
+- Web Marketplace ve mobil Marketplace ortak normalized listing sozlesmesini kullanir.
+- Mobil Marketplace demo listing fallback'i yerine bos/loading/error state kullanir; detail, vault ve share aksiyonlari listing contract uzerinden calisir.
+- Web Dashboard ve mobil collection sahip olunan yildizi backend list/unlist akisina baglar.
+- Mobil Marketplace buy aksiyonu backend checkout session URL akisini kullanir.
+- `pytest backend\tests\backend_test.py::TestMarketplace::test_listings_seeded -q --tb=short` -> 1/1 test gecti.
+- `pytest backend\tests\backend_test.py::TestClaimFlow::test_claim_and_mine_list backend\tests\backend_test.py::TestMarketplace::test_listings_seeded -q --tb=short` -> 2/2 test gecti.
+- `node --test tests/marketplaceContract.test.cjs` -> 2/2 test gecti.
+- `npm run test:astronomy` -> 109/109 test gecti.
+- `frontend npm run build` -> basarili.
+
+### 2026-07-12 Web Baglanti Sertligi Kaniti
+
+- Hosted/custom domainlerde frontend API base resolver relative `/api` rewrite kullanir; lokal gelistirme explicit backend URL ile calisabilir.
+- `/api/stars/count` opsiyonel endpoint hatasinda `StarRegistry.countStars` `null` doner ve katalog fallback akisi korunur.
+- Web mobil deep link payload'i `StarTarget` identity alanlarini korur.
+- `npm test -- --runInBand --watchAll=false src/lib/rank5WebHardening.test.js` -> 4/4 test gecti.
+- `frontend npm run build` -> basarili.
+- `npm run test:astronomy` -> 109/109 test gecti.
+
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 
 Asagidaki sira bozulmadan ilerlenir; bir senaryo sonuc kaydi olmadan sonraki senaryoya gecilmez.

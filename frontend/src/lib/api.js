@@ -20,14 +20,20 @@ function normalizeBackendUrl(value) {
   }
 }
 
-const hostname = getBrowserHostname();
-const isHostedFrontend =
-  hostname.endsWith(".vercel.app") ||
-  hostname === "starclaimx.com" ||
-  hostname === "www.starclaimx.com";
-const backendUrl = normalizeBackendUrl(rawBackendUrl);
+export function isHostedFrontendHostname(hostname = "") {
+  return (
+    hostname.endsWith(".vercel.app") ||
+    hostname === "starclaimx.com" ||
+    hostname === "www.starclaimx.com"
+  );
+}
 
-export const API = isHostedFrontend || !backendUrl ? "/api" : `${backendUrl}/api`;
+export function resolveApiBase({ hostname = getBrowserHostname(), backendUrl: rawUrl = rawBackendUrl } = {}) {
+  const normalized = normalizeBackendUrl(rawUrl);
+  return isHostedFrontendHostname(hostname) || !normalized ? "/api" : `${normalized}/api`;
+}
+
+export const API = resolveApiBase();
 
 export const api = axios.create({
   baseURL: API,

@@ -1,20 +1,14 @@
 import React, { useCallback } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Share, StyleSheet, Text, View, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { THEME } from '../constants/Theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import SpaceBackground from '../components/SpaceBackground';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ROUTES } from '../src/platform/navigation/routes';
+import { ROUTES, starMapRoute } from '../src/platform/navigation/routes';
 import { useMarketplaceStore } from '../src/platform/marketplace/marketplaceStore';
-
-const fallbackItems = [
-  { id: 'demo-sirius', name: 'Sirius A', price: 450, status: 'demo', constellation: 'Canis Major' },
-  { id: 'demo-betelgeuse', name: 'Betelgeuse', price: 320, status: 'demo', constellation: 'Orion' },
-  { id: 'demo-vega', name: 'Vega', price: 180, status: 'demo', constellation: 'Lyra' },
-  { id: 'demo-altair', name: 'Altair', price: 150, status: 'demo', constellation: 'Aquila' },
-];
+import { createMarketplaceCheckoutSession } from '../src/platform/marketplace/marketplaceRepository';
 
 const actionItems = [
   { label: 'Trendler', icon: 'trending-up' },
@@ -34,11 +28,48 @@ export default function Marketplace() {
   const loading = useMarketplaceStore((state) => state.loading);
   const error = useMarketplaceStore((state) => state.error);
   const loadMarketplace = useMarketplaceStore((state) => state.load);
-  const visibleItems = listings.length > 0 ? listings : fallbackItems;
+  const visibleItems = listings;
 
   useFocusEffect(useCallback(() => {
     loadMarketplace({ limit: 24 });
   }, [loadMarketplace]));
+
+  const refreshMarketplace = () => {
+    loadMarketplace({ limit: 24, refresh: Date.now() });
+  };
+
+  const openListingDetail = (item) => {
+    router.push(starMapRoute({
+      starId: item.starId,
+      starClaimCode: item.starClaimCode,
+      name: item.name,
+    }));
+  };
+
+  const openVault = () => {
+    router.push(ROUTES.vaultHome);
+  };
+
+  const shareListing = async (item) => {
+    await Share.share({
+      title: `StarClaim Marketplace - ${item.name}`,
+      message: `${item.name} / ${item.starClaimCode || item.starId} listing: ${formatCurrency(item.askingPrice || item.price)}`,
+    });
+  };
+
+  const buyListing = async (item) => {
+    if (!item?.listingId || !item.canBuy) return;
+    try {
+      const session = await createMarketplaceCheckoutSession(item.listingId);
+      if (session?.url) {
+        await Linking.openURL(session.url);
+      } else {
+        Alert.alert('Checkout', 'Satin alma oturumu olusturulamadi.');
+      }
+    } catch (error) {
+      Alert.alert('Marketplace', error.message || String(error));
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -74,8 +105,8 @@ export default function Marketplace() {
                 {error ? 'Canli pazar verisi alinamadi; son gosterim korunuyor.' : 'StarClaim mobil pazaryeri, dogrulanmis yildiz tekliflerini premium bir vitrinle sunar.'}
               </Text>
             </View>
-            <TouchableOpacity style={styles.heroAction}>
-              <Text style={styles.heroActionText}>PAZARI GEZ</Text>
+            <TouchableOpacity style={styles.heroAction} onPress={refreshMarketplace}>
+              <Text style={styles.heroActionText}>{loading ? 'SYNC' : 'YENILE'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -108,13 +139,35 @@ export default function Marketplace() {
               <Text style={styles.sectionTitle}>Premium Liste</Text>
               <Text style={styles.sectionBadge}>{loading ? 'SYNC' : `${visibleItems.length} Urun`}</Text>
             </View>
-            <Text style={styles.sectionDesc}>En seckin yildiz teklifleri ve ozel firsatlar.</Text>
+            <Text style={styles.sectionDesc}>En seckin yildiz teklifleri ortak MarketplaceListing sozlesmesiyle gosterilir.</Text>
           </View>
 
           {loading && listings.length === 0 ? (
             <View style={styles.loadingPanel}>
               <ActivityIndicator color={THEME.colors.primary} />
               <Text style={styles.loadingText}>PAZAR VERISI ALINIYOR</Text>
+            </View>
+          ) : null}
+
+          {!loading && visibleItems.length === 0 ? (
+            <View style={styles.emptyPanel}>
+              <MaterialCommunityIcons
+                name={error ? 'cloud-alert-outline' : 'store-search-outline'}
+                size={34}
+                color={error ? THEME.colors.secondary : THEME.colors.primary}
+              />
+              <Text style={styles.emptyTitle}>{error ? 'Pazar verisi alinamadi' : 'Aktif listing yok'}</Text>
+              <Text style={styles.emptyText}>
+                {error || 'Sahip olunan bir yildiz listelendiginde buy, detail, vault ve share aksiyonlari burada gorunur.'}
+              </Text>
+              <View style={styles.emptyActions}>
+                <TouchableOpacity style={styles.heroAction} onPress={refreshMarketplace}>
+                  <Text style={styles.heroActionText}>TEKRAR DENE</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push(ROUTES.claim)}>
+                  <Text style={styles.secondaryButtonText}>YILDIZ AL</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           ) : null}
 
@@ -131,12 +184,25 @@ export default function Marketplace() {
                   <Text style={styles.nameText}>{String(item.name || 'StarClaim Star').toUpperCase()}</Text>
                   <View style={styles.metaRow}>
                     <MaterialCommunityIcons name="star-four-points" size={12} color={THEME.colors.textMuted} />
-                    <Text style={styles.constellationText}>{String(item.constellation || item.currency || 'STARCLAIM').toUpperCase()}</Text>
+                    <Text style={styles.constellationText}>{String(item.constellation || item.starClaimCode || 'STARCLAIM').toUpperCase()}</Text>
                   </View>
-                  <Text style={styles.cardNote}>Bu yildiz, koleksiyonunuzun parlakliga en yakin parcasidir.</Text>
-                  <TouchableOpacity style={styles.buyBtn}>
+                  <Text style={styles.cardNote}>
+                    Seller: {item.sellerName || item.seller || 'Verified Owner'} / {item.starClaimCode || item.starId}
+                  </Text>
+                  <View style={styles.listingActions}>
+                    <TouchableOpacity style={styles.iconAction} onPress={() => openListingDetail(item)}>
+                      <MaterialCommunityIcons name="telescope" size={16} color="#000" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconActionDark} onPress={openVault}>
+                      <MaterialCommunityIcons name="lock-closed-outline" size={16} color={THEME.colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconActionDark} onPress={() => shareListing(item)}>
+                      <MaterialCommunityIcons name="share-variant" size={16} color={THEME.colors.primary} />
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity style={[styles.buyBtn, !item.canBuy && styles.disabledButton]} disabled={!item.canBuy} onPress={() => buyListing(item)}>
                     <LinearGradient colors={[THEME.colors.primary, '#63b8ff']} style={styles.buyGradient}>
-                      <Text style={styles.buyBtnText}>INCELE</Text>
+                      <Text style={styles.buyBtnText}>{item.canBuy ? 'BUY FLOW' : 'PASIF'}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </LinearGradient>
@@ -196,6 +262,12 @@ const styles = StyleSheet.create({
   sectionDesc: { color: THEME.colors.textMuted, fontSize: 11, lineHeight: 18 },
   loadingPanel: { minHeight: 72, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 14 },
   loadingText: { color: THEME.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.4 },
+  emptyPanel: { alignItems: 'center', borderRadius: 22, padding: 22, marginBottom: 18, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 12, textAlign: 'center' },
+  emptyText: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 8, marginBottom: 16, textAlign: 'center' },
+  emptyActions: { width: '100%', gap: 10 },
+  secondaryButton: { borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  secondaryButtonText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -8 },
   cardWrapper: { padding: 8 },
   card: { borderRadius: 18, padding: 20, minHeight: 220, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
@@ -207,7 +279,11 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
   constellationText: { color: THEME.colors.textMuted, fontSize: 10, fontWeight: '700', letterSpacing: 1.3 },
   cardNote: { color: THEME.colors.textMuted, fontSize: 11, lineHeight: 18, marginBottom: 16 },
+  listingActions: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  iconAction: { width: 40, height: 40, borderRadius: 13, backgroundColor: THEME.colors.primary, alignItems: 'center', justifyContent: 'center' },
+  iconActionDark: { width: 40, height: 40, borderRadius: 13, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   buyBtn: { borderRadius: 14, overflow: 'hidden' },
+  disabledButton: { opacity: 0.42 },
   buyGradient: { paddingVertical: 14, alignItems: 'center' },
   buyBtnText: { color: '#000', fontSize: 11, fontWeight: '900', letterSpacing: 1.8 },
   screenHud: { ...StyleSheet.absoluteFillObject, zIndex: 5 },

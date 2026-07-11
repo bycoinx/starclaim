@@ -249,6 +249,23 @@ Hedef:
 
 - Web ve mobil ayni `MarketplaceListing` sozlesmesini kullanir.
 
+Durum:
+
+- Backend `marketplace/listings` response'u snake_case ve camelCase ortak alanlari
+  birlikte doner: `listingId`, `starId`, `starClaimCode`, `askingPrice`,
+  `sellerId`, `sellerName`, `actions`, `canBuy`.
+- Web Marketplace ve mobil Marketplace ayni normalized listing alanlarini
+  kullanir; web katalog zenginlestirmesi ve mobil kartlar ayni `buy`,
+  `viewDetail`, `openVault`, `share` aksiyon sozlesmesine baglandi.
+- Mobil Marketplace gercek listing yokken demo yildiz gostermek yerine
+  loading/error/empty state ile kullaniciyi yenileme veya `Yildiz Al`
+  aksiyonuna yonlendirir.
+- Web Dashboard sahip olunan yildizi `marketplace/list` ve `marketplace/unlist`
+  endpointleriyle listeler/kaldirir.
+- Mobil koleksiyon ekrani sahip olunan yildizi fiyat modalindan listeler,
+  listelenen yildizi kaldirir; mobil Marketplace buy aksiyonu
+  `marketplace/checkout/session` ile checkout URL acar.
+
 Kurallar:
 
 - Listing yildiz verisini tekrar tasimaz; `starId`, fiyat, durum ve seller
@@ -264,12 +281,19 @@ Hedef:
 - Web `Yildiz Al`, `Marketplace`, `StarVault` ayni repository/sahiplik
   mantigini kullanir ve mobil devam aksiyonlari uretir.
 
+Durum:
+
+- Hosted/custom domainlerde web API base resolver relative `/api` rewrite
+  kullanir; lokal gelistirme explicit backend URL ile calisabilir.
+- `StarRegistry.countStars` opsiyonel `/api/stars/count` hatasinda `null`
+  doner; katalog sayfasi loaded page fallback akisini kullanmaya devam eder.
+- Web mobil deep link payload'i `StarTarget` identity alanlarini korur:
+  `starId`, `code/starClaimCode`, `hip`, `hd`, `name`.
+
 Kalan:
 
-- `/api/stars/count` gibi opsiyonel endpointler sayfayi dusurmeyecek.
-- Custom domain ve Vercel deployment her zaman relative `/api` rewrite akisini
-  kullanacak.
-- QR/deep link payload'lari `StarTarget` ile ayni kalacak.
+- Custom domain ve Vercel deployment uzerinde canli `/api` rewrite smoke testi.
+- QR/deep link payload'lari icin manuel web -> mobil smoke testi.
 
 ### Rank 6 - 3D Voyage Yeniden Baslatma
 
@@ -346,13 +370,13 @@ Kural:
 
 ### Paket D - Marketplace Mobil
 
-- [ ] Mobil marketplace listing normalizer web ile ayni sozlesmede.
-- [ ] Sahip olunan yildizdan listeleme aksiyonu.
-- [ ] Buy/list/unlist aksiyonlari backend order/listing akisina baglanir.
+- [x] Mobil marketplace listing normalizer web ile ayni sozlesmede.
+- [x] Sahip olunan yildizdan listeleme aksiyonu.
+- [x] Buy/list/unlist aksiyonlari backend order/listing akisina baglanir.
 
 ### Paket E - Web Sertlestirme
 
-- [ ] Katalog count/list fallback davranisi regression test ile korunur.
+- [x] Katalog count/list fallback davranisi regression test ile korunur.
 - [ ] Custom domain `/api` rewrite smoke testi.
 - [ ] Web QR/deep link manuel smoke.
 
