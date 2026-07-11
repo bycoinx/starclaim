@@ -208,7 +208,7 @@ def load_support_document(path: Path, max_lines: int = 80, max_chars: int = 3500
 
 
 SUPPORT_DOCS = {
-    "mission_plan": ROOT_DIR.parent / "MISSION_PLAN.md",
+    "unified_execution_plan": ROOT_DIR.parent / "STARCLAIM_UNIFIED_EXECUTION_PLAN.md",
     "work_log": ROOT_DIR.parent / "WORK_LOG.md",
     "deploy_notes": ROOT_DIR.parent / "DEPLOY.md",
     "prd": ROOT_DIR.parent / "memory" / "PRD.md",

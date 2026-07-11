@@ -40,6 +40,10 @@ const {
   buildStarRenderSet,
 } = loadApplicationModule('../src/sky/starRenderSet.js');
 
+const {
+  buildSkyRenderPlan,
+} = loadApplicationModule('../src/sky/skyRenderPlan.js');
+
 function buildStars(count) {
   return Array.from({ length: count }, (_, index) => ({
     id: `star-${index}`,
@@ -125,4 +129,86 @@ test('horizontal mode annotates stars with altitude and azimuth', () => {
   assert.equal(rendered.length, 1);
   assert.ok(Number.isFinite(rendered[0].horizontalAz));
   assert.ok(Number.isFinite(rendered[0].horizontalAlt));
+});
+
+test('visual acceptance maps magnitude to stable star radius', () => {
+  const rendered = buildStarRenderSet({
+    ...baseOptions,
+    stars: [
+      { id: 'bright', ra: 12, dec: 0, mag: -1.4, spect: 'A' },
+      { id: 'middle', ra: 12, dec: 1, mag: 3.5, spect: 'G' },
+      { id: 'dim', ra: 12, dec: 2, mag: 8.8, spect: 'M' },
+    ],
+    zoom: 4,
+  });
+  const byId = Object.fromEntries(rendered.map((star) => [star.id, star]));
+  assert.ok(byId.bright.radius > byId.middle.radius);
+  assert.ok(byId.middle.radius > byId.dim.radius);
+  assert.ok(byId.bright.radius <= 3.6);
+  assert.ok(byId.dim.radius >= 0.5);
+});
+
+test('visual acceptance prefers BP-RP color and falls back to spectral type', () => {
+  const rendered = buildStarRenderSet({
+    ...baseOptions,
+    stars: [
+      { id: 'blue-index', ra: 12, dec: 0, mag: 1, bpRp: -0.35, spect: 'M' },
+      { id: 'red-index', ra: 12, dec: 1, mag: 1, colorIndex: 1.65, spect: 'B' },
+      { id: 'spectral-fallback', ra: 12, dec: 2, mag: 1, spect: 'K' },
+    ],
+  });
+  const byId = Object.fromEntries(rendered.map((star) => [star.id, star]));
+  assert.equal(byId['blue-index'].color, '#9DBBFF');
+  assert.equal(byId['red-index'].color, '#FF9B82');
+  assert.equal(byId['spectral-fallback'].color, '#FFD09A');
+});
+
+test('visual acceptance keeps night vision stars in red-safe palette', () => {
+  const rendered = buildStarRenderSet({
+    ...baseOptions,
+    nightVision: true,
+    stars: [
+      { id: 'blue', ra: 12, dec: 0, mag: 1, bpRp: -0.35, spect: 'B' },
+      { id: 'red', ra: 12, dec: 1, mag: 4, bpRp: 1.65, spect: 'M' },
+    ],
+  });
+  assert.deepEqual([...new Set(rendered.map((star) => star.color))], ['#FF514A']);
+});
+
+test('visual acceptance gates atmospheric layers by quality profile', () => {
+  const plan = (qualityLevel) => buildSkyRenderPlan({
+    ...baseOptions,
+    stars: buildStars(30),
+    qualityLevel,
+    dsoData: [],
+    planetData: [],
+    constellations: {
+      lines: { features: [] },
+      labels: { features: [] },
+      boundaries: { features: [] },
+    },
+    mythologyAssets: {},
+    showLabels: false,
+    showGrid: true,
+    showNebula: true,
+    showDSOs: true,
+    showPlanets: true,
+    showConstellations: true,
+    showConstellationLabels: true,
+    showConstellationBoundaries: true,
+    showMythology: true,
+  });
+
+  const low = plan('low');
+  const medium = plan('medium');
+  const high = plan('high');
+
+  assert.equal(low.enabledLayers.deepAtmosphere, true);
+  assert.equal(low.enabledLayers.nebula, false);
+  assert.equal(low.enabledLayers.milkyWay, true);
+  assert.equal(low.enabledLayers.shootingStars, false);
+  assert.equal(medium.enabledLayers.nebula, true);
+  assert.equal(medium.enabledLayers.shootingStars, false);
+  assert.equal(high.enabledLayers.shootingStars, true);
+  assert.equal(high.visualLayerBudget.milkyWaySampleStep < low.visualLayerBudget.milkyWaySampleStep, true);
 });

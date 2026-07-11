@@ -1,41 +1,71 @@
 # StarClaim Unified Execution Plan
 
-Bu dosya, mobil 2D/3D altyapi planini, web `Yildiz Al` / `Marketplace` / `StarVault` akislarini ve StarVault MVP planini tek uygulama sirasinda toplar. Ana ilke: urun ekranlari yalnizca calisan deneyimi gosterecek; plan, teknik karar ve backlog bu dosyada yasayacak.
+Bu dosya StarClaim icin tek karar ve uygulama planidir.
 
-## 0. Urun Karari
+Eski roadmap, mimari ve deneyim planlari bu dosyada birlestirildi. Yeni is
+sirasinda baska `*PLAN*.md`, roadmap veya mission dosyasi ana kaynak olarak
+kullanilmayacak. Teknik specification, delivery summary ve acceptance checklist
+dosyalari yalnizca kanit veya referans niteligindedir.
 
-- Mobil uygulama ana deneyimdir: satin alma, sahiplik, Sky Live, StarVault ve ileride 3D yolculuk burada tamamlanir.
-- Web vitrin ve yonlendirme katmanidir: `Yildiz Al`, `Marketplace` ve `StarVault` kullaniciyi dogru veri ve hesap akisina baglar; mobilde devam edebilmesi icin QR/deep link uretir.
-- 3D gelistirme, 2D Sky Live ve astronomik veri katmani uretim guvenine ulasmadan tekrar ana is kalemi olmayacak.
-- Tek yildiz kimligi ve tek sahiplik kaynagi kullanilacak. Web, mobil, backend ve gelecekte blockchain ayni `StarIdentity` / `OwnershipRecord` sozlesmesini tuketecek.
+## 0. Kaynak Sirasi
 
-## 1. Mutlaka Kurulacak Ortak Altyapilar
+1. `STARCLAIM_UNIFIED_EXECUTION_PLAN.md` - tek ana plan.
+2. `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` - mobil 2D kabul kaniti.
+3. P0/P0.8 specification ve delivery summary dosyalari - teknik referans.
+4. Kod ve testler - uygulamanin gercek durumu.
 
-### 1.1 Platform Veri Sozlesmesi
+## 1. Urun Karari
 
-Kurulacak ana modeller:
+- Mobil uygulama ana deneyimdir: yildiz secme, satin alma, sahiplik,
+  StarVault, Sky Live ve ileride 3D yolculuk burada tamamlanir.
+- Web vitrin, katalog, marketplace ve mobil devam katmanidir. Web; QR,
+  deep link ve ortak sahiplik verisiyle mobil deneyime baglanir.
+- 3D ana gelistirme, mobil 2D Sky Live uretim kabul kapisi kapanmadan tekrar
+  ana is kalemi olmayacak.
+- Tek yildiz kimligi ve tek sahiplik kaynagi kullanilacak. Web, mobil,
+  backend ve gelecekte blockchain ayni `StarIdentity`, `StarTarget`,
+  `OwnershipRecord`, `MarketplaceListing`, `VaultItem` ve
+  `CertificateRecord` sozlesmesini tuketecek.
+- Uygulama ekranlari plan/backlog metni gostermeyecek; kullanici yalnizca
+  calisan urun deneyimi gorecek.
+
+## 2. Mimari Ilkeler
+
+### 2.1 Veri Sozlesmesi
+
+`StarIdentity` asgari alanlari:
 
 ```text
-StarIdentity
-StarTarget
-OwnershipRecord
-MarketplaceListing
-VaultItem
-CertificateRecord
-UserSession
-WalletLink
+id
+source
+sourceId
+canonicalId
+hip
+hd
+gaiaSourceId
+starClaimCode
+name
+constellation
+ra
+dec
+distanceParsec
+magnitude
+spectralType
+epoch
 ```
 
 Kurallar:
 
-- `StarIdentity` yildiz verisinin tek normal formu olacak: `id`, `source`, `sourceId`, `hip`, `hd`, `gaiaSourceId`, `starClaimCode`, `ra`, `dec`, `distanceParsec`, `magnitude`, `spectralType`, `epoch`.
-- `StarTarget` ekranlar arasi gecis icin kullanilacak: `type`, `value`, `starId`, `starClaimCode`, `source`.
-- `OwnershipRecord` satin alma, sertifika, vault ve marketplace icin tek sahiplik ozeti olacak.
-- AsyncStorage yalnizca cache ve offline snapshot icin kullanilacak; ana dogruluk backend sahiplik kaydindan gelecek.
+- `id` ve `canonicalId` sira veya UI indeksine bagli olmayacak.
+- `StarTarget` ekranlar ve deep linkler arasi tek hedef modeli olacak.
+- `OwnershipRecord` satin alma, sertifika, vault ve marketplace icin tek
+  sahiplik ozeti olacak.
+- AsyncStorage yalnizca cache/offline snapshot icin kullanilacak; kalici
+  dogruluk backend sahiplik kaydindan gelecek.
 
-### 1.2 Repository ve Store Katmani
+### 2.2 Repository ve Store Katmani
 
-Mobil ve web tarafinda UI dogrudan API, fixture, AsyncStorage veya katalog dosyasi okumayacak.
+UI dogrudan API, fixture, AsyncStorage veya katalog dosyasi okumayacak.
 
 ```text
 StarRepository
@@ -43,28 +73,26 @@ OwnershipRepository
 MarketplaceRepository
 VaultRepository
 CertificateRepository
-```
 
-Uygulama storelari:
-
-```text
 CatalogStore
 OwnershipStore
-VaultStore
 MarketplaceStore
+VaultStore
 SessionStore
 SkyRuntimeStore
 ```
 
-Beklenen fayda:
+Kurallar:
 
-- `Yildiz Al`, `Marketplace`, `StarVault`, `Yildizlarim`, `Sky Live` ayni yildiz ve sahiplik bilgisini gorur.
-- Kartlar, detay ekranlari ve aksiyon butonlari is mantigi tasimaz.
-- Offline fallback, loading, error ve retry davranislari tek yerden yonetilir.
+- Web `Yildiz Al`, `Marketplace`, `StarVault`; mobil `Claim`, `Sky Live`,
+  `StarVault`, `Profile` ayni kimlik ve sahiplik modelini kullanir.
+- Kartlar, drawer'lar ve action bar'lar is mantigi tasimaz.
+- Offline fallback, retry, loading, empty ve error davranislari store veya
+  repository katmaninda merkezilesir.
 
-### 1.3 API Gateway ve Sync Katmani
+### 2.3 API ve Sync
 
-Backend endpointleri tek semantik altinda toplanacak:
+Hedef endpoint semantigi:
 
 ```text
 GET  /api/stars
@@ -83,14 +111,16 @@ POST /api/vault/upload
 POST /api/sync/mobile-snapshot
 ```
 
-Sync kurallari:
+Kurallar:
 
-- Web satin alma tamamlaninca backend `OwnershipRecord` olusturur.
-- Mobil uygulama acilis, one donus ve manuel yenilemede `/api/sync/mobile-snapshot` ile sahiplik, sertifika, vault ve marketplace ozetini alir.
-- Snapshot SHA-256 ile dogrulanir; bozuk veya eksik snapshot eski saglam snapshot'i silmez.
-- Conflict durumunda backend tarihi ve siparis durumu kazanir.
+- GET isteklerinde retry olabilir; POST istekleri idempotency key kullanir.
+- Mobil acilis, one donus ve manuel yenilemede ownership/vault/marketplace
+  snapshot'i yeniler.
+- Snapshot SHA-256 ile dogrulanir; bozuk snapshot son saglam snapshot'i
+  silmez.
+- Backend tarihi ve siparis durumu conflict durumunda kazanir.
 
-### 1.4 Navigation ve Deep Link Tasarimi
+### 2.4 Deep Link ve Rota
 
 Tek hedef modeli:
 
@@ -103,259 +133,244 @@ starclaim://vault/item/{vaultItemId}
 starclaim://certificate/{certificateId}
 ```
 
-Mobil rota eslesmeleri:
+Mobil ana rotalar:
 
 ```text
-/(tabs)/claim                 -> Yildiz Al
-/(tabs)/catalog               -> Katalog detayli liste
-/(tabs)/explore/stardetail    -> Yildiz detay
-/(tabs)/sky                   -> Sky Live
-/(tabs)/vault/home            -> StarVault
-/(tabs)/vault/purchases       -> Satin alma gecmisi
-/(tabs)/vault/newmessage      -> Vault mesaji
-/(tabs)/profile               -> Profil
+/(tabs)/claim
+/(tabs)/sky
+/(tabs)/vault/home
+/(tabs)/profile
+/(tabs)/explore/stardetail
+/(tabs)/vault/purchases
+/(tabs)/vault/newmessage
 ```
 
-Web rota eslesmeleri:
+Web ana rotalar:
 
 ```text
-/stars                        -> Yildiz Al / katalog
-/marketplace                  -> Marketplace
-/vault                        -> StarVault
-/star/:starId                 -> Public star / detay
-/payment/success              -> Siparis tamamlama
+/stars
+/marketplace
+/vault
+/star/:starId
+/payment/success
 ```
+
+## 3. Aktif Rank
+
+### Rank 1 - Mobil 2D Sky Live Kabul Kapisi
+
+Durum:
+
+- Otomatik test kapisi geciyor: `npm run test:astronomy`.
+- Expo config kapisi geciyor: `npx expo-doctor`.
+- Sensor heading fallback, izin reddi ve invalid location payload riskleri
+  sertlestirildi.
+- Gorsel kalite otomatik kapisi magnitude radius, BP-RP/spektral renk,
+  night vision ve kaliteye gore atmosfer katmani davranisini testlerle
+  kilitliyor.
+- Fiziksel cihaz kaniti `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` uzerinden
+  kapatilacak; RAM riski nedeniyle cihaz calistirma bu turda kullanici manuel
+  testine birakildi.
+
+Kalan:
+
+- Fiziksel cihaz 9 senaryosunu tek tek kaydet:
+  soguk acilis, ana navigasyon, izin reddi, sensor lifecycle, offline tile
+  fallback, 10 dakika dayaniklilik, 90 derece motor hissi, web deep link,
+  StarVault deep link.
+- Dusuk/orta/yuksek Android profillerinde FPS, isi, bellek ve crash kaydi al.
+- Deep space gradient ve referans screenshot gorsel regresyon kabulunu kapat.
+
+Kabul:
+
+- Sky Live izin reddi, offline, bozuk cache, sensor stale ve background/foreground
+  durumlarinda crash uretmez.
+- Harita ag olmadan gorunur yildiz verisiyle acilir.
+- 10 dakika sensor modunda kritik FPS dususu veya crash yoktur.
+
+### Rank 2 - Sahiplik, Satin Alma ve Sync
+
+Hedef:
+
+- Satin alma sonrasi ayni yildiz web, mobil, StarVault, sertifika ve Sky Live
+  icinde ayni kimlikle gorunur.
+
+Kalan:
+
+- `PurchaseModal` backend order ve ownership kaydina bagli kalacak.
+- `OwnershipStore` ve `VaultStore` tek sync olayi ile yenilenecek.
+- Mock sayilar store-derived degerlere donusecek.
+- Certificate indirme/gosterme web ve mobilde ayni endpoint sozlesmesini
+  kullanacak.
+
+### Rank 3 - StarVault Mobil Urunlestirme
+
+Hedef:
+
+- Mobil StarVault web kalitesinde calisan urun merkezi olacak.
+
+Zorunlu bolumler:
+
+- Hero: sahip olunan yildiz, sertifika, vault item sayilari.
+- Kisa yollar: `Yildiz Al`, `Sertifikalar`, `Hikaye Ekle`, `Satin Almalar`,
+  `Guvenlik`, `Profil`.
+- Vault listesi: mesajlar, sertifikalar, satin alma snapshot'i.
+- Guvenlik: biyometrik kilit, tarih kilidi, yedekleme/sync durumu.
+- Empty state: satin alma veya ilk mesaj aksiyonuna goturur.
+
+### Rank 4 - Marketplace Web/Mobil Ortak Akis
+
+Hedef:
+
+- Web ve mobil ayni `MarketplaceListing` sozlesmesini kullanir.
 
 Kurallar:
 
-- Ekranlar birbirine string path dagitmayacak; `routeBuilder` / `linkBuilder` yardimcilari kullanilacak.
-- Web QR kodu veya deep link urettiginde ayni `StarTarget` payload'unu encode edecek.
-- Mobil link acildiginda once hedef resolve edilir, sonra ilgili ekrana gidilir.
+- Listing yildiz verisini tekrar tasimaz; `starId`, fiyat, durum ve seller
+  bilgisini tutar.
+- Detayda yildiz bilgisi `StarRepository` ile cozulur.
+- Action listesi ortak olur: `viewDetail`, `buy`, `list`, `unlist`,
+  `openVault`, `share`.
 
-### 1.5 Hata Guvenligi ve Test Altyapisi
+### Rank 5 - Web Baglanti ve Katalog Sertligi
 
-Zorunlu altyapilar:
+Hedef:
 
-- Render error boundary: Skia, GL ve agir katalog ekranlari icin ayri hata siniri.
-- Network retry policy: idempotent GET isteklerinde otomatik retry, POST isteklerinde siparis idempotency key.
-- Offline mode: gomulu HYG cekirdek katalog ve son saglam sahiplik snapshot'i.
-- Diagnostics: ilk frame, FPS, bellek baskisi, katalog kayit sayisi, tile cache durumu.
-- E2E smoke: uygulama acilir, `Yildiz Al`, `Sky Live`, `StarVault`, `Profil` gezilir.
-- Unit/regression: astronomi, katalog tile, star identity, ownership snapshot, marketplace action ve vault item testleri.
+- Web `Yildiz Al`, `Marketplace`, `StarVault` ayni repository/sahiplik
+  mantigini kullanir ve mobil devam aksiyonlari uretir.
 
-## 2. Mobil Oncelik Sirasi
+Kalan:
 
-### P0 - Calisma Guveni ve Baglanti Temizligi
+- `/api/stars/count` gibi opsiyonel endpointler sayfayi dusurmeyecek.
+- Custom domain ve Vercel deployment her zaman relative `/api` rewrite akisini
+  kullanacak.
+- QR/deep link payload'lari `StarTarget` ile ayni kalacak.
 
-- Expo Router icindeki eski tekil ekranlar ile yeni tab ekranlari ayrilacak; aktif urun rotalari tek kaynaktan yonetilecek.
-- `mobile/app/vault.js` gibi eski cockpit/decrypt ekranlari ya `legacy` altina alinacak ya da yeni StarVault akisina yonlendirilecek.
-- Tab bar, profil, yildiz detayi, satin alma modal ve vault ekranlari ayni route builder ile baglanacak.
-- Import ve path karmasasi icin `src/platform` altinda mobil repository/store katmani kurulacak.
-- `expo-doctor`, `npm run test:astronomy` ve Android smoke testi temel kabul kapisi olacak.
+### Rank 6 - 3D Voyage Yeniden Baslatma
 
-### P1 - Sahiplik ve Satin Alma Akisi
+Baslama sarti:
 
-- `PurchaseModal` satin alma sonucunda yalnizca lokal mesaj eklemeyecek; backend siparis ve sahiplik kaydi olusturacak.
-- Siparis sonucu `OwnershipStore` ve `VaultStore` tarafina tek sync olayi olarak dusecek.
-- `Yildiz Al` -> satin alma -> sertifika -> StarVault -> Sky Live acisi calisir hale gelecek.
-- Mobil StarVault istatistikleri mock sayi yerine `OwnershipSnapshot` ve `VaultItem` verisinden hesaplanacak.
+- Rank 1-3 kabul kapilari kapanmadan 3D ana gelistirme baslamaz.
 
-### P2 - 2D Sky Live Uretim Kapisi
+Hedef mimari:
 
-- Gaia/HIP binary tile cache icin LRU, bozuk tile kurtarma ve versiyon yukseltme testleri kapatilacak.
-- Pan, zoom, secim, etiket, takim yildizi ve ufuk filtreleri kanonik kimlikle dogrulanacak.
-- Izin reddi, offline katalog, bozuk cache ve uygulama background/foreground senaryolari fiziksel cihazda test edilecek.
-- Dusuk/orta/yuksek Android profillerinde 10 dakikalik FPS, isi, bellek ve crash kaydi alinacak.
-- Sky Live motoru planetarium uygulamalari gibi davranacak: sensorde hiz siniri, olu bolge, kisa-yol RA easing, layer stabilizasyonu ve fiziksel cihaz kalibrasyon kabul testleri zorunlu olacak.
-- Celestia/Stellarium benzeri uygulamalar referans alinabilir; GPL lisansli kod veya veri dogrudan kopyalanmayacak. Gaia, HYG, IAU ve lisansi uyumlu acik kataloglar platform veri sozlesmesine normalize edilerek kullanilacak.
+- Kanonik star identity, tile katalog ve ownership marker verisini kullanir.
+- Eski Three.js/Expo GL prototipleri yalnizca referans kalir.
+- Floating-origin, gercek sektor komsulugu, GL dispose, LOD ve cihaz kalite
+  profili ilk gunden zorunludur.
 
-#### P2.1 - Zorunlu Yurutme Sirasi (Kalite Sirasiyla)
+DSO hedefi:
 
-Asagidaki siralama bozulmadan ilerlenir. Bir adim kabul kaniti olmadan sonraki adim acilmaz.
+- Messier ve NGC derin uzay katmani 2D kabulden sonra 3D/DSO asamasinda ele
+  alinir.
+- DSO catalog: Messier 110 + kontrollu NGC alt kumesi, API testleri ve
+  performans kaniti ile ilerler.
 
-Durum (2026-07-06):
-- Otomatik kapilar yeniden dogrulandi (`test:astronomy` ve `expo-doctor` temiz).
-- Aktif is kalemi: 1. adim fiziksel cihaz kabul senaryolari.
+### Rank 7 - Web Yasayan Evren ve Hero
 
-1. Uretim guveni ve cihaz kabul kapisi
-  - Fiziksel cihaz senaryolari, lifecycle, tile fallback, 10 dakika dayaniklilik.
-  - Telemetry kayitlari: FPS, frame time, bellek, isi, crash.
-2. Yildiz fotometrisi ve gorunurluk kurallari
-  - Magnitude -> boyut egirisi dogrulamasi.
-  - BP-RP/spektral tip -> renk esleme dogrulamasi.
-  - Parlak yildiz halo esigi ve zoom tabanli etiket gorunurlugu.
-3. Arka plan katmanlari
-  - Deep space gradient, Milky Way bandi, dust/nebula katmani.
-  - Gece gorusu ve kalite profilleriyle tutarli davranis.
-4. Post-process ve ton yonetimi
-  - Bloom ve ton esleme sadece performans butcesi icinde acilir.
-  - Dusuk cihaz profilinde etkiler degrade edilerek kapatilabilir.
-5. Gorsel regresyon ve yayin kapisi
-  - Referans ekran goruntusu karsilastirma seti.
-  - P2 kabul raporu olmadan P5 (3D Voyage) yeniden baslatilmaz.
+Baslama sarti:
 
-#### P2.2 - Eklenecek Yeni Backlog Maddeleri
+- Mobil 2D kabul kapisi kapatilmadan web yasayan evren ana is kalemi olmaz.
 
-- [ ] Sky telemetry paneli: FPS, frame time, bellek, isi, dropped frame, sensor jitter.
-- [ ] Yildiz boyut/renk/halo spec dokumani: magnitude ve BP-RP tabanli tek sozlesme.
-- [ ] Arka plan spec dokumani: gradient + Milky Way + dust katmanlarinin kalite profili kurallari.
-- [ ] Gorsel regresyon testleri: secilen referans acilarda screenshot karsilastirma.
-- [ ] Fiziksel cihaz kanit kaydi: cihaz modeli, OS, test suresi, sonuc, issue linki.
+Kurallar:
 
-### P3 - StarVault Mobil Urunlestirme
+- CRA/CRACO + React 19 mevcut stack korunur.
+- Tek canvas `UniverseBackdrop`; ikinci WebGL context yok.
+- HYG/Gaia-lite veri kullanilir; Gaia tam katalog istemciye yuklenmez.
+- Desktop 10-14k, orta 6-8k, mobil web 2-3.5k yildiz kalite profiline gore
+  sinirlanir.
+- Reduced motion modunda meteor/parallax/twinkle kapanir.
 
-StarVault artik plan gostermeyecek; calisan urun merkezi olacak.
+### Rank 8 - Unity/Native Scaffold
 
-Ekran bolumleri:
+Durum:
 
-- Hero: sahip yildiz, sertifika, vault item sayilari.
-- Kisa yollar: `Yildiz Al`, `Sertifikalar`, `Hikaye Ekle`, `Satin Almalar`, `Guvenlik`, `Profil`.
-- Vault listesi: mesajlar, sertifikalar ve satin alma snapshot'i tek listede veya tabli gorunumde.
-- Guvenlik: biyometrik kilit, zaman kilidi, yedekleme/sync durumu.
-- Empty state: kullaniciyi satin almaya veya ilk mesajini olusturmaya goturur.
+- Sadece uzun vadeli POC fikri. Aktif sprint veya urun karari degildir.
 
-### P4 - Marketplace Mobil Entegrasyonu
+Kural:
 
-- Marketplace web ile ayni `MarketplaceListing` sozlesmesini kullanacak.
-- Mobilde ilk asama listeleme/inceleme; satin alma backend order akisina baglaninca aktif olacak.
-- Sahip olunan yildiz kartindan `Marketplace'te Listele` aksiyonu ayni action generator'dan gelecek.
+- Unity scaffold, mobil 2D kabul ve ana React Native akislari tamamlanmadan
+  baslatilmaz.
+- Baslatilirsa ayri POC olarak ele alinir; ana repo ve buyuk assetler LFS/
+  Addressables karari olmadan sisirilmez.
 
-### P5 - 3D Voyage Yeniden Baslatma
+## 4. Uygulama Paketleri
 
-- Sadece P0-P3 kabul kapilari kapandiktan sonra.
-- Eski Three.js prototipi referans kalacak; yeni 3D motor kanonik `StarTarget`, tile katalog ve ownership marker verisini kullanacak.
-- Floating-origin, gercek sektor komsulugu, GL dispose ve cihaz kalite profili ilk gunden zorunlu olacak.
+### Paket A - Mobil 2D Runtime Hardening
 
-## 3. Web Baglanti Plani
+- [x] Sensor heading stale fallback.
+- [x] Konum izni reddi diagnostic ve manuel fallback.
+- [x] Invalid location payload korumasi.
+- [x] Sky runtime unit testleri.
+- [ ] Fiziksel cihaz 9/9 kabul kaydi.
 
-### 3.1 Yildiz Al
+### Paket B - Mobil 2D Gorsel Kabul
 
-- `StarRepository` ve `CatalogStore` web katalog icin tek kaynak olacak.
-- Kartlar `StarCard` / `StarAssetImage` / `StarActionBar` ile platform kontratina baglanacak.
-- Satin alma CTA'si backend order yaratacak; basarili odeme sonrasi `OwnershipRecord` uretilecek.
-- Mobil devam icin `Open in Mobile`, QR ve deep link ayni `StarTarget` payload'unu kullanacak.
+- [ ] Magnitude -> boyut egrisi kabul.
+- [ ] BP-RP/spektral tip -> renk kabul.
+- [ ] Halo ve etiket yogunlugu kabul.
+- [ ] Night vision ve deep-space layer kabul.
+- [ ] Referans screenshot seti.
 
-### 3.2 Marketplace
+### Paket C - Ownership ve StarVault Sync
 
-- Marketplace kartlari yildiz verisini tekrar tasimayacak; listing sadece `starId`, fiyat, durum ve seller bilgisini tutacak.
-- Listing detayinda star bilgisi `StarRepository.getStarById` ile cozulur.
-- Web ve mobil ayni `MarketplaceAction` listesini kullanir: `viewDetail`, `buy`, `list`, `unlist`, `openVault`, `share`.
+- [ ] Purchase -> OwnershipStore -> VaultStore tek event zinciri.
+- [ ] StarVault istatistikleri tamamen store-derived.
+- [ ] Sky Live owned marker canonical id ile dogrulanir.
+- [ ] Certificate ve vault item web/mobil ayni kayitlari kullanir.
 
-### 3.3 StarVault Web
+### Paket D - Marketplace Mobil
 
-- StarVault web, mobildeki StarVault ile ayni sahiplik ve vault snapshot'ini tuketecek.
-- Cuzdan durumu, Google oturumu ve backend hesap eslesmesi ayri state olarak tutulacak.
-- On-chain islemler gorunur olsa bile backend sahiplik kaydiyla eslesmeden kalici sahiplik gostermeyecek.
-- Web StarVault'tan mobil StarVault'a QR/deep link: `starclaim://vault/item/{vaultItemId}` veya `starclaim://stars/{starId}`.
+- [ ] Mobil marketplace listing normalizer web ile ayni sozlesmede.
+- [ ] Sahip olunan yildizdan listeleme aksiyonu.
+- [ ] Buy/list/unlist aksiyonlari backend order/listing akisina baglanir.
 
-## 4. Web-Mobil Ortak Akislar
+### Paket E - Web Sertlestirme
 
-### Akis A - Web'de Yildiz Sec, Mobilde Devam Et
+- [ ] Katalog count/list fallback davranisi regression test ile korunur.
+- [ ] Custom domain `/api` rewrite smoke testi.
+- [ ] Web QR/deep link manuel smoke.
+
+### Paket F - 3D/DSO Hazirlik
+
+- [ ] 2D kabul raporu kapandiktan sonra baslar.
+- [ ] Floating-origin ve LOD teknik tasarimi.
+- [ ] DSO data/API performans kaniti.
+- [ ] Mobil cihaz 3D FPS/isi/bellek profili.
+
+## 5. Test Kapilari
+
+Her paket icin uygun olanlar calistirilir:
 
 ```text
-Web /stars
-  -> StarTarget olustur
-  -> QR/deep link
-  -> Mobil resolve
-  -> Star detail veya satin alma
-  -> Order
-  -> Ownership snapshot
-  -> StarVault + Sky Live
+mobile: npm run test:astronomy
+mobile: npx expo-doctor
+frontend: npm run build
+backend: ilgili pytest/API smoke
 ```
 
-### Akis B - Web Marketplace Satin Alma
+Fiziksel cihaz gerektiren maddeler tahminle kapatilmaz. Tarih, cihaz, OS,
+sonuc ve not `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` icine yazilir.
 
-```text
-Web /marketplace
-  -> Listing sec
-  -> Backend order
-  -> Payment success
-  -> OwnershipRecord
-  -> CertificateRecord
-  -> Mobil sync
-  -> StarVault / Satin Almalar
-```
+## 6. Dosya Politikasi
 
-### Akis C - Mobil Satin Alma Sonrasi StarVault
+- Yeni roadmap veya plan dosyasi acilmayacak.
+- Yeni karar bu dosyaya islenecek.
+- Kabul kanitlari `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` gibi checklist/kanit
+  dosyalarinda tutulabilir.
+- Teknik detay gerekiyorsa `SPECIFICATION` veya `IMPLEMENTATION_SUMMARY`
+  dosyasi olabilir, ama karar sirasi bu dosyayi gecemez.
+- Eski plan dosyalari silinmistir; tekrar eklenmeyecek.
 
-```text
-Mobil Yildiz Al
-  -> PurchaseModal
-  -> Backend order
-  -> OwnershipStore.refresh()
-  -> VaultStore.refresh()
-  -> StarVault home
-  -> Sky Live'da sahiplik isareti
-```
+## 7. Genel Kabul Kriterleri
 
-### Akis D - StarVault Mesaj ve Sertifika
-
-```text
-Owned star
-  -> Vault item olustur
-  -> Local encrypted draft
-  -> Backend vault upload
-  -> Certificate link
-  -> Web/Mobil snapshot
-```
-
-## 5. Eksik veya Hatali Dosyalar Icin Duzeltme Stratejisi
-
-- Mojibake/encoding gorunen mobil dosyalar tek tek UTF-8 olarak temizlenecek; once aktif ekranlar, sonra legacy dosyalar.
-- Eski rota dosyalari kullanici akisini bozuyorsa redirect'e cevrilecek.
-- Mock sayilar ve sabit placeholder metinler veri store'undan hesaplanan degerlerle degistirilecek.
-- UI bilesenleri API cagirmayacak; repository/store uzerinden veri alacak.
-- Her refactor paketinde bir smoke testi ve ilgili unit testi calistirilacak.
-
-## 6. Uygulama Paketleri
-
-### Paket 1 - Plan ve Rota Temizligi
-
-- [x] Bu dosya ana plan olarak kabul edilir.
-- [x] Mobil StarVault icindeki plan/placeholder dili kaldirilir.
-- [x] Eski vault rotalari yeni StarVault home'a kontrollu yonlendirilir.
-- [x] Route builder taslagi eklenir.
-- [x] Tab bar, StarVault, Claim, Profile, My Stars, Explore ve deep link gecisleri route builder'a baglanir.
-- [ ] Eski decrypt/vault araci gerekiyorsa `legacy` altinda urun akisindan ayrilmis bir arac olarak yeniden konumlandirilir.
-
-### Paket 2 - Mobil Platform Store
-
-- [x] `mobile/src/platform/ownership`, `vault`, `marketplace`, `navigation` klasorleri olusturulur.
-- [x] `OwnershipRecord`, `VaultItem` ve `MarketplaceListing` normalizer'lari eklenir.
-- [x] `OwnershipStore`, `VaultStore` ve `MarketplaceStore` kurulur.
-- [x] StarVault istatistikleri gercek snapshot ve local vault mesajlarindan hesaplanir.
-- [x] Claim, Profile, My Stars, Vault Purchases ve Marketplace ekranlari mobil store katmanina baglanir.
-- [ ] `mobile/src/platform/stars` ve `CatalogStore` mobil katalog refactor paketi olarak ayrica ele alinacak.
-
-### Paket 3 - Satin Alma ve StarVault Sync
-
-- [x] `PurchaseModal` backend order ve ownership sync akisi ile sertlestirilir.
-- [x] Basarili satin alma StarVault ve Sky Live sahiplik isaretini otomatik gunceller.
-- [x] Sertifika indirme/gosterme mobil ve web icin ayni endpoint'e baglanir.
-
-### Paket 4 - Web Baglanti Sertlestirme
-
-- [x] `Yildiz Al`, `Marketplace`, `StarVault` ortak `StarRepository`, `StarAssetManager`, action helper ve shell bilesenlerine baglanir.
-- [x] Web QR/deep link uretimi eklenir.
-- [x] Marketplace listing ve StarVault card'lari ortak yildiz/veri sozlesmesini kullanir.
-
-### Paket 5 - 2D Uretim Kabul Kapisi
-
-- [x] Route/deep link, tile cache, offline fallback ve sensor math otomatik kabul testlerine baglanir.
-- [x] Kabul kaniti `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` dokumanina islenir.
-- [x] Sky Live sensor hareketi icin planetarium tarzi smoothing, hiz limiti, RA kisa-yol easing ve constellation layer stabilizasyonu eklenir.
-- [ ] Izin reddi, sensor lifecycle ve 10 dakikalik cihaz testi fiziksel cihazda tamamlanir.
-
-### Paket 6 - 3D Yeniden Kurulum
-
-- Kanonik veri ve tile sistemi ustune yeni 3D render mimarisi kurulur.
-- Eski prototipten yalnizca dogrulanmis fikirler tasinir.
-
-## 7. Kabul Kriterleri
-
-- Mobil uygulama soguk acilista crash olmadan `Yildiz Al`, `Sky Live`, `StarVault`, `Profil` ekranlarini acar.
-- Satin alma sonrasi ayni yildiz web, mobil, StarVault, sertifika ve Sky Live'da ayni kimlikle gorunur.
-- Web `Yildiz Al`, `Marketplace`, `StarVault` ayni repository ve sahiplik snapshot mantigini kullanir.
-- Offline modda katalog ve son sahiplik snapshot'i kullanilabilir kalir.
-- StarVault ekraninda plan/backlog metni kalmaz; kullanici yalnizca calisan vault aksiyonlarini gorur.
-- 2D Sky Live fiziksel cihaz kabul testleri gecmeden 3D ana gelistirme tekrar baslamaz.
+- Mobil uygulama soguk acilista crash olmadan `Yildiz Al`, `Sky Live`,
+  `StarVault`, `Profil` ekranlarini acar.
+- Satin alma sonrasi ayni yildiz web, mobil, StarVault, sertifika ve Sky
+  Live'da ayni kimlikle gorunur.
+- Web `Yildiz Al`, `Marketplace`, `StarVault` ayni repository ve ownership
+  snapshot mantigini kullanir.
+- Offline modda katalog ve son saglam sahiplik snapshot'i kullanilabilir kalir.
+- StarVault ekraninda plan/backlog metni kalmaz.
+- 2D Sky Live fiziksel cihaz kabul testleri gecmeden 3D ana gelistirme
+  tekrar baslamaz.

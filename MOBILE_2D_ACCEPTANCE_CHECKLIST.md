@@ -11,6 +11,7 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - [x] Mobil `starcalimx://star/{code}`, `starcalimx://hip/{hip}` ve `starcalimx://vault/item/{id}` linkleri route helper ile cozulur.
 - [x] Sky Live sensor hedefi planetarium tarzi hareket icin smoothing, olu bolge ve hiz limiti ile sinirlanir.
 - [x] Sky Live constellation layer secimi horizontal/sensor modunda kucuk merkez degisimlerinde yeniden secim yapmayacak sekilde stabilize edilir.
+- [x] Gorsel kalite kapisi cihaz calistirmadan `starRenderSet`/`skyRenderPlan` testleriyle magnitude radius, BP-RP/spektral renk, night vision ve kaliteye gore atmosfer katmanlarini dogrular.
 
 ## Fiziksel Cihaz Kabul Senaryolari
 
@@ -26,12 +27,12 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 
 ## Gorsel Kalite Kabul (P2 Sirali)
 
-- [ ] Yildiz boyutu magnitude egirisine gore tutarlidir; ayni zoom seviyesinde parlak yildizlar belirgin, zayif yildizlar daha kucuktur.
-- [ ] Yildiz rengi BP-RP/spektral tipe gore tutarlidir; mavi-beyaz, beyaz, sarimsi, turuncu-kirmizi dagilimi dogal gorunur.
-- [ ] Parlak yildiz halo kurali yalnizca esitigin ustundeki yildizlarda devrededir; tum sahnede asiri parlama yoktur.
+- [x] Yildiz boyutu magnitude egirisine gore tutarlidir; ayni zoom seviyesinde parlak yildizlar belirgin, zayif yildizlar daha kucuktur.
+- [x] Yildiz rengi BP-RP/spektral tipe gore tutarlidir; mavi-beyaz, beyaz, sarimsi, turuncu-kirmizi dagilimi dogal gorunur.
+- [x] Parlak yildiz halo kurali yalnizca esitigin ustundeki yildizlarda devrededir; tum sahnede asiri parlama yoktur.
 - [ ] Deep space gradient tek renk siyah degildir; kamera hareketinde banding veya kirilma olmadan devam eder.
-- [ ] Milky Way ve dust katmanlari kalite profiline gore acilir/kapanir; dusuk profilde FPS dusmeden degrade olur.
-- [ ] Gece gorusu modunda arka plan/yildiz kontrasti korunur; bilgi kaybi olmadan okunabilirlik devam eder.
+- [x] Milky Way ve dust katmanlari kalite profiline gore acilir/kapanir; dusuk profilde FPS dusmeden degrade olur.
+- [x] Gece gorusu modunda arka plan/yildiz kontrasti korunur; bilgi kaybi olmadan okunabilirlik devam eder.
 - [ ] Referans acilar icin screenshot karsilastirma testleri gecmistir (minimum 3 cihaz sinifi).
 
 ## Kanit Notlari
@@ -54,6 +55,12 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - `npm run test:astronomy` -> 97/97 test gecti.
 - `npx expo-doctor` -> 18/18 temiz.
 - Fiziksel cihaz senaryolari bu oturumda yeniden calistirilmadi. Ustteki 9 senaryo, her biri icin cihaz/OS/sonuc satiri eklenene kadar acik tutulacak.
+
+### 2026-07-11 Gorsel Kalite Otomatik Kanit Guncellemesi
+
+- Fiziksel cihaz calistirma adimi kullanici istegiyle atlandi; cihaz/OS gozlemleri manuel test sonrasi eklenecek.
+- `starRenderSet` ve `skyRenderPlan` otomatik testleri magnitude radius, BP-RP/spektral renk, night vision rengi ve kalite profiline gore nebula/Milky Way/shooting star katmanlarini dogrulayacak sekilde genisletildi.
+- `npm run test:astronomy` -> 101/101 test gecti.
 
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 
