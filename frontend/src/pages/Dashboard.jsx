@@ -10,8 +10,10 @@ import { toast } from "sonner";
 import StarCanvas from "../components/StarCanvas";
 import {
   buildCertificateFilename,
+  clearPendingOwnershipSync,
   findOrderForStar,
   normalizeOwnershipRecord,
+  readPendingOwnershipSync,
   resolveCertificateOrderId,
 } from "../lib/ownershipRecords";
 import "./Console.css";
@@ -66,11 +68,32 @@ export default function Dashboard() {
       api.get("/orders/mine")
     ]).then(([{ data: starData }, { data: orderData }]) => {
       const normalizedOrders = (Array.isArray(orderData) ? orderData : []).map(normalizeOwnershipRecord);
-      setOrders(normalizedOrders);
-      setStars((Array.isArray(starData) ? starData : []).map((star) => {
-        const order = findOrderForStar(star, normalizedOrders);
+      const pending = readPendingOwnershipSync();
+      const hasPendingOrder = pending && normalizedOrders.some((order) => order.orderId && order.orderId === pending.orderId);
+      const nextOrders = pending && !hasPendingOrder ? [pending, ...normalizedOrders] : normalizedOrders;
+      if (hasPendingOrder) clearPendingOwnershipSync();
+      setOrders(nextOrders);
+      const nextStars = (Array.isArray(starData) ? starData : []).map((star) => {
+        const order = findOrderForStar(star, nextOrders);
         return order ? { ...star, order_id: order.orderId, orderId: order.orderId } : star;
-      }));
+      });
+      const hasPendingStar = pending && nextStars.some((star) => findOrderForStar(star, [pending]));
+      if (pending && !hasPendingStar) {
+        nextStars.unshift({
+          star_id: pending.starId,
+          id: pending.starId,
+          code: pending.starClaimCode || pending.code || pending.starId,
+          custom_name: pending.name,
+          name: pending.name,
+          constellation: pending.constellation || "Unknown",
+          tier: "standard",
+          order_id: pending.orderId,
+          orderId: pending.orderId,
+          ra: pending.ra,
+          dec: pending.dec,
+        });
+      }
+      setStars(nextStars);
     }).catch(err => {
       console.error("Dashboard fetch error:", err);
       toast.error(lang === "TR" ? "Veriler yüklenemedi." : "Data could not be loaded.");

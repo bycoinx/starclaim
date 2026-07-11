@@ -87,7 +87,19 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - Web Dashboard certificate indirme akisi order listesinden ortak ownership normalizer ile `orderId` cozer.
 - Web StarVault sahiplik merge akisi ayni normalizer ile canonical/starClaim alanlarini kullanir.
 - StarVault metrik fallback'leri mock koleksiyon sayilari yerine API/store-derived bos durumla baslar.
+- Web PaymentSuccess paid sonrasi Dashboard/StarVault icin pending ownership sync kaydi uretir.
+- Backend `checkout/status`, `orders/mine`, `orders/offline-snapshot` ve certificate endpoint'i ortak ownership alanlariyla dogrulanir.
+- `pytest backend\tests\backend_test.py::TestClaimFlow::test_claim_and_mine_list backend\tests\backend_test.py::TestFulfillmentIdempotency::test_process_paid_claim_idempotent -q --tb=short` -> 2/2 test gecti.
 - `frontend npm run build` -> basarili.
+
+### 2026-07-11 Mobil StarVault Urun Kaniti
+
+- Mobil StarVault home gercek ownership kaydi yokken demo/public claimed yildiz gostermek yerine bos/loading/error durumlarini gosterir.
+- Secili yildiz certificate PDF aksiyonu backend `orders/certificate/{orderId}` sozlesmesine baglandi.
+- Hero sync durumu, manuel yenileme, verified/local kartlari, sertifika ve timeline bolumleri ayni ownership verisini kullanir.
+- `npm run test:astronomy` -> 107/107 test gecti.
+- `npm run test:visual-snapshots` -> 1/1 test gecti.
+- `node -e "...@babel/parser..."` ile `mobile/app/(tabs)/vault/home.js` parse kontrolu -> basarili.
 
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 

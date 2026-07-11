@@ -4,6 +4,10 @@ import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { Loader2, Star, Mail, ArrowRight } from "lucide-react";
 import StarCanvas from "../components/StarCanvas";
+import {
+  normalizeCheckoutStatusRecord,
+  savePendingOwnershipSync,
+} from "../lib/ownershipRecords";
 
 const POLL_INTERVAL_MS = 2500;
 const MAX_ATTEMPTS = 8;
@@ -14,6 +18,7 @@ export default function PaymentSuccess() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("checking"); // checking | paid | failed | timeout
   const [info, setInfo] = useState(null);
+  const [syncState, setSyncState] = useState("idle"); // idle | syncing | synced | skipped
   const attemptsRef = useRef(0);
   const processedRef = useRef(false);
 
@@ -28,6 +33,31 @@ export default function PaymentSuccess() {
     }
 
     let cancelled = false;
+    const syncOwnership = async (paidStatus) => {
+      setSyncState("syncing");
+      try {
+        const [ordersResult, starsResult] = await Promise.allSettled([
+          api.get("/orders/mine"),
+          api.get("/stars/mine/list"),
+        ]);
+        const orders = ordersResult.status === "fulfilled" && Array.isArray(ordersResult.value.data)
+          ? ordersResult.value.data
+          : [];
+        const stars = starsResult.status === "fulfilled" && Array.isArray(starsResult.value.data)
+          ? starsResult.value.data
+          : [];
+        const record = normalizeCheckoutStatusRecord(paidStatus, orders, stars);
+        if (record.starId) {
+          savePendingOwnershipSync(record);
+          setSyncState("synced");
+        } else {
+          setSyncState("skipped");
+        }
+      } catch {
+        setSyncState("skipped");
+      }
+    };
+
     const poll = async () => {
       if (cancelled) return;
       attemptsRef.current += 1;
@@ -36,6 +66,7 @@ export default function PaymentSuccess() {
         if (data.payment_status === "paid") {
           setInfo(data);
           setStatus("paid");
+          syncOwnership(data);
           return;
         }
         if (data.status === "expired") {
@@ -84,6 +115,13 @@ export default function PaymentSuccess() {
               {lang === "TR" ? "Yıldız Senin!" : "The Star is Yours!"}
             </div>
             <div className="font-accent italic text-lg text-sc-text mb-2">{info?.custom_name}</div>
+            <div className="text-[10px] tracking-[0.24em] uppercase text-sc-gold/70 mb-4">
+              {syncState === "syncing"
+                ? (lang === "TR" ? "StarVault senkronize ediliyor" : "Syncing StarVault")
+                : syncState === "synced"
+                  ? (lang === "TR" ? "StarVault kaydi hazir" : "StarVault record ready")
+                  : (lang === "TR" ? "Sertifika kaydi hazirlaniyor" : "Certificate record preparing")}
+            </div>
             <p className="text-sc-text-muted text-sm leading-relaxed mb-8">
               <Mail className="w-4 h-4 inline mr-1.5 -mt-0.5" />
               {lang === "TR"

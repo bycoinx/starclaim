@@ -7,6 +7,8 @@ AI story (TR & EN), auth-protected endpoints (mock session via Mongo).
 import os
 import sys
 import uuid
+import json
+import hashlib
 import pytest
 import requests
 from datetime import datetime, timezone, timedelta
@@ -296,6 +298,7 @@ class TestClaimFlow:
         assert r.status_code == 200, r.text
         d = r.json()
         assert "order_id" in d
+        order_id = d["order_id"]
         assert d["star"]["owner_id"] == mock_session["user_id"]
         assert d["star"]["custom_name"] == "TEST Cosmic Heart"
 
@@ -304,6 +307,39 @@ class TestClaimFlow:
         assert r2.status_code == 200
         mine = r2.json()
         assert any(s["star_id"] == star_id for s in mine)
+
+        # orders/mine contract: web and mobile can resolve the same ownership record.
+        r_orders = requests.get(f"{API}/orders/mine", headers=auth_headers)
+        assert r_orders.status_code == 200
+        orders = r_orders.json()
+        order = next((item for item in orders if item.get("order_id") == order_id), None)
+        assert order is not None
+        for key in ["order_id", "orderId", "star_id", "starId", "star_code", "starClaimCode", "code", "name", "created_at", "createdAt"]:
+            assert key in order
+        assert order["orderId"] == order_id
+        assert order["starId"] == star_id
+        assert order["starClaimCode"] == order["star_code"] == order["code"]
+        assert order["certificateStatus"] == "Verified"
+        assert order["verified"] is True
+
+        # offline snapshot contract: integrity envelope carries the same shared fields.
+        r_snapshot = requests.get(f"{API}/orders/offline-snapshot", headers=auth_headers)
+        assert r_snapshot.status_code == 200
+        envelope = r_snapshot.json()
+        assert envelope["algorithm"] == "SHA-256"
+        assert hashlib.sha256(envelope["payload"].encode("utf-8")).hexdigest() == envelope["digest"]
+        snapshot = json.loads(envelope["payload"])
+        snapshot_record = next((item for item in snapshot["records"] if item.get("orderId") == order_id), None)
+        assert snapshot_record is not None
+        assert snapshot_record["starId"] == star_id
+        assert snapshot_record["starClaimCode"] == order["starClaimCode"]
+        assert snapshot_record["certificateStatus"] == "Verified"
+
+        # certificate endpoint contract: the same order id produces a PDF.
+        r_certificate = requests.get(f"{API}/orders/certificate/{order_id}", headers=auth_headers)
+        assert r_certificate.status_code == 200
+        assert r_certificate.headers["content-type"].startswith("application/pdf")
+        assert r_certificate.content.startswith(b"%PDF")
 
         # claim again -> 400
         r3 = requests.post(f"{API}/stars/claim", headers=auth_headers, json=payload)
@@ -518,8 +554,20 @@ class TestFulfillmentIdempotency:
 
         orders = list(db.orders.find({"session_id": session_id}))
         assert len(orders) == 1, f"Expected exactly 1 order, got {len(orders)}"
+        order_id = orders[0]["order_id"]
         final_txn = db.payment_transactions.find_one({"session_id": session_id})
         assert final_txn["status"] == "fulfilled"
+
+        status_response = api_client.get(f"{API}/checkout/status/{session_id}")
+        assert status_response.status_code == 200
+        status_payload = status_response.json()
+        assert status_payload["payment_status"] == "paid"
+        assert status_payload["fulfilled"] is True
+        assert status_payload["orderId"] == order_id
+        assert status_payload["order_id"] == order_id
+        assert status_payload["starId"] == star["star_id"]
+        assert status_payload["starClaimCode"] == star["code"]
+        assert status_payload["certificateStatus"] == "Verified"
 
         # cleanup
         db.payment_transactions.delete_many({"session_id": session_id})

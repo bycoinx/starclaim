@@ -212,19 +212,27 @@ Durum:
   order listesi uzerinden cozer.
 - Web StarVault istatistik fallback'leri mock 12/9/6 degerleri yerine
   store/API-derived 0/Cadet degerleriyle baslar.
-
-Kalan:
-
-- Web satin alma basari sayfasi, Dashboard ve StarVault yenilemesini ayni
-  ownership sozlesmesiyle tetikleyecek.
-- Backend order/offline snapshot response alanlari web ve mobil icin ortak
-  contract testine alinacak.
+- Web PaymentSuccess paid sonucundan sonra `/orders/mine` ve `/stars/mine/list`
+  kaynaklarini ortak ownership normalizer ile okuyup pending sync kaydi birakir;
+  Dashboard ve StarVault API gecikmesinde bu kaydi gecici olarak merge eder.
+- Backend `checkout/status`, `orders/mine` ve `orders/offline-snapshot`
+  response'lari ortak ownership contract alanlarini doner; certificate PDF
+  endpoint'i ayni `orderId` sozlesmesiyle test edilir.
 
 ### Rank 3 - StarVault Mobil Urunlestirme
 
 Hedef:
 
 - Mobil StarVault web kalitesinde calisan urun merkezi olacak.
+
+Durum:
+
+- Mobil StarVault home ekrani artik sahiplik verisi yokken demo/public claimed
+  yildiz gostermiyor; bos, loading ve hata durumlari acik CTA'larla yonetiliyor.
+- Web contract ile uyumlu `orderId`, `starId`, `starClaimCode`, verified/local
+  alanlari mobil kart, compass, sertifika ve timeline gorunumlerinde kullaniliyor.
+- Secili yildizdan certificate PDF paylasimi backend `orders/certificate/{orderId}`
+  sozlesmesine baglandi; sync durumu ve manuel yenileme hero icinde gorunur.
 
 Zorunlu bolumler:
 

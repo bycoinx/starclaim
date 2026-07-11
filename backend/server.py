@@ -1649,6 +1649,48 @@ async def get_star(star_id: str):
     return s
 
 
+def build_ownership_record(order: dict, star: dict | None = None) -> dict:
+    """Return the shared web/mobile ownership record contract."""
+    star = star or {}
+    order_id = order.get("order_id") or order.get("orderId") or ""
+    star_id = order.get("star_id") or order.get("starId") or star.get("star_id") or ""
+    star_code = order.get("star_code") or order.get("starClaimCode") or star.get("code") or ""
+    created_at = str(order.get("created_at") or order.get("createdAt") or "")
+    name = star.get("custom_name") or order.get("custom_name") or order.get("customName") or star.get("name") or ""
+
+    return {
+        **order,
+        "id": order_id or f"{star_id}-{created_at}",
+        "order_id": order_id,
+        "orderId": order_id,
+        "star_id": star_id,
+        "starId": star_id,
+        "star_code": star_code,
+        "starClaimCode": star_code,
+        "code": star_code,
+        "canonical_id": star.get("canonical_id") or star.get("canonicalId") or "",
+        "canonicalId": star.get("canonical_id") or star.get("canonicalId") or "",
+        "catalog_id": star.get("catalog_id") or star.get("catalogId") or "",
+        "catalogId": star.get("catalog_id") or star.get("catalogId") or "",
+        "source_id": star.get("source_id") or star.get("sourceId") or "",
+        "sourceId": star.get("source_id") or star.get("sourceId") or "",
+        "gaia_source_id": star.get("gaia_source_id") or star.get("gaiaSourceId") or star.get("gaia_id") or "",
+        "gaiaSourceId": star.get("gaia_source_id") or star.get("gaiaSourceId") or star.get("gaia_id") or "",
+        "hip": star.get("hip", ""),
+        "hd": star.get("hd", ""),
+        "name": name,
+        "custom_name": star.get("custom_name") or order.get("custom_name") or "",
+        "constellation": star.get("constellation", ""),
+        "ra": star.get("ra"),
+        "dec": star.get("dec"),
+        "message": star.get("personal_message", ""),
+        "created_at": created_at,
+        "createdAt": created_at,
+        "certificateStatus": "Verified" if order_id else "Pending",
+        "verified": bool(order_id),
+    }
+
+
 @api.get("/stars/mine/list")
 async def list_my_stars(user: User = Depends(get_current_user)):
     cursor = db.stars.find({"owner_id": user.user_id}, {"_id": 0}).sort([("claimed_at", -1)])
@@ -2459,6 +2501,9 @@ async def checkout_status(session_id: str):
 
     # If already fulfilled, return cached status — DO NOT re-process
     if txn.get("status") == "fulfilled":
+        order = await db.orders.find_one({"session_id": session_id}, {"_id": 0}) or {}
+        star = await db.stars.find_one({"star_id": txn["star_id"]}, {"_id": 0}) or {}
+        ownership = build_ownership_record(order, star) if order else {}
         return {
             "status": "complete",
             "payment_status": "paid",
@@ -2468,6 +2513,7 @@ async def checkout_status(session_id: str):
             "custom_name": txn.get("custom_name"),
             "fulfilled": True,
             "type": txn.get("type", "claim"),
+            **ownership,
         }
 
     if not STRIPE_API_KEY:
@@ -2508,6 +2554,9 @@ async def checkout_status(session_id: str):
             else:
                 await _process_paid_claim(latest)
 
+    order = await db.orders.find_one({"session_id": session_id}, {"_id": 0}) or {}
+    star = await db.stars.find_one({"star_id": txn["star_id"]}, {"_id": 0}) or {}
+    ownership = build_ownership_record(order, star) if order else {}
     return {
         "status": new_status,
         "payment_status": new_payment_status,
@@ -2517,6 +2566,7 @@ async def checkout_status(session_id: str):
         "custom_name": txn.get("custom_name"),
         "fulfilled": new_payment_status == "paid",
         "type": txn.get("type", "claim"),
+        **ownership,
     }
 
 
@@ -2560,8 +2610,11 @@ async def stripe_webhook(request: Request):
 @api.get("/orders/mine")
 async def get_my_orders(user: User = Depends(get_current_user)):
     """Retrieve all purchase records for the authenticated user."""
-    cur = db.orders.find({"user_id": user.user_id}, {"_id": 0}).sort([("created_at", -1)])
-    return await cur.to_list(100)
+    orders = await db.orders.find({"user_id": user.user_id}, {"_id": 0}).sort([("created_at", -1)]).to_list(100)
+    star_ids = [order.get("star_id") for order in orders if order.get("star_id")]
+    stars = await db.stars.find({"star_id": {"$in": star_ids}}, {"_id": 0}).to_list(100)
+    stars_by_id = {star["star_id"]: star for star in stars}
+    return [build_ownership_record(order, stars_by_id.get(order.get("star_id"), {})) for order in orders]
 
 
 @api.get("/orders/offline-snapshot")
@@ -2589,24 +2642,10 @@ async def get_offline_ownership_snapshot(user: User = Depends(get_current_user))
         },
     ).to_list(100)
     stars_by_id = {star["star_id"]: star for star in stars}
-    records = []
-    for order in orders:
-        star = stars_by_id.get(order.get("star_id"), {})
-        records.append({
-            "orderId": order.get("order_id", ""),
-            "starId": order.get("star_id", ""),
-            "starClaimCode": order.get("star_code") or star.get("code", ""),
-            "name": star.get("custom_name") or star.get("name", ""),
-            "hip": star.get("hip", ""),
-            "hd": star.get("hd", ""),
-            "constellation": star.get("constellation", ""),
-            "ra": star.get("ra"),
-            "dec": star.get("dec"),
-            "message": star.get("personal_message", ""),
-            "package": order.get("package", ""),
-            "amount": order.get("amount"),
-            "createdAt": str(order.get("created_at", "")),
-        })
+    records = [
+        build_ownership_record(order, stars_by_id.get(order.get("star_id"), {}))
+        for order in orders
+    ]
     snapshot = {
         "schemaVersion": 1,
         "userId": user.user_id,

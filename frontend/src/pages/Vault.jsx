@@ -20,7 +20,7 @@ import VaultWalletPanel from "../components/vault/VaultWalletPanel";
 import WalletConnectModal from "../components/vault/WalletConnectModal";
 import VaultActions from "../components/vault/VaultActions";
 import MobileDeepLinkPanel from "../components/catalog/MobileDeepLinkPanel";
-import { normalizeOwnershipRecord } from "../lib/ownershipRecords";
+import { normalizeOwnershipRecord, readPendingOwnershipSync } from "../lib/ownershipRecords";
 
 
 const WALLET_STORAGE_KEY = 'starclaim_mock_wallet'
@@ -367,12 +367,16 @@ export default function Vault() {
       try {
         const catalogStars = await StarRepository.loadAll(true);
         const myOwnedRows = await fetchMyVaultStars();
-        const mergedCatalog = mergeVaultOwnership(catalogStars, myOwnedRows);
+        const pending = readPendingOwnershipSync();
+        const ownedRows = pending
+          ? [pending, ...myOwnedRows.filter((row) => normalizeOwnershipRecord(row).orderId !== pending.orderId)]
+          : myOwnedRows;
+        const mergedCatalog = mergeVaultOwnership(catalogStars, ownedRows);
         StarRepository.setCache(mergedCatalog);
 
-        const ownedSource = myOwnedRows.length
+        const ownedSource = ownedRows.length
           ? mergedCatalog.filter((star) =>
-              myOwnedRows.some((ownedRow) =>
+              ownedRows.some((ownedRow) =>
                 starLookupKeys(ownedRow).some((key) => starLookupKeys(star).includes(key))
               )
             )

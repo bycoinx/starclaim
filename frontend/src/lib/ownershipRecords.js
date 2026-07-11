@@ -2,6 +2,8 @@ function firstValue(...values) {
   return values.find((value) => value !== undefined && value !== null && value !== "");
 }
 
+export const OWNERSHIP_SYNC_STORAGE_KEY = "starclaim_pending_ownership_sync";
+
 export function normalizeOwnershipRecord(record = {}) {
   const orderId = firstValue(record.orderId, record.order_id, record.id, "");
   const starId = firstValue(record.starId, record.star_id, record.id, "");
@@ -31,6 +33,28 @@ export function normalizeOwnershipRecord(record = {}) {
     verified: Boolean(record.verified || orderId),
     raw: record,
   };
+}
+
+export function normalizeCheckoutStatusRecord(status = {}, orders = [], stars = []) {
+  const statusStarId = firstValue(status.starId, status.star_id, "");
+  const matchingOrder = (Array.isArray(orders) ? orders : [])
+    .map(normalizeOwnershipRecord)
+    .find((order) => order.starId && order.starId === statusStarId);
+  const matchingStar = (Array.isArray(stars) ? stars : [])
+    .find((star) => ownershipKeys(star).includes(String(statusStarId)));
+
+  return normalizeOwnershipRecord({
+    ...(matchingOrder || {}),
+    ...(matchingStar || {}),
+    orderId: matchingOrder?.orderId || status.orderId || status.order_id || "",
+    starId: statusStarId || matchingOrder?.starId || matchingStar?.star_id || matchingStar?.starId || "",
+    customName: status.custom_name || status.customName || matchingOrder?.name || matchingStar?.custom_name,
+    name: status.custom_name || status.customName || matchingOrder?.name || matchingStar?.name,
+    amount: status.amount_total ? Number(status.amount_total) / 100 : matchingOrder?.amount,
+    status: status.status,
+    paymentStatus: status.payment_status,
+    fulfilled: Boolean(status.fulfilled || status.payment_status === "paid"),
+  });
 }
 
 function ownershipKeys(record = {}) {
@@ -92,4 +116,39 @@ export function summarizeOwnershipRecords(records = []) {
     verified,
     localOnly: Math.max(0, ownedStars - verified),
   };
+}
+
+export function savePendingOwnershipSync(record) {
+  if (typeof window === "undefined" || !record?.starId) return null;
+  const normalized = normalizeOwnershipRecord(record);
+  const payload = {
+    savedAt: new Date().toISOString(),
+    record: normalized,
+  };
+  window.localStorage.setItem(OWNERSHIP_SYNC_STORAGE_KEY, JSON.stringify(payload));
+  return payload;
+}
+
+export function readPendingOwnershipSync(maxAgeMs = 10 * 60 * 1000) {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(OWNERSHIP_SYNC_STORAGE_KEY);
+    if (!raw) return null;
+    const payload = JSON.parse(raw);
+    const savedAt = Date.parse(payload.savedAt || "");
+    if (!Number.isFinite(savedAt) || Date.now() - savedAt > maxAgeMs) {
+      window.localStorage.removeItem(OWNERSHIP_SYNC_STORAGE_KEY);
+      return null;
+    }
+    return payload.record ? normalizeOwnershipRecord(payload.record) : null;
+  } catch {
+    window.localStorage.removeItem(OWNERSHIP_SYNC_STORAGE_KEY);
+    return null;
+  }
+}
+
+export function clearPendingOwnershipSync() {
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(OWNERSHIP_SYNC_STORAGE_KEY);
+  }
 }

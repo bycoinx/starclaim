@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import SpaceBackground from '../../../components/SpaceBackground';
 import { Audio } from 'expo-av';
 import * as LocalAuthentication from 'expo-local-authentication';
+import * as Sharing from 'expo-sharing';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { THEME } from '../../../constants/Theme';
@@ -21,6 +22,7 @@ import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStor
 import { useVaultStore } from '../../../src/platform/vault/vaultStore';
 import { useCatalogStore } from '../../../src/platform/stars/catalogStore';
 import { getPurchaseMapParams } from '../../../src/utils/starIdentity';
+import { downloadCertificatePdf } from '../../../src/platform/certificates/certificateRepository';
 
 const quickActions = [
   { label: 'Yildiz Al', icon: 'star', href: ROUTES.claim },
@@ -29,54 +31,6 @@ const quickActions = [
   { label: 'Pazaryeri', icon: 'globe', href: ROUTES.marketplace },
   { label: 'Guvenlik', icon: 'shield-lock-outline', href: ROUTES.vaultLockSettings },
   { label: 'Profil', icon: 'account-circle-outline', href: ROUTES.profile },
-];
-
-const demoStars = [
-  {
-    starId: 'demo-sirius',
-    name: 'Sirius',
-    code: 'SIR-CMA',
-    constellation: 'Canis Major',
-    spectralType: 'A1V',
-    magnitude: -1.46,
-    distanceParsec: 2.64,
-    rarity: 'Legendary',
-    ownedSince: 'May 20, 2026',
-    owner: 'Pilot',
-    price: 2999,
-    verified: true,
-    storyCount: 3,
-  },
-  {
-    starId: 'demo-vega',
-    name: 'Vega',
-    code: 'VEG-LYR',
-    constellation: 'Lyra',
-    spectralType: 'A0V',
-    magnitude: 0.03,
-    distanceParsec: 7.68,
-    rarity: 'Legendary',
-    ownedSince: 'Mar 05, 2026',
-    owner: 'Pilot',
-    price: 1499,
-    verified: true,
-    storyCount: 2,
-  },
-  {
-    starId: 'demo-rigel',
-    name: 'Rigel',
-    code: 'RIG-ORI',
-    constellation: 'Orion',
-    spectralType: 'B8Ia',
-    magnitude: 0.18,
-    distanceParsec: 263.8,
-    rarity: 'Supernova',
-    ownedSince: 'Jan 12, 2026',
-    owner: 'Pilot',
-    price: 1299,
-    verified: true,
-    storyCount: 1,
-  },
 ];
 
 function starKeys(star = {}) {
@@ -116,6 +70,7 @@ function normalizeVaultStar(record = {}, catalogStar = {}) {
     id: String(id),
     name,
     code: raw.code || raw.starClaimCode || raw.star_code || String(id).slice(0, 12),
+    orderId: raw.orderId || raw.order_id || '',
     constellation: raw.constellation || 'Unknown',
     spectralType: raw.spectralType || raw.spect || 'N/A',
     magnitude: raw.magnitude ?? raw.mag ?? 'N/A',
@@ -137,11 +92,7 @@ function normalizeVaultStar(record = {}, catalogStar = {}) {
 function buildVaultStars(records = [], catalogStars = []) {
   const index = buildStarIndex(catalogStars);
   if (!records.length) {
-    const claimed = catalogStars
-      .filter((star) => star.isClaimed || star.ownerName || star.ownerId)
-      .slice(0, 12)
-      .map((star) => normalizeVaultStar(star, star));
-    return claimed.length ? claimed : demoStars.map((star) => normalizeVaultStar(star, star));
+    return [];
   }
 
   return records.map((record) => {
@@ -176,7 +127,11 @@ export default function VaultHomeScreen() {
   const router = useRouter();
   const ownershipRecords = useOwnershipStore((state) => state.records);
   const ownershipSummary = useOwnershipStore((state) => state.summary);
+  const ownershipLoading = useOwnershipStore((state) => state.loading);
+  const ownershipError = useOwnershipStore((state) => state.error);
+  const ownershipLoadedAt = useOwnershipStore((state) => state.loadedAt);
   const loadOwnership = useOwnershipStore((state) => state.load);
+  const refreshOwnership = useOwnershipStore((state) => state.refresh);
   const messages = useVaultStore((state) => state.messages);
   const unlocked = useVaultStore((state) => state.unlockedIds);
   const vaultSummary = useVaultStore((state) => state.summary);
@@ -189,6 +144,7 @@ export default function VaultHomeScreen() {
 
   const [selectedStarId, setSelectedStarId] = useState(null);
   const [previewStar, setPreviewStar] = useState(null);
+  const [certificateBusyId, setCertificateBusyId] = useState(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -213,6 +169,13 @@ export default function VaultHomeScreen() {
   const constellations = Array.from(new Set(vaultStars.map((star) => star.constellation).filter(Boolean)));
   const legendaryCount = vaultStars.filter((star) => String(star.rarity || '').toLowerCase().includes('legend')).length;
   const rank = vaultStars.length >= 8 ? 'Galactic' : vaultStars.length >= 5 ? 'Voyager' : vaultStars.length >= 3 ? 'Navigator' : vaultStars.length >= 1 ? 'Explorer' : 'Cadet';
+  const syncLabel = ownershipLoading
+    ? 'Senkronize ediliyor'
+    : ownershipError
+      ? 'Yerel kayit kullaniliyor'
+      : ownershipLoadedAt
+        ? `Son sync ${shortDate(ownershipLoadedAt)}`
+        : 'Sync bekleniyor';
 
   const stats = [
     { label: 'Sahip Yildiz', value: String(vaultStars.length || ownershipSummary.ownedStars || 0), icon: 'star-four-points' },
@@ -323,6 +286,30 @@ export default function VaultHomeScreen() {
     router.push(starDetailRoute({ starId: star.starId, name: star.name }));
   };
 
+  const refreshVault = async () => {
+    await Promise.all([refreshOwnership(), loadVault(), loadCatalog()]);
+  };
+
+  const shareCertificate = async (star) => {
+    if (!star?.orderId) {
+      Alert.alert('Sertifika Hazir Degil', 'Bu yildiz icin dogrulanmis orderId bulunamadi.');
+      return;
+    }
+    try {
+      setCertificateBusyId(star.starId);
+      const uri = await downloadCertificatePdf(star.orderId);
+      if (!uri) {
+        Alert.alert('Sertifika Alinamadi', 'PDF icin oturum veya sunucu yaniti dogrulanamadi.');
+        return;
+      }
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf' });
+    } catch (error) {
+      Alert.alert('Sertifika Hatasi', error.message || String(error));
+    } finally {
+      setCertificateBusyId(null);
+    }
+  };
+
   const renderVaultStar = (star) => {
     const selected = selectedStar?.starId === star.starId;
     return (
@@ -409,14 +396,22 @@ export default function VaultHomeScreen() {
               <View style={styles.heroBadge}>
                 <Text style={styles.heroBadgeText}>STARVAULT / LEGACY</Text>
               </View>
-              <TouchableOpacity style={styles.heroAction} onPress={() => router.push(ROUTES.vaultNewMessage)}>
-                <Text style={styles.heroActionText}>YENI</Text>
+              <TouchableOpacity style={styles.heroAction} onPress={refreshVault}>
+                <Text style={styles.heroActionText}>{ownershipLoading ? 'SYNC' : 'YENILE'}</Text>
               </TouchableOpacity>
             </View>
             <Text style={styles.heroTitle}>STARVAULT</Text>
             <Text style={styles.heroSubtitle}>
               Yildiz koleksiyonun, sertifikalarin, anilarin ve gelecek aktarimlarin icin web kalitesinde premium mobil kasa.
             </Text>
+            <View style={[styles.syncStrip, ownershipError && styles.syncStripWarning]}>
+              <MaterialCommunityIcons
+                name={ownershipError ? 'cloud-alert-outline' : 'cloud-check-outline'}
+                size={17}
+                color={ownershipError ? THEME.colors.secondary : THEME.colors.primary}
+              />
+              <Text style={styles.syncText}>{syncLabel}</Text>
+            </View>
             <View style={styles.metricsGrid}>
               {stats.map((stat) => (
                 <View key={stat.label} style={styles.metricCard}>
@@ -430,11 +425,18 @@ export default function VaultHomeScreen() {
 
           <View style={styles.sectionBlock}>
             <View style={styles.sectionHeadingRow}>
-              <Text style={styles.sectionTitle}>Benim Takimyildizim</Text>
+            <Text style={styles.sectionTitle}>Benim Takimyildizim</Text>
               <Text style={styles.sectionBadge}>{rank}</Text>
             </View>
             <Text style={styles.sectionDesc}>Sahiplik kayitlari katalog verisiyle eslestirilir; sertifika, hikaye ve piyasa bilgisi ayni kartta toplanir.</Text>
-            {vaultStars.map(renderVaultStar)}
+            {vaultStars.length ? vaultStars.map(renderVaultStar) : (
+              <EmptyVaultState
+                loading={ownershipLoading}
+                error={ownershipError}
+                onRefresh={refreshVault}
+                onClaim={() => router.push(ROUTES.claim)}
+              />
+            )}
           </View>
 
           {selectedStar ? (
@@ -458,6 +460,15 @@ export default function VaultHomeScreen() {
                 <TouchableOpacity style={styles.secondaryPanelAction} onPress={() => setPreviewStar(selectedStar)}>
                   <Text style={styles.secondaryPanelActionText}>Onizleme</Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.secondaryPanelAction, !selectedStar.orderId && styles.disabledAction]}
+                  onPress={() => shareCertificate(selectedStar)}
+                  disabled={!selectedStar.orderId || certificateBusyId === selectedStar.starId}
+                >
+                  <Text style={styles.secondaryPanelActionText}>
+                    {certificateBusyId === selectedStar.starId ? 'Hazir...' : 'PDF'}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </LinearGradient>
           ) : null}
@@ -480,14 +491,20 @@ export default function VaultHomeScreen() {
               <Text style={styles.sectionTitle}>Sertifikalar</Text>
               <Text style={styles.sectionBadge}>{verifiedCount} Verified</Text>
             </View>
-            {vaultStars.slice(0, 4).map((star) => (
+            {vaultStars.length ? vaultStars.slice(0, 4).map((star) => (
               <InfoRow
                 key={`cert-${star.starId}`}
                 icon="shield-check"
                 title={`${star.name} Certificate`}
                 detail={`${star.certificateStatus} / ${shortDate(star.ownedSince)}`}
               />
-            ))}
+            )) : (
+              <InfoRow
+                icon="shield-alert-outline"
+                title="Sertifika bekleniyor"
+                detail="Ilk satin alma sonrasi web ve mobil ayni orderId ile PDF uretir."
+              />
+            )}
           </View>
 
           <View style={styles.sectionBlock}>
@@ -524,14 +541,20 @@ export default function VaultHomeScreen() {
               <Text style={styles.sectionTitle}>Vault Timeline</Text>
               <Text style={styles.sectionBadge}>Live</Text>
             </View>
-            {vaultStars.slice(0, 3).map((star) => (
+            {vaultStars.length ? vaultStars.slice(0, 3).map((star) => (
               <InfoRow
                 key={`timeline-${star.starId}`}
                 icon="timeline-clock-outline"
                 title={`${star.name} koleksiyona eklendi`}
                 detail={`${shortDate(star.ownedSince)} / ${star.ownershipStatus}`}
               />
-            ))}
+            )) : (
+              <InfoRow
+                icon="timeline-alert-outline"
+                title="Timeline hazirlaniyor"
+                detail="Sahiplik snapshot'i geldiginde kayitlar burada siralanir."
+              />
+            )}
           </View>
 
           <View style={styles.sectionBlock}>
@@ -598,6 +621,32 @@ function MiniPanel({ title, detail, icon }) {
   );
 }
 
+function EmptyVaultState({ loading, error, onRefresh, onClaim }) {
+  return (
+    <View style={styles.emptyVaultCard}>
+      <MaterialCommunityIcons
+        name={error ? 'cloud-alert-outline' : 'star-plus-outline'}
+        size={34}
+        color={error ? THEME.colors.secondary : THEME.colors.primary}
+      />
+      <Text style={styles.emptyVaultTitle}>
+        {loading ? 'StarVault senkronize ediliyor' : error ? 'Snapshot okunamadi' : 'Henuz sahip yildiz yok'}
+      </Text>
+      <Text style={styles.emptyVaultText}>
+        {error || 'Bir yildiz aldiginda sertifika, hikaye, timeline ve guvenlik kayitlari burada ayni ownership sozlesmesiyle gorunur.'}
+      </Text>
+      <View style={styles.emptyVaultActions}>
+        <TouchableOpacity style={styles.ctaButton} onPress={onClaim}>
+          <Text style={styles.ctaButtonText}>Yildiz Al</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryEmptyButton} onPress={onRefresh}>
+          <Text style={styles.secondaryEmptyButtonText}>Tekrar Dene</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 function PreviewModal({ star, onClose, onMap, onDetail }) {
   if (!star) return null;
   return (
@@ -648,6 +697,9 @@ const styles = StyleSheet.create({
   heroActionText: { color: '#000', fontSize: 10, fontWeight: '900', letterSpacing: 1.7 },
   heroTitle: { color: '#fff', fontSize: 38, fontWeight: '900', lineHeight: 42, letterSpacing: 2 },
   heroSubtitle: { color: THEME.colors.textMuted, fontSize: 13, lineHeight: 20, marginTop: 14, marginBottom: 22 },
+  syncStrip: { flexDirection: 'row', alignItems: 'center', gap: 9, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 11, marginBottom: 14, backgroundColor: 'rgba(119,191,255,0.08)', borderWidth: 1, borderColor: 'rgba(119,191,255,0.16)' },
+  syncStripWarning: { backgroundColor: 'rgba(230,188,74,0.08)', borderColor: 'rgba(230,188,74,0.18)' },
+  syncText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
   metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -5 },
   metricCard: { width: '50%', padding: 10, minHeight: 112, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)' },
   metricValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 10 },
@@ -690,6 +742,7 @@ const styles = StyleSheet.create({
   primaryPanelActionText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
   secondaryPanelAction: { flex: 1, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', paddingVertical: 14, alignItems: 'center' },
   secondaryPanelActionText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
+  disabledAction: { opacity: 0.42 },
   actionGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
   actionTile: { width: '50%', padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 18, marginBottom: 12 },
   actionTileText: { color: '#fff', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
@@ -713,6 +766,12 @@ const styles = StyleSheet.create({
   emptyMemoryText: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginBottom: 16 },
   ctaButton: { backgroundColor: THEME.colors.primary, borderRadius: 16, paddingVertical: 14, alignItems: 'center' },
   ctaButtonText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 1.8 },
+  emptyVaultCard: { alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.04)', borderRadius: 22, padding: 22, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  emptyVaultTitle: { color: '#fff', fontSize: 18, fontWeight: '900', marginTop: 12, textAlign: 'center' },
+  emptyVaultText: { color: THEME.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 8, marginBottom: 16, textAlign: 'center' },
+  emptyVaultActions: { width: '100%', gap: 10 },
+  secondaryEmptyButton: { borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  secondaryEmptyButtonText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 1.5 },
   collectionGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 },
   miniPanel: { width: '50%', padding: 12, minHeight: 126, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   miniTitle: { color: '#fff', fontSize: 13, fontWeight: '900', marginTop: 10 },
