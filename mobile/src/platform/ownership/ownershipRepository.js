@@ -52,7 +52,7 @@ export function summarizeOwnership(records = []) {
   };
 }
 
-function normalizeOwnershipRecords(records) {
+export function normalizeOwnershipRecords(records) {
   return (Array.isArray(records) ? records : []).map((record) => ({
     id: record.id || record.orderId || `${record.starId || record.hip || 'star'}-${record.createdAt || record.date || ''}`,
     orderId: record.orderId || record.id || '',
@@ -63,8 +63,8 @@ function normalizeOwnershipRecords(records) {
     gaiaSourceId: record.gaiaSourceId || record.gaia_source_id || record.gaiaId || '',
     hip: record.hip || '',
     hd: record.hd || '',
-    starClaimCode: record.starClaimCode || record.code || '',
-    name: record.name || record.properName || record.proper || 'StarClaim Star',
+    starClaimCode: record.starClaimCode || record.star_claim_code || record.code || '',
+    name: record.name || record.customName || record.properName || record.proper || 'StarClaim Star',
     constellation: record.constellation || '',
     ra: record.ra,
     dec: record.dec,
@@ -81,9 +81,20 @@ function hasCertificateLikeData(record) {
   return Boolean(record.verified || record.orderId || record.starClaimCode || record.code);
 }
 
-function ownershipRecordMatchesId(record, starId) {
+export function ownershipRecordMatchesId(record, starId) {
   const target = String(starId ?? '');
   if (!target) return false;
-  return [record.starId, record.id, record.orderId, record.hip, record.hd, record.starClaimCode]
+  return [
+    record.starId,
+    record.id,
+    record.orderId,
+    record.canonicalId,
+    record.catalogId,
+    record.sourceId,
+    record.gaiaSourceId,
+    record.hip,
+    record.hd,
+    record.starClaimCode,
+  ]
     .some((value) => String(value ?? '') === target);
 }

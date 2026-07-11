@@ -47,6 +47,12 @@ import {
   getHeapPressure,
   updateAdaptiveQuality,
 } from '../src/utils/renderQuality';
+import {
+  DEEP_SPACE_ATMOSPHERE_SPEC,
+  MILKY_WAY_DENSITY_SPEC,
+  NEBULA_BACKGROUND_SPEC,
+  getMilkyWayWidthScale,
+} from '../src/sky/skyVisualQuality';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -303,17 +309,14 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
     layout.height * (0.5 + Math.cos(deg2rad(dec.value * 0.3)) * 0.1),
   ));
 
-  // Very subtle nebula - only 5% opacity as per document
-  const nebulaOpacity = 0.05;
-
   return (
-    <Group opacity={nebulaOpacity}>
+    <Group opacity={NEBULA_BACKGROUND_SPEC.opacity}>
       {/* Very light blue nebula */}
       <Rect x={0} y={0} width={layout.width} height={layout.height}>
         <RadialGradient
           c={blueCenter}
-          r={layout.width * 0.8}
-          colors={['rgba(30, 60, 120, 0.03)', 'rgba(10, 20, 40, 0.01)', 'rgba(0,0,0,0)']}
+          r={layout.width * NEBULA_BACKGROUND_SPEC.gradients[0].radiusScale}
+          colors={NEBULA_BACKGROUND_SPEC.gradients[0].colors}
         />
       </Rect>
 
@@ -321,8 +324,8 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
       <Rect x={0} y={0} width={layout.width} height={layout.height}>
         <RadialGradient
           c={purpleCenter}
-          r={layout.width * 0.7}
-          colors={['rgba(60, 30, 80, 0.025)', 'rgba(20, 10, 30, 0.005)', 'rgba(0,0,0,0)']}
+          r={layout.width * NEBULA_BACKGROUND_SPEC.gradients[1].radiusScale}
+          colors={NEBULA_BACKGROUND_SPEC.gradients[1].colors}
         />
       </Rect>
 
@@ -330,8 +333,8 @@ function NebulaBackground({ ra, dec, layout, qualityLevel }) {
       <Rect x={0} y={0} width={layout.width} height={layout.height}>
         <RadialGradient
           c={navyCenter}
-          r={layout.width * 0.6}
-          colors={['rgba(10, 20, 60, 0.02)', 'rgba(5, 10, 20, 0.005)', 'rgba(0,0,0,0)']}
+          r={layout.width * NEBULA_BACKGROUND_SPEC.gradients[2].radiusScale}
+          colors={NEBULA_BACKGROUND_SPEC.gradients[2].colors}
         />
       </Rect>
     </Group>
@@ -385,20 +388,18 @@ function MilkyWayDensity({
     return result;
   });
 
-  // Milky Way at 10-15% opacity as per document (using 12%)
-  const milkyWayOpacity = 0.12;
-  const widthScale = qualityLevel === 'low' ? 0.6 : qualityLevel === 'medium' ? 0.8 : 1;
+  const widthScale = getMilkyWayWidthScale(qualityLevel);
 
   return (
-    <Group opacity={milkyWayOpacity}>
+    <Group opacity={MILKY_WAY_DENSITY_SPEC.opacity}>
       {/* Main Milky Way band - very subtle */}
-      <Path path={path} color='#1A1A2E' style="stroke" strokeWidth={80 * widthScale} strokeCap="round" opacity={0.4} />
-      <Path path={path} color='#16213E' style="stroke" strokeWidth={60 * widthScale} strokeCap="round" opacity={0.3} />
-      <Path path={path} color='#0F3460' style="stroke" strokeWidth={40 * widthScale} strokeCap="round" opacity={0.2} />
+      <Path path={path} color={MILKY_WAY_DENSITY_SPEC.bands[0].color} style="stroke" strokeWidth={MILKY_WAY_DENSITY_SPEC.bands[0].width * widthScale} strokeCap="round" opacity={MILKY_WAY_DENSITY_SPEC.bands[0].opacity} />
+      <Path path={path} color={MILKY_WAY_DENSITY_SPEC.bands[1].color} style="stroke" strokeWidth={MILKY_WAY_DENSITY_SPEC.bands[1].width * widthScale} strokeCap="round" opacity={MILKY_WAY_DENSITY_SPEC.bands[1].opacity} />
+      <Path path={path} color={MILKY_WAY_DENSITY_SPEC.bands[2].color} style="stroke" strokeWidth={MILKY_WAY_DENSITY_SPEC.bands[2].width * widthScale} strokeCap="round" opacity={MILKY_WAY_DENSITY_SPEC.bands[2].opacity} />
 
       {/* Very subtle glow */}
-      <Path path={path} color='#533483' style="stroke" strokeWidth={120 * widthScale} strokeCap="round" opacity={0.08} />
-      <Path path={path} color='#7209B7' style="stroke" strokeWidth={100 * widthScale} strokeCap="round" opacity={0.05} />
+      <Path path={path} color={MILKY_WAY_DENSITY_SPEC.bands[3].color} style="stroke" strokeWidth={MILKY_WAY_DENSITY_SPEC.bands[3].width * widthScale} strokeCap="round" opacity={MILKY_WAY_DENSITY_SPEC.bands[3].opacity} />
+      <Path path={path} color={MILKY_WAY_DENSITY_SPEC.bands[4].color} style="stroke" strokeWidth={MILKY_WAY_DENSITY_SPEC.bands[4].width * widthScale} strokeCap="round" opacity={MILKY_WAY_DENSITY_SPEC.bands[4].opacity} />
     </Group>
   );
 }
@@ -407,18 +408,18 @@ function DeepSpaceAtmosphere({ layout, nightVision }) {
   if (nightVision) return null;
   return (
     <Group>
-      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.42}>
+      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={DEEP_SPACE_ATMOSPHERE_SPEC.gradients[0].opacity}>
         <RadialGradient
-          c={vec(layout.width * 0.18, layout.height * 0.2)}
-          r={layout.width * 0.78}
-          colors={['rgba(18,48,96,0.58)', 'rgba(5,11,28,0.12)', 'rgba(0,0,0,0)']}
+          c={vec(layout.width * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[0].center.x, layout.height * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[0].center.y)}
+          r={layout.width * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[0].radiusScale}
+          colors={DEEP_SPACE_ATMOSPHERE_SPEC.gradients[0].colors}
         />
       </Rect>
-      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={0.32}>
+      <Rect x={0} y={0} width={layout.width} height={layout.height} opacity={DEEP_SPACE_ATMOSPHERE_SPEC.gradients[1].opacity}>
         <RadialGradient
-          c={vec(layout.width * 0.82, layout.height * 0.68)}
-          r={layout.width * 0.68}
-          colors={['rgba(75,35,112,0.42)', 'rgba(9,14,38,0.1)', 'rgba(0,0,0,0)']}
+          c={vec(layout.width * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[1].center.x, layout.height * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[1].center.y)}
+          r={layout.width * DEEP_SPACE_ATMOSPHERE_SPEC.gradients[1].radiusScale}
+          colors={DEEP_SPACE_ATMOSPHERE_SPEC.gradients[1].colors}
         />
       </Rect>
     </Group>

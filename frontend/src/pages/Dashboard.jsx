@@ -8,6 +8,12 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
 import { toast } from "sonner";
 import StarCanvas from "../components/StarCanvas";
+import {
+  buildCertificateFilename,
+  findOrderForStar,
+  normalizeOwnershipRecord,
+  resolveCertificateOrderId,
+} from "../lib/ownershipRecords";
 import "./Console.css";
 
 export default function Dashboard() {
@@ -59,8 +65,12 @@ export default function Dashboard() {
       api.get("/stars/mine/list"),
       api.get("/orders/mine")
     ]).then(([{ data: starData }, { data: orderData }]) => {
-      setStars(starData);
-      setOrders(orderData);
+      const normalizedOrders = (Array.isArray(orderData) ? orderData : []).map(normalizeOwnershipRecord);
+      setOrders(normalizedOrders);
+      setStars((Array.isArray(starData) ? starData : []).map((star) => {
+        const order = findOrderForStar(star, normalizedOrders);
+        return order ? { ...star, order_id: order.orderId, orderId: order.orderId } : star;
+      }));
     }).catch(err => {
       console.error("Dashboard fetch error:", err);
       toast.error(lang === "TR" ? "Veriler yüklenemedi." : "Data could not be loaded.");
@@ -74,16 +84,18 @@ export default function Dashboard() {
   }, [user, loading, refreshData]);
 
   const downloadCertificate = async (star) => {
-    if (!star.order_id) {
+    const orderId = resolveCertificateOrderId(star, orders);
+    if (!orderId) {
       toast.error(lang === "TR" ? "Bu yildiz icin siparis kaydi bulunamadi." : "No order record found for this star.");
       return;
     }
     try {
-      const { data } = await api.get(`/orders/certificate/${star.order_id}`, { responseType: "blob" });
+      const order = findOrderForStar(star, orders);
+      const { data } = await api.get(`/orders/certificate/${orderId}`, { responseType: "blob" });
       const url = window.URL.createObjectURL(new Blob([data], { type: "application/pdf" }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `StarClaim-${star.code}-Certificate.pdf`;
+      link.download = buildCertificateFilename(star, order);
       document.body.appendChild(link);
       link.click();
       link.remove();

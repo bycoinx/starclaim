@@ -20,6 +20,7 @@ import VaultWalletPanel from "../components/vault/VaultWalletPanel";
 import WalletConnectModal from "../components/vault/WalletConnectModal";
 import VaultActions from "../components/vault/VaultActions";
 import MobileDeepLinkPanel from "../components/catalog/MobileDeepLinkPanel";
+import { normalizeOwnershipRecord } from "../lib/ownershipRecords";
 
 
 const WALLET_STORAGE_KEY = 'starclaim_mock_wallet'
@@ -259,7 +260,7 @@ function mergeVaultOwnership(catalogStars = [], ownedRows = []) {
   const catalogIndex = buildStarIndex(catalogStars);
   const mergedById = new Map(catalogStars.map((star) => [star.starId, star]));
 
-  ownedRows.forEach((ownedRow) => {
+  ownedRows.map(normalizeOwnershipRecord).forEach((ownedRow) => {
     const base =
       starLookupKeys(ownedRow)
         .map((key) => catalogIndex.get(key))
@@ -268,9 +269,9 @@ function mergeVaultOwnership(catalogStars = [], ownedRows = []) {
     const merged = {
       ...base,
       ...ownedRow,
-      starId: base.starId || ownedRow.star_id || ownedRow.starId || ownedRow.id || ownedRow.code,
-      code: base.code || ownedRow.code || ownedRow.star_code,
-      name: base.name || ownedRow.custom_name || ownedRow.name,
+      starId: base.starId || ownedRow.starId || ownedRow.star_id || ownedRow.id || ownedRow.code,
+      code: base.code || ownedRow.code || ownedRow.starClaimCode,
+      name: base.name || ownedRow.name,
       constellation: base.constellation || ownedRow.constellation,
       spectralType: base.spectralType || ownedRow.spect || ownedRow.spectralType,
       magnitude: base.magnitude ?? ownedRow.magnitude,
@@ -283,8 +284,8 @@ function mergeVaultOwnership(catalogStars = [], ownedRows = []) {
       ownerId: ownedRow.owner_id || base.ownerId,
       hasCertificate: true,
       certificateStatus: "Verified",
-      ownedSince: ownedRow.claimed_at || ownedRow.ownedSince || base.ownedSince,
-      orderId: ownedRow.order_id,
+      ownedSince: ownedRow.createdAt || ownedRow.claimed_at || ownedRow.ownedSince || base.ownedSince,
+      orderId: ownedRow.orderId,
       raw: { ...(base.raw || {}), ...ownedRow },
     };
 

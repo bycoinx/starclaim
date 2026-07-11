@@ -13,8 +13,8 @@ import {
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import GoldButton from './GoldButton';
-import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 import { downloadCertificatePdf } from '../src/platform/certificates/certificateRepository';
+import { emitPurchaseCommitted } from '../src/platform/ownership/ownershipSyncEvents';
 import { useOwnershipStore } from '../src/platform/ownership/ownershipStore';
 import { claimStar } from '../src/platform/purchase/purchaseRepository';
 import { useVaultStore } from '../src/platform/vault/vaultStore';
@@ -113,14 +113,8 @@ export default function PurchaseModal({ visible, onClose, star, onPurchaseSucces
         paymentMethod: selected,
       });
 
-      await useOwnershipStore.getState().addLocalRecord(rec);
+      await useOwnershipStore.getState().addLocalRecord(rec, { emit: false });
       setPurchaseRecord(rec);
-
-      syncOwnershipSnapshot()
-        .then(() => useOwnershipStore.getState().load())
-        .catch((syncError) => {
-          console.log('Purchase ownership sync deferred', syncError.message);
-        });
 
       try {
         await useVaultStore.getState().addMessage({
@@ -134,6 +128,8 @@ export default function PurchaseModal({ visible, onClose, star, onPurchaseSucces
       } catch (vaultError) {
         console.warn('Vault integration failed', vaultError);
       }
+
+      await emitPurchaseCommitted(rec, { source: 'purchase-modal' });
 
       if (onPurchaseSuccess) onPurchaseSuccess(rec);
       setStep(3);

@@ -66,7 +66,7 @@ function bindVaultSyncBridge() {
   onOwnershipSync((event) => {
     if (event !== OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED) return;
     const store = useVaultStore.getState();
-    store.load();
+    return store.load();
   });
 }
 

@@ -43,6 +43,14 @@ const {
   getSkyRenderLayerBudgets,
 } = loadApplicationModule('../src/sky/skyRenderPlan.js');
 
+const {
+  DEEP_SPACE_ATMOSPHERE_SPEC,
+  MILKY_WAY_DENSITY_SPEC,
+  NEBULA_BACKGROUND_SPEC,
+  SKY_REFERENCE_VIEWPORTS,
+  getMilkyWayWidthScale,
+} = loadApplicationModule('../src/sky/skyVisualQuality.js');
+
 const basePlanOptions = {
   stars: [],
   selectedStar: null,
@@ -142,4 +150,48 @@ test('layer budgets expose per-layer limits for renderer scheduling', () => {
   assert.ok(lowBudget.constellations.maxSegments < highBudget.constellations.maxSegments);
   assert.equal(lowBudget.shootingStars.enabled, false);
   assert.equal(highBudget.shootingStars.enabled, true);
+});
+
+test('visual quality specs keep deep space richer than a flat black backdrop', () => {
+  assert.equal(DEEP_SPACE_ATMOSPHERE_SPEC.gradients.length, 2);
+  assert.equal(NEBULA_BACKGROUND_SPEC.gradients.length, 3);
+  assert.equal(MILKY_WAY_DENSITY_SPEC.bands.length, 5);
+
+  DEEP_SPACE_ATMOSPHERE_SPEC.gradients.forEach((gradient) => {
+    assert.ok(gradient.opacity > 0 && gradient.opacity < 0.5);
+    assert.ok(gradient.radiusScale > 0.5);
+    assert.equal(gradient.colors.at(-1), 'rgba(0,0,0,0)');
+    assert.notEqual(gradient.colors[0], '#000');
+    assert.match(gradient.colors[0], /rgba\((?!0,0,0)/);
+  });
+
+  assert.equal(getMilkyWayWidthScale('low') < getMilkyWayWidthScale('medium'), true);
+  assert.equal(getMilkyWayWidthScale('medium') < getMilkyWayWidthScale('high'), true);
+});
+
+test('reference viewport profiles produce bounded visual render plans', () => {
+  const sampleStars = [
+    { id: 'sirius', canonicalId: 'hip:32349', ra: 6.752481, dec: -16.716116, mag: -1.46, spect: 'A', proper: 'Sirius' },
+    { id: 'vega', canonicalId: 'hip:91262', ra: 18.615649, dec: 38.783689, mag: 0.03, bpRp: 0.0, proper: 'Vega' },
+    { id: 'betelgeuse', canonicalId: 'hip:27989', ra: 5.919529, dec: 7.407064, mag: 0.42, bpRp: 1.85, proper: 'Betelgeuse' },
+    { id: 'dim-reference', canonicalId: 'ref:dim', ra: 12, dec: 0, mag: 8.4, spect: 'K' },
+  ];
+
+  SKY_REFERENCE_VIEWPORTS.forEach((viewport) => {
+    const plan = buildSkyRenderPlan({
+      ...basePlanOptions,
+      stars: sampleStars,
+      qualityLevel: viewport.qualityLevel,
+      layout: { width: viewport.width, height: viewport.height },
+      virtualCenter: { ra: 95, dec: -6 },
+      zoom: viewport.qualityLevel === 'low' ? 1.1 : 2.4,
+      showLabels: true,
+    });
+
+    assert.ok(plan.renderedStars.length > 0, viewport.id);
+    assert.ok(plan.renderedStars.length <= plan.layerRenderBudgets.stars.maxVisible, viewport.id);
+    assert.equal(plan.enabledLayers.deepAtmosphere, true, viewport.id);
+    assert.ok(Number.isFinite(plan.layerNodeEstimate.total), viewport.id);
+    assert.ok(plan.starBatches.length <= plan.renderedStars.length, viewport.id);
+  });
 });

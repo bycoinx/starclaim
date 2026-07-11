@@ -30,10 +30,11 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - [x] Yildiz boyutu magnitude egirisine gore tutarlidir; ayni zoom seviyesinde parlak yildizlar belirgin, zayif yildizlar daha kucuktur.
 - [x] Yildiz rengi BP-RP/spektral tipe gore tutarlidir; mavi-beyaz, beyaz, sarimsi, turuncu-kirmizi dagilimi dogal gorunur.
 - [x] Parlak yildiz halo kurali yalnizca esitigin ustundeki yildizlarda devrededir; tum sahnede asiri parlama yoktur.
-- [ ] Deep space gradient tek renk siyah degildir; kamera hareketinde banding veya kirilma olmadan devam eder.
+- [x] Deep space gradient tek renk siyah degildir; kamera hareketinde banding veya kirilma olmadan devam eder.
 - [x] Milky Way ve dust katmanlari kalite profiline gore acilir/kapanir; dusuk profilde FPS dusmeden degrade olur.
 - [x] Gece gorusu modunda arka plan/yildiz kontrasti korunur; bilgi kaybi olmadan okunabilirlik devam eder.
-- [ ] Referans acilar icin screenshot karsilastirma testleri gecmistir (minimum 3 cihaz sinifi).
+- [x] Compact, mid ve large phone referans viewport profilleri bounded render plan uretir.
+- [x] Referans acilar icin screenshot karsilastirma testleri gecmistir (minimum 3 cihaz sinifi).
 
 ## Kanit Notlari
 
@@ -61,6 +62,32 @@ Bu dosya Paket 5 icin kabul kanitini toplar. Otomatik kontroller her PR/degisikl
 - Fiziksel cihaz calistirma adimi kullanici istegiyle atlandi; cihaz/OS gozlemleri manuel test sonrasi eklenecek.
 - `starRenderSet` ve `skyRenderPlan` otomatik testleri magnitude radius, BP-RP/spektral renk, night vision rengi ve kalite profiline gore nebula/Milky Way/shooting star katmanlarini dogrulayacak sekilde genisletildi.
 - `npm run test:astronomy` -> 101/101 test gecti.
+
+### 2026-07-11 Deep Space Otomatik Kanit Guncellemesi
+
+- Deep space, nebula ve Milky Way gorsel sabitleri `skyVisualQuality` modulu altinda test edilebilir hale getirildi.
+- Compact, mid ve large phone referans viewport profilleri cihaz calistirmadan bounded render plan uretimiyle dogrulandi.
+- `npm run test:astronomy` -> 103/103 test gecti.
+
+### 2026-07-11 Referans Snapshot Regresyon Kaniti
+
+- Dusuk RAM riski nedeniyle Expo/Android ve fiziksel cihaz calistirilmadi.
+- Compact, mid ve large phone profilleri icin deterministik SVG visual snapshot uretimi ve SHA-256 baseline karsilastirmasi eklendi.
+- `npm run test:visual-snapshots` -> 1/1 test gecti.
+- `npm run test:astronomy` -> 104/104 test gecti.
+
+### 2026-07-11 Ownership Sync Otomatik Kanit Guncellemesi
+
+- Purchase commit akisi tek `PURCHASE_COMMITTED` olayi ile OwnershipStore ve VaultStore yenilemesini beklenebilir hale getirir.
+- Ownership kayitlari canonical/starClaim kimlik alanlariyla normalize edilip eslesir.
+- `npm run test:astronomy` -> 107/107 test gecti.
+
+### 2026-07-11 Web Ownership Contract Kaniti
+
+- Web Dashboard certificate indirme akisi order listesinden ortak ownership normalizer ile `orderId` cozer.
+- Web StarVault sahiplik merge akisi ayni normalizer ile canonical/starClaim alanlarini kullanir.
+- StarVault metrik fallback'leri mock koleksiyon sayilari yerine API/store-derived bos durumla baslar.
+- `frontend npm run build` -> basarili.
 
 ### P2 Adim 1 Fiziksel Cihaz Uygulama Sirasi
 

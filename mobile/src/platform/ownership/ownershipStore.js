@@ -6,7 +6,7 @@ import {
   summarizeOwnership,
   updateLocalOwnershipMessage,
 } from './ownershipRepository';
-import { emitOwnershipSync, onOwnershipSync, OWNERSHIP_SYNC_EVENT } from './ownershipSyncEvents';
+import { emitPurchaseCommitted, onOwnershipSync, OWNERSHIP_SYNC_EVENT } from './ownershipSyncEvents';
 
 export const useOwnershipStore = create((set, get) => ({
   records: [],
@@ -50,18 +50,17 @@ export const useOwnershipStore = create((set, get) => ({
     }
   },
 
-  addLocalRecord: async (record) => {
+  addLocalRecord: async (record, options = {}) => {
     const records = await appendLocalOwnershipRecord(record);
+    const normalized = records[0] || record;
     set({
       records,
       summary: summarizeOwnership(records),
       loadedAt: Date.now(),
     });
-    emitOwnershipSync(OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED, {
-      starId: record?.starId || record?.id,
-      canonicalId: record?.canonicalId,
-      starClaimCode: record?.starClaimCode,
-    });
+    if (options.emit !== false) {
+      await emitPurchaseCommitted(normalized, { source: options.source || 'ownership-store' });
+    }
     return records;
   },
 
@@ -84,7 +83,7 @@ function bindOwnershipSyncBridge() {
   onOwnershipSync((event) => {
     if (event !== OWNERSHIP_SYNC_EVENT.PURCHASE_COMMITTED) return;
     const store = useOwnershipStore.getState();
-    store.refresh();
+    return store.refresh();
   });
 }
 

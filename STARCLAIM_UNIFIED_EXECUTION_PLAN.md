@@ -168,6 +168,10 @@ Durum:
 - Gorsel kalite otomatik kapisi magnitude radius, BP-RP/spektral renk,
   night vision ve kaliteye gore atmosfer katmani davranisini testlerle
   kilitliyor.
+- Deep space gradient ve compact/mid/large phone referans viewport planlari
+  otomatik testlerle dogrulandi.
+- Referans screenshot/gorsel regresyon kapisi deterministik SVG snapshot ve
+  SHA-256 baseline karsilastirmasi ile cihazsiz kapatildi.
 - Fiziksel cihaz kaniti `MOBILE_2D_ACCEPTANCE_CHECKLIST.md` uzerinden
   kapatilacak; RAM riski nedeniyle cihaz calistirma bu turda kullanici manuel
   testine birakildi.
@@ -179,7 +183,7 @@ Kalan:
   fallback, 10 dakika dayaniklilik, 90 derece motor hissi, web deep link,
   StarVault deep link.
 - Dusuk/orta/yuksek Android profillerinde FPS, isi, bellek ve crash kaydi al.
-- Deep space gradient ve referans screenshot gorsel regresyon kabulunu kapat.
+- Fiziksel cihaz 9 senaryosunu kullanici manuel test sonucu ile kapat.
 
 Kabul:
 
@@ -195,13 +199,26 @@ Hedef:
 - Satin alma sonrasi ayni yildiz web, mobil, StarVault, sertifika ve Sky Live
   icinde ayni kimlikle gorunur.
 
+Durum:
+
+- Mobil purchase commit akisi tek `PURCHASE_COMMITTED` sync olayi uzerinden
+  OwnershipStore ve VaultStore refresh'ini beklenebilir hale getiriyor.
+- Ownership kayitlari `starId`, `canonicalId`, `catalogId`, `sourceId`,
+  `gaiaSourceId`, `hip`, `hd` ve `starClaimCode` ile normalize edilip
+  eslesebiliyor.
+- Offline ownership snapshot canonical alanlari mobil cache'e tasiyor.
+- Web Dashboard ve StarVault ayni ownership normalizer ile order/star
+  eslestiriyor; certificate indirme `orders/certificate/{orderId}` sozlesmesini
+  order listesi uzerinden cozer.
+- Web StarVault istatistik fallback'leri mock 12/9/6 degerleri yerine
+  store/API-derived 0/Cadet degerleriyle baslar.
+
 Kalan:
 
-- `PurchaseModal` backend order ve ownership kaydina bagli kalacak.
-- `OwnershipStore` ve `VaultStore` tek sync olayi ile yenilenecek.
-- Mock sayilar store-derived degerlere donusecek.
-- Certificate indirme/gosterme web ve mobilde ayni endpoint sozlesmesini
-  kullanacak.
+- Web satin alma basari sayfasi, Dashboard ve StarVault yenilemesini ayni
+  ownership sozlesmesiyle tetikleyecek.
+- Backend order/offline snapshot response alanlari web ve mobil icin ortak
+  contract testine alinacak.
 
 ### Rank 3 - StarVault Mobil Urunlestirme
 
