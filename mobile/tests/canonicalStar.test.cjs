@@ -8,12 +8,28 @@ const { transformSync } = require('@babel/core');
 
 function loadApplicationModule(relativePath) {
   const filename = path.resolve(__dirname, relativePath);
+  const previousLoader = require.extensions['.js'];
+  require.extensions['.js'] = (module, moduleFilename) => {
+    if (!moduleFilename.includes(`${path.sep}src${path.sep}`)) {
+      return previousLoader(module, moduleFilename);
+    }
+    const dependencySource = fs.readFileSync(moduleFilename, 'utf8');
+    const dependency = transformSync(dependencySource, {
+      filename: moduleFilename,
+      plugins: ['@babel/plugin-transform-modules-commonjs'],
+    });
+    return module._compile(dependency.code, moduleFilename);
+  };
   const source = fs.readFileSync(filename, 'utf8');
   const transformed = transformSync(source, { filename, plugins: ['@babel/plugin-transform-modules-commonjs'] });
   const loaded = new Module(filename, module);
   loaded.filename = filename;
   loaded.paths = Module._nodeModulePaths(path.dirname(filename));
-  loaded._compile(transformed.code, filename);
+  try {
+    loaded._compile(transformed.code, filename);
+  } finally {
+    require.extensions['.js'] = previousLoader;
+  }
   return loaded.exports;
 }
 

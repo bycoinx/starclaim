@@ -1,3 +1,5 @@
+import { DSOLODManager } from './DSOLODManager';
+
 /**
  * P0.8.4 - DSO Rendering System
  * 
@@ -6,7 +8,7 @@
 
 export class DSORender {
   constructor(options = {}) {
-    this.lodManager = options.lodManager;
+    this.lodManager = options.lodManager || new DSOLODManager(options);
     this.renderer = options.renderer;          // Three.js/Babylon renderer
     this.renderables = new Map();              // DSO ID → render object
     this.visibleDSOs = [];

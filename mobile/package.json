@@ -4,6 +4,7 @@
   "private": true,
   "main": "expo-router/entry",
   "scripts": {
+    "test": "npm run test:astronomy && jest --runInBand",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -71,6 +72,7 @@
     "@babel/plugin-transform-modules-commonjs": "^7.22.0",
     "@babel/preset-env": "^7.22.0",
     "babel-jest": "^30.4.1",
+    "babel-preset-expo": "~54.0.11",
     "jest": "~29.7.0",
     "jest-environment-jsdom": "^30.4.1"
   }

@@ -1,19 +1,15 @@
-const LEVELS = ['low', 'medium', 'high'];
-
-function levelIndex(level) {
-  return Math.max(0, LEVELS.indexOf(level));
-}
+import {
+  evaluatePerformance,
+  getDeviceMaximumProfile,
+  getHeapPressure as getSharedHeapPressure,
+} from '../engine/performancePolicy';
 
 export function getBaseRenderQuality({ pixelRatio, scenePixels, catalogStarCount }) {
-  if (scenePixels >= 4_000_000 || catalogStarCount >= 30_000) return 'low';
-  if (scenePixels >= 2_200_000 || catalogStarCount >= 15_000 || pixelRatio >= 3.5) return 'medium';
-  return 'high';
+  return getDeviceMaximumProfile({ pixelRatio, scenePixels, catalogObjectCount: catalogStarCount });
 }
 
 export function getHeapPressure() {
-  const memory = globalThis.performance?.memory;
-  if (!memory?.jsHeapSizeLimit || !memory?.usedJSHeapSize) return null;
-  return Math.max(0, Math.min(1, memory.usedJSHeapSize / memory.jsHeapSizeLimit));
+  return getSharedHeapPressure();
 }
 
 export function updateAdaptiveQuality({
@@ -23,28 +19,17 @@ export function updateAdaptiveQuality({
   heapPressure = null,
   lowSamples = 0,
   highSamples = 0,
+  renderedObjects = 0,
 }) {
-  const memoryCritical = heapPressure != null && heapPressure >= 0.82;
-  const isSlow = fps > 0 && fps < 43;
-  const isFast = fps >= 56 && (heapPressure == null || heapPressure < 0.68);
-  const nextLowSamples = memoryCritical ? 3 : isSlow ? lowSamples + 1 : 0;
-  const nextHighSamples = isFast ? highSamples + 1 : 0;
-  let level = current;
-
-  if (nextLowSamples >= 3 && levelIndex(current) > 0) {
-    level = LEVELS[levelIndex(current) - 1];
-  } else if (
-    nextHighSamples >= 8
-    && levelIndex(current) < levelIndex(maximum)
-  ) {
-    level = LEVELS[levelIndex(current) + 1];
-  }
-
-  return {
-    level,
-    lowSamples: level === current ? nextLowSamples : 0,
-    highSamples: level === current ? nextHighSamples : 0,
-  };
+  return evaluatePerformance({
+    current,
+    maximum,
+    fps,
+    heapPressure,
+    renderedObjects,
+    lowSamples,
+    highSamples,
+  });
 }
 
 export function estimateLayerNodes({

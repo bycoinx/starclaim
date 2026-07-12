@@ -14,36 +14,47 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import StarSystem3D from '../../../components/StarSystem3D';
-import { ensureStarData } from '../../../src/data/starLoader';
-import { createStarSectorTileStore } from '../../../src/data/starSectorTileStore';
+import CelestialVoyageSurface from '../CelestialVoyageSurface';
+import { ensureStarData } from '../../src/data/starLoader';
+import { createStarSectorTileStore } from '../../src/data/starSectorTileStore';
 import {
   clearRemoteStarTileDiskCache,
   getRemoteStarTileCacheStats,
   getStarTileOfflineMode,
   loadRemoteStarSectorWindow,
   setStarTileOfflineMode,
-} from '../../../src/data/remoteStarTileProvider';
+} from '../../src/data/remoteStarTileProvider';
 import {
   purchaseMatchesStar,
   resolveStarTarget,
   starMatchesQuery,
-} from '../../../src/utils/starIdentity';
+} from '../../src/utils/starIdentity';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { THEME } from '../../../constants/Theme';
-import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
-import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
+import { THEME } from '../../constants/Theme';
+import RenderSurfaceBoundary from '../RenderSurfaceBoundary';
+import { recordRenderDiagnostic } from '../../src/utils/renderDiagnostics';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { getOwnershipPurchases } from '../../../src/data/ownershipSnapshot';
+import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
+import { useCelestialEngineStore } from '../../src/engine/celestialEngineStore';
 
 const RECENT_TARGETS_KEY = '@starvoyage_recent_targets_v1';
 const MAX_RECENT_TARGETS = 6;
 
 export default function StarVoyage3D() {
-  const [stars, setStars] = useState([]);
-  const [targetStar, setTargetStar] = useState(null);
+  const stars = useCelestialEngineStore((state) => state.catalogs.voyage.stars);
+  const remoteSectorWindow = useCelestialEngineStore((state) => state.catalogs.voyage.sectorWindow);
+  const targetStar = useCelestialEngineStore((state) => state.selection.target);
+  const setVoyageCatalog = useCelestialEngineStore((state) => state.setVoyageCatalog);
+  const sharedView = useCelestialEngineStore((state) => state.view);
+  const setSharedView = useCelestialEngineStore((state) => state.setView);
+  const selectTarget = useCelestialEngineStore((state) => state.selectTarget);
+  const requestWarp = useCelestialEngineStore((state) => state.requestWarp);
+  const completeArrival = useCelestialEngineStore((state) => state.completeArrival);
+  const setTargetStar = (target) => selectTarget(target, { source: 'voyage-3d' });
+  const setStars = (nextStars) => setVoyageCatalog({ stars: nextStars });
+  const setRemoteSectorWindow = (sectorWindow) => setVoyageCatalog({ sectorWindow });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [renderReady, setRenderReady] = useState(false);
@@ -57,7 +68,6 @@ export default function StarVoyage3D() {
   const [offlineStats, setOfflineStats] = useState({ tileCount: 0, byteSize: 0 });
   const [searchQuery, setSearchQuery] = useState('');
   const [recentTargetIds, setRecentTargetIds] = useState([]);
-  const [remoteSectorWindow, setRemoteSectorWindow] = useState({ stars: [], sectorIds: [] });
   const openedAtRef = useRef(Date.now());
   const renderReadyDataRef = useRef(null);
   const diagnosticReportedRef = useRef(false);
@@ -307,7 +317,10 @@ export default function StarVoyage3D() {
   };
 
   const handleArrival = (star) => {
-    if (star) setArrivalVisible(true);
+    if (star) {
+      completeArrival(star, { source: 'voyage-3d' });
+      setArrivalVisible(true);
+    }
   };
 
   const handleTargetChange = (star) => {
@@ -402,12 +415,18 @@ export default function StarVoyage3D() {
                   setLoadError(error?.message || '3D görüntü motoru başlatılamadı.');
                 }}
               >
-                <StarSystem3D
+                <CelestialVoyageSurface
                   key={`star-voyage-${loadAttempt}`}
                   stars={renderedSectorWindow.stars}
                   targetStar={targetStar}
                   ownedStars={activeOwnedStars}
                   loadedSectorCount={renderedSectorWindow.sectorIds.length}
+                  view={sharedView}
+                  onViewChange={setSharedView}
+                  onWarpStart={(star, metadata) => requestWarp(star, {
+                    source: 'voyage-3d',
+                    metadata,
+                  })}
                   onArrival={handleArrival}
                   onTargetChange={handleTargetChange}
                   onOwnedStarPress={openOwnedStarCertificate}

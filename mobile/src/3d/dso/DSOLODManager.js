@@ -50,8 +50,6 @@ export class DSOLODManager {
       return 'billboard';
     } else if (cameraDistance < this.pointDistance) {
       return 'point';
-    } else if (cameraDistance < this.skipDistance) {
-      return 'point';
     }
     
     return 'skip';

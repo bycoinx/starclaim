@@ -49,7 +49,14 @@ class Group extends Object3D {}
 class Scene extends Object3D {}
 
 class PerspectiveCamera extends Object3D {
-  constructor(fov, aspect, near, far) { super(); this.fov = fov; this.aspect = aspect; this.near = near; this.far = far; }
+  constructor(fov, aspect, near, far) {
+    super();
+    this.fov = fov;
+    this.aspect = aspect;
+    this.near = near;
+    this.far = far;
+    this.up = new Vector3(0, 1, 0);
+  }
   updateProjectionMatrix() {}
   lookAt() {}
 }

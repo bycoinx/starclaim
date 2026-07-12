@@ -8,7 +8,7 @@
 /**
  * Get star size from magnitude and LOD level
  * 
- * Formula: size = baseSize * 10^(-magnitude / 2.5)
+ * Formula: size = baseSize * 10^(-magnitude / 12.5)
  * 
  * Rationale:
  * - Magnitude scale: each +2.5 steps = 10x dimmer = 3.16x smaller
@@ -29,12 +29,12 @@ export function getMagnitudeSize(magnitude, lodLevel) {
     skip: 0,        // Not rendered
   };
   
-  const baseSize = baseSizes[lodLevel] || 3;
+  const baseSize = baseSizes[lodLevel] ?? baseSizes.medium;
   if (baseSize === 0) return 0;
   
   // Apply magnitude scaling
-  // 10^(-m/2.5): negative magnitude (bright) = larger
-  const magnitudeScale = Math.pow(10, -magnitude / 2.5);
+  // Compress the physical flux range into a perceptual display-size range.
+  const magnitudeScale = Math.pow(10, -magnitude / 12.5);
   let size = baseSize * magnitudeScale;
   
   // Clamp to reasonable range

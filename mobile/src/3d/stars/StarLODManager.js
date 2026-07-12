@@ -130,7 +130,7 @@ export class StarLODManager {
     this.frameTimeMs = frameTimeMs;
     
     // If consistently over budget, reduce quality
-    if (frameTimeMs > this.targetFrameTimeMs * 1.2) {
+    if (frameTimeMs > this.targetFrameTimeMs) {
       this.qualityFactor = Math.max(0.5, this.qualityFactor - 0.1);
     }
     // If consistently under budget, increase quality

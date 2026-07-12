@@ -1,3 +1,5 @@
+import { CelestialEngineRuntime, ENGINE_KIND } from '../../engine/CelestialEngineRuntime';
+
 /**
  * P0.8.4b - VoyageScene
  * 
@@ -54,6 +56,12 @@ export class VoyageScene {
     // Callbacks
     this.onSelectionChanged = options.onSelectionChanged || (() => {});
     this.onCameraChanged = options.onCameraChanged || (() => {});
+    this.engine = new CelestialEngineRuntime({
+      id: options.engineId || 'voyage-scene',
+      kind: ENGINE_KIND.voyage3d,
+      capabilities: ['catalog', 'view', 'selection', 'target', 'telemetry'],
+      callbacks: options.engineCallbacks,
+    });
   }
   
   /**
@@ -75,6 +83,7 @@ export class VoyageScene {
     
     // Set up interaction callbacks
     this._setupInteractionCallbacks();
+    this.engine.initialize({ width: this.width, height: this.height });
     
     console.log('✓ VoyageScene initialized');
   }
@@ -91,6 +100,7 @@ export class VoyageScene {
     try {
       // Pass stars to renderer
       this.starRenderer.setStars(starData);
+      this.engine.setCatalog('stars', starData);
       this.stats.starCount = starData.length;
       
       console.log(`✓ Loaded ${starData.length} stars`);
@@ -105,6 +115,7 @@ export class VoyageScene {
   async loadDSOs(dsoData) {
     // Always update the stat count — even if the renderer doesn't have setDSOs yet
     this._dsoData = dsoData;
+    this.engine.setCatalog('dsos', dsoData);
     this.stats.dsoCount = dsoData.length;
 
     if (this.dsoRenderer) {
@@ -157,6 +168,7 @@ export class VoyageScene {
     if (this.dsoRenderer) {
       try {
         const dsoRenderObjects = this.dsoRenderer.renderFrame(
+          this._dsoData || this.dsoRenderer.visibleDSOs || [],
           this.camera.distance,
           this.height
         );
@@ -178,6 +190,11 @@ export class VoyageScene {
     this.fps = this.frameTime > 0 ? 1 / this.frameTime : 0;
     this.stats.frameTime = this.frameTime * 1000; // ms
     this.stats.fps = Math.round(this.fps);
+    this.engine.reportTelemetry({
+      fps: this.stats.fps,
+      frameTimeMs: this.stats.frameTime,
+      renderedObjects: this.sceneObjects.stars.length + this.sceneObjects.dsos.length,
+    });
     
     // Schedule next frame
     requestAnimationFrame(() => this.render());
@@ -190,6 +207,7 @@ export class VoyageScene {
     if (this.isRunning) return;
     
     this.isRunning = true;
+    this.engine.start();
     this.lastFrameTime = Date.now();
     this.render();
     
@@ -201,6 +219,7 @@ export class VoyageScene {
    */
   stop() {
     this.isRunning = false;
+    this.engine.stop();
     console.log('✓ VoyageScene rendering stopped');
   }
   
@@ -455,6 +474,11 @@ export class VoyageScene {
       pitch: this.camera.pitch,
     };
   }
+
+  getEngineSnapshot() {
+    this.engine.setView(this.getCameraState());
+    return this.engine.getSnapshot();
+  }
   
   /**
    * Resize handler
@@ -479,6 +503,7 @@ export class VoyageScene {
     this.sceneObjects.stars = [];
     this.sceneObjects.dsos = [];
     this.sceneObjects.background = null;
+    this.engine.destroy();
     
     console.log('✓ VoyageScene destroyed');
   }

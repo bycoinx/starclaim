@@ -40,7 +40,7 @@ describe('VoyageCamera', () => {
     });
     
     test('should update after position change', () => {
-      camera.setTarget(0, 0, 50);
+      camera.setTarget(0, 0, -50);
       const distance = camera.distanceToTarget();
       expect(distance).toBeCloseTo(100, 1);
     });

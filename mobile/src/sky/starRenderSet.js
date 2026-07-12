@@ -7,8 +7,11 @@ import {
   radiusForMag,
   raDecToAltAz,
 } from '../utils/astronomy';
+import { PERFORMANCE_PROFILES } from '../engine/performancePolicy';
 
-export const STAR_RENDER_BUDGET = Object.freeze({ low: 100, medium: 260, high: 380 });
+export const STAR_RENDER_BUDGET = Object.freeze(Object.fromEntries(
+  Object.entries(PERFORMANCE_PROFILES).map(([level, profile]) => [level, profile.skyStars])
+));
 export const VIEWPORT_PADDING = 140;
 
 export function magnitudeLimitForZoom(zoom) {

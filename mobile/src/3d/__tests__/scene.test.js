@@ -83,6 +83,7 @@ describe('VoyageScene', () => {
       starInteraction: mockStarInteraction,
       dsoInteraction: mockDSOInteraction,
       gestureDetector: mockGestureDetector,
+      onSelectionChanged: jest.fn(),
     });
   });
   
@@ -162,7 +163,12 @@ describe('VoyageScene', () => {
       expect(mockCamera.update).toHaveBeenCalled();
     });
     
-    test('should render stars and DSOs', () => {
+    test('should render stars and DSOs with the loaded DSO collection', async () => {
+      const dsoData = [
+        { id: 'd1', commonName: 'Crab', voyageX: 100, voyageY: 100, voyageZ: 100 },
+      ];
+      await scene.loadDSOs(dsoData);
+
       mockStarRenderer.renderFrame.mockReturnValue([
         { type: 'star', position: { x: 0, y: 0, z: 0 } },
       ]);
@@ -174,7 +180,11 @@ describe('VoyageScene', () => {
       jest.advanceTimersByTime(16);
       
       expect(mockStarRenderer.renderFrame).toHaveBeenCalled();
-      expect(mockDSORenderer.renderFrame).toHaveBeenCalled();
+      expect(mockDSORenderer.renderFrame).toHaveBeenCalledWith(
+        dsoData,
+        mockCamera.distance,
+        mockCanvas.height
+      );
     });
   });
   
@@ -242,8 +252,8 @@ describe('VoyageScene', () => {
   
   describe('statistics', () => {
     test('should track frame statistics', () => {
-      scene.start();
       jest.useFakeTimers();
+      scene.start();
       jest.advanceTimersByTime(16);
       
       const stats = scene.getStats();

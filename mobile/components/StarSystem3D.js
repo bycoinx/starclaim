@@ -9,19 +9,38 @@ import {
 import { GLView } from 'expo-gl';
 import { Renderer } from 'expo-three';
 import * as THREE from 'three';
-import { colorForSpectrum, getStarDistanceParsec, getStarXYZ } from '../src/utils/astronomy';
+import { colorForSpectrum, getStarDistanceParsec } from '../src/utils/astronomy';
 import { THEME } from '../constants/Theme';
 import { SpaceAudio } from '../src/utils/audioEngine';
+import { CelestialEngineRuntime, ENGINE_KIND } from '../src/engine/CelestialEngineRuntime';
+import {
+  DEFAULT_VIEW_ZOOM,
+  MAX_CAMERA_DISTANCE,
+  MIN_CAMERA_DISTANCE,
+  PARSEC_TO_LIGHT_YEARS,
+  cameraDistanceToZoom,
+  starToWorldCartesian,
+  zoomToCameraDistance,
+} from '../src/engine/celestialCoordinates';
+import {
+  PERFORMANCE_LEVELS,
+  PERFORMANCE_PROFILES,
+  evaluatePerformance,
+  getDeviceMaximumProfile,
+  getHeapPressure,
+} from '../src/engine/performancePolicy';
 
-const PARSEC_TO_LIGHT_YEARS = 3.26156;
-const STAR_SCALE = 0.15;
-const DEFAULT_ORBIT_RADIUS = 68;
-const MIN_ORBIT_RADIUS = 10;
-const MAX_ORBIT_RADIUS = 260;
+const DEFAULT_ORBIT_RADIUS = zoomToCameraDistance(DEFAULT_VIEW_ZOOM);
+const MIN_ORBIT_RADIUS = MIN_CAMERA_DISTANCE;
+const MAX_ORBIT_RADIUS = MAX_CAMERA_DISTANCE;
 const WARP_DURATION_MS = 3600;
-const QUALITY_LIMITS = { low: 3500, medium: 7000, high: 10000 };
-const GALAXY_LIMITS = { low: 2400, medium: 4800, high: 8000 };
-const QUALITY_ORDER = ['low', 'medium', 'high'];
+const QUALITY_LIMITS = Object.fromEntries(
+  Object.entries(PERFORMANCE_PROFILES).map(([level, profile]) => [level, profile.voyageStars])
+);
+const GALAXY_LIMITS = Object.fromEntries(
+  Object.entries(PERFORMANCE_PROFILES).map(([level, profile]) => [level, profile.galaxyPoints])
+);
+const QUALITY_ORDER = PERFORMANCE_LEVELS;
 const SCENE_MODES = { galaxy: 'galaxy', sector: 'sector', target: 'target' };
 
 const starVertexShader = `
@@ -184,8 +203,8 @@ const nebulaFragmentShader = `
 `;
 
 function toWorldPosition(star) {
-  const { x, y, z } = getStarXYZ(star);
-  return new THREE.Vector3(x * STAR_SCALE, y * STAR_SCALE, z * STAR_SCALE);
+  const { x, y, z } = starToWorldCartesian(star);
+  return new THREE.Vector3(x, y, z);
 }
 
 function getDistanceLightYears(star) {
@@ -208,15 +227,9 @@ function getOrbitPosition(focus, radius, yaw, pitch) {
   );
 }
 
-function getInitialQuality() {
-  const density = PixelRatio.get();
-  return density >= 3 ? 'medium' : 'high';
-}
-
-function nextQuality(current, direction) {
-  const index = QUALITY_ORDER.indexOf(current);
-  const nextIndex = Math.max(0, Math.min(QUALITY_ORDER.length - 1, index + direction));
-  return QUALITY_ORDER[nextIndex];
+function getInitialQuality(forcedQuality, maximumQuality) {
+  if (QUALITY_ORDER.includes(forcedQuality)) return forcedQuality;
+  return maximumQuality;
 }
 
 function disposeMaterial(material) {
@@ -548,6 +561,10 @@ export default function StarSystem3D({
   onReady = null,
   onRenderError = null,
   onTelemetry = null,
+  onViewChange = null,
+  onWarpStart = null,
+  view = null,
+  qualityProfile = null,
   loadedSectorCount = 0,
 }) {
   const animationFrameRef = useRef(null);
@@ -578,6 +595,16 @@ export default function StarSystem3D({
   const onReadyRef = useRef(onReady);
   const onRenderErrorRef = useRef(onRenderError);
   const onTelemetryRef = useRef(onTelemetry);
+  const onViewChangeRef = useRef(onViewChange);
+  const onWarpStartRef = useRef(onWarpStart);
+  const engineRef = useRef(null);
+  if (!engineRef.current) {
+    engineRef.current = new CelestialEngineRuntime({
+      id: 'star-system-3d',
+      kind: ENGINE_KIND.voyage3d,
+      capabilities: ['catalog', 'target', 'selection', 'telemetry', 'warp'],
+    });
+  }
   const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
   const onArrivalRef = useRef(onArrival);
   const onTargetChangeRef = useRef(onTargetChange);
@@ -598,12 +625,20 @@ export default function StarSystem3D({
   });
   const orbitYawRef = useRef(0.55);
   const orbitPitchRef = useRef(0.18);
-  const orbitRadiusRef = useRef(targetStar ? DEFAULT_ORBIT_RADIUS : 112);
+  const orbitRadiusRef = useRef(targetStar
+    ? zoomToCameraDistance(view?.zoom)
+    : zoomToCameraDistance(view?.zoom || 0.73));
   const gestureRef = useRef({ x: 0, y: 0, startX: 0, startY: 0, pinchDistance: 0, moved: false });
   const viewportRef = useRef({ width: 1, height: 1 });
   const raycasterRef = useRef(new THREE.Raycaster());
-  const qualityRef = useRef(getInitialQuality());
-  const qualityRecoveryRef = useRef(0);
+  const maximumQualityRef = useRef(QUALITY_ORDER.includes(qualityProfile)
+    ? qualityProfile
+    : getDeviceMaximumProfile({
+        pixelRatio: PixelRatio.get(),
+        catalogObjectCount: stars.length,
+      }));
+  const qualityRef = useRef(getInitialQuality(qualityProfile, maximumQualityRef.current));
+  const performanceSamplesRef = useRef({ lowSamples: 0, highSamples: 0 });
   const mountedRef = useRef(true);
   const [quality, setQuality] = useState(qualityRef.current);
   const [fps, setFps] = useState(0);
@@ -617,7 +652,14 @@ export default function StarSystem3D({
     onReadyRef.current = onReady;
     onRenderErrorRef.current = onRenderError;
     onTelemetryRef.current = onTelemetry;
-  }, [onReady, onRenderError, onTelemetry]);
+    onViewChangeRef.current = onViewChange;
+    onWarpStartRef.current = onWarpStart;
+    engineRef.current.setCallbacks({
+      onReady: (_, details) => onReadyRef.current?.(details),
+      onTelemetry: (details) => onTelemetryRef.current?.(details),
+      onError: (error) => onRenderErrorRef.current?.(error),
+    });
+  }, [onReady, onRenderError, onTelemetry, onViewChange, onWarpStart]);
 
   useEffect(() => {
     ownedStarsRef.current = ownedStars;
@@ -630,6 +672,17 @@ export default function StarSystem3D({
   }, [ownedStars]);
 
   useEffect(() => {
+    maximumQualityRef.current = QUALITY_ORDER.includes(qualityProfile)
+      ? qualityProfile
+      : getDeviceMaximumProfile({
+          pixelRatio: PixelRatio.get(),
+          catalogObjectCount: stars.length,
+        });
+    if (QUALITY_ORDER.indexOf(qualityRef.current) > QUALITY_ORDER.indexOf(maximumQualityRef.current)) {
+      qualityRef.current = maximumQualityRef.current;
+      setQuality(maximumQualityRef.current);
+    }
+    engineRef.current.setCatalog('stars', stars);
     const points = pointsRef.current;
     if (!points) return;
     const validStars = getRenderableSectorStars(stars);
@@ -640,17 +693,18 @@ export default function StarSystem3D({
     previousGeometry?.dispose();
     renderedStarsRef.current = validStars;
     labelCandidatesRef.current = buildLabelCandidates(validStars, ownedStarIdsRef.current);
-  }, [stars]);
+  }, [qualityProfile, stars]);
 
   useEffect(() => {
     const previousMode = sceneModeRef.current;
     targetStarRef.current = targetStar;
+    engineRef.current.setTarget(targetStar);
     setLockedTarget(targetStar || null);
     arrivedRef.current = false;
     if (sceneModeRef.current === SCENE_MODES.target) {
       sceneModeRef.current = SCENE_MODES.sector;
       setSceneMode(SCENE_MODES.sector);
-      orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+      orbitRadiusRef.current = zoomToCameraDistance(view?.zoom);
     }
     if (!targetStar) {
       sectorFocusRef.current.set(0, 0, 0);
@@ -683,7 +737,7 @@ export default function StarSystem3D({
       transition.fromFocus.copy(cameraFocusRef.current);
       transition.toFocus.copy(position);
       if (previousMode !== SCENE_MODES.sector) {
-        orbitRadiusRef.current = DEFAULT_ORBIT_RADIUS;
+        orbitRadiusRef.current = zoomToCameraDistance(view?.zoom);
         orbitPitchRef.current = 0.18;
       }
       if (previousMode !== SCENE_MODES.sector) {
@@ -696,6 +750,11 @@ export default function StarSystem3D({
       targetMarkerRef.current.visible = true;
     }
   }, [targetStar]);
+
+  useEffect(() => {
+    if (!Number.isFinite(view?.zoom)) return;
+    orbitRadiusRef.current = zoomToCameraDistance(view.zoom);
+  }, [view?.zoom]);
 
   useEffect(() => {
     onArrivalRef.current = onArrival;
@@ -1027,32 +1086,39 @@ export default function StarSystem3D({
         frameCount = 0;
         fpsWindowAt = now;
         if (mountedRef.current) setFps(measuredFps);
-        onTelemetryRef.current?.({
+        const heapPressure = getHeapPressure();
+        engineRef.current.reportTelemetry({
           fps: measuredFps,
+          heapPressure,
           quality: qualityRef.current,
+          maximumQuality: maximumQualityRef.current,
+          objectBudget: QUALITY_LIMITS[qualityRef.current],
           renderedStarCount: validStars.length,
+          renderedObjects: validStars.length,
           loadedSectorCount,
         });
 
-        if (measuredFps < 28) {
-          qualityRecoveryRef.current = 0;
-          updateQuality(nextQuality(qualityRef.current, -1));
-        } else if (measuredFps >= 52) {
-          qualityRecoveryRef.current += 1;
-          if (qualityRecoveryRef.current >= 5) {
-            updateQuality(nextQuality(qualityRef.current, 1));
-            qualityRecoveryRef.current = 0;
-          }
-        } else {
-          qualityRecoveryRef.current = 0;
-        }
+        const decision = evaluatePerformance({
+          current: qualityRef.current,
+          maximum: maximumQualityRef.current,
+          fps: measuredFps,
+          heapPressure,
+          renderedObjects: validStars.length,
+          ...performanceSamplesRef.current,
+        });
+        performanceSamplesRef.current = {
+          lowSamples: decision.lowSamples,
+          highSamples: decision.highSamples,
+        };
+        updateQuality(decision.level);
       }
 
       renderer.render(scene, camera);
       gl.endFrameEXP();
     };
 
-    onReadyRef.current?.({ starCount: validStars.length });
+    engineRef.current.initialize({ starCount: validStars.length });
+    engineRef.current.start();
     render();
   }, [loadedSectorCount, stars, updateQuality]);
 
@@ -1063,6 +1129,7 @@ export default function StarSystem3D({
     disposeScene(sceneRef.current, rendererRef.current);
     sceneRef.current = null;
     rendererRef.current = null;
+    engineRef.current.destroy();
     SpaceAudio.stopAll();
   }, []);
 
@@ -1078,6 +1145,7 @@ export default function StarSystem3D({
       warpMaterial.uniforms.certified.value = certifiedWarp ? 1 : 0;
     }
     setWarpOwned(certifiedWarp);
+    onWarpStartRef.current?.(star, { certified: certifiedWarp });
 
     const targetPosition = toWorldPosition(star);
     const approachDirection = targetPosition.clone().sub(camera.position);
@@ -1167,6 +1235,10 @@ export default function StarSystem3D({
         MIN_ORBIT_RADIUS,
         MAX_ORBIT_RADIUS,
       );
+      onViewChangeRef.current?.({
+        zoom: cameraDistanceToZoom(orbitRadiusRef.current),
+        cameraDistance: orbitRadiusRef.current,
+      });
       gestureRef.current.pinchDistance = distance;
       return;
     }
@@ -1258,7 +1330,7 @@ export default function StarSystem3D({
       >
         <GLView
           style={StyleSheet.absoluteFill}
-          onContextCreate={(gl) => onContextCreate(gl).catch((error) => onRenderErrorRef.current?.(error))}
+          onContextCreate={(gl) => onContextCreate(gl).catch((error) => engineRef.current.reportError(error, 'renderer-init'))}
         />
       </View>
 

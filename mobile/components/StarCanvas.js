@@ -1,5 +1,5 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio, InteractionManager } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, TouchableOpacity, PixelRatio } from 'react-native';
 import {
   Canvas,
   Circle,
@@ -37,7 +37,6 @@ import {
 } from '../src/sky/skyInteractionIndex';
 import { buildSkyRenderPlan } from '../src/sky/skyRenderPlan';
 import { MYTHOLOGY_ASSETS } from '../src/data/mythologyData';
-import { getPlanetPositions } from '../src/utils/solarSystem';
 import {
   isSkySegmentVisible,
   projectSkySegment,
@@ -47,6 +46,8 @@ import {
   getHeapPressure,
   updateAdaptiveQuality,
 } from '../src/utils/renderQuality';
+import { CelestialEngineRuntime, ENGINE_KIND } from '../src/engine/CelestialEngineRuntime';
+import { projectEquatorialToScreen } from '../src/engine/celestialCoordinates';
 import {
   DEEP_SPACE_ATMOSPHERE_SPEC,
   MILKY_WAY_DENSITY_SPEC,
@@ -179,13 +180,15 @@ function equatorialToHorizontal(raHours, decDegrees, latitudeDegrees, lstDegrees
 
 function projectDegrees(longitude, latitude, centerLongitude, centerLatitude, width, height, zoom) {
   'worklet';
-  const longitudeDiff = normalizeRaDelta(longitude - centerLongitude);
-  const latitudeDiff = latitude - centerLatitude;
-  const field = 90 / Math.max(0.1, zoom);
-  const scale = width / field;
-  const x = width / 2 + longitudeDiff * scale * Math.cos(deg2rad(centerLatitude));
-  const y = height / 2 - latitudeDiff * scale;
-  return { x, y };
+  return projectEquatorialToScreen({
+    raDegrees: longitude,
+    decDegrees: latitude,
+    centerRaDegrees: centerLongitude,
+    centerDecDegrees: centerLatitude,
+    width,
+    height,
+    zoom,
+  });
 }
 
 function project(
@@ -428,6 +431,8 @@ function DeepSpaceAtmosphere({ layout, nightVision }) {
 
 const StarCanvasBase = forwardRef(function StarCanvas({
   stars,
+  dsoData = [],
+  planetData = [],
   selectedStar,
   centerRa: initialRa,
   centerDec: initialDec,
@@ -463,7 +468,6 @@ const StarCanvasBase = forwardRef(function StarCanvas({
 }, ref) {
   const [layout, setLayout] = useState({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
   const [qualityLevel, setQualityLevel] = useState('high');
-  const [dsoData, setDsoData] = useState([]);
   const [virtualCenter, setVirtualCenter] = useState({ ra: initialRa, dec: initialDec });
   const virtualCenterRef = useRef({ ra: initialRa, dec: initialDec });
 
@@ -483,6 +487,14 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   const readyDetailsRef = useRef(null);
   const onReadyRef = useRef(onReady);
   const onTelemetryRef = useRef(onTelemetry);
+  const engineRef = useRef(null);
+  if (!engineRef.current) {
+    engineRef.current = new CelestialEngineRuntime({
+      id: 'star-canvas',
+      kind: ENGINE_KIND.sky2d,
+      capabilities: ['catalog', 'view', 'selection', 'telemetry'],
+    });
+  }
   // For parallax effect: track previous center to calculate movement delta
   const prevRa = useSharedValue(initialRa);
   const prevDec = useSharedValue(initialDec);
@@ -495,6 +507,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       if (!Number.isFinite(nextRa) || !Number.isFinite(nextDec)) return;
       const nextRaNormalized = normalizeLongitude(nextRa);
       const nextDecClamped = Math.max(-90, Math.min(90, nextDec));
+      engineRef.current.setView({ ra: nextRaNormalized, dec: nextDecClamped, zoom: zoom.value });
       const shortestRaTarget = ra.value + normalizeRaDelta(nextRaNormalized - normalizeLongitude(ra.value));
       ra.value = withTiming(shortestRaTarget, SENSOR_VIEW_TIMING);
       dec.value = withTiming(nextDecClamped, SENSOR_VIEW_TIMING);
@@ -510,7 +523,17 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   useEffect(() => {
     onReadyRef.current = onReady;
     onTelemetryRef.current = onTelemetry;
+    engineRef.current.setCallbacks({
+      onReady: (_, details) => onReadyRef.current?.(details),
+      onTelemetry: (details) => onTelemetryRef.current?.(details),
+    });
   }, [onInteractionStateChange, onReady, onTelemetry]);
+
+  useEffect(() => {
+    engineRef.current.setCatalog('stars', stars);
+  }, [stars]);
+
+  useEffect(() => () => engineRef.current.destroy(), []);
 
   const reportTelemetry = (fps) => {
     const heapPressure = getHeapPressure();
@@ -521,39 +544,24 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       heapPressure,
       lowSamples: qualityRef.current.lowSamples,
       highSamples: qualityRef.current.highSamples,
+      renderedObjects: readyDetailsRef.current?.totalDrawNodes || 0,
     });
     qualityRef.current = { ...qualityRef.current, ...next };
     setQualityLevel((current) => current === next.level ? current : next.level);
-    onTelemetryRef.current?.({
+    engineRef.current.reportTelemetry({
       fps,
       heapPressure,
       quality: next.level,
       layerNodes: readyDetailsRef.current?.layerNodes,
       totalDrawNodes: readyDetailsRef.current?.totalDrawNodes,
+      maximumQuality: qualityRef.current.maximum,
     });
   };
 
   const reportReady = () => {
-    onReadyRef.current?.(readyDetailsRef.current);
+    engineRef.current.initialize(readyDetailsRef.current);
+    if (active) engineRef.current.start();
   };
-
-  const planetData = useMemo(() => getPlanetPositions(), []);
-
-  useEffect(() => {
-    if (!showDSOs || dsoData.length) return undefined;
-    let cancelled = false;
-    const task = InteractionManager.runAfterInteractions(() => {
-      import('../src/data/dsoData')
-        .then(({ DSO_CATALOG }) => {
-          if (!cancelled) setDsoData(DSO_CATALOG);
-        })
-        .catch(() => {});
-    });
-    return () => {
-      cancelled = true;
-      task.cancel?.();
-    };
-  }, [dsoData.length, showDSOs]);
 
   const baseQuality = useMemo(() => getBaseRenderQuality({
     pixelRatio: PixelRatio.get(),
@@ -619,6 +627,11 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     prevRa.value = ra.value;
     prevDec.value = dec.value;
   }, active);
+
+  useEffect(() => {
+    if (active && readyShared.value) engineRef.current.start();
+    if (!active) engineRef.current.stop();
+  }, [active, readyShared]);
 
   useEffect(() => {
     ra.value = withSpring(initialRa, SPRING_CONFIG);

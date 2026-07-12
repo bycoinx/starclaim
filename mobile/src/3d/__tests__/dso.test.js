@@ -376,7 +376,7 @@ describe('DSOInfoPanel', () => {
     
     expect(container.innerHTML).toContain('Supernova Remnant');
     expect(container.innerHTML).toContain('8.4');
-    expect(container.innerHTML).toContain('1300');
+    expect(container.innerHTML).toContain('1.30 kpc');
   });
   
   test('should hide panel', () => {

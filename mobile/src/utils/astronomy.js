@@ -1,46 +1,46 @@
+import {
+  clampDeclinationDegrees,
+  equatorialToCartesianParsec,
+  getCanonicalStarCoordinates,
+  normalizeDegreeDelta,
+  normalizeDegrees,
+  raDegreesToHours as canonicalRaDegreesToHours,
+  raHoursToDegrees as canonicalRaHoursToDegrees,
+  starToCartesianParsec,
+} from '../engine/celestialCoordinates.js';
+
 const deg2rad = (deg) => deg * Math.PI / 180;
 
 export function raHoursToDegrees(hours) {
-  return normalizeAngle((Number(hours) || 0) * 15);
+  return canonicalRaHoursToDegrees(hours);
 }
 
 export function raDegreesToHours(degrees) {
-  return normalizeAngle(Number(degrees) || 0) / 15;
+  return canonicalRaDegreesToHours(degrees);
 }
 
 export function clampDeclination(degrees) {
-  return Math.max(-90, Math.min(90, Number(degrees) || 0));
+  return clampDeclinationDegrees(degrees);
 }
 
 export function getStarRaHours(star) {
-  if (Number.isFinite(star?.raHours)) return star.raHours;
-  if (Number.isFinite(star?.ra)) return star.ra;
-  if (Number.isFinite(star?.raDegrees)) return raDegreesToHours(star.raDegrees);
-  return 0;
+  return getCanonicalStarCoordinates(star).raHours;
 }
 
 export function getStarRaDegrees(star) {
-  if (Number.isFinite(star?.raDegrees)) return normalizeAngle(star.raDegrees);
-  return raHoursToDegrees(getStarRaHours(star));
+  return getCanonicalStarCoordinates(star).raDegrees;
 }
 
 export function getStarDecDegrees(star) {
-  if (Number.isFinite(star?.decDegrees)) return clampDeclination(star.decDegrees);
-  return clampDeclination(star?.dec);
+  return getCanonicalStarCoordinates(star).decDegrees;
 }
 
 export function normalizeAngle(angle) {
-  let value = Number(angle) || 0;
-  while (value < 0) value += 360;
-  while (value >= 360) value -= 360;
-  return value;
+  return normalizeDegrees(angle);
 }
 
 export function normalizeRaDelta(delta) {
-  let value = Number(delta) || 0;
-  while (value > 180) value -= 360;
-  while (value < -180) value += 360;
-  return value;
+  return normalizeDegreeDelta(delta);
 }
 
 export function projectRaDec(star, centerRa, centerDec, width, height, zoom) {
@@ -152,10 +152,7 @@ export function getApproximateLST(longitudeDegrees = 0, date = new Date()) {
 }
 
 export function getStarDistanceParsec(star) {
-  if (Number.isFinite(star?.distanceParsec)) return star.distanceParsec;
-  if (Number.isFinite(star?.dist)) return star.dist;
-  if (Number.isFinite(star?.distance)) return star.distance;
-  return 100; // Default distance if unknown
+  return getCanonicalStarCoordinates(star).distanceParsec;
 }
 
 /**
@@ -171,15 +168,7 @@ export function getStarDistanceParsec(star) {
  * @returns {{x: number, y: number, z: number}}
  */
 export function raDecDistToXYZ(raHours, decDegrees, distParsec = 100) {
-  const raRad = deg2rad(raHours * 15);
-  const decRad = deg2rad(decDegrees);
-  const cosDec = Math.cos(decRad);
-
-  return {
-    x: distParsec * cosDec * Math.cos(raRad),
-    y: distParsec * Math.sin(decRad),
-    z: -distParsec * cosDec * Math.sin(raRad),
-  };
+  return equatorialToCartesianParsec({ raHours, decDegrees, distanceParsec: distParsec });
 }
 
 /**
@@ -188,10 +177,7 @@ export function raDecDistToXYZ(raHours, decDegrees, distParsec = 100) {
  * @returns {{x: number, y: number, z: number}}
  */
 export function getStarXYZ(star) {
-  const ra = getStarRaHours(star);
-  const dec = getStarDecDegrees(star);
-  const dist = getStarDistanceParsec(star);
-  return raDecDistToXYZ(ra, dec, dist);
+  return starToCartesianParsec(star);
 }
 
 /**

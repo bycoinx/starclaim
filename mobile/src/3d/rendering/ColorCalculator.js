@@ -19,14 +19,12 @@ export function bprpToTemperature(bprp) {
   // Clamp to reasonable range
   const clamped = Math.max(-0.5, Math.min(4.0, bprp));
   
-  // Polynomial fit (Gaia DR3 calibration)
-  // T_eff = a0 + a1*x + a2*x^2 + a3*x^3
-  const a0 = 5778; // Solar temperature reference
-  const a1 = -1200; // Approximate slope
-  const a2 = -300;  // Curvature for red stars
-  
-  const x = clamped;
-  const temp = a0 + a1 * x + a2 * x * x;
+  // Fast two-term color-temperature approximation. This keeps the solar
+  // reference near 5778 K while remaining monotonic for blue and red stars.
+  const temp = 4600 * (
+    1 / (0.92 * clamped + 1.7) +
+    1 / (0.92 * clamped + 0.62)
+  );
   
   // Clamp to physically reasonable range
   return Math.max(2500, Math.min(15000, temp));
@@ -127,7 +125,7 @@ export function spectralTypeToRGB(spectralType) {
   };
   
   const temp = spectralTemps[spClass] || 5778;
-  return temperatureToRGB(temp);
+  return temperatureToRGB(Math.max(2500, Math.min(15000, temp)));
 }
 
 /**

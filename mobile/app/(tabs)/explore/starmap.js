@@ -7,7 +7,7 @@ import * as Location from 'expo-location';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { DeviceMotion, Magnetometer } from 'expo-sensors';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import StarCanvas from '../../../components/StarCanvas';
+import CelestialEngineSurface from '../../../components/CelestialEngineSurface';
 import StarPopup from '../../../components/StarPopup';
 import PurchaseModal from '../../../components/PurchaseModal';
 import { ensureStarData } from '../../../src/data/starLoader';
@@ -34,6 +34,8 @@ import RenderSurfaceBoundary from '../../../components/RenderSurfaceBoundary';
 import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
 import { ROUTES, starVoyageRoute } from '../../../src/platform/navigation/routes';
 import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
+import { ENGINE_KIND } from '../../../src/engine/CelestialEngineRuntime';
+import { useCelestialEngineStore } from '../../../src/engine/celestialEngineStore';
 import {
   SENSOR_HUD_INTERVAL_MS,
   SENSOR_RENDER_INTERVAL_MS,
@@ -69,35 +71,65 @@ function buildObserverLabel(placemark, latitude, longitude) {
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
-  const [stars, setStars] = useState([]);
-  const [selectedStar, setSelectedStar] = useState(null);
+  const stars = useCelestialEngineStore((state) => state.catalogs.sky.stars);
+  const constellations = useCelestialEngineStore((state) => state.catalogs.sky.constellations) || {
+    lines: { features: [] },
+    labels: { features: [] },
+    boundaries: { features: [] },
+  };
+  const dsoCatalog = useCelestialEngineStore((state) => state.catalogs.sky.dsos);
+  const planetCatalog = useCelestialEngineStore((state) => state.catalogs.sky.planets);
+  const selectedStar = useCelestialEngineStore((state) => state.selection.target);
+  const centerRa = useCelestialEngineStore((state) => state.view.ra);
+  const centerDec = useCelestialEngineStore((state) => state.view.dec);
+  const zoom = useCelestialEngineStore((state) => state.view.zoom);
+  const coordinateMode = useCelestialEngineStore((state) => state.view.coordinateMode);
+  const engineLayers = useCelestialEngineStore((state) => state.layers);
+  const setSkyCatalog = useCelestialEngineStore((state) => state.setSkyCatalog);
+  const setView = useCelestialEngineStore((state) => state.setView);
+  const selectTarget = useCelestialEngineStore((state) => state.selectTarget);
+  const clearTarget = useCelestialEngineStore((state) => state.clearTarget);
+  const setEngineLayers = useCelestialEngineStore((state) => state.setLayers);
+  const setStars = (nextStars) => setSkyCatalog({ stars: nextStars });
+  const setConstellations = (nextConstellations) => setSkyCatalog({ constellations: nextConstellations });
+  const setCenterRa = (ra) => setView({ ra });
+  const setCenterDec = (dec) => setView({ dec });
+  const setZoom = (nextZoom) => setView({ zoom: nextZoom });
+  const setCoordinateMode = (nextMode) => setView({ coordinateMode: nextMode });
+  const setSelectedStar = (target) => target
+    ? selectTarget(target, { source: 'sky-2d' })
+    : clearTarget({ source: 'sky-2d' });
+  const {
+    constellations: showConstellations,
+    constellationLabels: showConstellationLabels,
+    constellationBoundaries: showConstellationBoundaries,
+    grid: showGrid,
+    labels: showLabels,
+    planets: showPlanets,
+    dsos: showDSOs,
+    nebula: showNebula,
+    mythology: showMythology,
+    nightVision,
+  } = engineLayers;
+  const setShowConstellations = (value) => setEngineLayers({ constellations: value });
+  const setShowConstellationLabels = (value) => setEngineLayers({ constellationLabels: value });
+  const setShowConstellationBoundaries = (value) => setEngineLayers({ constellationBoundaries: value });
+  const setShowGrid = (value) => setEngineLayers({ grid: value });
+  const setShowLabels = (value) => setEngineLayers({ labels: value });
+  const setShowPlanets = (value) => setEngineLayers({ planets: value });
+  const setShowDSOs = (value) => setEngineLayers({ dsos: value });
+  const setShowNebula = (value) => setEngineLayers({ nebula: value });
+  const setShowMythology = (value) => setEngineLayers({ mythology: value });
+  const setNightVision = (value) => setEngineLayers({ nightVision: value });
   const [popupVisible, setPopupVisible] = useState(false);
   const [mode, setMode] = useState('manual');
-  const [centerRa, setCenterRa] = useState(180);
-  const [centerDec, setCenterDec] = useState(0);
-  const [zoom, setZoom] = useState(1.2);
   const [viewDirection, setViewDirection] = useState({ heading: 0, tilt: 0 });
   const [loading, setLoading] = useState(true);
   const [mapError, setMapError] = useState(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
-  const [showConstellations, setShowConstellations] = useState(true);
-  const [showConstellationLabels, setShowConstellationLabels] = useState(true);
-  const [showConstellationBoundaries, setShowConstellationBoundaries] = useState(false);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showLabels, setShowLabels] = useState(false);
-  const [showPlanets, setShowPlanets] = useState(true);
-  const [showDSOs, setShowDSOs] = useState(true);
-  const [showNebula, setShowNebula] = useState(true);
-  const [constellations, setConstellations] = useState({
-    lines: { features: [] },
-    labels: { features: [] },
-    boundaries: { features: [] },
-  });
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
-  const [showMythology, setShowMythology] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [coordinateMode, setCoordinateMode] = useState('equatorial');
   const [observer, setObserver] = useState(DEFAULT_OBSERVER);
   const [siderealTime, setSiderealTime] = useState(0);
   const [timeOffsetHours, setTimeOffsetHours] = useState(0);
@@ -105,7 +137,6 @@ export default function StarMapScreen() {
   const [headingAccuracy, setHeadingAccuracy] = useState(0);
   const [calibrationVisible, setCalibrationVisible] = useState(false);
   const [layersVisible, setLayersVisible] = useState(false);
-  const [nightVision, setNightVision] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const [screenOrientation, setScreenOrientation] = useState(ScreenOrientation.Orientation.UNKNOWN);
   const [capabilityNotice, setCapabilityNotice] = useState(null);
@@ -184,6 +215,7 @@ export default function StarMapScreen() {
       });
     }).finally(() => setLoading(false));
     ensureConstellations().then(setConstellations).catch(() => {});
+    setSkyCatalog({ dsos: DSO_CATALOG, planets: getPlanetPositions() });
     loadOwnership();
   }, [loadAttempt, loadOwnership, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
 
@@ -379,8 +411,8 @@ export default function StarMapScreen() {
       return;
     }
     const lower = text.toLowerCase();
-    const planetResults = getPlanetPositions().filter(p => p.name.toLowerCase().includes(lower));
-    const dsoResults = DSO_CATALOG.filter(d => d.name.toLowerCase().includes(lower));
+    const planetResults = planetCatalog.filter(p => p.name.toLowerCase().includes(lower));
+    const dsoResults = dsoCatalog.filter(d => d.name.toLowerCase().includes(lower));
     const starResults = stars
       .filter((star) => starMatchesQuery(star, text))
       .sort((a, b) => {
@@ -870,37 +902,48 @@ export default function StarMapScreen() {
                   });
                 }}
               >
-                <StarCanvas
+                <CelestialEngineSurface
                   ref={starCanvasRef}
                   key={`sky-live-${loadAttempt}`}
-                  stars={renderStars}
-                  selectedStar={selectedStar}
-                  centerRa={centerRa}
-                  centerDec={centerDec}
-                  zoom={zoom}
-                  showConstellations={showConstellations}
-                  showConstellationLabels={showConstellationLabels}
-                  showConstellationBoundaries={showConstellationBoundaries}
-                  showGrid={showGrid}
-                  showLabels={showLabels}
-                  showPlanets={showPlanets}
-                  showDSOs={showDSOs}
-                  constellations={constellations}
-                  showMythology={showMythology}
-                  coordinateMode={coordinateMode}
-                  observerLatitude={observer?.latitude || 0}
-                  lstDegrees={siderealTime}
-                  hideBelowHorizon={false}
-                  transparentBackground={false}
-                  nightVision={nightVision}
-                  showNebula={showNebula}
-                  onInteractionStateChange={handleInteractionStateChange}
-                  onCenterChange={handleCenterChange}
-                  onZoomChange={handleZoomChange}
-                  onSelect={handleSelect}
-                  ownedStarIds={ownedStarIds}
-                  onReady={handleReady}
-                  onTelemetry={handleTelemetry}
+                  engineKind={ENGINE_KIND.sky2d}
+                  catalog={{
+                    stars: renderStars,
+                    dsos: dsoCatalog,
+                    planets: planetCatalog,
+                    ownedStarIds,
+                  }}
+                  selection={{ target: selectedStar }}
+                  view={{
+                    ra: centerRa,
+                    dec: centerDec,
+                    zoom,
+                    coordinateMode,
+                    observerLatitude: observer?.latitude || 0,
+                    lstDegrees: siderealTime,
+                    hideBelowHorizon: false,
+                  }}
+                  layers={{
+                    constellations: showConstellations,
+                    constellationLabels: showConstellationLabels,
+                    constellationBoundaries: showConstellationBoundaries,
+                    constellationData: constellations,
+                    grid: showGrid,
+                    labels: showLabels,
+                    planets: showPlanets,
+                    dsos: showDSOs,
+                    mythology: showMythology,
+                    transparentBackground: false,
+                    nightVision,
+                    nebula: showNebula,
+                  }}
+                  events={{
+                    onInteractionStateChange: handleInteractionStateChange,
+                    onViewChange: handleCenterChange,
+                    onZoomChange: handleZoomChange,
+                    onSelect: handleSelect,
+                    onReady: handleReady,
+                    onTelemetry: handleTelemetry,
+                  }}
                 />
               </RenderSurfaceBoundary>
             )}

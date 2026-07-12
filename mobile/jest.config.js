@@ -4,7 +4,7 @@ module.exports = {
   transform: {
     '^.+\\.js$': 'babel-jest',
   },
-  testMatch: ['**/src/__tests__/**/*.test.js'],
+  testMatch: ['**/src/**/__tests__/**/*.test.js'],
   moduleNameMapper: {
     '^three$': '<rootDir>/__mocks__/three.js',
   },
