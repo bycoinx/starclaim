@@ -74,4 +74,51 @@ describe('CelestialEngineRuntime', () => {
       expect.objectContaining({ state: ENGINE_STATE.initialized })
     );
   });
+
+  test('suspends without losing the requested running state', () => {
+    const onSuspend = jest.fn();
+    const onResume = jest.fn();
+    const engine = new CelestialEngineRuntime({
+      id: 'background-safe',
+      kind: ENGINE_KIND.voyage3d,
+      callbacks: { onSuspend, onResume },
+    });
+
+    engine.start();
+    expect(engine.suspend('app-background')).toBe(true);
+    expect(engine.getSnapshot()).toEqual(expect.objectContaining({
+      state: ENGINE_STATE.suspended,
+      suspensionReason: 'app-background',
+    }));
+    expect(engine.resume({ reason: 'app-active' })).toBe(true);
+    expect(engine.state).toBe(ENGINE_STATE.running);
+    expect(onSuspend).toHaveBeenCalledTimes(1);
+    expect(onResume).toHaveBeenCalledTimes(1);
+  });
+
+  test('forwards operational events to the diagnostics observer', () => {
+    const diagnostics = {
+      recordTelemetry: jest.fn(),
+      recordError: jest.fn(),
+      recordRecovery: jest.fn(),
+      recordLifecycle: jest.fn(),
+    };
+    const engine = new CelestialEngineRuntime({
+      id: 'diagnosed',
+      kind: ENGINE_KIND.sky2d,
+      diagnostics,
+    });
+
+    engine.start();
+    engine.reportTelemetry({ fps: 60, quality: 'high' });
+    engine.suspend('app-background');
+    engine.resume({ reason: 'app-active' });
+    engine.reportError(new Error('render failed'), 'frame');
+    engine.recover({ mode: 'sky-2d' });
+
+    expect(diagnostics.recordTelemetry).toHaveBeenCalledTimes(1);
+    expect(diagnostics.recordLifecycle).toHaveBeenCalledTimes(2);
+    expect(diagnostics.recordError).toHaveBeenCalledTimes(1);
+    expect(diagnostics.recordRecovery).toHaveBeenCalledTimes(1);
+  });
 });

@@ -24,6 +24,7 @@ export default function StarClaimTabBar() {
           return (
             <TouchableOpacity
               key={item.key}
+              testID={`tab-${item.key}`}
               accessibilityRole="tab"
               accessibilityLabel={item.label}
               accessibilityState={{ selected: active }}

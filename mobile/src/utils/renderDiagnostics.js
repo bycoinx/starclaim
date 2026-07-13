@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = '@starclaim_render_diagnostics_v1';
-const MAX_ENTRIES = 20;
+const MAX_ENTRIES = 100;
+let writeQueue = Promise.resolve();
 
 function getJsHeapBytes() {
   const memory = globalThis?.performance?.memory;
@@ -15,23 +16,27 @@ export async function recordRenderDiagnostic(entry) {
     ...entry,
   };
 
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    const existing = raw ? JSON.parse(raw) : [];
-    const history = Array.isArray(existing) ? existing : [];
-    await AsyncStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify([diagnostic, ...history].slice(0, MAX_ENTRIES)),
-    );
-  } catch (error) {
-    console.warn('Render diagnostic write failed', error);
-  }
+  writeQueue = writeQueue.then(async () => {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const existing = raw ? JSON.parse(raw) : [];
+      const history = Array.isArray(existing) ? existing : [];
+      await AsyncStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify([diagnostic, ...history].slice(0, MAX_ENTRIES)),
+      );
+    } catch (error) {
+      console.warn('Render diagnostic write failed', error);
+    }
+  });
+  await writeQueue;
 
   if (__DEV__) console.info('[RenderDiagnostic]', diagnostic);
   return diagnostic;
 }
 
 export async function getRenderDiagnostics() {
+  await writeQueue;
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
@@ -43,6 +48,7 @@ export async function getRenderDiagnostics() {
 }
 
 export async function clearRenderDiagnostics() {
+  await writeQueue;
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
     return true;

@@ -49,6 +49,7 @@ export function createVoyage3DRendererProps({
   selection = {},
   events = {},
   qualityProfile,
+  active = true,
 } = {}) {
   return {
     stars: catalog.stars || [],
@@ -65,6 +66,7 @@ export function createVoyage3DRendererProps({
     onViewChange: events.onViewChange,
     onWarpStart: events.onWarpStart,
     qualityProfile,
+    active,
   };
 }
 

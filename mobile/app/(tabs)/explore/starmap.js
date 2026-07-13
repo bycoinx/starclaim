@@ -35,7 +35,11 @@ import { recordRenderDiagnostic } from '../../../src/utils/renderDiagnostics';
 import { ROUTES, starVoyageRoute } from '../../../src/platform/navigation/routes';
 import { useOwnershipStore } from '../../../src/platform/ownership/ownershipStore';
 import { ENGINE_KIND } from '../../../src/engine/CelestialEngineRuntime';
-import { useCelestialEngineStore } from '../../../src/engine/celestialEngineStore';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  selectSkyEngineSlice,
+  useCelestialEngineStore,
+} from '../../../src/engine/celestialEngineStore';
 import {
   SENSOR_HUD_INTERVAL_MS,
   SENSOR_RENDER_INTERVAL_MS,
@@ -71,25 +75,28 @@ function buildObserverLabel(placemark, latitude, longitude) {
 
 export default function StarMapScreen() {
   const params = useLocalSearchParams();
-  const stars = useCelestialEngineStore((state) => state.catalogs.sky.stars);
-  const constellations = useCelestialEngineStore((state) => state.catalogs.sky.constellations) || {
+  const {
+    stars,
+    constellations: storedConstellations,
+    dsos: dsoCatalog,
+    planets: planetCatalog,
+    selectedStar,
+    centerRa,
+    centerDec,
+    zoom,
+    coordinateMode,
+    layers: engineLayers,
+    setSkyCatalog,
+    setView,
+    selectTarget,
+    clearTarget,
+    setLayers: setEngineLayers,
+  } = useCelestialEngineStore(useShallow(selectSkyEngineSlice));
+  const constellations = storedConstellations || {
     lines: { features: [] },
     labels: { features: [] },
     boundaries: { features: [] },
   };
-  const dsoCatalog = useCelestialEngineStore((state) => state.catalogs.sky.dsos);
-  const planetCatalog = useCelestialEngineStore((state) => state.catalogs.sky.planets);
-  const selectedStar = useCelestialEngineStore((state) => state.selection.target);
-  const centerRa = useCelestialEngineStore((state) => state.view.ra);
-  const centerDec = useCelestialEngineStore((state) => state.view.dec);
-  const zoom = useCelestialEngineStore((state) => state.view.zoom);
-  const coordinateMode = useCelestialEngineStore((state) => state.view.coordinateMode);
-  const engineLayers = useCelestialEngineStore((state) => state.layers);
-  const setSkyCatalog = useCelestialEngineStore((state) => state.setSkyCatalog);
-  const setView = useCelestialEngineStore((state) => state.setView);
-  const selectTarget = useCelestialEngineStore((state) => state.selectTarget);
-  const clearTarget = useCelestialEngineStore((state) => state.clearTarget);
-  const setEngineLayers = useCelestialEngineStore((state) => state.setLayers);
   const setStars = (nextStars) => setSkyCatalog({ stars: nextStars });
   const setConstellations = (nextConstellations) => setSkyCatalog({ constellations: nextConstellations });
   const setCenterRa = (ra) => setView({ ra });
@@ -803,7 +810,7 @@ export default function StarMapScreen() {
   }, [mode]);
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="sky-screen">
       {/* HUD OVERLAY */}
       <View style={styles.hudOverlay} pointerEvents="none">
         <View style={[styles.hudCorner, { top: 30, left: 30, borderTopWidth: 2, borderLeftWidth: 2, borderColor: THEME.colors.primary + '40' }]} />
@@ -824,6 +831,7 @@ export default function StarMapScreen() {
               <View style={styles.searchBar}>
                 <MaterialCommunityIcons name="radar" size={20} color={THEME.colors.primary} />
                 <TextInput
+                  testID="sky-search-input"
                   style={styles.searchInput}
                   placeholder="SCAN_OBJECT..."
                   placeholderTextColor="rgba(0, 242, 254, 0.4)"
@@ -834,7 +842,12 @@ export default function StarMapScreen() {
               {searchResults.length > 0 && (
                 <View style={styles.searchResults}>
                   {searchResults.map((item) => (
-                    <TouchableOpacity key={`${item.type || 'object'}-${item.id}`} style={styles.searchResultItem} onPress={() => navigateToObject(item)}>
+                    <TouchableOpacity
+                      key={`${item.type || 'object'}-${item.id}`}
+                      testID={`sky-search-result-${item.id}`}
+                      style={styles.searchResultItem}
+                      onPress={() => navigateToObject(item)}
+                    >
                       <Ionicons name="sparkles" size={16} color={THEME.colors.secondary} />
                       <Text style={styles.searchResultText}>
                         {(item.name || item.properName || item.proper || `HIP ${item.hip}`).toUpperCase()}
@@ -951,7 +964,7 @@ export default function StarMapScreen() {
             {nightVision && <View style={styles.nightFilter} pointerEvents="none" />}
 
             {selectedStar && (
-              <View style={[styles.selectionPanel, nightVision && styles.selectionPanelNight]}>
+              <View testID="sky-selection-panel" style={[styles.selectionPanel, nightVision && styles.selectionPanelNight]}>
                 <View style={styles.selectionIdentity}>
                   <Text style={[styles.selectionName, nightVision && styles.nightText]}>
                     {(selectedStar.properName || selectedStar.proper || `HIP ${selectedStar.hip || selectedStar.id}`).toUpperCase()}

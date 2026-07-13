@@ -12,6 +12,9 @@ import {
   advanceRendererRecovery,
   createRendererRecoveryState,
 } from '../src/engine/rendererRecoveryPolicy';
+import { registerCelestialRuntime } from '../src/engine/celestialAppLifecycle';
+import { useCelestialAppLifecycle } from '../src/engine/useCelestialAppLifecycle';
+import { rendererDiagnostics } from '../src/engine/rendererDiagnostics';
 
 export default function CelestialVoyageSurface({
   catalog,
@@ -33,6 +36,7 @@ export default function CelestialVoyageSurface({
   onWarpStart,
   ...props
 }) {
+  const { active: appActive } = useCelestialAppLifecycle();
   const [recovery, setRecovery] = useState(createRendererRecoveryState);
   const runtimeRef = useRef(null);
   if (!runtimeRef.current) {
@@ -40,11 +44,18 @@ export default function CelestialVoyageSurface({
       id: 'celestial-voyage-surface',
       kind: ENGINE_KIND.voyage3d,
       capabilities: ['recovery', 'quality-fallback', 'renderer-fallback'],
+      diagnostics: rendererDiagnostics,
     });
     runtimeRef.current.initialize();
     runtimeRef.current.start();
   }
-  useEffect(() => () => runtimeRef.current.destroy(), []);
+  useEffect(() => {
+    const unregister = registerCelestialRuntime(runtimeRef.current);
+    return () => {
+      unregister();
+      runtimeRef.current.destroy();
+    };
+  }, []);
 
   const surfaceCatalog = catalog || { stars, ownedStars, loadedSectorCount };
   const surfaceSelection = selection || { target: targetStar };
@@ -67,6 +78,10 @@ export default function CelestialVoyageSurface({
         runtimeRef.current.recover({ mode: next.mode, failureCount: next.failures.length });
         runtimeRef.current.start();
       } else {
+        rendererDiagnostics.recordRecovery(
+          { mode: next.mode, failureCount: next.failures.length, terminal: true },
+          runtimeRef.current.getSnapshot(),
+        );
         surfaceEvents.onError?.(error);
       }
       return next;
@@ -121,6 +136,7 @@ export default function CelestialVoyageSurface({
         {...props}
         key={`${recovery.mode}-${recovery.revision}`}
         engineKind={engineKind}
+        active={appActive && props.active !== false}
         renderer={renderer}
         qualityProfile={recovery.mode === RENDER_MODE.voyage3dLow ? 'low' : undefined}
         catalog={fallbackCatalog}

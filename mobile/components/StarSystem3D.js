@@ -7,8 +7,8 @@ import {
   View,
 } from 'react-native';
 import { GLView } from 'expo-gl';
-import { Renderer } from 'expo-three';
 import * as THREE from 'three';
+import { ExpoGLRenderer } from '../src/3d/rendering/ExpoGLRenderer';
 import { colorForSpectrum, getStarDistanceParsec } from '../src/utils/astronomy';
 import { THEME } from '../constants/Theme';
 import { SpaceAudio } from '../src/utils/audioEngine';
@@ -29,6 +29,8 @@ import {
   getDeviceMaximumProfile,
   getHeapPressure,
 } from '../src/engine/performancePolicy';
+import { registerCelestialRuntime } from '../src/engine/celestialAppLifecycle';
+import { rendererDiagnostics } from '../src/engine/rendererDiagnostics';
 
 const DEFAULT_ORBIT_RADIUS = zoomToCameraDistance(DEFAULT_VIEW_ZOOM);
 const MIN_ORBIT_RADIUS = MIN_CAMERA_DISTANCE;
@@ -566,8 +568,12 @@ export default function StarSystem3D({
   view = null,
   qualityProfile = null,
   loadedSectorCount = 0,
+  active = true,
 }) {
   const animationFrameRef = useRef(null);
+  const renderLoopRef = useRef(null);
+  const activeRef = useRef(active);
+  const pausedAtRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
@@ -603,6 +609,7 @@ export default function StarSystem3D({
       id: 'star-system-3d',
       kind: ENGINE_KIND.voyage3d,
       capabilities: ['catalog', 'target', 'selection', 'telemetry', 'warp'],
+      diagnostics: rendererDiagnostics,
     });
   }
   const ownedStarIdsRef = useRef(new Set(ownedStars.map((star) => String(star.id))));
@@ -791,7 +798,7 @@ export default function StarSystem3D({
     const height = gl.drawingBufferHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(67, width / height, 0.08, 50000);
-    const renderer = new Renderer({ gl });
+    const renderer = new ExpoGLRenderer({ gl });
     renderer.setSize(width, height);
     renderer.setPixelRatio(1);
     renderer.setClearColor(0x000106, 1);
@@ -911,6 +918,10 @@ export default function StarSystem3D({
     let frameCount = 0;
 
     const render = () => {
+      if (!activeRef.current) {
+        animationFrameRef.current = null;
+        return;
+      }
       animationFrameRef.current = requestAnimationFrame(render);
       const now = Date.now();
       const elapsed = (now - startedAt) / 1000;
@@ -1118,9 +1129,39 @@ export default function StarSystem3D({
     };
 
     engineRef.current.initialize({ starCount: validStars.length });
-    engineRef.current.start();
-    render();
+    renderLoopRef.current = render;
+    if (activeRef.current) {
+      engineRef.current.start();
+      render();
+    }
   }, [loadedSectorCount, stars, updateQuality]);
+
+  useEffect(() => {
+    activeRef.current = active;
+    if (!active) {
+      pausedAtRef.current = Date.now();
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+      engineRef.current.suspend('surface-inactive');
+      SpaceAudio.stopAll();
+      return;
+    }
+
+    if (pausedAtRef.current != null) {
+      const pausedFor = Date.now() - pausedAtRef.current;
+      warpStartedAtRef.current += pausedFor;
+      targetLockStartedAtRef.current += pausedFor;
+      arrivalRevealStartedAtRef.current += pausedFor;
+      if (sceneTransitionRef.current.active) sceneTransitionRef.current.startedAt += pausedFor;
+      pausedAtRef.current = null;
+    }
+    engineRef.current.resume({ reason: 'surface-active' });
+    engineRef.current.start();
+    SpaceAudio.initialize();
+    if (!animationFrameRef.current) renderLoopRef.current?.();
+  }, [active]);
+
+  useEffect(() => registerCelestialRuntime(engineRef.current), []);
 
   useEffect(() => () => {
     mountedRef.current = false;

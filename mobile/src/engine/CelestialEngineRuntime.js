@@ -3,6 +3,7 @@ export const ENGINE_STATE = Object.freeze({
   initialized: 'initialized',
   running: 'running',
   stopped: 'stopped',
+  suspended: 'suspended',
   destroyed: 'destroyed',
   error: 'error',
 });
@@ -19,17 +20,20 @@ function finiteOrNull(value) {
 }
 
 export class CelestialEngineRuntime {
-  constructor({ id, kind, capabilities = [], callbacks = EMPTY_CALLBACKS } = {}) {
+  constructor({ id, kind, capabilities = [], callbacks = EMPTY_CALLBACKS, diagnostics = null } = {}) {
     if (!id || !kind) throw new Error('Celestial engine requires id and kind');
     this.id = id;
     this.kind = kind;
     this.capabilities = new Set(capabilities);
     this.callbacks = callbacks;
+    this.diagnostics = diagnostics;
     this.state = ENGINE_STATE.idle;
     this.catalogs = new Map();
     this.view = null;
     this.target = null;
     this.telemetry = null;
+    this.desiredRunning = false;
+    this.suspensionReason = null;
   }
 
   setCallbacks(callbacks = EMPTY_CALLBACKS) {
@@ -47,20 +51,44 @@ export class CelestialEngineRuntime {
 
   start() {
     if (this.state === ENGINE_STATE.destroyed || this.state === ENGINE_STATE.error) return false;
+    this.desiredRunning = true;
+    if (this.state === ENGINE_STATE.suspended) return true;
     if (this.state === ENGINE_STATE.idle) this.initialize();
     this.state = ENGINE_STATE.running;
     return true;
   }
 
   stop() {
-    if (this.state !== ENGINE_STATE.running) return false;
+    this.desiredRunning = false;
+    if (this.state !== ENGINE_STATE.running && this.state !== ENGINE_STATE.suspended) return false;
     this.state = ENGINE_STATE.stopped;
+    this.suspensionReason = null;
+    return true;
+  }
+
+  suspend(reason = 'app-inactive') {
+    if (this.state === ENGINE_STATE.destroyed || this.state === ENGINE_STATE.error) return false;
+    if (this.state !== ENGINE_STATE.running) return false;
+    this.state = ENGINE_STATE.suspended;
+    this.suspensionReason = reason;
+    this.callbacks.onSuspend?.({ reason }, this.getSnapshot());
+    this.diagnostics?.recordLifecycle?.('suspended', { reason }, this.getSnapshot());
+    return true;
+  }
+
+  resume(details = {}) {
+    if (this.state !== ENGINE_STATE.suspended) return false;
+    this.suspensionReason = null;
+    this.state = this.desiredRunning ? ENGINE_STATE.running : ENGINE_STATE.stopped;
+    this.callbacks.onResume?.(details, this.getSnapshot());
+    this.diagnostics?.recordLifecycle?.('resumed', details, this.getSnapshot());
     return true;
   }
 
   destroy() {
     if (this.state === ENGINE_STATE.destroyed) return false;
     this.catalogs.clear();
+    this.desiredRunning = false;
     this.state = ENGINE_STATE.destroyed;
     return true;
   }
@@ -93,6 +121,7 @@ export class CelestialEngineRuntime {
       ...telemetry,
     };
     this.callbacks.onTelemetry?.(this.telemetry, this.getSnapshot());
+    this.diagnostics?.recordTelemetry?.(this.telemetry, this.getSnapshot());
     return true;
   }
 
@@ -100,6 +129,7 @@ export class CelestialEngineRuntime {
     if (this.state === ENGINE_STATE.destroyed) return false;
     this.state = ENGINE_STATE.error;
     this.callbacks.onError?.(error, { stage, engine: this.getSnapshot() });
+    this.diagnostics?.recordError?.(error, { stage, engine: this.getSnapshot() });
     return true;
   }
 
@@ -107,6 +137,7 @@ export class CelestialEngineRuntime {
     if (this.state !== ENGINE_STATE.error) return false;
     this.state = ENGINE_STATE.initialized;
     this.callbacks.onRecovery?.(details, this.getSnapshot());
+    this.diagnostics?.recordRecovery?.(details, this.getSnapshot());
     return true;
   }
 
@@ -122,6 +153,7 @@ export class CelestialEngineRuntime {
       view: this.view,
       target: this.target,
       telemetry: this.telemetry,
+      suspensionReason: this.suspensionReason,
     };
   }
 }

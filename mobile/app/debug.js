@@ -13,8 +13,8 @@ function formatDate(value) {
 }
 
 function statusColor(status) {
-  if (status === 'ready' || status === 'sensor-active') return THEME.colors.success;
-  if (status === 'low-fps' || status === 'sensor-fallback') return THEME.colors.secondary;
+  if (['ready', 'sensor-active', 'recovered', 'resumed', 'sample'].includes(status)) return THEME.colors.success;
+  if (['low-fps', 'sensor-fallback', 'suspended'].includes(status)) return THEME.colors.secondary;
   return THEME.colors.danger;
 }
 
@@ -24,6 +24,9 @@ function entrySummary(item) {
   if (Number.isFinite(item.startupMs)) parts.push(`${item.startupMs} ms açılış`);
   if (Number.isFinite(item.renderedStarCount)) parts.push(`${item.renderedStarCount} yıldız`);
   if (item.quality) parts.push(`kalite ${item.quality}`);
+  if (item.mode) parts.push(`mod ${item.mode}`);
+  if (item.stage) parts.push(`aşama ${item.stage}`);
+  if (item.reason) parts.push(`neden ${item.reason}`);
   return parts.join(' · ') || item.message || 'Ek ölçüm yok';
 }
 
@@ -43,11 +46,11 @@ export default function DebugScreen() {
   }, [loadEntries]));
 
   const summary = useMemo(() => {
-    const latestReady = entries.find((item) => item.status === 'ready');
+    const latestReady = entries.find((item) => Number.isFinite(item.fps));
     return {
       count: entries.length,
       fps: latestReady?.fps ?? '--',
-      failures: entries.filter((item) => ['error', 'timeout', 'low-fps'].includes(item.status)).length,
+      failures: entries.filter((item) => ['error', 'timeout', 'low-fps', 'maintenance'].includes(item.status)).length,
     };
   }, [entries]);
 

@@ -12,6 +12,7 @@ import { Cinzel_400Regular, Cinzel_700Bold } from '@expo-google-fonts/cinzel';
 import { ensureStarData } from '../src/data/starLoader';
 import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 import { resolveParsedDeepLinkRoute } from '../src/platform/navigation/deepLinks';
+import { setAppLifecycleState } from '../src/engine/celestialAppLifecycle';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_400Regular, Cinzel_700Bold });
@@ -44,12 +45,14 @@ export default function RootLayout() {
   }, [router]);
 
   useEffect(() => {
+    setAppLifecycleState(AppState.currentState);
     const sync = () => syncOwnershipSnapshot().catch((error) => {
       console.log('Ownership sync deferred', error.message);
     });
     sync();
     const interval = setInterval(sync, 60000);
     const subscription = AppState.addEventListener('change', (state) => {
+      setAppLifecycleState(state);
       if (state === 'active') sync();
     });
     return () => {

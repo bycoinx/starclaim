@@ -47,6 +47,8 @@ import {
   updateAdaptiveQuality,
 } from '../src/utils/renderQuality';
 import { CelestialEngineRuntime, ENGINE_KIND } from '../src/engine/CelestialEngineRuntime';
+import { registerCelestialRuntime } from '../src/engine/celestialAppLifecycle';
+import { rendererDiagnostics } from '../src/engine/rendererDiagnostics';
 import { projectEquatorialToScreen } from '../src/engine/celestialCoordinates';
 import {
   DEEP_SPACE_ATMOSPHERE_SPEC,
@@ -493,6 +495,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
       id: 'star-canvas',
       kind: ENGINE_KIND.sky2d,
       capabilities: ['catalog', 'view', 'selection', 'telemetry'],
+      diagnostics: rendererDiagnostics,
     });
   }
   // For parallax effect: track previous center to calculate movement delta
@@ -534,6 +537,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
   }, [stars]);
 
   useEffect(() => () => engineRef.current.destroy(), []);
+  useEffect(() => registerCelestialRuntime(engineRef.current), []);
 
   const reportTelemetry = (fps) => {
     const heapPressure = getHeapPressure();

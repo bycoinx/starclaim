@@ -1,0 +1,35 @@
+appId: com.anonymous.mobile
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: tab-sky
+- extendedWaitUntil:
+    visible:
+      id: sky-screen
+    timeout: 30000
+- tapOn:
+    id: sky-search-input
+- inputText: Sirius
+- extendedWaitUntil:
+    visible: SIRIUS
+    timeout: 30000
+- tapOn: SIRIUS
+- assertVisible:
+    id: sky-selection-panel
+- tapOn:
+    id: tab-universe
+- extendedWaitUntil:
+    visible:
+      id: voyage-screen
+    timeout: 30000
+- assertVisible: SIRIUS
+- extendedWaitUntil:
+    visible:
+      id: voyage-render-ready
+    timeout: 45000
+- tapOn:
+    id: tab-sky
+- assertVisible:
+    id: sky-selection-panel
+- assertVisible: SIRIUS

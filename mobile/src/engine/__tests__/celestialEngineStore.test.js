@@ -2,6 +2,8 @@ import {
   DEFAULT_CELESTIAL_LAYERS,
   DEFAULT_CELESTIAL_VIEW,
   useCelestialEngineStore,
+  selectSkyEngineSlice,
+  selectVoyageEngineSlice,
 } from '../celestialEngineStore';
 
 describe('celestial engine store', () => {
@@ -64,5 +66,38 @@ describe('celestial engine store', () => {
       type: 'arrival-completed',
       target,
     }));
+  });
+
+  test('does not publish state when view, layer or catalog patches are unchanged', () => {
+    const listener = jest.fn();
+    const unsubscribe = useCelestialEngineStore.subscribe(listener);
+    const store = useCelestialEngineStore.getState();
+
+    store.setView({ ra: store.view.ra, zoom: store.view.zoom });
+    store.setLayers({ grid: store.layers.grid });
+    store.setSkyCatalog({ stars: store.catalogs.sky.stars });
+    store.setVoyageCatalog({ sectorWindow: store.catalogs.voyage.sectorWindow });
+
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
+  test('exposes renderer-specific selector slices without interaction churn', () => {
+    const state = useCelestialEngineStore.getState();
+    const sky = selectSkyEngineSlice(state);
+    const voyage = selectVoyageEngineSlice(state);
+
+    expect(sky).toEqual(expect.objectContaining({
+      centerRa: DEFAULT_CELESTIAL_VIEW.ra,
+      layers: state.layers,
+      setView: state.setView,
+    }));
+    expect(voyage).toEqual(expect.objectContaining({
+      view: state.view,
+      sectorWindow: state.catalogs.voyage.sectorWindow,
+      requestWarp: state.requestWarp,
+    }));
+    expect(sky).not.toHaveProperty('interaction');
+    expect(voyage).not.toHaveProperty('interaction');
   });
 });

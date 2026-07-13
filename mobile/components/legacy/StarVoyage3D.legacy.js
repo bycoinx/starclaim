@@ -37,21 +37,27 @@ import { recordRenderDiagnostic } from '../../src/utils/renderDiagnostics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getOwnershipPurchases } from '../../src/data/ownershipSnapshot';
-import { useCelestialEngineStore } from '../../src/engine/celestialEngineStore';
+import { useShallow } from 'zustand/react/shallow';
+import {
+  selectVoyageEngineSlice,
+  useCelestialEngineStore,
+} from '../../src/engine/celestialEngineStore';
 
 const RECENT_TARGETS_KEY = '@starvoyage_recent_targets_v1';
 const MAX_RECENT_TARGETS = 6;
 
 export default function StarVoyage3D() {
-  const stars = useCelestialEngineStore((state) => state.catalogs.voyage.stars);
-  const remoteSectorWindow = useCelestialEngineStore((state) => state.catalogs.voyage.sectorWindow);
-  const targetStar = useCelestialEngineStore((state) => state.selection.target);
-  const setVoyageCatalog = useCelestialEngineStore((state) => state.setVoyageCatalog);
-  const sharedView = useCelestialEngineStore((state) => state.view);
-  const setSharedView = useCelestialEngineStore((state) => state.setView);
-  const selectTarget = useCelestialEngineStore((state) => state.selectTarget);
-  const requestWarp = useCelestialEngineStore((state) => state.requestWarp);
-  const completeArrival = useCelestialEngineStore((state) => state.completeArrival);
+  const {
+    stars,
+    sectorWindow: remoteSectorWindow,
+    targetStar,
+    setVoyageCatalog,
+    view: sharedView,
+    setView: setSharedView,
+    selectTarget,
+    requestWarp,
+    completeArrival,
+  } = useCelestialEngineStore(useShallow(selectVoyageEngineSlice));
   const setTargetStar = (target) => selectTarget(target, { source: 'voyage-3d' });
   const setStars = (nextStars) => setVoyageCatalog({ stars: nextStars });
   const setRemoteSectorWindow = (sectorWindow) => setVoyageCatalog({ sectorWindow });
@@ -352,7 +358,7 @@ export default function StarVoyage3D() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} testID="voyage-screen">
       {/* HUD OVERLAY LAYER */}
       <View style={styles.hudLayer} pointerEvents="none">
         <View style={[styles.hudCorner, { top: 40, left: 20, borderTopWidth: 1, borderLeftWidth: 1 }]} />
@@ -389,7 +395,7 @@ export default function StarVoyage3D() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.viewport}>
+        <View style={styles.viewport} testID="voyage-viewport">
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={THEME.colors.primary} />
@@ -457,6 +463,15 @@ export default function StarVoyage3D() {
                   <ActivityIndicator size="large" color={THEME.colors.primary} />
                   <Text style={styles.loadingText}>3D SAHNE HAZIRLANIYOR</Text>
                 </View>
+              )}
+              {renderReady && (
+                <View
+                  accessible
+                  accessibilityLabel="3D sahne hazır"
+                  testID="voyage-render-ready"
+                  style={styles.e2eMarker}
+                  pointerEvents="none"
+                />
               )}
             </>
           )}
@@ -741,6 +756,7 @@ function TargetResultRow({ star, purchase, onPress }) {
 }
 
 const styles = StyleSheet.create({
+  e2eMarker: { position: 'absolute', width: 1, height: 1, opacity: 0.01 },
   container: { flex: 1, backgroundColor: '#000' },
   safeArea: { flex: 1 },
   hudLayer: { ...StyleSheet.absoluteFillObject, zIndex: 15 },
