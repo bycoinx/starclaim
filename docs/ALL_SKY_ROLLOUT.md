@@ -73,6 +73,12 @@ ID, constellation list, eligible count, and exclusions. The NFT projection
 also binds the commerce projection hash, preventing metadata from being paired
 with a different price/rarity calculation.
 
+The web catalogue release bundles the 84 approved pilot systems with the 102
+eligible expansion-1 systems. This 186-system slice is compiled into the web
+application as a resilience source. Remote ownership rows still overlay the
+canonical records, but an unavailable `/api/catalog/*` deployment can no longer
+silently send the user back to the 53-row legacy commercial catalogue.
+
 Regenerate and verify this slice with:
 
 ```text

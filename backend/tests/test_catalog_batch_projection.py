@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from backend.catalog_batch_projection import build_all_sky_policy, build_batch_projections
+from backend.catalog_batch_projection import build_all_sky_policy, build_batch_projections, build_web_release
 from backend.catalog_commerce import CatalogCommercePolicy
 from backend.catalog_domain import canonical_payload_hash
 from backend.catalog_nft import CatalogNftMetadataService
@@ -72,3 +72,18 @@ def test_projected_metadata_document_verifies_against_candidate():
     result = service.verify(service.document(star))
     assert result["valid"] is True
     assert result["canonical_id"] == star.canonical_id
+
+
+def test_committed_web_release_contains_only_priced_sellable_systems():
+    release = build_web_release(
+        _load("curated-pilot-v1.json"),
+        _load("curated-commerce-pilot-v1.json"),
+        _load("curated-all-sky-candidate-v1.json"),
+        _load("commerce-projection-expansion-1-v1.json"),
+    )
+    assert release == _load("web-catalog-release-v1.json")
+    assert release["star_count"] == 186
+    assert {star["canonical_id"] for star in release["stars"]} == {
+        quote["canonical_id"] for quote in release["pricing"]
+    }
+    assert all(star["curation"]["sellable"] for star in release["stars"])

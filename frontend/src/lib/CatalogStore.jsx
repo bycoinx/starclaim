@@ -173,12 +173,12 @@ export function CatalogProvider({ children, onClaim, starLoader, catalogSource =
         setServerTotalCount(null);
         webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "custom-catalog");
       } else if (catalogSource === "curated") {
-        const list = await StarRepository.loadCuratedPilot(forceReload);
+        const list = await StarRepository.loadCuratedCatalog(forceReload);
         if (!isCurrentRequest()) return;
         setStars(list);
         setServerTotalCount(null);
         setServerConstellations(Array.from(new Set(list.map((star) => star.constellation).filter(Boolean))).sort());
-        webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "curated-pilot");
+        webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "curated-web-release");
       } else {
         const query = buildServerQuery(filters, sortBy, currentPage, pageSize, searchQuery);
         const pageQuery = { ...query };

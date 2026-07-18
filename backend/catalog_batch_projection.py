@@ -14,6 +14,7 @@ from backend.catalog_service import CuratedCatalogService
 
 
 PROJECTION_SCHEMA = "starclaim-catalog-batch-projection-v1"
+WEB_RELEASE_SCHEMA = "starclaim-web-catalog-release-v1"
 
 
 def build_all_sky_policy(base_policy: dict[str, Any], catalog_version: str) -> dict[str, Any]:
@@ -109,6 +110,44 @@ def write_batch_projections(
     return commerce_path, nft_path
 
 
+def build_web_release(
+    pilot_catalog: dict[str, Any],
+    pilot_commerce: dict[str, Any],
+    candidate: dict[str, Any],
+    expansion_commerce: dict[str, Any],
+) -> dict[str, Any]:
+    expansion_ids = {quote["canonical_id"] for quote in expansion_commerce["quotes"]}
+    stars = [
+        *pilot_catalog["stars"],
+        *[star for star in candidate["stars"] if star["canonical_id"] in expansion_ids],
+    ]
+    pricing = [*pilot_commerce["quotes"], *expansion_commerce["quotes"]]
+    star_ids = [star["canonical_id"] for star in stars]
+    quote_ids = [quote["canonical_id"] for quote in pricing]
+    if len(star_ids) != len(set(star_ids)):
+        raise ValueError("Web release contains duplicate canonical IDs")
+    if set(star_ids) != set(quote_ids):
+        raise ValueError("Web release astronomy and pricing IDs do not match")
+    if not all(star["curation"]["sellable"] for star in stars):
+        raise ValueError("Web release cannot contain review-held stars")
+    payload = {
+        "schema": WEB_RELEASE_SCHEMA,
+        "release_id": "pilot-v1+expansion-1-v1",
+        "status": "web-published-slice",
+        "source_bindings": {
+            "pilot_catalog_version": pilot_catalog["catalog_version"],
+            "all_sky_catalog_version": candidate["catalog_version"],
+            "all_sky_manifest_sha256": candidate["manifest_sha256"],
+            "expansion_commerce_projection_sha256": expansion_commerce["projection_hash_sha256"],
+        },
+        "star_count": len(stars),
+        "stars": stars,
+        "pricing": pricing,
+    }
+    payload["release_hash_sha256"] = canonical_payload_hash(payload)
+    return payload
+
+
 def main() -> None:
     root = Path(__file__).parents[1]
     catalog_dir = root / "shared" / "catalog"
@@ -127,12 +166,19 @@ def main() -> None:
     policy_path.write_text(json.dumps(policy_payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     commerce, nft = build_batch_projections(args.catalog, policy_path, batch_id=args.batch_id)
     commerce_path, nft_path = write_batch_projections(commerce, nft, args.output_dir, args.batch_id)
+    pilot_catalog = json.loads((catalog_dir / "curated-pilot-v1.json").read_text(encoding="utf-8"))
+    pilot_commerce = json.loads((catalog_dir / "curated-commerce-pilot-v1.json").read_text(encoding="utf-8"))
+    web_release = build_web_release(pilot_catalog, pilot_commerce, candidate, commerce)
+    web_release_path = Path(args.output_dir) / "web-catalog-release-v1.json"
+    web_release_path.write_text(json.dumps(web_release, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(json.dumps({
         "batch_id": args.batch_id,
         "eligible_star_count": commerce["binding"]["eligible_star_count"],
         "excluded_star_count": commerce["binding"]["excluded_star_count"],
         "commerce_output": str(commerce_path),
         "nft_output": str(nft_path),
+        "web_release_output": str(web_release_path),
+        "web_release_star_count": web_release["star_count"],
         "commerce_projection_hash_sha256": commerce["projection_hash_sha256"],
         "nft_projection_hash_sha256": nft["projection_hash_sha256"],
     }, indent=2))

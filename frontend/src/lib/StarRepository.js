@@ -1,5 +1,6 @@
 import { StarRegistry } from "./StarRegistry";
 import { StarAssetManager } from "./StarAssetManager";
+import webCatalogRelease from "../../../shared/catalog/web-catalog-release-v1.json";
 
 const FALLBACK_STARS = [
   { star_id: "fallback-sirius", code: "SIRIUS-A", name: "Sirius", constellation: "Canis Major", tier: "legendary", price: 2999, spect: "A1V", distance: 8.6, magnitude: -1.46, claimed: false },
@@ -14,6 +15,27 @@ const FALLBACK_STARS = [
 
 const CATALOG_TARGET_SIZE = 10000;
 const LISTING_PRICE_BASE = 250;
+
+const BUNDLED_CURATED_STARS = webCatalogRelease.stars;
+const BUNDLED_CURATED_PRICING = webCatalogRelease.pricing;
+
+function mergeCanonicalRows(bundled, remote) {
+  const byId = new Map(bundled.map((row) => [row.canonical_id, row]));
+  remote.forEach((row) => {
+    if (row?.canonical_id && byId.has(row.canonical_id)) {
+      byId.set(row.canonical_id, row);
+    }
+  });
+  return Array.from(byId.values());
+}
+
+export function getBundledCuratedRelease() {
+  return {
+    releaseId: webCatalogRelease.release_id,
+    stars: BUNDLED_CURATED_STARS,
+    pricing: BUNDLED_CURATED_PRICING,
+  };
+}
 
 function computeListingPrice(item, index) {
   const magnitude = Number(item.magnitude ?? item.mag ?? 5);
@@ -41,19 +63,24 @@ export class StarRepository {
   static loadPromise = null;
   static curatedLoadPromise = null;
 
-  static async loadCuratedPilot(forceReload = false) {
+  static async loadCuratedCatalog(forceReload = false) {
     if (this.curatedCache.length && !forceReload) return this.curatedCache;
     if (this.curatedLoadPromise) return this.curatedLoadPromise;
 
     this.curatedLoadPromise = (async () => {
       try {
-        const [catalog, pricing, commercial, ownedRows] = await Promise.all([
+        const [catalogResult, pricingResult, commercialResult, ownedResult] = await Promise.allSettled([
           StarRegistry.fetchCuratedStars({ catalog_version: "pilot-v1", sort: "rank" }),
           StarRegistry.fetchCuratedPricing({ catalog_version: "pilot-v1", policy_version: "commerce-pilot-v1" }),
           StarRegistry.fetchStars({ limit: 1000, sort: "name" }),
           StarRegistry.fetchMyStars(),
         ]);
-        if (!catalog.length) throw new Error("Curated catalog is empty");
+        const remoteCatalog = catalogResult.status === "fulfilled" ? catalogResult.value : [];
+        const remotePricing = pricingResult.status === "fulfilled" ? pricingResult.value : [];
+        const commercial = commercialResult.status === "fulfilled" ? commercialResult.value : [];
+        const ownedRows = ownedResult.status === "fulfilled" ? ownedResult.value : [];
+        const catalog = mergeCanonicalRows(BUNDLED_CURATED_STARS, remoteCatalog);
+        const pricing = mergeCanonicalRows(BUNDLED_CURATED_PRICING, remotePricing);
         const quotes = new Map(pricing.map((quote) => [quote.canonical_id, quote]));
         const commercialByHip = new Map();
         const commercialByCanonical = new Map();
@@ -122,8 +149,8 @@ export class StarRepository {
         }));
         return this.curatedCache;
       } catch (error) {
-        console.warn("StarRepository: curated pilot unavailable; using commercial catalog fallback.", error);
-        return this.loadAll(forceReload);
+        console.warn("StarRepository: bundled curated release could not be normalized.", error);
+        throw error;
       }
     })();
     try {
@@ -131,6 +158,10 @@ export class StarRepository {
     } finally {
       this.curatedLoadPromise = null;
     }
+  }
+
+  static loadCuratedPilot(forceReload = false) {
+    return this.loadCuratedCatalog(forceReload);
   }
 
   /**
