@@ -1,0 +1,12 @@
+{
+  "bayer_required": true,
+  "magnitude_ceiling_v": 5.5,
+  "preferred_minimum_per_constellation": 5,
+  "maximum_per_constellation": 10,
+  "exception_policy": "Do not add filler stars; mark under-minimum constellations non-sellable for review.",
+  "sources": [
+    "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+    "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239",
+    "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+  ]
+}

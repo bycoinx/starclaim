@@ -1,0 +1,1820 @@
+{
+  "policy_version": "commerce-pilot-v1",
+  "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+  "catalog_version": "pilot-v1",
+  "currency": "USD",
+  "rarity_bands": [
+    {
+      "name": "legendary",
+      "min_score": 78,
+      "legacy_tier": "legendary"
+    },
+    {
+      "name": "epic",
+      "min_score": 58,
+      "legacy_tier": "named"
+    },
+    {
+      "name": "rare",
+      "min_score": 38,
+      "legacy_tier": "constellation"
+    },
+    {
+      "name": "standard",
+      "min_score": 0,
+      "legacy_tier": "standard"
+    }
+  ],
+  "price_bands": {
+    "legendary": {
+      "base": "1499.00",
+      "increment_per_score": "75.00"
+    },
+    "epic": {
+      "base": "699.00",
+      "increment_per_score": "35.00"
+    },
+    "rare": {
+      "base": "249.00",
+      "increment_per_score": "15.00"
+    },
+    "standard": {
+      "base": "79.00",
+      "increment_per_score": "4.00"
+    }
+  },
+  "immutable_purchase_snapshots": true,
+  "star_count": 84,
+  "rarity_counts": {
+    "epic": 20,
+    "legendary": 3,
+    "rare": 27,
+    "standard": 34
+  },
+  "quotes": [
+    {
+      "canonical_id": "hip:25281",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 19,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "155.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:56561",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 19,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "155.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:89826",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 20,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "159.00",
+      "score_breakdown": {
+        "brightness": 8,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:92791",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 20,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "159.00",
+      "score_breakdown": {
+        "brightness": 8,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:16083",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 22,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "167.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:51624",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 22,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "167.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:22449",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 24,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "175.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:15900",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 26,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "183.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:18724",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 26,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "183.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:49583",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 26,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "183.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:89642",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 26,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "183.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:20205",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 27,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "187.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:47508",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 27,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "187.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:65109",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 27,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "187.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:87073",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 30,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "199.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:20889",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:50335",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:54879",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:59196",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:68002",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:71352",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 31,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "203.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:60260",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 33,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "211.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:86670",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 34,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "215.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:92041",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 34,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "215.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 12,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:93864",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 34,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "215.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 3,
+        "asterism": 12,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:78265",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 35,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "219.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:80112",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 35,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "219.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:81266",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 35,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "219.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 3,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:20894",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 36,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "223.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:26241",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 36,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "223.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:27366",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 36,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "223.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:61932",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 36,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "223.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:66657",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 36,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "223.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 0,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:92420",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 37,
+      "rarity_band": "standard",
+      "legacy_tier": "standard",
+      "currency": "USD",
+      "primary_price": "227.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:78820",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 39,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "264.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:85696",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 39,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "264.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:94141",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 39,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "264.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:59774",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 40,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "279.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 7,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:93194",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 41,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "294.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:26451",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 44,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "339.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:47908",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 44,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "339.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:54872",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 44,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "339.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:78401",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 44,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "339.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:82396",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 44,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "339.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:68933",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 45,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "354.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:8886",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 45,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "354.00",
+      "score_breakdown": {
+        "brightness": 16,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:17702",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 48,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "399.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:25930",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 48,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "399.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:57632",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 48,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "399.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:58001",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 48,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "399.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:88635",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 51,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "444.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 7,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:50583",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 52,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "459.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:25336",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 53,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "474.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:53910",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 53,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "474.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:59747",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 53,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "474.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:65378",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 53,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "474.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:6686",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 53,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "474.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:86228",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 56,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "519.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 16,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:89931",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 56,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "519.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:90496",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 56,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "519.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:746",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 57,
+      "rarity_band": "rare",
+      "legacy_tier": "constellation",
+      "currency": "USD",
+      "primary_price": "534.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 16,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:25428",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 60,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "769.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:85927",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 60,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "769.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:93506",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 60,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "769.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 16,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:26311",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 61,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "804.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:26727",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 61,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "804.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 12,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:92855",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 64,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "909.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 20,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:3179",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 65,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "944.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 20,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:61084",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 65,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "944.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 16,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:67301",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 65,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "944.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 16,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:68702",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 65,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "944.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:4427",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 66,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "979.00",
+      "score_breakdown": {
+        "brightness": 24,
+        "constellation_rank": 25,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:27989",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 69,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1084.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 20,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:49669",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 69,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1084.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 25,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:62434",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 69,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1084.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 20,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:80763",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 69,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1084.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 25,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:24436",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 70,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1119.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 25,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:54061",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 73,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1224.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 20,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:62956",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 74,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1259.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 25,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:21421",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 77,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1364.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 25,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:90185",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 77,
+      "rarity_band": "epic",
+      "legacy_tier": "named",
+      "currency": "USD",
+      "primary_price": "1364.00",
+      "score_breakdown": {
+        "brightness": 32,
+        "constellation_rank": 25,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 0,
+        "zodiac_constellation": 3,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:71683",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 79,
+      "rarity_band": "legendary",
+      "legacy_tier": "legendary",
+      "currency": "USD",
+      "primary_price": "1574.00",
+      "score_breakdown": {
+        "brightness": 45,
+        "constellation_rank": 25,
+        "asterism": 0,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:60718",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 86,
+      "rarity_band": "legendary",
+      "legacy_tier": "legendary",
+      "currency": "USD",
+      "primary_price": "2099.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 25,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    },
+    {
+      "canonical_id": "hip:91262",
+      "catalog_version": "pilot-v1",
+      "policy_version": "commerce-pilot-v1",
+      "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+      "rarity_score": 86,
+      "rarity_band": "legendary",
+      "legacy_tier": "legendary",
+      "currency": "USD",
+      "primary_price": "2099.00",
+      "score_breakdown": {
+        "brightness": 40,
+        "constellation_rank": 25,
+        "asterism": 12,
+        "proper_name": 5,
+        "alpha_bayer": 4,
+        "zodiac_constellation": 0,
+        "reviewed_cultural_prominence": 0
+      },
+      "frozen": false
+    }
+  ]
+}

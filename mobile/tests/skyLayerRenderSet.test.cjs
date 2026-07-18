@@ -192,11 +192,13 @@ test('path segment builders flatten geometry before Skia worklets', () => {
     [regular, emphasized],
     { constellation: 'lyra' },
     10,
+    new Map([['orion', { state: 'available' }]]),
   );
   const boundarySegments = buildBoundarySegments([
     { geometry: { type: 'Polygon', coordinates: [[[180, 0], [181, 0], [181, 1]]] } },
   ], 10);
   assert.equal(countSegments(constellationSegments), 2);
   assert.equal(constellationSegments.filter((segment) => segment.emphasized).length, 1);
+  assert.equal(constellationSegments.filter((segment) => segment.availabilityState === 'available').length, 1);
   assert.equal(countSegments(boundarySegments), 2);
 });

@@ -9,9 +9,17 @@ import { CONFIG } from '../constants/Config';
 import { raDecToAzAlt, getApproximateLST } from '../src/utils/astronomy';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Line as SvgLine } from 'react-native-svg';
 import SpaceBackground from '../components/SpaceBackground';
 import { useCatalogStore } from '../src/platform/stars/catalogStore';
 import { getFeaturedStars, getNearbyStars, getTierMeta } from '../src/platform/stars/catalogSelection';
+import { ensureConstellations } from '../src/data/constellationLoader';
+import {
+  buildARConstellationSegments,
+  buildConstellationStateIndex,
+  getCatalogSkyColor,
+  normalizeAvailabilityState,
+} from '../src/sky/catalogSkyPresentation';
 
 const { width, height } = Dimensions.get('window');
 const CATALOG_RENDER_LIMIT = 360;
@@ -24,6 +32,7 @@ const CATALOG_FILTERS = [
 export default function Stars() {
   const [permission, requestPermission] = useCameraPermissions();
   const [motion, setMotion] = useState(null);
+  const [constellationData, setConstellationData] = useState(null);
 
   const {
     stars,
@@ -33,6 +42,10 @@ export default function Stars() {
     setSearchQuery,
     selectedTier,
     setSelectedTier,
+    collections,
+    asterismCollections,
+    selectedConstellation,
+    setSelectedConstellation,
     getFilteredStars,
     getVisibleTotalLabel
   } = useCatalogStore();
@@ -47,6 +60,10 @@ export default function Stars() {
     });
     return () => task.cancel?.();
   }, [loadCatalog]);
+
+  useEffect(() => {
+    ensureConstellations().then(setConstellationData).catch(() => setConstellationData(null));
+  }, []);
 
   useEffect(() => {
     let subscription;
@@ -83,11 +100,12 @@ export default function Stars() {
       ...star,
       star_id: star.id,
     }));
-  }, [getFilteredStars, searchQuery, selectedTier, stars]);
+  }, [getFilteredStars, searchQuery, selectedTier, selectedConstellation, stars]);
 
   const featuredStars = useMemo(() => getFeaturedStars(filteredStars, 6), [filteredStars]);
   const nearbyStars = useMemo(() => getNearbyStars(filteredStars, 3), [filteredStars]);
   const catalogTotalLabel = getVisibleTotalLabel();
+  const constellationStates = useMemo(() => buildConstellationStateIndex(collections), [collections]);
 
   const renderARMode = () => {
     if (loading) return null;
@@ -96,8 +114,17 @@ export default function Stars() {
     const { alpha, beta } = motion.rotation;
     const deviceAz = (alpha * 180) / Math.PI;
     const deviceAlt = (beta * 180) / Math.PI;
+    const constellationSegments = buildARConstellationSegments({
+      features: constellationData?.lines?.features || [],
+      constellationStates,
+      lstDegrees: lst,
+      deviceAz,
+      deviceAlt,
+      width,
+      height,
+    });
 
-    return starsWithCoordinates.map((star) => {
+    const markers = starsWithCoordinates.map((star) => {
       let diffAz = star.az - deviceAz;
       if (diffAz > 180) diffAz -= 360;
       if (diffAz < -180) diffAz += 360;
@@ -112,6 +139,10 @@ export default function Stars() {
       if (x < -100 || x > width + 100 || y < -100 || y > height + 100) return null;
 
       const isCentered = Math.abs(diffAz) < 5 && Math.abs(diffAlt) < 5;
+      const availabilityState = normalizeAvailabilityState(star);
+      const markerColor = star.catalogVersion
+        ? getCatalogSkyColor(availabilityState)
+        : (isCentered ? THEME.colors.secondary : THEME.colors.primary);
 
       return (
         <TouchableOpacity
@@ -119,18 +150,38 @@ export default function Stars() {
           style={[styles.starContainer, { left: x, top: y }]}
           onPress={() => setSelectedStar(star)}
         >
-          <View style={[styles.starReticle, { borderColor: isCentered ? THEME.colors.secondary : THEME.colors.primary }]}>
-            <View style={[styles.starCore, { backgroundColor: isCentered ? THEME.colors.secondary : '#fff' }]} />
+          <View style={[styles.starReticle, { borderColor: markerColor }]}>
+            <View style={[styles.starCore, { backgroundColor: markerColor }]} />
           </View>
           {isCentered && (
             <View style={styles.lockOnLabel}>
               <Text style={styles.lockOnText}>{star.name.toUpperCase()}</Text>
-              <Text style={styles.lockOnSub}>{star.tier?.toUpperCase()}</Text>
+              <Text style={styles.lockOnSub}>{star.bayerDesignation || availabilityState.toUpperCase()}</Text>
             </View>
           )}
         </TouchableOpacity>
       );
     });
+
+    return (
+      <>
+        <Svg pointerEvents="none" style={StyleSheet.absoluteFillObject} width={width} height={height}>
+          {constellationSegments.map((segment) => (
+            <SvgLine
+              key={segment.key}
+              x1={segment.x1}
+              y1={segment.y1}
+              x2={segment.x2}
+              y2={segment.y2}
+              stroke={getCatalogSkyColor(segment.state)}
+              strokeWidth={segment.state === 'owned' ? 2 : 1.25}
+              strokeOpacity={segment.state === 'unlisted' ? 0.38 : 0.72}
+            />
+          ))}
+        </Svg>
+        {markers}
+      </>
+    );
   };
 
   const renderCatalogItem = ({ item: star }) => {
@@ -207,6 +258,20 @@ export default function Stars() {
               </TouchableOpacity>
             </View>
 
+            <View style={styles.arLegend} pointerEvents="none">
+              {[
+                ['owned', 'SENİN'],
+                ['claimed', 'KİLİTLİ'],
+                ['available', 'UYGUN'],
+                ['unlisted', 'PİLOT'],
+              ].map(([state, label]) => (
+                <View key={state} style={styles.arLegendItem}>
+                  <View style={[styles.arLegendDot, { backgroundColor: getCatalogSkyColor(state) }]} />
+                  <Text style={styles.arLegendText}>{label}</Text>
+                </View>
+              ))}
+            </View>
+
             {selectedStar && (
               <View style={styles.arDetailPanel}>
                 <LinearGradient colors={['rgba(25, 25, 35, 0.95)', 'rgba(10, 10, 20, 0.98)']} style={styles.arDetailContent}>
@@ -223,9 +288,14 @@ export default function Stars() {
                       <Text style={styles.detailStatValue}>{selectedStar.constellation || 'N/A'}</Text>
                     </View>
                   </View>
-                  <TouchableOpacity style={styles.claimBtn}>
+                  <TouchableOpacity
+                    style={[styles.claimBtn, selectedStar.claimable === false && styles.claimBtnDisabled]}
+                    disabled={selectedStar.claimable === false}
+                  >
                     <LinearGradient colors={[THEME.colors.primary, THEME.colors.purple]} style={styles.claimGradient}>
-                      <Text style={styles.claimBtnText}>ACQUIRE_SYSTEM</Text>
+                      <Text style={styles.claimBtnText}>
+                        {selectedStar.claimable === false ? 'PILOT_LISTING_PENDING' : 'ACQUIRE_SYSTEM'}
+                      </Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.closeArDetail} onPress={() => setSelectedStar(null)}>
@@ -254,6 +324,10 @@ export default function Stars() {
                 <MaterialCommunityIcons name="magnify" size={18} color={THEME.colors.primary} />
                 <TextInput style={styles.catalogSearchInput} placeholder="SEARCH_SYSTEM..." placeholderTextColor="rgba(0,242,254,0.3)" value={searchQuery} onChangeText={setSearchQuery} />
               </View>
+              <TouchableOpacity style={styles.arButton} onPress={() => setActiveTab('tarama')}>
+                <MaterialCommunityIcons name="augmented-reality" size={18} color={THEME.colors.primary} />
+                <Text style={styles.arButtonText}>GÖKYÜZÜ AR TARAMASI</Text>
+              </TouchableOpacity>
               <View style={styles.tierFilters}>
                 {CATALOG_FILTERS.map((filter) => (
                   <TouchableOpacity key={filter.key} style={[styles.tierFilter, selectedTier === filter.key && styles.tierFilterActive]} onPress={() => setSelectedTier(filter.key)}>
@@ -268,9 +342,9 @@ export default function Stars() {
             ListHeaderComponent={(
               <View style={styles.catalogSections}>
                 <View style={styles.heroPanel}>
-                  <Text style={styles.heroTitle}>10.000 YILDIZLIK ATLAS</Text>
+                  <Text style={styles.heroTitle}>CURATED STELLAR ATLAS</Text>
                   <Text style={styles.heroSubtitle}>
-                    Web katalogla aynı registry akışından senkronize edilen {catalogTotalLabel} yıldız. Liste performansı için ilk {Math.min(CATALOG_RENDER_LIMIT, filteredStars.length)} kayıt gösteriliyor.
+                    Web katalogla aynı kimlik, fiyat ve sahiplik sözleşmesinden senkronize edilen {catalogTotalLabel} yıldız. Seçili filtrede {filteredStars.length} kayıt gösteriliyor.
                   </Text>
                   <View style={styles.heroCards}>
                     {featuredStars.map((star) => {
@@ -286,6 +360,51 @@ export default function Stars() {
                       );
                     })}
                   </View>
+                </View>
+
+                <View style={styles.sectionPanel}>
+                  <View style={styles.collectionHeader}>
+                    <View>
+                      <Text style={styles.sectionTitle}>CONSTELLATION SETS</Text>
+                      <Text style={styles.collectionIntro}>Complete sets with the stars owned by your account.</Text>
+                    </View>
+                    {selectedConstellation !== 'all' && (
+                      <TouchableOpacity style={styles.collectionReset} onPress={() => setSelectedConstellation('all')}>
+                        <Text style={styles.collectionResetText}>ALL</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.collectionGrid}>
+                    {collections.map((collection) => {
+                      const active = selectedConstellation === collection.iauCode;
+                      return (
+                        <TouchableOpacity
+                          key={collection.key}
+                          style={[styles.collectionCard, active && styles.collectionCardActive]}
+                          onPress={() => setSelectedConstellation(active ? 'all' : collection.iauCode)}
+                        >
+                          <View style={styles.collectionTitleRow}>
+                            <Text style={styles.collectionName}>{collection.name}</Text>
+                            <Text style={styles.collectionCode}>{collection.iauCode}</Text>
+                          </View>
+                          <Text style={styles.collectionCount}>{collection.owned}/{collection.total} OWNED · {collection.available} AVAILABLE</Text>
+                          <View style={styles.collectionTrack}>
+                            <View style={[styles.collectionProgress, { width: `${collection.completionPercent}%` }]} />
+                          </View>
+                          <Text style={styles.collectionPercent}>{collection.isComplete ? 'SET COMPLETE' : `${collection.completionPercent}% COMPLETE`}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {asterismCollections.length > 0 && (
+                    <View style={styles.asterismRow}>
+                      {asterismCollections.map((asterism) => (
+                        <View key={asterism.key} style={styles.asterismPill}>
+                          <Text style={styles.asterismText}>{asterism.name} · {asterism.owned}/{asterism.total}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.sectionPanel}>
@@ -338,6 +457,10 @@ const styles = StyleSheet.create({
   hudCorner: { position: 'absolute', width: 40, height: 40 },
   centerCrosshair: { position: 'absolute', top: '50%', left: '50%', width: 30, height: 30, marginLeft: -15, marginTop: -15, borderWidth: 1, borderColor: 'rgba(0, 242, 254, 0.2)', borderRadius: 15 },
   topBar: { position: 'absolute', top: 30, left: 30, right: 30, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  arLegend: { position: 'absolute', top: 88, left: 30, flexDirection: 'row', flexWrap: 'wrap', gap: 8, maxWidth: width - 60 },
+  arLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 5, backgroundColor: 'rgba(0,0,0,0.58)' },
+  arLegendDot: { width: 7, height: 7, borderRadius: 4 },
+  arLegendText: { color: '#fff', fontSize: 8, fontWeight: '900', letterSpacing: 0.8 },
   glassBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(25, 25, 35, 0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(0, 242, 254, 0.3)' },
   glassBtnText: { color: '#fff', fontSize: 11, fontWeight: '900', letterSpacing: 1 },
   statusGroup: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
@@ -359,6 +482,7 @@ const styles = StyleSheet.create({
   detailStatLabel: { color: THEME.colors.textMuted, fontSize: 9, fontWeight: '900', letterSpacing: 1.5, marginBottom: 4 },
   detailStatValue: { color: '#fff', fontSize: 16, fontWeight: '900', fontFamily: 'monospace' },
   claimBtn: { borderRadius: 12, overflow: 'hidden', marginTop: 20 },
+  claimBtnDisabled: { opacity: 0.45 },
   claimGradient: { paddingVertical: 16, alignItems: 'center' },
   claimBtnText: { color: '#000', fontSize: 12, fontWeight: '900', letterSpacing: 2 },
   closeArDetail: { marginTop: 16, alignItems: 'center' },
@@ -375,6 +499,23 @@ const styles = StyleSheet.create({
   heroCardMeta: { color: 'rgba(244,247,255,0.6)', fontSize: 11, marginBottom: 8 },
   sectionPanel: { borderRadius: 20, padding: 16, backgroundColor: 'rgba(10, 16, 32, 0.85)', borderWidth: 1, borderColor: 'rgba(119, 191, 255, 0.2)' },
   sectionTitle: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 2, marginBottom: 12 },
+  collectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  collectionIntro: { color: 'rgba(244,247,255,0.58)', fontSize: 11, marginTop: -6, marginBottom: 12 },
+  collectionReset: { borderWidth: 1, borderColor: THEME.colors.primary + '66', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
+  collectionResetText: { color: THEME.colors.primary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  collectionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  collectionCard: { width: '48%', minWidth: 210, flexGrow: 1, borderRadius: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  collectionCardActive: { borderColor: THEME.colors.primary, backgroundColor: THEME.colors.primary + '12' },
+  collectionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  collectionName: { color: '#fff', fontSize: 13, fontWeight: '900', flexShrink: 1 },
+  collectionCode: { color: THEME.colors.secondary, fontSize: 9, fontWeight: '900', letterSpacing: 1 },
+  collectionCount: { color: 'rgba(244,247,255,0.6)', fontSize: 9, fontWeight: '800', marginTop: 7 },
+  collectionTrack: { height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginTop: 10 },
+  collectionProgress: { height: '100%', backgroundColor: THEME.colors.secondary },
+  collectionPercent: { color: THEME.colors.secondary, fontSize: 8, fontWeight: '900', letterSpacing: 1, marginTop: 7 },
+  asterismRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  asterismPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, backgroundColor: 'rgba(230,188,74,0.1)', borderWidth: 1, borderColor: 'rgba(230,188,74,0.28)' },
+  asterismText: { color: '#e6bc4a', fontSize: 9, fontWeight: '900', letterSpacing: 0.5 },
   nearbyCards: { gap: 10 },
   nearbyCard: { borderRadius: 14, padding: 12, backgroundColor: 'rgba(255,255,255,0.04)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
   nearbyCardName: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 4 },

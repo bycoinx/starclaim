@@ -33,6 +33,7 @@ function projectDegrees(longitude, latitude, centerLongitude, centerLatitude, wi
 
 function isImportantStar(star, selectedStar, owned) {
   if (owned) return true;
+  if (star?.availabilityState) return true;
   if (!selectedStar) return false;
   return (
     String(selectedStar.id) === String(star.id)

@@ -134,7 +134,7 @@ export function buildOverlayStars(renderedStars = [], {
   limit = OVERLAY_STAR_LIMIT,
 } = {}) {
   return renderedStars
-    .filter((star) => star.owned || (star.proper && (showLabels || zoom > 2.8)))
+    .filter((star) => star.owned || star.availabilityState || (star.proper && (showLabels || zoom > 2.8)))
     .slice(0, limit);
 }
 
@@ -153,6 +153,7 @@ export function buildSkyRenderPlan({
   dsoData,
   planetData,
   constellations,
+  constellationStates,
   mythologyAssets,
   showLabels,
   showGrid,
@@ -197,6 +198,7 @@ export function buildSkyRenderPlan({
     dsoData,
     planetData,
     constellations,
+    constellationStates,
     mythologyAssets,
     showDSOs: enabledLayers.dsos,
     showPlanets: enabledLayers.planets,

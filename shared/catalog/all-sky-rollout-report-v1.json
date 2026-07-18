@@ -1,0 +1,755 @@
+{
+  "catalog_version": "all-sky-candidate-v1",
+  "status": "candidate-not-published",
+  "constellation_count": 88,
+  "star_count": 740,
+  "manifest_sha256": "c7a8c9a2b6735b6f4c8a1b7603c6ce1222fb35eca594667787bfd5fb02a392f8",
+  "quality_gates": [
+    {
+      "name": "iau-registry-coverage",
+      "passed": true,
+      "detail": "88 IAU constellations; 88 represented in HYG."
+    },
+    {
+      "name": "target-star-count",
+      "passed": true,
+      "detail": "740 candidate systems; target is 600–800."
+    },
+    {
+      "name": "unique-canonical-ids",
+      "passed": true,
+      "detail": "740 IDs checked."
+    },
+    {
+      "name": "unique-coordinates",
+      "passed": true,
+      "detail": "740 rounded ICRS coordinate pairs checked."
+    },
+    {
+      "name": "pilot-continuity",
+      "passed": true,
+      "detail": "84 pilot identities and astronomy projections preserved."
+    },
+    {
+      "name": "source-provenance",
+      "passed": true,
+      "detail": "Every candidate has source references."
+    },
+    {
+      "name": "bayer-designations",
+      "passed": true,
+      "detail": "Every candidate has a Bayer designation."
+    },
+    {
+      "name": "review-isolation",
+      "passed": true,
+      "detail": "8 exception constellations are non-sellable pending review."
+    }
+  ],
+  "constellations": [
+    {
+      "iau_code": "And",
+      "name": "Andromeda",
+      "genitive": "Andromedae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ant",
+      "name": "Antlia",
+      "genitive": "Antliae",
+      "selected_count": 5,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Aps",
+      "name": "Apus",
+      "genitive": "Apodis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Aql",
+      "name": "Aquila",
+      "genitive": "Aquilae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Aqr",
+      "name": "Aquarius",
+      "genitive": "Aquarii",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ara",
+      "name": "Ara",
+      "genitive": "Arae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ari",
+      "name": "Aries",
+      "genitive": "Arietis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Aur",
+      "name": "Auriga",
+      "genitive": "Aurigae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Boo",
+      "name": "Boötes",
+      "genitive": "Boötis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "CMa",
+      "name": "Canis Major",
+      "genitive": "Canis Majoris",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "CMi",
+      "name": "Canis Minor",
+      "genitive": "Canis Minoris",
+      "selected_count": 7,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "CVn",
+      "name": "Canes Venatici",
+      "genitive": "Canum Venaticorum",
+      "selected_count": 2,
+      "status": "review-required",
+      "reason": "Only 2 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Cae",
+      "name": "Caelum",
+      "genitive": "Caeli",
+      "selected_count": 4,
+      "status": "review-required",
+      "reason": "Only 4 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Cam",
+      "name": "Camelopardalis",
+      "genitive": "Camelopardalis",
+      "selected_count": 3,
+      "status": "review-required",
+      "reason": "Only 3 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Cap",
+      "name": "Capricornus",
+      "genitive": "Capricorni",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Car",
+      "name": "Carina",
+      "genitive": "Carinae",
+      "selected_count": 8,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cas",
+      "name": "Cassiopeia",
+      "genitive": "Cassiopeiae",
+      "selected_count": 5,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Cen",
+      "name": "Centaurus",
+      "genitive": "Centauri",
+      "selected_count": 10,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Cep",
+      "name": "Cepheus",
+      "genitive": "Cephei",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cet",
+      "name": "Cetus",
+      "genitive": "Ceti",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cha",
+      "name": "Chamaeleon",
+      "genitive": "Chamaeleontis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cir",
+      "name": "Circinus",
+      "genitive": "Circini",
+      "selected_count": 7,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cnc",
+      "name": "Cancer",
+      "genitive": "Cancri",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Col",
+      "name": "Columba",
+      "genitive": "Columbae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Com",
+      "name": "Coma Berenices",
+      "genitive": "Comae Berenices",
+      "selected_count": 3,
+      "status": "review-required",
+      "reason": "Only 3 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "CrA",
+      "name": "Corona Australis",
+      "genitive": "Coronae Australis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "CrB",
+      "name": "Corona Borealis",
+      "genitive": "Coronae Borealis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Crt",
+      "name": "Crater",
+      "genitive": "Crateris",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cru",
+      "name": "Crux",
+      "genitive": "Crucis",
+      "selected_count": 5,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Crv",
+      "name": "Corvus",
+      "genitive": "Corvi",
+      "selected_count": 7,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Cyg",
+      "name": "Cygnus",
+      "genitive": "Cygni",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Del",
+      "name": "Delphinus",
+      "genitive": "Delphini",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Dor",
+      "name": "Dorado",
+      "genitive": "Doradus",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Dra",
+      "name": "Draco",
+      "genitive": "Draconis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Equ",
+      "name": "Equuleus",
+      "genitive": "Equulei",
+      "selected_count": 5,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Eri",
+      "name": "Eridanus",
+      "genitive": "Eridani",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "For",
+      "name": "Fornax",
+      "genitive": "Fornacis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Gem",
+      "name": "Gemini",
+      "genitive": "Geminorum",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Gru",
+      "name": "Grus",
+      "genitive": "Gruis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Her",
+      "name": "Hercules",
+      "genitive": "Herculis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Hor",
+      "name": "Horologium",
+      "genitive": "Horologii",
+      "selected_count": 9,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Hya",
+      "name": "Hydra",
+      "genitive": "Hydrae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Hyi",
+      "name": "Hydrus",
+      "genitive": "Hydri",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ind",
+      "name": "Indus",
+      "genitive": "Indi",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "LMi",
+      "name": "Leo Minor",
+      "genitive": "Leonis Minoris",
+      "selected_count": 1,
+      "status": "review-required",
+      "reason": "Only 1 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Lac",
+      "name": "Lacerta",
+      "genitive": "Lacertae",
+      "selected_count": 2,
+      "status": "review-required",
+      "reason": "Only 2 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Leo",
+      "name": "Leo",
+      "genitive": "Leonis",
+      "selected_count": 10,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Lep",
+      "name": "Lepus",
+      "genitive": "Leporis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Lib",
+      "name": "Libra",
+      "genitive": "Librae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Lup",
+      "name": "Lupus",
+      "genitive": "Lupi",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Lyn",
+      "name": "Lynx",
+      "genitive": "Lyncis",
+      "selected_count": 1,
+      "status": "review-required",
+      "reason": "Only 1 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    },
+    {
+      "iau_code": "Lyr",
+      "name": "Lyra",
+      "genitive": "Lyrae",
+      "selected_count": 5,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Men",
+      "name": "Mensa",
+      "genitive": "Mensae",
+      "selected_count": 6,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Mic",
+      "name": "Microscopium",
+      "genitive": "Microscopii",
+      "selected_count": 7,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Mon",
+      "name": "Monoceros",
+      "genitive": "Monocerotis",
+      "selected_count": 6,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Mus",
+      "name": "Musca",
+      "genitive": "Muscae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Nor",
+      "name": "Norma",
+      "genitive": "Normae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Oct",
+      "name": "Octans",
+      "genitive": "Octantis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Oph",
+      "name": "Ophiuchus",
+      "genitive": "Ophiuchi",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ori",
+      "name": "Orion",
+      "genitive": "Orionis",
+      "selected_count": 10,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Pav",
+      "name": "Pavo",
+      "genitive": "Pavonis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Peg",
+      "name": "Pegasus",
+      "genitive": "Pegasi",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Per",
+      "name": "Perseus",
+      "genitive": "Persei",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Phe",
+      "name": "Phoenix",
+      "genitive": "Phoenicis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Pic",
+      "name": "Pictor",
+      "genitive": "Pictoris",
+      "selected_count": 8,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "PsA",
+      "name": "Piscis Austrinus",
+      "genitive": "Piscis Austrini",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Psc",
+      "name": "Pisces",
+      "genitive": "Piscium",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Pup",
+      "name": "Puppis",
+      "genitive": "Puppis",
+      "selected_count": 8,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Pyx",
+      "name": "Pyxis",
+      "genitive": "Pyxidis",
+      "selected_count": 9,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ret",
+      "name": "Reticulum",
+      "genitive": "Reticuli",
+      "selected_count": 9,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Scl",
+      "name": "Sculptor",
+      "genitive": "Sculptoris",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Sco",
+      "name": "Scorpius",
+      "genitive": "Scorpii",
+      "selected_count": 12,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Sct",
+      "name": "Scutum",
+      "genitive": "Scuti",
+      "selected_count": 7,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Ser",
+      "name": "Serpens",
+      "genitive": "Serpentis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Sex",
+      "name": "Sextans",
+      "genitive": "Sextantis",
+      "selected_count": 5,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Sge",
+      "name": "Sagitta",
+      "genitive": "Sagittae",
+      "selected_count": 6,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Sgr",
+      "name": "Sagittarius",
+      "genitive": "Sagittarii",
+      "selected_count": 10,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Tau",
+      "name": "Taurus",
+      "genitive": "Tauri",
+      "selected_count": 10,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "Tel",
+      "name": "Telescopium",
+      "genitive": "Telescopii",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "TrA",
+      "name": "Triangulum Australe",
+      "genitive": "Trianguli Australis",
+      "selected_count": 9,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Tri",
+      "name": "Triangulum",
+      "genitive": "Trianguli",
+      "selected_count": 5,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Tuc",
+      "name": "Tucana",
+      "genitive": "Tucanae",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "UMa",
+      "name": "Ursa Major",
+      "genitive": "Ursae Majoris",
+      "selected_count": 7,
+      "status": "pilot-approved",
+      "reason": null
+    },
+    {
+      "iau_code": "UMi",
+      "name": "Ursa Minor",
+      "genitive": "Ursae Minoris",
+      "selected_count": 8,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Vel",
+      "name": "Vela",
+      "genitive": "Velorum",
+      "selected_count": 8,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Vir",
+      "name": "Virgo",
+      "genitive": "Virginis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Vol",
+      "name": "Volans",
+      "genitive": "Volantis",
+      "selected_count": 10,
+      "status": "ready",
+      "reason": null
+    },
+    {
+      "iau_code": "Vul",
+      "name": "Vulpecula",
+      "genitive": "Vulpeculae",
+      "selected_count": 1,
+      "status": "review-required",
+      "reason": "Only 1 Bayer-designated Hipparcos systems satisfy the V≤5.5 quality policy; no filler stars were added."
+    }
+  ]
+}

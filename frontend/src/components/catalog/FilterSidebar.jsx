@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Filter, RotateCcw, ChevronDown, ChevronUp } from "lucide-react";
+import { DEFAULT_CATALOG_FILTERS } from "../../stores/celestialStore";
 
 export default function FilterSidebar({
   filters,
@@ -30,15 +31,7 @@ export default function FilterSidebar({
 
   const handleReset = () => {
     setFilters({
-      constellation: "all",
-      magnitudeMin: 0.0,
-      magnitudeMax: 10.0,
-      distanceMin: 0,
-      distanceMax: 10000,
-      spectralType: "all",
-      starType: "all",
-      ownership: "all", // "all", "available", "claimed", "legendary"
-      hasStories: false,
+      ...DEFAULT_CATALOG_FILTERS,
       sortBy: "recommended"
     });
   };
@@ -109,7 +102,7 @@ export default function FilterSidebar({
             </div>
             <input
               type="range"
-              min="0.0"
+              min="-2.0"
               max="10.0"
               step="0.1"
               value={filters.magnitudeMax}

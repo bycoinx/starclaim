@@ -138,6 +138,94 @@ export async function fetchRemoteStars(params = {}) {
   }
 }
 
+async function fetchCatalogJson(path, params = {}) {
+  const baseUrl = await CONFIG.getAPIUrl();
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') query.set(key, String(value));
+  });
+  const suffix = query.toString();
+  const response = await fetch(`${baseUrl}/api${path}${suffix ? `?${suffix}` : ''}`);
+  if (!response.ok) throw new Error(`${path} HTTP ${response.status}`);
+  return response.json();
+}
+
+async function loadOwnershipPurchases() {
+  try {
+    const { getOwnershipPurchases } = await import('../../data/ownershipSnapshot');
+    return await getOwnershipPurchases();
+  } catch (error) {
+    console.warn('starRepository: Ownership snapshot unavailable; set progress starts at zero.', error?.message || error);
+    return [];
+  }
+}
+
+export async function loadCuratedPilotStars() {
+  try {
+    const [catalog, pricing, commercial] = await Promise.all([
+      fetchCatalogJson('/catalog/stars', { catalog_version: 'pilot-v1', sort: 'rank', limit: 200 }),
+      fetchCatalogJson('/catalog/pricing', { catalog_version: 'pilot-v1', policy_version: 'commerce-pilot-v1', limit: 200 }),
+      fetchRemoteStars({ limit: 1000, sort: 'name' }),
+    ]);
+    if (!Array.isArray(catalog) || !catalog.length) return [];
+    const ownership = await loadOwnershipPurchases();
+    const quoteMap = new Map((pricing || []).map((quote) => [quote.canonical_id, quote]));
+    const commercialMap = new Map();
+    commercial.forEach((star) => {
+      if (star.hip) commercialMap.set(`hip:${star.hip}`, star);
+      if (star.canonicalId) commercialMap.set(star.canonicalId, star);
+    });
+    const ownedKeys = new Set((ownership || []).flatMap((star) => [
+      star.canonicalId, star.starId, star.hip && `hip:${star.hip}`, star.hip,
+    ].filter(Boolean).map(String)));
+    return catalog.map((star) => {
+      const hip = star.designations?.hip;
+      const commercialStar = commercialMap.get(star.canonical_id) || commercialMap.get(`hip:${hip}`);
+      const quote = quoteMap.get(star.canonical_id);
+      const globallyClaimed = Boolean(commercialStar?.isClaimed || commercialStar?.ownerName);
+      const ownedByViewer = [star.canonical_id, commercialStar?.id, hip && `hip:${hip}`, hip]
+        .filter(Boolean).some((key) => ownedKeys.has(String(key)));
+      const availabilityState = ownedByViewer ? 'owned' : globallyClaimed ? 'claimed' : commercialStar ? 'available' : 'unlisted';
+      const canonical = {
+        id: commercialStar?.id || star.canonical_id,
+        canonicalId: star.canonical_id,
+        name: star.display_name,
+        displayName: star.display_name,
+        properName: star.display_name,
+        hip,
+        hd: star.designations?.hd,
+        constellation: star.constellation?.name,
+        iauCode: star.constellation?.iau_code,
+        bayerDesignation: star.designations?.bayer_latin,
+        asterisms: star.asterisms || [],
+        raDegrees: star.astrometry?.ra_deg,
+        raHours: Number(star.astrometry?.ra_deg || 0) / 15,
+        decDegrees: star.astrometry?.dec_deg,
+        distanceParsec: star.astrometry?.distance_pc,
+        magnitude: star.photometry?.apparent_magnitude_v,
+        spectralType: star.stellar?.spectral_type,
+        tier: quote?.legacy_tier || 'standard',
+        rarity: quote?.rarity_band || 'standard',
+        rarityBand: quote?.rarity_band || 'standard',
+        rarityScore: quote?.rarity_score ?? null,
+        price: quote ? Number(quote.primary_price) : null,
+        policyVersion: quote?.policy_version,
+        catalogVersion: star.catalog_version,
+        isClaimed: globallyClaimed,
+        isOwnedByViewer: ownedByViewer,
+        availabilityState,
+        claimable: availabilityState === 'available',
+        ownerName: commercialStar?.ownerName || null,
+        localCatalog: false,
+      };
+      return { ...canonical, asset: createStarAsset({ starId: canonical.id, slug: canonical.canonicalId, version: 'v1' }, canonical) };
+    });
+  } catch (error) {
+    console.warn('starRepository: Curated pilot unavailable, using legacy catalog.', error);
+    return [];
+  }
+}
+
 export async function countRemoteStars(params = {}) {
   const baseUrl = await CONFIG.getAPIUrl();
   try {
@@ -164,7 +252,10 @@ export async function countRemoteStars(params = {}) {
 }
 
 export async function loadAllStars(limit = CATALOG_TARGET_SIZE) {
-  // Remote registry is the shared source of truth. Local HYG remains an offline fallback.
+  const curated = await loadCuratedPilotStars();
+  if (curated.length > 0) return curated.slice(0, limit);
+
+  // Legacy remote registry remains the fallback until the curated API is deployed.
   const remote = await fetchRemoteStars({ limit, sort: 'price_asc' });
   if (remote.length > 0) {
     return remote.slice(0, limit);

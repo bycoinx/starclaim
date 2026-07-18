@@ -38,4 +38,18 @@ describe("supported Metaplex metadata contract", () => {
     });
     expect(updated.image).toBe("https://images/sirius.png");
   });
+
+  test("preserves the immutable StarClaim integrity envelope during Vault updates", () => {
+    const starclaim = {
+      immutable_core: { canonical_id: "hip:32349", catalog_version: "pilot-v1" },
+      integrity: { algorithm: "SHA-256", immutable_metadata_hash_sha256: "abc" },
+    };
+    const updated = buildVaultMetadataDocument({
+      attributes: [],
+      properties: { category: "image", starclaim },
+    }, { txId: "vault-next", url: "https://arweave/vault-next" });
+
+    expect(updated.properties.starclaim).toEqual(starclaim);
+    expect(updated.properties.starclaimVault.transactionId).toBe("vault-next");
+  });
 });

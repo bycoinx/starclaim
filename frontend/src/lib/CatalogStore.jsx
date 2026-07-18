@@ -5,10 +5,11 @@ import { StarRegistry } from "./StarRegistry";
 import { useT } from "./i18n";
 import { useCelestialStore } from "../stores/celestialStore";
 import { webDiagnostics } from "../engine/diagnostics/webDiagnostics";
+import { buildCatalogCollections } from "./catalogCollections";
 
 const CatalogContext = createContext(null);
 
-export function CatalogProvider({ children, onClaim, starLoader }) {
+export function CatalogProvider({ children, onClaim, starLoader, catalogSource = "commercial" }) {
   const { lang } = useT();
   const isTR = lang === "TR";
 
@@ -171,6 +172,13 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
         setStars(list);
         setServerTotalCount(null);
         webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "custom-catalog");
+      } else if (catalogSource === "curated") {
+        const list = await StarRepository.loadCuratedPilot(forceReload);
+        if (!isCurrentRequest()) return;
+        setStars(list);
+        setServerTotalCount(null);
+        setServerConstellations(Array.from(new Set(list.map((star) => star.constellation).filter(Boolean))).sort());
+        webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "curated-pilot");
       } else {
         const query = buildServerQuery(filters, sortBy, currentPage, pageSize, searchQuery);
         const pageQuery = { ...query };
@@ -220,6 +228,7 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     pageSize,
     searchQuery,
     starLoader,
+    catalogSource,
     isTR,
     debouncedObserverCoords,
     setError,
@@ -236,10 +245,10 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
   }, [loadCatalog]);
 
   useEffect(() => {
-    if (!starLoader) {
+    if (!starLoader && catalogSource === "commercial") {
       loadConstellations();
     }
-  }, [loadConstellations, starLoader]);
+  }, [catalogSource, loadConstellations, starLoader]);
 
   // Action methods
   const toggleFavorite = useCallback((starId) => {
@@ -403,6 +412,8 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     };
   }, [stars, serverTotalCount]);
 
+  const collections = useMemo(() => buildCatalogCollections(stars), [stars]);
+
   const contextValue = {
     // Cache
     stars,
@@ -416,6 +427,8 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     totalCount: serverTotalCount !== null ? serverTotalCount : filteredStars.length,
     stats: statsCounters,
     filterOptions,
+    collections,
+    catalogSource,
     
     // Filter State
     searchQuery,

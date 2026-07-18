@@ -1,4 +1,5 @@
 import { normalizeRaDelta, raDecToAltAz } from '../utils/astronomy';
+import { resolveConstellationState } from './catalogSkyPresentation';
 
 export const SKY_LAYER_BUDGET = Object.freeze({
   low: Object.freeze({
@@ -271,7 +272,7 @@ export function getBoundaryPaths(feature) {
   return [];
 }
 
-function pushPathSegments(target, pathPoints, limit, emphasized = false) {
+function pushPathSegments(target, pathPoints, limit, emphasized = false, availabilityState = null) {
   if (!Array.isArray(pathPoints) || pathPoints.length < 2 || target.length >= limit) return;
   for (let index = 0; index < pathPoints.length - 1 && target.length < limit; index += 1) {
     const first = pathPoints[index];
@@ -288,19 +289,26 @@ function pushPathSegments(target, pathPoints, limit, emphasized = false) {
         secondRa: second[0] / 15,
         secondDec: second[1],
         emphasized,
+        availabilityState,
       });
     }
   }
 }
 
-export function buildConstellationSegments(features = [], selectedStar = null, limit = Infinity) {
+export function buildConstellationSegments(features = [], selectedStar = null, limit = Infinity, constellationStates = null) {
   const segments = [];
   for (let featureIndex = 0; featureIndex < features.length && segments.length < limit; featureIndex += 1) {
     const feature = features[featureIndex];
     if (feature?.geometry?.type !== 'MultiLineString') continue;
     const emphasized = isSelectedConstellationFeature(feature, selectedStar);
+    const presentation = resolveConstellationState(
+      constellationStates,
+      getConstellationAbbrev(feature),
+      feature.id,
+      feature.properties?.name,
+    );
     (feature.geometry.coordinates || []).forEach((linePoints) => {
-      pushPathSegments(segments, linePoints, limit, emphasized);
+      pushPathSegments(segments, linePoints, limit, emphasized, presentation?.state || null);
     });
   }
   return segments;
@@ -336,6 +344,7 @@ export function buildSkyLayerRenderSet({
   dsoData,
   planetData,
   constellations,
+  constellationStates,
   mythologyAssets,
   showDSOs,
   showPlanets,
@@ -410,6 +419,7 @@ export function buildSkyLayerRenderSet({
     visibleConstellationLines,
     selectedStar,
     budget.constellationSegments,
+    constellationStates,
   );
 
   const visibleBoundaries = showConstellationBoundaries

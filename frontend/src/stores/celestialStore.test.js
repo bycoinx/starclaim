@@ -1,4 +1,5 @@
 import {
+  DEFAULT_CATALOG_FILTERS,
   DEFAULT_CELESTIAL_LAYERS,
   DEFAULT_CELESTIAL_INTERACTION,
   celestialStore,
@@ -24,6 +25,13 @@ describe("central celestial store", () => {
     }));
     expect(state.layers.planets).toBe(false);
     expect(DEFAULT_CELESTIAL_LAYERS.planets).toBe(true);
+  });
+
+  test("includes negative-magnitude bright stars in the default catalog", () => {
+    expect(DEFAULT_CATALOG_FILTERS.magnitudeMin).toBeLessThanOrEqual(-1.46);
+    expect(celestialStore.getState().catalog.filters.magnitudeMin).toBe(
+      DEFAULT_CATALOG_FILTERS.magnitudeMin,
+    );
   });
 
   test("resets pagination when catalog query inputs change", () => {

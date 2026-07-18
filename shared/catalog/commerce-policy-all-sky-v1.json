@@ -1,0 +1,120 @@
+{
+  "policy_version": "commerce-all-sky-v1",
+  "catalog_version": "all-sky-candidate-v1",
+  "currency": "USD",
+  "score_policy": {
+    "brightness_bands": [
+      {
+        "max_magnitude": 0.0,
+        "points": 45
+      },
+      {
+        "max_magnitude": 1.0,
+        "points": 40
+      },
+      {
+        "max_magnitude": 2.0,
+        "points": 32
+      },
+      {
+        "max_magnitude": 3.0,
+        "points": 24
+      },
+      {
+        "max_magnitude": 4.0,
+        "points": 16
+      },
+      {
+        "max_magnitude": null,
+        "points": 8
+      }
+    ],
+    "rank_bands": [
+      {
+        "max_rank": 1,
+        "points": 25
+      },
+      {
+        "max_rank": 2,
+        "points": 20
+      },
+      {
+        "max_rank": 3,
+        "points": 16
+      },
+      {
+        "max_rank": 5,
+        "points": 12
+      },
+      {
+        "max_rank": 8,
+        "points": 7
+      },
+      {
+        "max_rank": null,
+        "points": 3
+      }
+    ],
+    "asterism_points": 12,
+    "proper_name_points": 5,
+    "alpha_bayer_points": 4,
+    "zodiac_constellation_points": 3,
+    "zodiac_iau_codes": [
+      "Ari",
+      "Tau",
+      "Gem",
+      "Cnc",
+      "Leo",
+      "Vir",
+      "Lib",
+      "Sco",
+      "Sgr",
+      "Cap",
+      "Aqr",
+      "Psc"
+    ],
+    "cultural_prominence_overrides": {}
+  },
+  "rarity_bands": [
+    {
+      "name": "legendary",
+      "min_score": 78,
+      "legacy_tier": "legendary"
+    },
+    {
+      "name": "epic",
+      "min_score": 58,
+      "legacy_tier": "named"
+    },
+    {
+      "name": "rare",
+      "min_score": 38,
+      "legacy_tier": "constellation"
+    },
+    {
+      "name": "standard",
+      "min_score": 0,
+      "legacy_tier": "standard"
+    }
+  ],
+  "price_bands": {
+    "legendary": {
+      "base": "1499.00",
+      "increment_per_score": "75.00"
+    },
+    "epic": {
+      "base": "699.00",
+      "increment_per_score": "35.00"
+    },
+    "rare": {
+      "base": "249.00",
+      "increment_per_score": "15.00"
+    },
+    "standard": {
+      "base": "79.00",
+      "increment_per_score": "4.00"
+    }
+  },
+  "derived_from_policy_version": "commerce-pilot-v1",
+  "change_scope": "catalog-version binding only; score and price bands unchanged"
+}

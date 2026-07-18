@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starclaimx.com/schemas/star-nft-metadata-v1.json",
+  "title": "StarClaim NFT Metadata Envelope",
+  "type": "object",
+  "required": ["name", "symbol", "description", "image", "external_url", "attributes", "properties"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "symbol": { "const": "STAR" },
+    "description": { "type": "string", "minLength": 1 },
+    "image": { "type": "string", "format": "uri" },
+    "external_url": { "type": "string", "format": "uri" },
+    "attributes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["trait_type", "value"],
+        "properties": {
+          "trait_type": { "type": "string", "minLength": 1 },
+          "value": { "type": ["string", "number", "boolean"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "properties": {
+      "type": "object",
+      "required": ["category", "files", "starclaim"],
+      "properties": {
+        "category": { "const": "image" },
+        "files": { "type": "array", "minItems": 1 },
+        "starclaim": {
+          "type": "object",
+          "required": ["immutable_core", "integrity"],
+          "properties": {
+            "immutable_core": {
+              "type": "object",
+              "required": [
+                "schema",
+                "canonical_id",
+                "catalog_version",
+                "catalog_hash_sha256",
+                "astronomy_hash_sha256",
+                "astronomy",
+                "commerce_reference"
+              ],
+              "properties": {
+                "schema": { "const": "starclaim-nft-metadata-v1" },
+                "canonical_id": { "type": "string", "pattern": "^(hip|gaia-dr3|hr):[A-Za-z0-9.-]+$" },
+                "catalog_version": { "type": "string", "minLength": 1 },
+                "catalog_hash_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "astronomy_hash_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                "astronomy": { "$ref": "https://starclaimx.com/schemas/star-catalog-v1.json" },
+                "commerce_reference": {
+                  "type": "object",
+                  "required": ["policy_version", "policy_hash_sha256", "rarity_band", "rarity_score"],
+                  "properties": {
+                    "policy_version": { "type": "string", "minLength": 1 },
+                    "policy_hash_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+                    "rarity_band": { "type": "string", "minLength": 1 },
+                    "rarity_score": { "type": "integer", "minimum": 0 }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            },
+            "integrity": {
+              "type": "object",
+              "required": ["algorithm", "canonicalization", "immutable_metadata_hash_sha256"],
+              "properties": {
+                "algorithm": { "const": "SHA-256" },
+                "canonicalization": { "const": "StarClaim sorted compact JSON v1" },
+                "immutable_metadata_hash_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

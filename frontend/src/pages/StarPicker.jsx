@@ -111,6 +111,51 @@ function StarsHero({ store }) {
   );
 }
 
+function CollectionProgress({ collections, onOpenConstellation, isTR }) {
+  const groups = collections?.constellations || [];
+  const asterisms = collections?.asterisms || [];
+  if (!groups.length) return null;
+  return (
+    <SurfacePanel variant="strong" className="p-5">
+      <SectionHeader
+        title={isTR ? "Takimyildizi Koleksiyonlari" : "Constellation Collections"}
+        action={`${groups.length} pilot set`}
+      />
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {groups.map((group) => (
+          <button
+            type="button"
+            key={group.key}
+            onClick={() => onOpenConstellation(group.name)}
+            className="rounded-2xl border border-white/10 bg-[#050814]/70 p-4 text-left transition hover:border-sc-gold/40"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-display text-base text-white">{group.name}</span>
+              <span className="font-mono text-[10px] text-sc-gold">{group.iauCode}</span>
+            </div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-sc-gold" style={{ width: `${group.completionPercent}%` }} />
+            </div>
+            <div className="mt-2 flex justify-between text-[10px] text-[#8fa0c4]">
+              <span>{isTR ? "Koleksiyonun" : "Your set"} {group.owned}/{group.total}</span>
+              <span>{group.available} {isTR ? "mevcut" : "available"}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+      {asterisms.length ? (
+        <div className="mt-5 flex flex-wrap gap-2">
+          {asterisms.map((group) => (
+            <span key={group.key} className="rounded-full border border-sc-blue/25 bg-sc-blue/5 px-3 py-1.5 text-[10px] text-slate-300">
+              {group.name} · {group.owned}/{group.total}{group.isComplete ? " ✓" : ""}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </SurfacePanel>
+  );
+}
+
 function FeaturedStars({ stars, onSelect, isTR = true }) {
   const featured = useMemo(() => getFeaturedStars(stars, 6), [stars]);
   if (!featured.length) return null;
@@ -212,6 +257,15 @@ function SelectedStarPanel({ star }) {
     );
   }
 
+  const canClaim = star.claimable ?? !star.isClaimed;
+  const availabilityLabel = star.isOwnedByViewer
+    ? "Koleksiyonunda"
+    : star.isClaimed
+      ? "Sahipli"
+      : canClaim
+        ? "Mevcut"
+        : "Pilot Liste";
+
   return (
     <SurfacePanel variant="strong" className="lg:sticky lg:top-28">
       <SectionHeader title="Secili Yildiz" action="Detay" />
@@ -223,7 +277,7 @@ function SelectedStarPanel({ star }) {
             <p className="mt-1 text-xs uppercase tracking-[0.2em] text-sc-gold">{star.constellation}</p>
           </div>
           <StatusBadge tone={star.isClaimed ? "blue" : "emerald"}>
-            {star.isClaimed ? "Sahipli" : "Mevcut"}
+            {availabilityLabel}
           </StatusBadge>
         </div>
 
@@ -244,7 +298,13 @@ function SelectedStarPanel({ star }) {
         </div>
 
         <div className="mt-5">
-          <ActionBar starId={star.starId} layout="drawer" />
+          {canClaim ? (
+            <ActionBar starId={star.starId} layout="drawer" />
+          ) : (
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-xs text-slate-400">
+              Bu kanonik yildiz henuz ticari listeye alinmadi; astronomi ve set ilerlemesi goruntulenebilir.
+            </div>
+          )}
         </div>
 
         <div className="mt-5">
@@ -430,6 +490,12 @@ function CatalogPageOrchestrator() {
         </div>
       </PageToolbar>
 
+      <CollectionProgress
+        collections={store.collections}
+        isTR={isTR}
+        onOpenConstellation={(constellation) => store.updateFilters({ constellation })}
+      />
+
       <FeaturedStars stars={store.sortedStars || store.filteredStars} onSelect={handleSelect} isTR={isTR} />
       <NearbyStars stars={store.sortedStars || store.filteredStars} onSelect={handleSelect} isTR={isTR} />
 
@@ -476,7 +542,7 @@ function CatalogPageOrchestrator() {
 
 export default function StarPicker({ onClaim }) {
   return (
-    <CatalogProvider onClaim={onClaim}>
+    <CatalogProvider onClaim={onClaim} catalogSource="curated">
       <CatalogPageOrchestrator />
     </CatalogProvider>
   );

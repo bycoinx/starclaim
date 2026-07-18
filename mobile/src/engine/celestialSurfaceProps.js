@@ -29,6 +29,7 @@ export function createSky2DRendererProps({
     showPlanets: layers.planets ?? true,
     showDSOs: layers.dsos ?? true,
     constellations: layers.constellationData,
+    constellationStates: catalog.constellationStates,
     showMythology: layers.mythology ?? false,
     transparentBackground: layers.transparentBackground ?? false,
     nightVision: layers.nightVision ?? false,

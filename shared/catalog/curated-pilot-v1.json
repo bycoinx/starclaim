@@ -1,0 +1,4981 @@
+{
+  "catalog_version": "pilot-v1",
+  "status": "curated-pilot",
+  "source_policy": "IAU constellation metadata + CDS Hipparcos astrometry/photometry + HYG name cross-match",
+  "constellation_count": 10,
+  "star_count": 84,
+  "constellations": [
+    {
+      "iau_code": "Ori",
+      "name": "Orion",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 10
+    },
+    {
+      "iau_code": "UMa",
+      "name": "Ursa Major",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 7
+    },
+    {
+      "iau_code": "Cas",
+      "name": "Cassiopeia",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 5
+    },
+    {
+      "iau_code": "Sco",
+      "name": "Scorpius",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 12
+    },
+    {
+      "iau_code": "Tau",
+      "name": "Taurus",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 10
+    },
+    {
+      "iau_code": "Leo",
+      "name": "Leo",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 10
+    },
+    {
+      "iau_code": "Sgr",
+      "name": "Sagittarius",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 10
+    },
+    {
+      "iau_code": "Cru",
+      "name": "Crux",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 5
+    },
+    {
+      "iau_code": "Cen",
+      "name": "Centaurus",
+      "magnitude_ceiling": 4.0,
+      "selected_count": 10
+    },
+    {
+      "iau_code": "Lyr",
+      "name": "Lyra",
+      "magnitude_ceiling": 4.5,
+      "selected_count": 5
+    }
+  ],
+  "stars": [
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:24436",
+      "object_scope": "system",
+      "display_name": "Rigel",
+      "aliases": [
+        "Beta Orionis",
+        "19Bet Ori",
+        "19 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Orionis",
+        "flamsteed": "19 Orionis",
+        "hr": "1713",
+        "hip": "24436",
+        "hd": "34085",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 78.63446353,
+        "dec_deg": -8.20163919,
+        "parallax_mas": 4.22,
+        "distance_pc": 236.96682464454977,
+        "distance_ly": 772.8815165876778
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.18,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B8Ia"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 24436)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:27989",
+      "object_scope": "system",
+      "display_name": "Betelgeuse",
+      "aliases": [
+        "Alpha Orionis",
+        "58Alp Ori",
+        "58 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Orionis",
+        "flamsteed": "58 Orionis",
+        "hr": "2061",
+        "hip": "27989",
+        "hd": "39801",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 88.79287161,
+        "dec_deg": 7.40703634,
+        "parallax_mas": 7.63,
+        "distance_pc": 131.06159895150722,
+        "distance_ly": 427.46526867627784
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.45,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 0.571, 0.281"
+      },
+      "stellar": {
+        "spectral_type": "M2Ib"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 27989)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:25336",
+      "object_scope": "system",
+      "display_name": "Bellatrix",
+      "aliases": [
+        "Gamma Orionis",
+        "24Gam Ori",
+        "24 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Orionis",
+        "flamsteed": "24 Orionis",
+        "hr": "1790",
+        "hip": "25336",
+        "hd": "35468",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 81.28278416,
+        "dec_deg": 6.34973451,
+        "parallax_mas": 13.42,
+        "distance_pc": 74.51564828614009,
+        "distance_ly": 243.03725782414307
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.64,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B2III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 25336)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:26311",
+      "object_scope": "system",
+      "display_name": "Alnilam",
+      "aliases": [
+        "Epsilon Orionis",
+        "46Eps Ori",
+        "46 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Orionis",
+        "flamsteed": "46 Orionis",
+        "hr": "1903",
+        "hip": "26311",
+        "hd": "37128",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 84.05338572,
+        "dec_deg": -1.20191725,
+        "parallax_mas": 2.43,
+        "distance_pc": 411.52263374485597,
+        "distance_ly": 1342.2057613168724
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.69,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 1.717, 1.667"
+      },
+      "stellar": {
+        "spectral_type": "B0Ia"
+      },
+      "asterisms": [
+        "Orion Belt"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 26311)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:26727",
+      "object_scope": "system",
+      "display_name": "Alnitak",
+      "aliases": [
+        "Zeta Orionis",
+        "50Zet Ori",
+        "50 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Orionis",
+        "flamsteed": "50 Orionis",
+        "hr": "1948",
+        "hip": "26727",
+        "hd": "37742",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 85.18968672,
+        "dec_deg": -1.94257841,
+        "parallax_mas": 3.99,
+        "distance_pc": 250.62656641604008,
+        "distance_ly": 817.4335839598996
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.74,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "O9.5Ib SB"
+      },
+      "asterisms": [
+        "Orion Belt"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 26727)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:27366",
+      "object_scope": "system",
+      "display_name": "Saiph",
+      "aliases": [
+        "Kappa Orionis",
+        "53Kap Ori",
+        "53 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "kappa",
+        "bayer_latin": "Kappa Orionis",
+        "flamsteed": "53 Orionis",
+        "hr": "2004",
+        "hip": "27366",
+        "hd": "38771",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 86.93911641,
+        "dec_deg": -9.66960186,
+        "parallax_mas": 4.52,
+        "distance_pc": 221.23893805309737,
+        "distance_ly": 721.5840707964602
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.07,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B0.5Iavar"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 27366)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:25930",
+      "object_scope": "system",
+      "display_name": "Mintaka",
+      "aliases": [
+        "Delta Orionis",
+        "34Del Ori",
+        "34 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Orionis",
+        "flamsteed": "34 Orionis",
+        "hr": "1852",
+        "hip": "25930",
+        "hd": "36486",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 83.00166562,
+        "dec_deg": -0.2990934,
+        "parallax_mas": 3.56,
+        "distance_pc": 280.8988764044944,
+        "distance_ly": 916.1685393258426
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.25,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.334, 2.234"
+      },
+      "stellar": {
+        "spectral_type": "O9.5II"
+      },
+      "asterisms": [
+        "Orion Belt"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 25930)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:26241",
+      "object_scope": "system",
+      "display_name": "Hatysa",
+      "aliases": [
+        "Iota Orionis",
+        "44Iot Ori",
+        "44 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "iota",
+        "bayer_latin": "Iota Orionis",
+        "flamsteed": "44 Orionis",
+        "hr": "1899",
+        "hip": "26241",
+        "hd": "37043",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 83.85825475,
+        "dec_deg": -5.90989984,
+        "parallax_mas": 2.46,
+        "distance_pc": 406.5040650406504,
+        "distance_ly": 1325.8373983739837
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.75,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "O9III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 26241)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:22449",
+      "object_scope": "system",
+      "display_name": "Tabit",
+      "aliases": [
+        "Pi3 Orionis",
+        "1Pi 3Ori",
+        "1 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "pi3",
+        "bayer_latin": "Pi3 Orionis",
+        "flamsteed": "1 Orionis",
+        "hr": "1543",
+        "hip": "22449",
+        "hd": "30652",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 72.45890935,
+        "dec_deg": 6.96124744,
+        "parallax_mas": 124.6,
+        "distance_pc": 8.025682182985554,
+        "distance_ly": 26.17624398073836
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.19,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F6V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 22449)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:25281",
+      "object_scope": "system",
+      "display_name": "Eta Orionis",
+      "aliases": [
+        "Eta Orionis",
+        "28Eta Ori",
+        "28 Orionis"
+      ],
+      "constellation": {
+        "iau_code": "Ori",
+        "name": "Orion",
+        "genitive": "Orionis"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Orionis",
+        "flamsteed": "28 Orionis",
+        "hr": "1788",
+        "hip": "25281",
+        "hd": "35411",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 81.11923774,
+        "dec_deg": -2.39713844,
+        "parallax_mas": 3.62,
+        "distance_pc": 276.24309392265195,
+        "distance_ly": 900.9834254143647
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.35,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.589, 3.319"
+      },
+      "stellar": {
+        "spectral_type": "B1V + B2"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 25281)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:62956",
+      "object_scope": "system",
+      "display_name": "Alioth",
+      "aliases": [
+        "Epsilon Ursae Majoris",
+        "77Eps UMa",
+        "77 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Ursae Majoris",
+        "flamsteed": "77 Ursae Majoris",
+        "hr": "4905",
+        "hip": "62956",
+        "hd": "112185",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 193.5068041,
+        "dec_deg": 55.95984301,
+        "parallax_mas": 40.3,
+        "distance_pc": 24.81389578163772,
+        "distance_ly": 80.93200992555832
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.76,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 1.776, 1.746"
+      },
+      "stellar": {
+        "spectral_type": "A0p"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 62956)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:54061",
+      "object_scope": "system",
+      "display_name": "Dubhe",
+      "aliases": [
+        "Alpha Ursae Majoris",
+        "50Alp UMa",
+        "50 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Ursae Majoris",
+        "flamsteed": "50 Ursae Majoris",
+        "hr": "4301",
+        "hip": "54061",
+        "hd": "95689",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 165.93265365,
+        "dec_deg": 61.75111888,
+        "parallax_mas": 26.38,
+        "distance_pc": 37.90750568612585,
+        "distance_ly": 123.63760424564063
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.81,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F7V comp"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 54061)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:67301",
+      "object_scope": "system",
+      "display_name": "Alkaid",
+      "aliases": [
+        "Eta Ursae Majoris",
+        "85Eta UMa",
+        "85 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Ursae Majoris",
+        "flamsteed": "85 Ursae Majoris",
+        "hr": "5191",
+        "hip": "67301",
+        "hd": "120315",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 206.8856088,
+        "dec_deg": 49.31330288,
+        "parallax_mas": 32.39,
+        "distance_pc": 30.873726458783576,
+        "distance_ly": 100.69651126891016
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.85,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B3V SB"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 67301)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:65378",
+      "object_scope": "system",
+      "display_name": "Mizar",
+      "aliases": [
+        "Zeta Ursae Majoris",
+        "79Zet UMa",
+        "79 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Ursae Majoris",
+        "flamsteed": "79 Ursae Majoris",
+        "hr": "5054",
+        "hip": "65378",
+        "hd": "116656",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 200.98091604,
+        "dec_deg": 54.92541525,
+        "parallax_mas": 41.73,
+        "distance_pc": 23.963575365444527,
+        "distance_ly": 78.15863886891924
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.23,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A2V"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 65378)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:53910",
+      "object_scope": "system",
+      "display_name": "Merak",
+      "aliases": [
+        "Beta Ursae Majoris",
+        "48Bet UMa",
+        "48 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Ursae Majoris",
+        "flamsteed": "48 Ursae Majoris",
+        "hr": "4295",
+        "hip": "53910",
+        "hd": "95418",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 165.4599615,
+        "dec_deg": 56.38234478,
+        "parallax_mas": 41.07,
+        "distance_pc": 24.348672997321646,
+        "distance_ly": 79.41465790114438
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.34,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A1V"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 53910)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:58001",
+      "object_scope": "system",
+      "display_name": "Phecda",
+      "aliases": [
+        "Gamma Ursae Majoris",
+        "64Gam UMa",
+        "64 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Ursae Majoris",
+        "flamsteed": "64 Ursae Majoris",
+        "hr": "4554",
+        "hip": "58001",
+        "hd": "103287",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 178.45725536,
+        "dec_deg": 53.69473296,
+        "parallax_mas": 38.99,
+        "distance_pc": 25.647601949217748,
+        "distance_ly": 83.65119261349064
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.41,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A0V SB"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 58001)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:59774",
+      "object_scope": "system",
+      "display_name": "Megrez",
+      "aliases": [
+        "Delta Ursae Majoris",
+        "69Del UMa",
+        "69 Ursae Majoris"
+      ],
+      "constellation": {
+        "iau_code": "UMa",
+        "name": "Ursa Major",
+        "genitive": "Ursae Majoris"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Ursae Majoris",
+        "flamsteed": "69 Ursae Majoris",
+        "hr": "4660",
+        "hip": "59774",
+        "hd": "106591",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 183.85603795,
+        "dec_deg": 57.03259792,
+        "parallax_mas": 40.05,
+        "distance_pc": 24.968789013732835,
+        "distance_ly": 81.43720349563046
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.32,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A3Vvar"
+      },
+      "asterisms": [
+        "Big Dipper"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 59774)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:4427",
+      "object_scope": "system",
+      "display_name": "Cih",
+      "aliases": [
+        "Gamma Cassiopeiae",
+        "27Gam Cas",
+        "27 Cassiopeiae"
+      ],
+      "constellation": {
+        "iau_code": "Cas",
+        "name": "Cassiopeia",
+        "genitive": "Cassiopeiae"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Cassiopeiae",
+        "flamsteed": "27 Cassiopeiae",
+        "hr": "264",
+        "hip": "4427",
+        "hd": "5394",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 14.17708808,
+        "dec_deg": 60.71674966,
+        "parallax_mas": 5.32,
+        "distance_pc": 187.96992481203006,
+        "distance_ly": 613.0751879699247
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.15,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.173, 2.133"
+      },
+      "stellar": {
+        "spectral_type": "B0IV:evar"
+      },
+      "asterisms": [
+        "Cassiopeia W"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 4427)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:3179",
+      "object_scope": "system",
+      "display_name": "Schedar",
+      "aliases": [
+        "Alpha Cassiopeiae",
+        "18Alp Cas",
+        "18 Cassiopeiae"
+      ],
+      "constellation": {
+        "iau_code": "Cas",
+        "name": "Cassiopeia",
+        "genitive": "Cassiopeiae"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Cassiopeiae",
+        "flamsteed": "18 Cassiopeiae",
+        "hr": "168",
+        "hip": "3179",
+        "hd": "3712",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 10.12661349,
+        "dec_deg": 56.53740928,
+        "parallax_mas": 14.27,
+        "distance_pc": 70.0770847932726,
+        "distance_ly": 228.56061667834618
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.24,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.25, 2.23"
+      },
+      "stellar": {
+        "spectral_type": "K0II-IIIvar"
+      },
+      "asterisms": [
+        "Cassiopeia W"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 3179)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:746",
+      "object_scope": "system",
+      "display_name": "Caph",
+      "aliases": [
+        "Beta Cassiopeiae",
+        "11Bet Cas",
+        "11 Cassiopeiae"
+      ],
+      "constellation": {
+        "iau_code": "Cas",
+        "name": "Cassiopeia",
+        "genitive": "Cassiopeiae"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Cassiopeiae",
+        "flamsteed": "11 Cassiopeiae",
+        "hr": "21",
+        "hip": "746",
+        "hd": "432",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 2.29204036,
+        "dec_deg": 59.15021814,
+        "parallax_mas": 59.89,
+        "distance_pc": 16.69727834362999,
+        "distance_ly": 54.459175154449824
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.28,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.303, 2.263"
+      },
+      "stellar": {
+        "spectral_type": "F2III-IV"
+      },
+      "asterisms": [
+        "Cassiopeia W"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 746)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:6686",
+      "object_scope": "system",
+      "display_name": "Ruchbah",
+      "aliases": [
+        "Delta Cassiopeiae",
+        "37Del Cas",
+        "37 Cassiopeiae"
+      ],
+      "constellation": {
+        "iau_code": "Cas",
+        "name": "Cassiopeia",
+        "genitive": "Cassiopeiae"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Cassiopeiae",
+        "flamsteed": "37 Cassiopeiae",
+        "hr": "403",
+        "hip": "6686",
+        "hd": "8538",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 21.45251267,
+        "dec_deg": 60.23540347,
+        "parallax_mas": 32.81,
+        "distance_pc": 30.478512648582747,
+        "distance_ly": 99.40749771411154
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.66,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.666, 2.656"
+      },
+      "stellar": {
+        "spectral_type": "A5Vv SB"
+      },
+      "asterisms": [
+        "Cassiopeia W"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 6686)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:8886",
+      "object_scope": "system",
+      "display_name": "Segin",
+      "aliases": [
+        "Epsilon Cassiopeiae",
+        "45Eps Cas",
+        "45 Cassiopeiae"
+      ],
+      "constellation": {
+        "iau_code": "Cas",
+        "name": "Cassiopeia",
+        "genitive": "Cassiopeiae"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Cassiopeiae",
+        "flamsteed": "45 Cassiopeiae",
+        "hr": "542",
+        "hip": "8886",
+        "hd": "11415",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 28.59868107,
+        "dec_deg": 63.67014686,
+        "parallax_mas": 7.38,
+        "distance_pc": 135.50135501355012,
+        "distance_ly": 441.9457994579945
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.35,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B2pvar"
+      },
+      "asterisms": [
+        "Cassiopeia W"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 8886)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:80763",
+      "object_scope": "system",
+      "display_name": "Antares",
+      "aliases": [
+        "Alpha Scorpii",
+        "21Alp Sco",
+        "21 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Scorpii",
+        "flamsteed": "21 Scorpii",
+        "hr": "6134",
+        "hip": "80763",
+        "hd": "148478",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 247.35194804,
+        "dec_deg": -26.43194608,
+        "parallax_mas": 5.4,
+        "distance_pc": 185.18518518518516,
+        "distance_ly": 603.9925925925925
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.06,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 1.155, 0.995"
+      },
+      "stellar": {
+        "spectral_type": "M1Ib + B2.5V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 80763)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:85927",
+      "object_scope": "system",
+      "display_name": "Shaula",
+      "aliases": [
+        "Lambda Scorpii",
+        "35Lam Sco",
+        "35 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "lambda",
+        "bayer_latin": "Lambda Scorpii",
+        "flamsteed": "35 Scorpii",
+        "hr": "6527",
+        "hip": "85927",
+        "hd": "158926",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 263.40219373,
+        "dec_deg": -37.10374835,
+        "parallax_mas": 4.64,
+        "distance_pc": 215.51724137931035,
+        "distance_ly": 702.9224137931034
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.62,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 1.656, 1.596"
+      },
+      "stellar": {
+        "spectral_type": "B1.5IV+..."
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 85927)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:86228",
+      "object_scope": "system",
+      "display_name": "Sargas",
+      "aliases": [
+        "Theta Scorpii",
+        "The Sco"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "theta",
+        "bayer_latin": "Theta Scorpii",
+        "flamsteed": null,
+        "hr": "6553",
+        "hip": "86228",
+        "hd": "159532",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 264.32969072,
+        "dec_deg": -42.99782155,
+        "parallax_mas": 11.99,
+        "distance_pc": 83.40283569641367,
+        "distance_ly": 272.02335279399495
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.86,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F1II"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 86228)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:78401",
+      "object_scope": "system",
+      "display_name": "Dschubba",
+      "aliases": [
+        "Delta Scorpii",
+        "7Del Sco",
+        "7 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Scorpii",
+        "flamsteed": "7 Scorpii",
+        "hr": "5953",
+        "hip": "78401",
+        "hd": "143275",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 240.08338225,
+        "dec_deg": -22.62162024,
+        "parallax_mas": 8.12,
+        "distance_pc": 123.15270935960592,
+        "distance_ly": 401.66995073891627
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.29,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.299, 2.279"
+      },
+      "stellar": {
+        "spectral_type": "B0.2IV"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 78401)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:82396",
+      "object_scope": "system",
+      "display_name": "Larawag",
+      "aliases": [
+        "Epsilon Scorpii",
+        "26Eps Sco",
+        "26 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Scorpii",
+        "flamsteed": "26 Scorpii",
+        "hr": "6241",
+        "hip": "82396",
+        "hd": "151680",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 252.54268738,
+        "dec_deg": -34.29260982,
+        "parallax_mas": 49.85,
+        "distance_pc": 20.060180541624874,
+        "distance_ly": 65.42748244734202
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.29,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K2IIIb"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 82396)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:86670",
+      "object_scope": "system",
+      "display_name": "Kappa Scorpii",
+      "aliases": [
+        "Kappa Scorpii",
+        "Kap Sco"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "kappa",
+        "bayer_latin": "Kappa Scorpii",
+        "flamsteed": null,
+        "hr": "6580",
+        "hip": "86670",
+        "hd": "160578",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 265.62199908,
+        "dec_deg": -39.02992092,
+        "parallax_mas": 7.03,
+        "distance_pc": 142.2475106685633,
+        "distance_ly": 463.9487908961593
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.39,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.404, 2.384"
+      },
+      "stellar": {
+        "spectral_type": "B1.5III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 86670)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:78820",
+      "object_scope": "system",
+      "display_name": "Acrab",
+      "aliases": [
+        "Beta1 Scorpii",
+        "8Bet1Sco",
+        "8 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "beta1",
+        "bayer_latin": "Beta1 Scorpii",
+        "flamsteed": "8 Scorpii",
+        "hr": "5984",
+        "hip": "78820",
+        "hd": "144217",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 241.35931206,
+        "dec_deg": -19.80539286,
+        "parallax_mas": 6.15,
+        "distance_pc": 162.60162601626016,
+        "distance_ly": 530.3349593495934
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.56,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B0.5V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 78820)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:85696",
+      "object_scope": "system",
+      "display_name": "Lesath",
+      "aliases": [
+        "Upsilon Scorpii",
+        "34Ups Sco",
+        "34 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "upsilon",
+        "bayer_latin": "Upsilon Scorpii",
+        "flamsteed": "34 Scorpii",
+        "hr": "6508",
+        "hip": "85696",
+        "hd": "158408",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 262.69099501,
+        "dec_deg": -37.29574016,
+        "parallax_mas": 6.29,
+        "distance_pc": 158.9825119236884,
+        "distance_ly": 518.5310015898251
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.7,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B2IV"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 85696)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:81266",
+      "object_scope": "system",
+      "display_name": "Paikauhale",
+      "aliases": [
+        "Tau Scorpii",
+        "23Tau Sco",
+        "23 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "tau",
+        "bayer_latin": "Tau Scorpii",
+        "flamsteed": "23 Scorpii",
+        "hr": "6165",
+        "hip": "81266",
+        "hd": "149438",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 248.97066423,
+        "dec_deg": -28.21596156,
+        "parallax_mas": 7.59,
+        "distance_pc": 131.75230566534916,
+        "distance_ly": 429.7180500658762
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.82,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B0V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 81266)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:78265",
+      "object_scope": "system",
+      "display_name": "Fang",
+      "aliases": [
+        "Pi Scorpii",
+        "6Pi  Sco",
+        "6 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "pi",
+        "bayer_latin": "Pi Scorpii",
+        "flamsteed": "6 Scorpii",
+        "hr": "5944",
+        "hip": "78265",
+        "hd": "143018",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 239.71300283,
+        "dec_deg": -26.1140428,
+        "parallax_mas": 7.1,
+        "distance_pc": 140.84507042253523,
+        "distance_ly": 459.374647887324
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.89,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.913, 2.873"
+      },
+      "stellar": {
+        "spectral_type": "B1V + B2V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 78265)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:80112",
+      "object_scope": "system",
+      "display_name": "Alniyat",
+      "aliases": [
+        "Sigma Scorpii",
+        "20Sig Sco",
+        "20 Scorpii"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "sigma",
+        "bayer_latin": "Sigma Scorpii",
+        "flamsteed": "20 Scorpii",
+        "hr": "6084",
+        "hip": "80112",
+        "hd": "147165",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 245.29717718,
+        "dec_deg": -25.59275259,
+        "parallax_mas": 4.44,
+        "distance_pc": 225.22522522522522,
+        "distance_ly": 734.5855855855855
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.9,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.928, 2.868"
+      },
+      "stellar": {
+        "spectral_type": "B1III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 11,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 80112)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:87073",
+      "object_scope": "system",
+      "display_name": "Iota1 Scorpii",
+      "aliases": [
+        "Iota1 Scorpii",
+        "Iot1Sco"
+      ],
+      "constellation": {
+        "iau_code": "Sco",
+        "name": "Scorpius",
+        "genitive": "Scorpii"
+      },
+      "designations": {
+        "bayer_letter": "iota1",
+        "bayer_latin": "Iota1 Scorpii",
+        "flamsteed": null,
+        "hr": "6615",
+        "hip": "87073",
+        "hd": "161471",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 266.89617137,
+        "dec_deg": -40.12698197,
+        "parallax_mas": 1.82,
+        "distance_pc": 549.4505494505495,
+        "distance_ly": 1792.065934065934
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.99,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F3Ia"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 12,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 87073)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:21421",
+      "object_scope": "system",
+      "display_name": "Aldebaran",
+      "aliases": [
+        "Alpha Tauri",
+        "87Alp Tau",
+        "87 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Tauri",
+        "flamsteed": "87 Tauri",
+        "hr": "1457",
+        "hip": "21421",
+        "hd": "29139",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 68.98000195,
+        "dec_deg": 16.50976164,
+        "parallax_mas": 50.09,
+        "distance_pc": 19.964064683569575,
+        "distance_ly": 65.11399480934318
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.87,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 0.888, 0.858"
+      },
+      "stellar": {
+        "spectral_type": "K5III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 21421)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:25428",
+      "object_scope": "system",
+      "display_name": "Elnath",
+      "aliases": [
+        "Beta Tauri",
+        "112Bet Tau",
+        "112 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Tauri",
+        "flamsteed": "112 Tauri",
+        "hr": "1791",
+        "hip": "25428",
+        "hd": "35497",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 81.57290804,
+        "dec_deg": 28.60787346,
+        "parallax_mas": 24.89,
+        "distance_pc": 40.17677782241864,
+        "distance_ly": 131.03897147448774
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.65,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B7III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 25428)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:17702",
+      "object_scope": "system",
+      "display_name": "Alcyone",
+      "aliases": [
+        "Eta Tauri",
+        "25Eta Tau",
+        "25 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Tauri",
+        "flamsteed": "25 Tauri",
+        "hr": "1165",
+        "hip": "17702",
+        "hd": "23630",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 56.87110065,
+        "dec_deg": 24.10524193,
+        "parallax_mas": 8.87,
+        "distance_pc": 112.73957158962797,
+        "distance_ly": 367.706877113867
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.85,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B7III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 17702)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:26451",
+      "object_scope": "system",
+      "display_name": "Tianguan",
+      "aliases": [
+        "Zeta Tauri",
+        "123Zet Tau",
+        "123 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Tauri",
+        "flamsteed": "123 Tauri",
+        "hr": "1910",
+        "hip": "26451",
+        "hd": "37202",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 84.41118447,
+        "dec_deg": 21.14259299,
+        "parallax_mas": 7.82,
+        "distance_pc": 127.8772378516624,
+        "distance_ly": 417.07928388746797
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.97,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.032, 2.902"
+      },
+      "stellar": {
+        "spectral_type": "B4IIIp"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 26451)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:20894",
+      "object_scope": "system",
+      "display_name": "Chamukuy",
+      "aliases": [
+        "Theta2 Tauri",
+        "78The2Tau",
+        "78 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "theta2",
+        "bayer_latin": "Theta2 Tauri",
+        "flamsteed": "78 Tauri",
+        "hr": "1412",
+        "hip": "20894",
+        "hd": "28319",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 67.16531219,
+        "dec_deg": 15.8709468,
+        "parallax_mas": 21.89,
+        "distance_pc": 45.682960255824575,
+        "distance_ly": 148.99771585198718
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.4,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.411, 3.391"
+      },
+      "stellar": {
+        "spectral_type": "A7III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 20894)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:18724",
+      "object_scope": "system",
+      "display_name": "Lambda Tauri",
+      "aliases": [
+        "Lambda Tauri",
+        "35Lam Tau",
+        "35 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "lambda",
+        "bayer_latin": "Lambda Tauri",
+        "flamsteed": "35 Tauri",
+        "hr": "1239",
+        "hip": "18724",
+        "hd": "25204",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 60.17008591,
+        "dec_deg": 12.49037571,
+        "parallax_mas": 8.81,
+        "distance_pc": 113.50737797956866,
+        "distance_ly": 370.2111237230419
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.41,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.493, 3.393"
+      },
+      "stellar": {
+        "spectral_type": "B3V + A"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 18724)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:20889",
+      "object_scope": "system",
+      "display_name": "Ain",
+      "aliases": [
+        "Epsilon Tauri",
+        "74Eps Tau",
+        "74 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Tauri",
+        "flamsteed": "74 Tauri",
+        "hr": "1409",
+        "hip": "20889",
+        "hd": "28305",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 67.15388879,
+        "dec_deg": 19.18052092,
+        "parallax_mas": 21.04,
+        "distance_pc": 47.528517110266165,
+        "distance_ly": 155.0171102661597
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.53,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K0III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 20889)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:15900",
+      "object_scope": "system",
+      "display_name": "Omicron Tauri",
+      "aliases": [
+        "Omicron Tauri",
+        "1Omi Tau",
+        "1 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "omicron",
+        "bayer_latin": "Omicron Tauri",
+        "flamsteed": "1 Tauri",
+        "hr": "1030",
+        "hip": "15900",
+        "hd": "21120",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 51.20349011,
+        "dec_deg": 9.02906504,
+        "parallax_mas": 15.42,
+        "distance_pc": 64.85084306095979,
+        "distance_ly": 211.514915693904
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.61,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "G8III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 15900)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:20205",
+      "object_scope": "system",
+      "display_name": "Prima Hyadum",
+      "aliases": [
+        "Gamma Tauri",
+        "54Gam Tau",
+        "54 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Tauri",
+        "flamsteed": "54 Tauri",
+        "hr": "1346",
+        "hip": "20205",
+        "hd": "27371",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 64.94805793,
+        "dec_deg": 15.62770031,
+        "parallax_mas": 21.17,
+        "distance_pc": 47.23665564478035,
+        "distance_ly": 154.06518658478979
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.65,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "G8III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 20205)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:16083",
+      "object_scope": "system",
+      "display_name": "Xi Tauri",
+      "aliases": [
+        "Xi Tauri",
+        "2Xi  Tau",
+        "2 Tauri"
+      ],
+      "constellation": {
+        "iau_code": "Tau",
+        "name": "Taurus",
+        "genitive": "Tauri"
+      },
+      "designations": {
+        "bayer_letter": "xi",
+        "bayer_latin": "Xi Tauri",
+        "flamsteed": "2 Tauri",
+        "hr": "1038",
+        "hip": "16083",
+        "hd": "21364",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 51.79217049,
+        "dec_deg": 9.7327724,
+        "parallax_mas": 14.68,
+        "distance_pc": 68.11989100817439,
+        "distance_ly": 222.17711171662125
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.73,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.812, 3.722"
+      },
+      "stellar": {
+        "spectral_type": "B9Vn"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 16083)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:49669",
+      "object_scope": "system",
+      "display_name": "Regulus",
+      "aliases": [
+        "Alpha Leonis",
+        "32Alp Leo",
+        "32 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Leonis",
+        "flamsteed": "32 Leonis",
+        "hr": "3982",
+        "hip": "49669",
+        "hd": "87901",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 152.09358075,
+        "dec_deg": 11.96719513,
+        "parallax_mas": 42.09,
+        "distance_pc": 23.75861249703017,
+        "distance_ly": 77.49014017581372
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.36,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B7V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 49669)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:50583",
+      "object_scope": "system",
+      "display_name": "Algieba",
+      "aliases": [
+        "Gamma1 Leonis",
+        "41Gam1Leo",
+        "41 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "gamma1",
+        "bayer_latin": "Gamma1 Leonis",
+        "flamsteed": "41 Leonis",
+        "hr": "4057",
+        "hip": "50583",
+        "hd": "89484",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 154.99234054,
+        "dec_deg": 19.84186032,
+        "parallax_mas": 25.96,
+        "distance_pc": 38.52080123266564,
+        "distance_ly": 125.63790446841294
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.01,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K0III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 50583)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:57632",
+      "object_scope": "system",
+      "display_name": "Denebola",
+      "aliases": [
+        "Beta Leonis",
+        "94Bet Leo",
+        "94 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Leonis",
+        "flamsteed": "94 Leonis",
+        "hr": "4534",
+        "hip": "57632",
+        "hd": "102647",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 177.26615977,
+        "dec_deg": 14.57233687,
+        "parallax_mas": 90.16,
+        "distance_pc": 11.09139307897072,
+        "distance_ly": 36.17524401064774
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.14,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A3Vvar"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 57632)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:54872",
+      "object_scope": "system",
+      "display_name": "Zosma",
+      "aliases": [
+        "Delta Leonis",
+        "68Del Leo",
+        "68 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Leonis",
+        "flamsteed": "68 Leonis",
+        "hr": "4357",
+        "hip": "54872",
+        "hd": "97603",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 168.52671705,
+        "dec_deg": 20.52403384,
+        "parallax_mas": 56.52,
+        "distance_pc": 17.692852087756545,
+        "distance_ly": 57.70629865534323
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.56,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A4V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 54872)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:47908",
+      "object_scope": "system",
+      "display_name": "Ras Elased Australis",
+      "aliases": [
+        "Epsilon Leonis",
+        "17Eps Leo",
+        "17 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Leonis",
+        "flamsteed": "17 Leonis",
+        "hr": "3873",
+        "hip": "47908",
+        "hd": "84441",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 146.4629267,
+        "dec_deg": 23.77427792,
+        "parallax_mas": 13.01,
+        "distance_pc": 76.86395080707149,
+        "distance_ly": 250.69638739431207
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.97,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "G0II"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 47908)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:54879",
+      "object_scope": "system",
+      "display_name": "Chertan",
+      "aliases": [
+        "Theta Leonis",
+        "70The Leo",
+        "70 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "theta",
+        "bayer_latin": "Theta Leonis",
+        "flamsteed": "70 Leonis",
+        "hr": "4359",
+        "hip": "54879",
+        "hd": "97633",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 168.56017036,
+        "dec_deg": 15.4297631,
+        "parallax_mas": 18.36,
+        "distance_pc": 54.46623093681917,
+        "distance_ly": 177.64488017429193
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.33,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A2V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 54879)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:50335",
+      "object_scope": "system",
+      "display_name": "Adhafera",
+      "aliases": [
+        "Zeta Leonis",
+        "36Zet Leo",
+        "36 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Leonis",
+        "flamsteed": "36 Leonis",
+        "hr": "4031",
+        "hip": "50335",
+        "hd": "89025",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 154.17251805,
+        "dec_deg": 23.4173284,
+        "parallax_mas": 12.56,
+        "distance_pc": 79.61783439490445,
+        "distance_ly": 259.6783439490445
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.43,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F0III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 50335)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:49583",
+      "object_scope": "system",
+      "display_name": "Eta Leonis",
+      "aliases": [
+        "Eta Leonis",
+        "30Eta Leo",
+        "30 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Leonis",
+        "flamsteed": "30 Leonis",
+        "hr": "3975",
+        "hip": "49583",
+        "hd": "87737",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 151.83313948,
+        "dec_deg": 16.76266572,
+        "parallax_mas": 1.53,
+        "distance_pc": 653.59477124183,
+        "distance_ly": 2131.738562091503
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.48,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A0Ib"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 49583)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:47508",
+      "object_scope": "system",
+      "display_name": "Subra",
+      "aliases": [
+        "Omicron Leonis",
+        "14Omi Leo",
+        "14 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "omicron",
+        "bayer_latin": "Omicron Leonis",
+        "flamsteed": "14 Leonis",
+        "hr": "3852",
+        "hip": "47508",
+        "hd": "83808",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 145.28799116,
+        "dec_deg": 9.89239902,
+        "parallax_mas": 24.12,
+        "distance_pc": 41.45936981757877,
+        "distance_ly": 135.2222222222222
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.52,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A5V+..."
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 47508)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:51624",
+      "object_scope": "system",
+      "display_name": "Rho Leonis",
+      "aliases": [
+        "Rho Leonis",
+        "47Rho Leo",
+        "47 Leonis"
+      ],
+      "constellation": {
+        "iau_code": "Leo",
+        "name": "Leo",
+        "genitive": "Leonis"
+      },
+      "designations": {
+        "bayer_letter": "rho",
+        "bayer_latin": "Rho Leonis",
+        "flamsteed": "47 Leonis",
+        "hr": "4133",
+        "hip": "51624",
+        "hd": "91316",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 158.20281305,
+        "dec_deg": 9.30659431,
+        "parallax_mas": 0.57,
+        "distance_pc": 1754.3859649122808,
+        "distance_ly": 5722.035087719298
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.84,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B1Ib SB"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 51624)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:90185",
+      "object_scope": "system",
+      "display_name": "Kaus Australis",
+      "aliases": [
+        "Epsilon Sagittarii",
+        "20Eps Sgr",
+        "20 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Sagittarii",
+        "flamsteed": "20 Sagittarii",
+        "hr": "6879",
+        "hip": "90185",
+        "hd": "169022",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 276.04310967,
+        "dec_deg": -34.3843146,
+        "parallax_mas": 22.55,
+        "distance_pc": 44.34589800443459,
+        "distance_ly": 144.63680709534367
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.79,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B9.5III"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 90185)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:92855",
+      "object_scope": "system",
+      "display_name": "Nunki",
+      "aliases": [
+        "Sigma Sagittarii",
+        "34Sig Sgr",
+        "34 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "sigma",
+        "bayer_latin": "Sigma Sagittarii",
+        "flamsteed": "34 Sagittarii",
+        "hr": "7121",
+        "hip": "92855",
+        "hd": "175191",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 283.81631956,
+        "dec_deg": -26.29659428,
+        "parallax_mas": 14.54,
+        "distance_pc": 68.7757909215956,
+        "distance_ly": 224.31636863823934
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.05,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B2.5V"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 92855)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:93506",
+      "object_scope": "system",
+      "display_name": "Ascella",
+      "aliases": [
+        "Zeta Sagittarii",
+        "38Zet Sgr",
+        "38 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Sagittarii",
+        "flamsteed": "38 Sagittarii",
+        "hr": "7194",
+        "hip": "93506",
+        "hd": "176687",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 285.65301428,
+        "dec_deg": -29.88011429,
+        "parallax_mas": 36.61,
+        "distance_pc": 27.314941272876265,
+        "distance_ly": 89.08931985796231
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.6,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A3IV"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 93506)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:89931",
+      "object_scope": "system",
+      "display_name": "Kaus Media",
+      "aliases": [
+        "Delta Sagittarii",
+        "19Del Sgr",
+        "19 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Sagittarii",
+        "flamsteed": "19 Sagittarii",
+        "hr": "6859",
+        "hip": "89931",
+        "hd": "168454",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 275.24842337,
+        "dec_deg": -29.82803914,
+        "parallax_mas": 10.67,
+        "distance_pc": 93.72071227741331,
+        "distance_ly": 305.67572633552015
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.72,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K3III"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 89931)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:90496",
+      "object_scope": "system",
+      "display_name": "Kaus Borealis",
+      "aliases": [
+        "Lambda Sagittarii",
+        "22Lam Sgr",
+        "22 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "lambda",
+        "bayer_latin": "Lambda Sagittarii",
+        "flamsteed": "22 Sagittarii",
+        "hr": "6913",
+        "hip": "90496",
+        "hd": "169916",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 276.99278955,
+        "dec_deg": -25.42124732,
+        "parallax_mas": 42.2,
+        "distance_pc": 23.696682464454973,
+        "distance_ly": 77.28815165876776
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.82,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K1IIIb"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 90496)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:94141",
+      "object_scope": "system",
+      "display_name": "Albaldah",
+      "aliases": [
+        "Pi Sagittarii",
+        "41Pi  Sgr",
+        "41 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "pi",
+        "bayer_latin": "Pi Sagittarii",
+        "flamsteed": "41 Sagittarii",
+        "hr": "7264",
+        "hip": "94141",
+        "hd": "178524",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 287.44097404,
+        "dec_deg": -21.02352534,
+        "parallax_mas": 7.41,
+        "distance_pc": 134.9527665317139,
+        "distance_ly": 440.1565452091768
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.88,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "F2II/III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 94141)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:88635",
+      "object_scope": "system",
+      "display_name": "Alnasl",
+      "aliases": [
+        "Gamma2 Sagittarii",
+        "10Gam2Sgr",
+        "10 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "gamma2",
+        "bayer_latin": "Gamma2 Sagittarii",
+        "flamsteed": "10 Sagittarii",
+        "hr": "6746",
+        "hip": "88635",
+        "hd": "165135",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 271.45218586,
+        "dec_deg": -30.42365007,
+        "parallax_mas": 33.94,
+        "distance_pc": 29.463759575721863,
+        "distance_ly": 96.09781968179139
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.98,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K0III"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 88635)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:89642",
+      "object_scope": "system",
+      "display_name": "Eta Sagittarii",
+      "aliases": [
+        "Eta Sagittarii",
+        "Eta Sgr"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Sagittarii",
+        "flamsteed": null,
+        "hr": "6832",
+        "hip": "89642",
+        "hd": "167618",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 274.4072049,
+        "dec_deg": -36.76128103,
+        "parallax_mas": 21.87,
+        "distance_pc": 45.72473708276177,
+        "distance_ly": 149.13397347965247
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.1,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 3.119, 3.069"
+      },
+      "stellar": {
+        "spectral_type": "M2III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 89642)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:92041",
+      "object_scope": "system",
+      "display_name": "Phi Sagittarii",
+      "aliases": [
+        "Phi Sagittarii",
+        "27Phi Sgr",
+        "27 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "phi",
+        "bayer_latin": "Phi Sagittarii",
+        "flamsteed": "27 Sagittarii",
+        "hr": "7039",
+        "hip": "92041",
+        "hd": "173300",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 281.41397083,
+        "dec_deg": -26.9907794,
+        "parallax_mas": 14.14,
+        "distance_pc": 70.72135785007072,
+        "distance_ly": 230.66195190947664
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.17,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B8.5III"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 92041)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:93864",
+      "object_scope": "system",
+      "display_name": "Tau Sagittarii",
+      "aliases": [
+        "Tau Sagittarii",
+        "40Tau Sgr",
+        "40 Sagittarii"
+      ],
+      "constellation": {
+        "iau_code": "Sgr",
+        "name": "Sagittarius",
+        "genitive": "Sagittarii"
+      },
+      "designations": {
+        "bayer_letter": "tau",
+        "bayer_latin": "Tau Sagittarii",
+        "flamsteed": "40 Sagittarii",
+        "hr": "7234",
+        "hip": "93864",
+        "hd": "177716",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 286.73517629,
+        "dec_deg": -27.66981416,
+        "parallax_mas": 27.09,
+        "distance_pc": 36.913990402362494,
+        "distance_ly": 120.3971945367294
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.32,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K1/K2III"
+      },
+      "asterisms": [
+        "Teapot"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 93864)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:60718",
+      "object_scope": "system",
+      "display_name": "Acrux",
+      "aliases": [
+        "Alpha1 Crucis",
+        "Alp1Cru"
+      ],
+      "constellation": {
+        "iau_code": "Cru",
+        "name": "Crux",
+        "genitive": "Crucis"
+      },
+      "designations": {
+        "bayer_letter": "alpha1",
+        "bayer_latin": "Alpha1 Crucis",
+        "flamsteed": null,
+        "hr": "4730",
+        "hip": "60718",
+        "hd": "108248",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 186.64975585,
+        "dec_deg": -63.09905586,
+        "parallax_mas": 10.17,
+        "distance_pc": 98.32841691248771,
+        "distance_ly": 320.7040314650934
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.77,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B0.5IV"
+      },
+      "asterisms": [
+        "Southern Cross"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 60718)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:62434",
+      "object_scope": "system",
+      "display_name": "Mimosa",
+      "aliases": [
+        "Beta Crucis",
+        "Bet Cru"
+      ],
+      "constellation": {
+        "iau_code": "Cru",
+        "name": "Crux",
+        "genitive": "Crucis"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Crucis",
+        "flamsteed": null,
+        "hr": "4853",
+        "hip": "62434",
+        "hd": "111123",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 191.93049537,
+        "dec_deg": -59.68873246,
+        "parallax_mas": 9.25,
+        "distance_pc": 108.10810810810811,
+        "distance_ly": 352.6010810810811
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.25,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 1.267, 1.237"
+      },
+      "stellar": {
+        "spectral_type": "B0.5III"
+      },
+      "asterisms": [
+        "Southern Cross"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 62434)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:61084",
+      "object_scope": "system",
+      "display_name": "Gacrux",
+      "aliases": [
+        "Gamma Crucis",
+        "Gam Cru"
+      ],
+      "constellation": {
+        "iau_code": "Cru",
+        "name": "Crux",
+        "genitive": "Crucis"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Crucis",
+        "flamsteed": null,
+        "hr": "4763",
+        "hip": "61084",
+        "hd": "108903",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 187.79137202,
+        "dec_deg": -57.11256922,
+        "parallax_mas": 37.09,
+        "distance_pc": 26.96144513345915,
+        "distance_ly": 87.93637098948503
+      },
+      "photometry": {
+        "apparent_magnitude_v": 1.59,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "M4III"
+      },
+      "asterisms": [
+        "Southern Cross"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 61084)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:59747",
+      "object_scope": "system",
+      "display_name": "Imai",
+      "aliases": [
+        "Delta Crucis",
+        "Del Cru"
+      ],
+      "constellation": {
+        "iau_code": "Cru",
+        "name": "Crux",
+        "genitive": "Crucis"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Crucis",
+        "flamsteed": null,
+        "hr": "4656",
+        "hip": "59747",
+        "hd": "106490",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 183.78648733,
+        "dec_deg": -58.74890179,
+        "parallax_mas": 8.96,
+        "distance_pc": 111.60714285714285,
+        "distance_ly": 364.0133928571428
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.79,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.794, 2.784"
+      },
+      "stellar": {
+        "spectral_type": "B2IV"
+      },
+      "asterisms": [
+        "Southern Cross"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 59747)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:60260",
+      "object_scope": "system",
+      "display_name": "Ginan",
+      "aliases": [
+        "Epsilon Crucis",
+        "Eps Cru"
+      ],
+      "constellation": {
+        "iau_code": "Cru",
+        "name": "Crux",
+        "genitive": "Crucis"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Crucis",
+        "flamsteed": null,
+        "hr": "4700",
+        "hip": "60260",
+        "hd": "107446",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 185.34088036,
+        "dec_deg": -60.40136988,
+        "parallax_mas": 14.3,
+        "distance_pc": 69.93006993006993,
+        "distance_ly": 228.08111888111887
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.59,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K3/K4III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 60260)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:71683",
+      "object_scope": "system",
+      "display_name": "Rigil Kentaurus",
+      "aliases": [
+        "Alpha1 Centauri",
+        "Alp1Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "alpha1",
+        "bayer_latin": "Alpha1 Centauri",
+        "flamsteed": null,
+        "hr": "5459",
+        "hip": "71683",
+        "hd": "128620",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 219.92041034,
+        "dec_deg": -60.83514707,
+        "parallax_mas": 742.12,
+        "distance_pc": 1.3474909718104888,
+        "distance_ly": 4.394922654018218
+      },
+      "photometry": {
+        "apparent_magnitude_v": -0.01,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "G2V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 71683)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:68702",
+      "object_scope": "system",
+      "display_name": "Hadar",
+      "aliases": [
+        "Beta Centauri",
+        "Bet Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Centauri",
+        "flamsteed": null,
+        "hr": "5267",
+        "hip": "68702",
+        "hd": "122451",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 210.95601898,
+        "dec_deg": -60.3729784,
+        "parallax_mas": 6.21,
+        "distance_pc": 161.0305958132045,
+        "distance_ly": 525.2109500805153
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.61,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 0.634, 0.594"
+      },
+      "stellar": {
+        "spectral_type": "B1III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 68702)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:68933",
+      "object_scope": "system",
+      "display_name": "Menkent",
+      "aliases": [
+        "Theta Centauri",
+        "5The Cen",
+        "5 Centauri"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "theta",
+        "bayer_latin": "Theta Centauri",
+        "flamsteed": "5 Centauri",
+        "hr": "5288",
+        "hip": "68933",
+        "hd": "123139",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 211.67218608,
+        "dec_deg": -36.36869575,
+        "parallax_mas": 53.52,
+        "distance_pc": 18.684603886397607,
+        "distance_ly": 60.94095665171898
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.06,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K0IIIb"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 68933)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:61932",
+      "object_scope": "system",
+      "display_name": "Gamma Centauri",
+      "aliases": [
+        "Gamma Centauri",
+        "Gam Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Centauri",
+        "flamsteed": null,
+        "hr": "4819",
+        "hip": "61932",
+        "hd": "110304",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 190.38002079,
+        "dec_deg": -48.95988553,
+        "parallax_mas": 25.01,
+        "distance_pc": 39.98400639744102,
+        "distance_ly": 130.41023590563773
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.2,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A1IV"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 61932)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:66657",
+      "object_scope": "system",
+      "display_name": "Epsilon Centauri",
+      "aliases": [
+        "Epsilon Centauri",
+        "Eps Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "epsilon",
+        "bayer_latin": "Epsilon Centauri",
+        "flamsteed": null,
+        "hr": "5132",
+        "hip": "66657",
+        "hd": "118716",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 204.97196962,
+        "dec_deg": -53.46636269,
+        "parallax_mas": 8.68,
+        "distance_pc": 115.20737327188941,
+        "distance_ly": 375.7557603686636
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.29,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.301, 2.281"
+      },
+      "stellar": {
+        "spectral_type": "B1III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 66657)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:71352",
+      "object_scope": "system",
+      "display_name": "Eta Centauri",
+      "aliases": [
+        "Eta Centauri",
+        "Eta Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "eta",
+        "bayer_latin": "Eta Centauri",
+        "flamsteed": null,
+        "hr": "5440",
+        "hip": "71352",
+        "hd": "127972",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 218.87688163,
+        "dec_deg": -42.15774562,
+        "parallax_mas": 10.57,
+        "distance_pc": 94.6073793755913,
+        "distance_ly": 308.56764427625353
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.33,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.378, 2.308"
+      },
+      "stellar": {
+        "spectral_type": "B1Vn + A"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 6,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 71352)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:68002",
+      "object_scope": "system",
+      "display_name": "Zeta Centauri",
+      "aliases": [
+        "Zeta Centauri",
+        "Zet Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "zeta",
+        "bayer_latin": "Zeta Centauri",
+        "flamsteed": null,
+        "hr": "5231",
+        "hip": "68002",
+        "hd": "121263",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 208.88514539,
+        "dec_deg": -47.28826634,
+        "parallax_mas": 8.48,
+        "distance_pc": 117.92452830188678,
+        "distance_ly": 384.61792452830184
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.55,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B2.5IV"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 7,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 68002)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:59196",
+      "object_scope": "system",
+      "display_name": "Delta Centauri",
+      "aliases": [
+        "Delta Centauri",
+        "Del Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "delta",
+        "bayer_latin": "Delta Centauri",
+        "flamsteed": null,
+        "hr": "4621",
+        "hip": "59196",
+        "hd": "105435",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 182.08976505,
+        "dec_deg": -50.72240999,
+        "parallax_mas": 8.25,
+        "distance_pc": 121.21212121212122,
+        "distance_ly": 395.34060606060604
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.58,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 2.626, 2.496"
+      },
+      "stellar": {
+        "spectral_type": "B2IVne"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 8,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 59196)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:65109",
+      "object_scope": "system",
+      "display_name": "Iota Centauri",
+      "aliases": [
+        "Iota Centauri",
+        "Iot Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "iota",
+        "bayer_latin": "Iota Centauri",
+        "flamsteed": null,
+        "hr": "5028",
+        "hip": "65109",
+        "hd": "115892",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 200.15027321,
+        "dec_deg": -36.71208109,
+        "parallax_mas": 55.64,
+        "distance_pc": 17.97268152408339,
+        "distance_ly": 58.61897915168942
+      },
+      "photometry": {
+        "apparent_magnitude_v": 2.75,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A2V"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 9,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 65109)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:56561",
+      "object_scope": "system",
+      "display_name": "Lambda Centauri",
+      "aliases": [
+        "Lambda Centauri",
+        "Lam Cen"
+      ],
+      "constellation": {
+        "iau_code": "Cen",
+        "name": "Centaurus",
+        "genitive": "Centauri"
+      },
+      "designations": {
+        "bayer_letter": "lambda",
+        "bayer_latin": "Lambda Centauri",
+        "flamsteed": null,
+        "hr": "4467",
+        "hip": "56561",
+        "hd": "100841",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 173.94553448,
+        "dec_deg": -63.01982488,
+        "parallax_mas": 7.96,
+        "distance_pc": 125.62814070351759,
+        "distance_ly": 409.7437185929648
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.11,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B9II:"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 10,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 56561)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:91262",
+      "object_scope": "system",
+      "display_name": "Vega",
+      "aliases": [
+        "Alpha Lyrae",
+        "3Alp Lyr",
+        "3 Lyrae"
+      ],
+      "constellation": {
+        "iau_code": "Lyr",
+        "name": "Lyra",
+        "genitive": "Lyrae"
+      },
+      "designations": {
+        "bayer_letter": "alpha",
+        "bayer_latin": "Alpha Lyrae",
+        "flamsteed": "3 Lyrae",
+        "hr": "7001",
+        "hip": "91262",
+        "hd": "172167",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 279.23410832,
+        "dec_deg": 38.78299311,
+        "parallax_mas": 128.93,
+        "distance_pc": 7.756146746296439,
+        "distance_ly": 25.29713798185061
+      },
+      "photometry": {
+        "apparent_magnitude_v": 0.03,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "A0Vvar"
+      },
+      "asterisms": [
+        "Summer Triangle"
+      ],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 1,
+        "selection_reason": "asterism",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 91262)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:93194",
+      "object_scope": "system",
+      "display_name": "Sulafat",
+      "aliases": [
+        "Gamma Lyrae",
+        "14Gam Lyr",
+        "14 Lyrae"
+      ],
+      "constellation": {
+        "iau_code": "Lyr",
+        "name": "Lyra",
+        "genitive": "Lyrae"
+      },
+      "designations": {
+        "bayer_letter": "gamma",
+        "bayer_latin": "Gamma Lyrae",
+        "flamsteed": "14 Lyrae",
+        "hr": "7178",
+        "hip": "93194",
+        "hd": "176437",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 284.73593568,
+        "dec_deg": 32.68955312,
+        "parallax_mas": 5.14,
+        "distance_pc": 194.5525291828794,
+        "distance_ly": 634.5447470817121
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.25,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "B9III"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 2,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 93194)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:92420",
+      "object_scope": "system",
+      "display_name": "Sheliak",
+      "aliases": [
+        "Beta Lyrae",
+        "10Bet Lyr",
+        "10 Lyrae"
+      ],
+      "constellation": {
+        "iau_code": "Lyr",
+        "name": "Lyra",
+        "genitive": "Lyrae"
+      },
+      "designations": {
+        "bayer_letter": "beta",
+        "bayer_latin": "Beta Lyrae",
+        "flamsteed": "10 Lyrae",
+        "hr": "7106",
+        "hip": "92420",
+        "hd": "174638",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 282.51997462,
+        "dec_deg": 33.36267788,
+        "parallax_mas": 3.7,
+        "distance_pc": 270.27027027027026,
+        "distance_ly": 881.5027027027027
+      },
+      "photometry": {
+        "apparent_magnitude_v": 3.52,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 4.259, 3.329"
+      },
+      "stellar": {
+        "spectral_type": "A8:V comp SB"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 3,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 92420)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:92791",
+      "object_scope": "system",
+      "display_name": "Delta2 Lyrae",
+      "aliases": [
+        "Delta2 Lyrae",
+        "12Del2Lyr",
+        "12 Lyrae"
+      ],
+      "constellation": {
+        "iau_code": "Lyr",
+        "name": "Lyra",
+        "genitive": "Lyrae"
+      },
+      "designations": {
+        "bayer_letter": "delta2",
+        "bayer_latin": "Delta2 Lyrae",
+        "flamsteed": "12 Lyrae",
+        "hr": "7139",
+        "hip": "92791",
+        "hd": "175588",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 283.62620294,
+        "dec_deg": 36.89860518,
+        "parallax_mas": 3.63,
+        "distance_pc": 275.4820936639118,
+        "distance_ly": 898.5013774104682
+      },
+      "photometry": {
+        "apparent_magnitude_v": 4.22,
+        "gaia_g_mag": null,
+        "is_variable": true,
+        "magnitude_note": "HYG variable-star fields: 4.313, 4.133"
+      },
+      "stellar": {
+        "spectral_type": "M4IIvar"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 4,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 92791)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    },
+    {
+      "schema_version": 1,
+      "catalog_version": "pilot-v1",
+      "canonical_id": "hip:89826",
+      "object_scope": "system",
+      "display_name": "Kappa Lyrae",
+      "aliases": [
+        "Kappa Lyrae",
+        "1Kap Lyr",
+        "1 Lyrae"
+      ],
+      "constellation": {
+        "iau_code": "Lyr",
+        "name": "Lyra",
+        "genitive": "Lyrae"
+      },
+      "designations": {
+        "bayer_letter": "kappa",
+        "bayer_latin": "Kappa Lyrae",
+        "flamsteed": "1 Lyrae",
+        "hr": "6872",
+        "hip": "89826",
+        "hd": "168775",
+        "gaia_dr3": null,
+        "component": null
+      },
+      "astrometry": {
+        "epoch": "J1991.25 (ICRS)",
+        "ra_deg": 274.96550503,
+        "dec_deg": 36.06444696,
+        "parallax_mas": 13.71,
+        "distance_pc": 72.93946024799416,
+        "distance_ly": 237.89642596644782
+      },
+      "photometry": {
+        "apparent_magnitude_v": 4.33,
+        "gaia_g_mag": null,
+        "is_variable": false,
+        "magnitude_note": null
+      },
+      "stellar": {
+        "spectral_type": "K2IIIvar"
+      },
+      "asterisms": [],
+      "curation": {
+        "visible": true,
+        "sellable": true,
+        "rank_in_constellation": 5,
+        "selection_reason": "bayer",
+        "source_refs": [
+          "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+          "https://cdsarc.cds.unistra.fr/viz-bin/cat/I/239 (HIP 89826)",
+          "https://github.com/astronexus/HYG-Database (v4.1 cross-match)"
+        ],
+        "reviewed_at": null
+      },
+      "legacy_ids": []
+    }
+  ]
+}

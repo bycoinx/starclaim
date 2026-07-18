@@ -8,11 +8,10 @@ import random
 import csv
 import io
 import uuid
-import httpx
 from datetime import datetime, timezone
 
-HYG_CSV_URL = "https://raw.githubusercontent.com/astronexus/HYG-Database/master/hyg/v3/hyg.csv"
-LOCAL_HYG_PATH = os.path.join(os.path.dirname(__file__), "hyg.csv")
+LOCAL_HYG_PATH = os.path.join(os.path.dirname(__file__), "data", "hyg_v41.csv")
+LEGACY_HYG_SEED_ENABLED = os.environ.get("ENABLE_LEGACY_HYG_SEED", "0") == "1"
 
 def _star(code, name, constellation, tier, price, ra, dec, ra_deg=None, dec_deg=None, magnitude=None, spect=None, hip=None, owner=None):
     star = {
@@ -57,24 +56,15 @@ MANUAL_CATALOG = [
 ]
 
 def fetch_hyg_database():
-    """Download HYG database if not present locally."""
+    """Load the legacy bulk seed only when an operator explicitly enables it."""
+    if not LEGACY_HYG_SEED_ENABLED:
+        return None
     if os.path.exists(LOCAL_HYG_PATH):
         print(f"Loading local HYG database from {LOCAL_HYG_PATH}")
         with open(LOCAL_HYG_PATH, "r", encoding="utf-8") as f:
             return f.read()
-    
-    print(f"Downloading HYG database from {HYG_CSV_URL}...")
-    try:
-        with httpx.Client(timeout=60.0) as client:
-            resp = client.get(HYG_CSV_URL)
-            resp.raise_for_status()
-            content = resp.text
-            with open(LOCAL_HYG_PATH, "w", encoding="utf-8") as f:
-                f.write(content)
-            return content
-    except Exception as e:
-        print(f"Failed to download HYG database: {e}")
-        return None
+    print(f"Legacy HYG seed requested but local file is missing: {LOCAL_HYG_PATH}")
+    return None
 
 def parse_hyg_to_stars(csv_content, limit=120000):
     """Parse HYG CSV content into Star objects."""
@@ -164,17 +154,8 @@ if _hyg_content:
     STAR_CATALOG = list(MANUAL_CATALOG) + REAL_STARS
     print(f"Catalog initialized with {len(STAR_CATALOG)} real stars.")
 else:
-    print("Warning: Could not load HYG database. Using fallback catalog.")
-    # Fallback to a generated catalog if download fails
-    def generate_fallback_stars(count=5000):
-        stars = list(MANUAL_CATALOG)
-        for i in range(len(stars), count):
-            code = f"sc-{i+1:05d}"
-            ra = f"{random.randint(0, 23):02d}h {random.randint(0, 59):02d}m"
-            dec = f"{random.randint(-89, 89):+03d}° {random.randint(0, 59):02d}'"
-            stars.append(_star(code, f"Star {i}", "Unknown", "standard", 19.99, ra, dec, 6.0))
-        return stars
-    STAR_CATALOG = generate_fallback_stars()
+    print("Legacy bulk HYG seed disabled; using reviewed manual commerce seeds only.")
+    STAR_CATALOG = list(MANUAL_CATALOG)
 
 SAMPLE_LISTINGS = [
     {"code": "vega", "original": 1499, "asking": 2200, "owner": "Kaan B.", "days_ago": 45, "hops": 2},

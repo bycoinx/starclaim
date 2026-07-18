@@ -54,6 +54,12 @@ import {
   smoothHeading,
   smoothTilt,
 } from '../../../src/sky/skyRuntime';
+import { useCatalogStore } from '../../../src/platform/stars/catalogStore';
+import {
+  buildCatalogPresentationIndex,
+  buildConstellationStateIndex,
+  enrichStarWithCatalogPresentation,
+} from '../../../src/sky/catalogSkyPresentation';
 
 const IS_EXPO_GO = Constants?.appOwnership === 'expo';
 const EXPO_GO_SENSOR_STAR_LIMIT = 2400;
@@ -166,6 +172,9 @@ export default function StarMapScreen() {
   const router = useRouter();
   const purchases = useOwnershipStore((state) => state.records);
   const loadOwnership = useOwnershipStore((state) => state.load);
+  const catalogStars = useCatalogStore((state) => state.stars);
+  const catalogCollections = useCatalogStore((state) => state.collections);
+  const loadCuratedCatalog = useCatalogStore((state) => state.loadCatalog);
   const { heading, tilt } = viewDirection;
   const observedNow = useMemo(
     () => new Date(now.getTime() + timeOffsetHours * 60 * 60 * 1000),
@@ -224,7 +233,8 @@ export default function StarMapScreen() {
     ensureConstellations().then(setConstellations).catch(() => {});
     setSkyCatalog({ dsos: DSO_CATALOG, planets: getPlanetPositions() });
     loadOwnership();
-  }, [loadAttempt, loadOwnership, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
+    loadCuratedCatalog();
+  }, [loadAttempt, loadCuratedCatalog, loadOwnership, params.hd, params.hip, params.name, params.starClaimCode, params.starId]);
 
   useEffect(() => {
     if (loading || mapError || !coreStarsRef.current.length) return undefined;
@@ -628,12 +638,22 @@ export default function StarMapScreen() {
     return new Set(ids);
   }, [purchases]);
 
+  const catalogPresentationIndex = useMemo(
+    () => buildCatalogPresentationIndex(catalogStars),
+    [catalogStars],
+  );
+  const constellationStates = useMemo(
+    () => buildConstellationStateIndex(catalogCollections),
+    [catalogCollections],
+  );
+
   const renderStars = useMemo(() => {
+    const presentedStars = stars.map((star) => enrichStarWithCatalogPresentation(star, catalogPresentationIndex));
     const hardLimit = IS_EXPO_GO
       ? (mode === 'sensor' ? EXPO_GO_SENSOR_STAR_LIMIT : EXPO_GO_MANUAL_STAR_LIMIT)
       : (mode === 'sensor' ? 6000 : 10000);
 
-    if (stars.length <= hardLimit) return stars;
+    if (presentedStars.length <= hardLimit) return presentedStars;
 
     const dynamicMagnitudeLimit = mode === 'sensor'
       ? (zoom < 1.3 ? 6.4 : zoom < 2 ? 7.1 : 7.8)
@@ -645,7 +665,7 @@ export default function StarMapScreen() {
     const selectedCanonicalId = selectedStar?.canonicalId != null ? String(selectedStar.canonicalId) : null;
     const selectedHip = selectedStar?.hip != null ? String(selectedStar.hip) : null;
 
-    for (const star of stars) {
+    for (const star of presentedStars) {
       const starId = star?.id != null ? String(star.id) : null;
       const canonicalId = star?.canonicalId != null ? String(star.canonicalId) : null;
       const hip = star?.hip != null ? String(star.hip) : null;
@@ -674,8 +694,8 @@ export default function StarMapScreen() {
     regular.sort((a, b) => Number(a?.mag ?? a?.magnitude ?? 99) - Number(b?.mag ?? b?.magnitude ?? 99));
     const remainingSlots = Math.max(0, hardLimit - important.length);
     const capped = [...important.slice(0, hardLimit), ...regular.slice(0, remainingSlots)];
-    return capped.length ? capped : stars.slice(0, hardLimit);
-  }, [mode, ownedStarIds, selectedStar?.canonicalId, selectedStar?.hip, selectedStar?.id, stars, zoom]);
+    return capped.length ? capped : presentedStars.slice(0, hardLimit);
+  }, [catalogPresentationIndex, mode, ownedStarIds, selectedStar?.canonicalId, selectedStar?.hip, selectedStar?.id, stars, zoom]);
 
   const selectedPurchase = renderStars.length > 0 && selectedStar
     && purchases.find((item) => purchaseMatchesStar(item, selectedStar));
@@ -924,6 +944,7 @@ export default function StarMapScreen() {
                     dsos: dsoCatalog,
                     planets: planetCatalog,
                     ownedStarIds,
+                    constellationStates,
                   }}
                   selection={{ target: selectedStar }}
                   view={{

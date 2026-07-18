@@ -7,6 +7,7 @@ import {
   getConstellations,
   getSpectralTypes
 } from './starRepository';
+import { buildCatalogCollections } from './catalogCollections';
 
 export const useCatalogStore = create((set, get) => ({
   stars: [],
@@ -15,6 +16,9 @@ export const useCatalogStore = create((set, get) => ({
   searchQuery: '',
   selectedTier: 'all', // 'all' | 'named' | 'nearby'
   constellations: [],
+  collections: [],
+  asterismCollections: [],
+  selectedConstellation: 'all',
   spectralTypes: [],
   totalCount: 0,
   catalogTargetSize: CATALOG_TARGET_SIZE,
@@ -28,11 +32,15 @@ export const useCatalogStore = create((set, get) => ({
         loadAllStars(CATALOG_TARGET_SIZE),
         countRemoteStars(),
       ]);
-      const totalCount = remoteCount || stars.length;
+      const isCuratedCatalog = stars.some((star) => Boolean(star.catalogVersion));
+      const totalCount = isCuratedCatalog ? stars.length : (remoteCount || stars.length);
+      const groupedCollections = buildCatalogCollections(stars);
       set({
         stars,
         totalCount,
         constellations: getConstellations(stars),
+        collections: groupedCollections.constellations,
+        asterismCollections: groupedCollections.asterisms,
         spectralTypes: getSpectralTypes(stars),
         loading: false,
         loadedAt: Date.now(),
@@ -52,8 +60,12 @@ export const useCatalogStore = create((set, get) => ({
     set({ selectedTier: tier });
   },
 
+  setSelectedConstellation: (constellation) => {
+    set({ selectedConstellation: constellation || 'all' });
+  },
+
   getFilteredStars: () => {
-    const { stars, searchQuery, selectedTier } = get();
+    const { stars, searchQuery, selectedTier, selectedConstellation } = get();
     return stars.filter((star) => {
       // 1. Search Query Match
       const matchesSearch = String(star.name || star.properName || star.proper || '')
@@ -64,6 +76,9 @@ export const useCatalogStore = create((set, get) => ({
         .includes(searchQuery.toLowerCase());
 
       if (!matchesSearch) return false;
+
+      const constellationKey = star.iauCode || star.constellationCode || star.constellation;
+      if (selectedConstellation !== 'all' && constellationKey !== selectedConstellation) return false;
 
       // 2. Filter Match
       const distance = Number(star.distanceParsec ?? star.dist ?? 0);

@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starclaimx.com/schemas/star-catalog-v1.json",
+  "title": "StarClaim Canonical Star",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "catalog_version",
+    "canonical_id",
+    "object_scope",
+    "display_name",
+    "aliases",
+    "constellation",
+    "designations",
+    "astrometry",
+    "photometry",
+    "curation"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "catalog_version": { "type": "string", "minLength": 1 },
+    "canonical_id": {
+      "type": "string",
+      "pattern": "^(hip|gaia-dr3|hr):[A-Za-z0-9.-]+$"
+    },
+    "object_scope": { "enum": ["system", "component"] },
+    "display_name": { "type": "string", "minLength": 1 },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "constellation": {
+      "type": "object",
+      "required": ["iau_code", "name", "genitive"],
+      "properties": {
+        "iau_code": { "type": "string", "pattern": "^[A-Z][A-Za-z]{2}$" },
+        "name": { "type": "string", "minLength": 1 },
+        "genitive": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "designations": {
+      "type": "object",
+      "required": ["hip", "gaia_dr3"],
+      "properties": {
+        "bayer_letter": { "type": ["string", "null"] },
+        "bayer_latin": { "type": ["string", "null"] },
+        "flamsteed": { "type": ["string", "null"] },
+        "hr": { "type": ["string", "null"] },
+        "hip": { "type": ["string", "null"] },
+        "hd": { "type": ["string", "null"] },
+        "gaia_dr3": { "type": ["string", "null"] },
+        "component": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "astrometry": {
+      "type": "object",
+      "required": ["epoch", "ra_deg", "dec_deg"],
+      "properties": {
+        "epoch": { "type": "string" },
+        "ra_deg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "dec_deg": { "type": "number", "minimum": -90, "maximum": 90 },
+        "parallax_mas": { "type": ["number", "null"] },
+        "distance_pc": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "distance_ly": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "photometry": {
+      "type": "object",
+      "required": ["apparent_magnitude_v"],
+      "properties": {
+        "apparent_magnitude_v": { "type": "number" },
+        "gaia_g_mag": { "type": ["number", "null"] },
+        "is_variable": { "type": "boolean" },
+        "magnitude_note": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "stellar": {
+      "type": "object",
+      "properties": {
+        "spectral_type": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "asterisms": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "curation": {
+      "type": "object",
+      "required": ["visible", "sellable", "rank_in_constellation", "selection_reason", "source_refs"],
+      "properties": {
+        "visible": { "type": "boolean" },
+        "sellable": { "type": "boolean" },
+        "rank_in_constellation": { "type": "integer", "minimum": 1 },
+        "selection_reason": {
+          "enum": ["bayer", "brightness", "asterism", "cultural", "exception"]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "reviewed_at": { "type": ["string", "null"], "format": "date-time" }
+      },
+      "additionalProperties": false
+    },
+    "legacy_ids": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "additionalProperties": false
+}

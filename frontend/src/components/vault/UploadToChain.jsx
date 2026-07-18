@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { uploadToArweave } from '../../lib/api';
+import { StarRegistry } from '../../lib/StarRegistry';
 import {
   buildVaultMetadataDocument,
   fetchOffchainMetadata,
@@ -108,6 +109,9 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
         txId: arweaveRes.txId,
         url: arweaveRes.url,
       });
+      if (updatedMetadata.properties?.starclaim) {
+        await StarRegistry.verifyNftMetadata(updatedMetadata);
+      }
       const metadataBlob = new Blob([JSON.stringify(updatedMetadata)], {
         type: 'application/json',
       });

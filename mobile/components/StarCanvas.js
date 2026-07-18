@@ -56,6 +56,7 @@ import {
   NEBULA_BACKGROUND_SPEC,
   getMilkyWayWidthScale,
 } from '../src/sky/skyVisualQuality';
+import { getCatalogSkyColor } from '../src/sky/catalogSkyPresentation';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -452,6 +453,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     labels: { features: [] },
     boundaries: { features: [] },
   },
+  constellationStates = null,
   showMythology = false,
   showLabels = false,
   showPlanets = true,
@@ -722,6 +724,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     dsoData,
     planetData,
     constellations,
+    constellationStates,
     mythologyAssets: MYTHOLOGY_ASSETS,
     showLabels,
     showGrid,
@@ -736,6 +739,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     constellations.boundaries?.features,
     constellations.labels?.features,
     constellations.lines?.features,
+    constellationStates,
     coordinateMode,
     dsoData,
     initialZoom,
@@ -766,14 +770,14 @@ const StarCanvasBase = forwardRef(function StarCanvas({
     virtualCenter.ra,
   ]);
 
-  const ownedRingStars = useMemo(() => {
+  const statusRingStars = useMemo(() => {
     const selectedCanonical = selectedStar?.canonicalId != null ? String(selectedStar.canonicalId) : null;
     const selectedId = selectedStar?.id != null ? String(selectedStar.id) : null;
     const selectedHip = selectedStar?.hip != null ? String(selectedStar.hip) : null;
 
     return renderedStars
       .filter((star) => {
-        if (!star?.owned) return false;
+        if (!star?.owned && !star?.availabilityState) return false;
         const canonicalId = star?.canonicalId != null ? String(star.canonicalId) : null;
         const starId = star?.id != null ? String(star.id) : null;
         const hip = star?.hip != null ? String(star.hip) : null;
@@ -992,7 +996,7 @@ const StarCanvasBase = forwardRef(function StarCanvas({
               <StarPointBatch key={batch.key} batch={batch} ra={ra} dec={dec} zoom={zoom} layout={layout} time={time} coordinateMode={coordinateMode} observerLatitude={observerLatitude} lstDegrees={lstDegrees} hideBelowHorizon={hideBelowHorizon} qualityLevel={qualityLevel} prevRa={prevRa} prevDec={prevDec} />
             ))}
 
-            {ownedRingStars.map((star) => (
+            {statusRingStars.map((star) => (
               <OwnedStarRing
                 key={`owned-ring-${star.canonicalId || star.id}`}
                 star={star}
@@ -1342,6 +1346,10 @@ function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMo
   const paths = useDerivedValue(() => {
     const regularPath = Skia.Path.Make();
     const emphasizedPath = Skia.Path.Make();
+    const ownedPath = Skia.Path.Make();
+    const claimedPath = Skia.Path.Make();
+    const availablePath = Skia.Path.Make();
+    const unlistedPath = Skia.Path.Make();
     const w = layout.width;
     const h = layout.height;
     const z = zoom.value;
@@ -1349,7 +1357,12 @@ function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMo
     const dVal = dec.value;
 
     segments.forEach((item) => {
-      const targetPath = item.emphasized ? emphasizedPath : regularPath;
+      let targetPath = regularPath;
+      if (item.emphasized) targetPath = emphasizedPath;
+      else if (item.availabilityState === 'owned') targetPath = ownedPath;
+      else if (item.availabilityState === 'claimed') targetPath = claimedPath;
+      else if (item.availabilityState === 'available') targetPath = availablePath;
+      else if (item.availabilityState === 'unlisted') targetPath = unlistedPath;
       const segment = projectSkySegment(
         { ra: item.firstRa, dec: item.firstDec },
         { ra: item.secondRa, dec: item.secondDec },
@@ -1369,11 +1382,22 @@ function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMo
       }
     });
 
-    return { regular: regularPath, emphasized: emphasizedPath };
+    return {
+      regular: regularPath,
+      emphasized: emphasizedPath,
+      owned: ownedPath,
+      claimed: claimedPath,
+      available: availablePath,
+      unlisted: unlistedPath,
+    };
   });
 
   const regular = useDerivedValue(() => paths.value.regular);
   const emphasized = useDerivedValue(() => paths.value.emphasized);
+  const owned = useDerivedValue(() => paths.value.owned);
+  const claimed = useDerivedValue(() => paths.value.claimed);
+  const available = useDerivedValue(() => paths.value.available);
+  const unlisted = useDerivedValue(() => paths.value.unlisted);
 
   const regularColor = nightVision ? 'rgba(255,74,66,0.18)' : 'rgba(120,160,205,0.14)';
   const emphasizedColor = nightVision ? 'rgba(255,105,97,0.62)' : 'rgba(126,190,255,0.62)';
@@ -1388,6 +1412,10 @@ function ConstellationsPath({ segments = [], ra, dec, zoom, layout, coordinateMo
         strokeWidth={regularWidth}
         style="stroke"
       />
+      <Path path={owned} color={getCatalogSkyColor('owned', nightVision)} strokeWidth={1.35} style="stroke" opacity={0.78} />
+      <Path path={claimed} color={getCatalogSkyColor('claimed', nightVision)} strokeWidth={1.2} style="stroke" opacity={0.66} />
+      <Path path={available} color={getCatalogSkyColor('available', nightVision)} strokeWidth={1.2} style="stroke" opacity={0.7} />
+      <Path path={unlisted} color={getCatalogSkyColor('unlisted', nightVision)} strokeWidth={0.9} style="stroke" opacity={0.42} />
       <Path
         path={emphasized}
         color={emphasizedColor}
@@ -1717,6 +1745,7 @@ const StarCircle = React.memo(function StarCircle({ star, ra, dec, zoom, layout,
 });
 
 function getOwnedRingColor(star, nightVision) {
+  if (star?.availabilityState) return getCatalogSkyColor(star.availabilityState, nightVision);
   if (nightVision) return '#FF4A42';
   const mag = Number(star?.mag);
   if (Number.isFinite(mag) && mag < 1) return '#E6C05A';

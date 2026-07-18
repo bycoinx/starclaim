@@ -1,0 +1,516 @@
+{
+  "schema": "starclaim-nft-metadata-manifest-v1",
+  "catalog_version": "pilot-v1",
+  "catalog_hash_sha256": "f330bdcbd21ea14db72b4d0f07e05f3706debe2ecc818f8917be67d71af63c9c",
+  "policy_version": "commerce-pilot-v1",
+  "policy_hash_sha256": "1fe608eb42b17c17fe361cadbbaef3eed3dd58b8208600e96a2e127ce43964fe",
+  "star_count": 84,
+  "entries": [
+    {
+      "canonical_id": "hip:4427",
+      "astronomy_hash_sha256": "8944d746d6d46f50351ef08c9980c0cfb9f47b39f23f99d15c7fb29bddafc3eb",
+      "immutable_metadata_hash_sha256": "05618543ab45ac18d4f597da561f11b92b5485c44ea2b03d350325007ccb5ec5",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A4427"
+    },
+    {
+      "canonical_id": "hip:3179",
+      "astronomy_hash_sha256": "695f49a4bd7cbec834265ee1cd769e66fd139f9a813894bc90fd167c4a332bf9",
+      "immutable_metadata_hash_sha256": "918b9f5d8d4ccd64fc2e8e01981fbf81d2c5b7b35fcbb01981a00b39907c7448",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A3179"
+    },
+    {
+      "canonical_id": "hip:746",
+      "astronomy_hash_sha256": "b48af4ae179dcc9f2d4ee33ac670ae08e1e8347a8a59094cd546bfdef701af1a",
+      "immutable_metadata_hash_sha256": "72f205df2e394ada4aa22c9f785155b0b7b40dfbc5f7f94d0a5bc337486c907a",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A746"
+    },
+    {
+      "canonical_id": "hip:6686",
+      "astronomy_hash_sha256": "41b2661c253f822285b5f7f221fc62a20bd9cb70290d6b22b5b7a64f8a542caf",
+      "immutable_metadata_hash_sha256": "29f2511b30a2a2afb3c03a34cfb2bcc6a89f79c08490fdab3232b92f45fd789c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A6686"
+    },
+    {
+      "canonical_id": "hip:8886",
+      "astronomy_hash_sha256": "d30c8e8cacc905b8e9e2a2b4416b04a11a37b9020963445509a4f361773571cd",
+      "immutable_metadata_hash_sha256": "471f2ae454862c31d0cab296a2fd8f9ca5ecc4a2438dd9e642521331e89d4a2a",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A8886"
+    },
+    {
+      "canonical_id": "hip:71683",
+      "astronomy_hash_sha256": "def16723633d8d18324975758b8b193277d424773d2b6cb6fc10ae1a954a8f6b",
+      "immutable_metadata_hash_sha256": "b27777e6e8fbf2fd03c5633ffb801b3f62af1c6aa828252e5f482bd11926b8ec",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A71683"
+    },
+    {
+      "canonical_id": "hip:68702",
+      "astronomy_hash_sha256": "b0e2a53f15e484ff36043dbcfb3ba4aba32f09558b88d7f7cd4714777dfb65ef",
+      "immutable_metadata_hash_sha256": "9debdf92a45d7eb12832b7c68a9d34fe89b768ea7486119d021ca508bb6ee09f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A68702"
+    },
+    {
+      "canonical_id": "hip:68933",
+      "astronomy_hash_sha256": "ab78064851da07a52e65dbde851f00a8bf8a6fa1f38d16ebe24e4569a536735b",
+      "immutable_metadata_hash_sha256": "3d0e442218314f3a1769d25f045f80523997fbc1771ed3c39f3dca416f61d04c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A68933"
+    },
+    {
+      "canonical_id": "hip:61932",
+      "astronomy_hash_sha256": "6f2ac1b267443891b89b311e81ca74ee90e536f2f33467ef9c4067071ea2a248",
+      "immutable_metadata_hash_sha256": "aebd6eb2162e52d99de56fd9d1a3a509bf7041bca3e6eb697bd9b983b248c4cb",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A61932"
+    },
+    {
+      "canonical_id": "hip:66657",
+      "astronomy_hash_sha256": "bcd6ebe76b9749d3aa6e6c68149ae5c9d745f37400587617a36073d584f8e3a9",
+      "immutable_metadata_hash_sha256": "0f9a3c4aa843953ff33439457a286d3eefce9d3f2b09a54f98a6cdfae2b10a93",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A66657"
+    },
+    {
+      "canonical_id": "hip:71352",
+      "astronomy_hash_sha256": "48953562a5a3f3918b289578050dd5987703c916544d5e5b780c627eea960507",
+      "immutable_metadata_hash_sha256": "fcb0dc65ded62169969b3b908f026532dc192df905d8c81580c3eaf5c7b9a1fa",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A71352"
+    },
+    {
+      "canonical_id": "hip:68002",
+      "astronomy_hash_sha256": "22156217e938388369f2c2a97c1ef4e1aef6df00eab1d5c4a01c509cbb242c30",
+      "immutable_metadata_hash_sha256": "98831e24ee17f1cf46601597f425fc4b356841e70020bb683d1178fe3864886c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A68002"
+    },
+    {
+      "canonical_id": "hip:59196",
+      "astronomy_hash_sha256": "b3f9b65c9e56b96a1250b0bfb64c34bcb03d5e434ad094efe0ee51a525c43fae",
+      "immutable_metadata_hash_sha256": "9321d87fd7a25aeb7388be959e1786d8d131d60e4e6a5617c4c319737cf919ce",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A59196"
+    },
+    {
+      "canonical_id": "hip:65109",
+      "astronomy_hash_sha256": "c1b8732b69db2024f7587debed17b56e6838be2ddcbfad9ce45961d8f03c6f32",
+      "immutable_metadata_hash_sha256": "e5fc94ac0009ef1f47a7f6be419780e848846669c8ad7222caf90a22a500061f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A65109"
+    },
+    {
+      "canonical_id": "hip:56561",
+      "astronomy_hash_sha256": "f7b43f1b87d68ce4a91f6a5f77f8bb6e9080544538fae759da6018b345519ca2",
+      "immutable_metadata_hash_sha256": "a00feeabd000756c7776f5807fec9e8eb93850eab994da6dff7ec701e7420a02",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A56561"
+    },
+    {
+      "canonical_id": "hip:60718",
+      "astronomy_hash_sha256": "e29f5034d78e2c7326e839eca4e3a7cf19fa701cab5b0a5a8991862608731554",
+      "immutable_metadata_hash_sha256": "f3f1aa064a708e8bfa1ff25d6fc765605867dd6c76302090562d89e671ab4827",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A60718"
+    },
+    {
+      "canonical_id": "hip:62434",
+      "astronomy_hash_sha256": "2b6246ca210e0229a39977db3d73e995410383bc071a51135d308135e44bbe71",
+      "immutable_metadata_hash_sha256": "8b8aceccb320e1cc069d656f391b543599ec74981629eb43c58e043646348037",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A62434"
+    },
+    {
+      "canonical_id": "hip:61084",
+      "astronomy_hash_sha256": "b8b20e477695c2ecd9399e57dd9a3b3069cc911382757a02517f9a7b51a9339f",
+      "immutable_metadata_hash_sha256": "aa85b4324d5bb9f1c3532952a28d6820203d40790270811b8be9f731601c29d7",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A61084"
+    },
+    {
+      "canonical_id": "hip:59747",
+      "astronomy_hash_sha256": "1c1f9d2558eb686971af1d67531c6ac442693d0947a2bc227dc892f9f91aa46a",
+      "immutable_metadata_hash_sha256": "a5b52def05d10382131b82921a6259ea6fafbdfa7686be2ab1cd565d363afa0f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A59747"
+    },
+    {
+      "canonical_id": "hip:60260",
+      "astronomy_hash_sha256": "03dbc0091a49b308b4595a2420048c9132208371a2e5e9d3d7df9ed061d8ffd2",
+      "immutable_metadata_hash_sha256": "e321baec19579c97683b61c5d164b2b6ec488ee92f7b22b94dcf8b600d9bd18b",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A60260"
+    },
+    {
+      "canonical_id": "hip:49669",
+      "astronomy_hash_sha256": "b4b6ba08fa230af70944de75d9d159dbeb006d2a2190788339f816e8d2cfcc2d",
+      "immutable_metadata_hash_sha256": "0b3b49431f8e552ff0f50e1a2b891f89b9a5197ef1156de4fc5404d92b11eda2",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A49669"
+    },
+    {
+      "canonical_id": "hip:50583",
+      "astronomy_hash_sha256": "0ea8c62ab7fad09cc88e8eae1071cb99d1fd8242a408b3fc011a7ac2a61d56a5",
+      "immutable_metadata_hash_sha256": "f2dc323b57aa9238d3620935eada6b1b0d7babf14cef9244df5e4d5fdc48c2b9",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A50583"
+    },
+    {
+      "canonical_id": "hip:57632",
+      "astronomy_hash_sha256": "788cdb07447dc0dc4652eabcd97b0e99f161f39b99a53a96a71fad272e4e7575",
+      "immutable_metadata_hash_sha256": "845d626d2bd0ff418b84026c058d505711be7890d736b1fd16f65c3687030f5a",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A57632"
+    },
+    {
+      "canonical_id": "hip:54872",
+      "astronomy_hash_sha256": "9d63f28ed23b20f1de7da0cd02c4bb3d41012c6bbbab12d62957393b469d056f",
+      "immutable_metadata_hash_sha256": "16847ad3c0f8e876da900445ba68d53f34b22648a9067882a7465ce57abcf6f1",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A54872"
+    },
+    {
+      "canonical_id": "hip:47908",
+      "astronomy_hash_sha256": "99873b2dfc81ebe94f5ac99292d78918dd54f054cf5af7f9fd0a83f9666a5ddd",
+      "immutable_metadata_hash_sha256": "7d3a1f8b973aefcc58c26358b5c3c08130432e589f5807e9e3cd646b0f1e968d",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A47908"
+    },
+    {
+      "canonical_id": "hip:54879",
+      "astronomy_hash_sha256": "7b5084ae052eff4b8edfb46820ff0e7ebfa18c8c0c4761a7a0c8d53081fefb7c",
+      "immutable_metadata_hash_sha256": "415ae6d18140382903990b27eebfdaa1557e5af5caf2c30dcbcee9b3a39b0d00",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A54879"
+    },
+    {
+      "canonical_id": "hip:50335",
+      "astronomy_hash_sha256": "803e5442bb09f65e98353cc7d6431454b77839f0e7701961418905e0ccbc403d",
+      "immutable_metadata_hash_sha256": "8adeed350c9bd98f3e53aa55d22ad54fba69d26531523411911b323cc06704c8",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A50335"
+    },
+    {
+      "canonical_id": "hip:49583",
+      "astronomy_hash_sha256": "240ef58916754c78aa035bb16314bc42636881e23b3e487a99728f31c1c2834d",
+      "immutable_metadata_hash_sha256": "8bb1449a8ba709ba54f2f64f1e6505baadcec76d4a1e0b154262a13e9013565c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A49583"
+    },
+    {
+      "canonical_id": "hip:47508",
+      "astronomy_hash_sha256": "e93ce1b7084e727f9e6aa06068352347ca6a6e6caed7bfc4b303813d5c7d8d14",
+      "immutable_metadata_hash_sha256": "55afdf74a7da15db7ecb868975ac3fe43fe6b5fbe50ce9533b373587f008f528",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A47508"
+    },
+    {
+      "canonical_id": "hip:51624",
+      "astronomy_hash_sha256": "7ba5e0a2c13f41822b15a9dab7c0c6e41c8e906473d571bb12697f00ebba3cb8",
+      "immutable_metadata_hash_sha256": "dd65239f2b2b028589c02a894e54b9481bb4d7753bdec239f8ede2fbbb28c1cc",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A51624"
+    },
+    {
+      "canonical_id": "hip:91262",
+      "astronomy_hash_sha256": "4e581af22e4919dc22ffd0b8b6424587cffaeff58934444451e4b5e8d845be4a",
+      "immutable_metadata_hash_sha256": "ad7377193525c8fc6cb8ec088c2fcd2f2dbc8a7212e0a13f7f9a0abd5837feb5",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A91262"
+    },
+    {
+      "canonical_id": "hip:93194",
+      "astronomy_hash_sha256": "39c8667390502b49fb437ca16a488c7b6597ac2895aa9bd6163427ce9f8a3776",
+      "immutable_metadata_hash_sha256": "5322616255fed5f5cf2d3a6fdc101777c864779760818542731a33ccbc5630ac",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A93194"
+    },
+    {
+      "canonical_id": "hip:92420",
+      "astronomy_hash_sha256": "1fc59e09d852937ac8ce22202aec295e4d951071a65ec442fe4a7633954e2ec1",
+      "immutable_metadata_hash_sha256": "e4192139e5e2d7b46565107d07999df0bdfd13834b4c00b4ffaecdb6aa85e9f8",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A92420"
+    },
+    {
+      "canonical_id": "hip:92791",
+      "astronomy_hash_sha256": "cfd82456319d727e4f01edfa757c8e5589c6ab539859c1e778e7ae1a51af7fd7",
+      "immutable_metadata_hash_sha256": "962af88b7cba6a88e5eeece0882baf49d846d274b57560270aae9cccca272102",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A92791"
+    },
+    {
+      "canonical_id": "hip:89826",
+      "astronomy_hash_sha256": "dde44e72669558bdb41a46f4025df1d0906c79fb8916f98e23ba3b8cd48c0373",
+      "immutable_metadata_hash_sha256": "6356705327ed20575dd84094998393071237bd2bdacc648f2dd0b810033b9551",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A89826"
+    },
+    {
+      "canonical_id": "hip:24436",
+      "astronomy_hash_sha256": "3a0bf2ae24b3cd98931f0c9d2d252789d3476dd61599a045345105c2e23cbb5b",
+      "immutable_metadata_hash_sha256": "6a89b8aff32e15283ad90b2dc471fc07fdd8531272834f09b65a254570b9d8d9",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A24436"
+    },
+    {
+      "canonical_id": "hip:27989",
+      "astronomy_hash_sha256": "09bb84cd0a162daa50a909aa03228bccc28515375f2a2ff2dee48a8542e889e9",
+      "immutable_metadata_hash_sha256": "e0cb93fdbd917970d684c4e55042666b6f90ce7b6a80336dfca1833dd492e7dc",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A27989"
+    },
+    {
+      "canonical_id": "hip:25336",
+      "astronomy_hash_sha256": "0eca976749a59a1ab81313c830dc5e5c7f1a257eb09a93fff37acec2bcf42fc7",
+      "immutable_metadata_hash_sha256": "5aa0e29e63be400d2cdc2e8c64a322c8ebdc3abbd1280b704c30f9e1ad2c2fab",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A25336"
+    },
+    {
+      "canonical_id": "hip:26311",
+      "astronomy_hash_sha256": "e2eb4a4e89c0f10551b49aba19bc89b32b21eb6d721609babf91f7afb801d57b",
+      "immutable_metadata_hash_sha256": "a7d107e3d8ef3ff231652aacfdb7ecf045cde27e22d3972918d3688278b832a3",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A26311"
+    },
+    {
+      "canonical_id": "hip:26727",
+      "astronomy_hash_sha256": "d41ceaa738843de1c4ac73fdbcb760806d581b7cf520933e2d4a52f6eb83c9b7",
+      "immutable_metadata_hash_sha256": "3802ccf74c7c43110da03765b91319c14832065e958901f40ff34af2cadd7c35",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A26727"
+    },
+    {
+      "canonical_id": "hip:27366",
+      "astronomy_hash_sha256": "f5c8279e5c2074b101c8ef7549cdd45bec009050382de7ed52b453584c38257f",
+      "immutable_metadata_hash_sha256": "f48517fb77b05181a36e9585f9d88b81bc6ffd8cb1f04fc51236701f7c9b19dd",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A27366"
+    },
+    {
+      "canonical_id": "hip:25930",
+      "astronomy_hash_sha256": "a204faccaa0e8e2cab3a0cfebdb5dde0054b3e558912259a5f6db8b0448ec2c5",
+      "immutable_metadata_hash_sha256": "bde98b0a7415e3fa4d627a76cca428b331a4e1b6f281188588f1e8c6498e9324",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A25930"
+    },
+    {
+      "canonical_id": "hip:26241",
+      "astronomy_hash_sha256": "2332439528845d5c7457cf040566fdcfca250600da2be0026386ce4956efe559",
+      "immutable_metadata_hash_sha256": "b2d3b129498fd1d4d06bccf0b2a2e8a9356d88937cd5f72110a0157055bc72e1",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A26241"
+    },
+    {
+      "canonical_id": "hip:22449",
+      "astronomy_hash_sha256": "691f297ce95c0bf196726955b0bd152fe3341fa488692cf618d010042e2e5b83",
+      "immutable_metadata_hash_sha256": "7312342a112b84687930ad0c41b7693bfefb22d3b34a2ead4223c5852450e63f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A22449"
+    },
+    {
+      "canonical_id": "hip:25281",
+      "astronomy_hash_sha256": "42d22d4e99ce019cb3b469a24c2f02af007b7fb941185d2b7257762ce48cc77b",
+      "immutable_metadata_hash_sha256": "edc528e172b7c6e788af9dd23c253fc07b9328b4e99deaf43178c6eecf1a1eba",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A25281"
+    },
+    {
+      "canonical_id": "hip:80763",
+      "astronomy_hash_sha256": "925fab6cb396ff4bf86b00ed9b9244ddac8aaf50c73686b782cc90ab21fe064f",
+      "immutable_metadata_hash_sha256": "d393e10f0906a3f1705f72314a3ad4da3bc65580519c05c7d6e8212384dabdab",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A80763"
+    },
+    {
+      "canonical_id": "hip:85927",
+      "astronomy_hash_sha256": "8b6d2d72b4cf5faebdbcb86c59c61f30a76afee654e90e2d16212e134b970bb9",
+      "immutable_metadata_hash_sha256": "ae46887f184b63262842f44c6ee9e423c36954300211e0d758012d727bd8bc72",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A85927"
+    },
+    {
+      "canonical_id": "hip:86228",
+      "astronomy_hash_sha256": "ec57908625eb9c9857c0eab898194488ed8cbc3ad15c6aea8592133eff8d7d69",
+      "immutable_metadata_hash_sha256": "722e1e4aa269f7c613ca57a2d3614f4034807680ca75cb59f7b6afb3d1913e8a",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A86228"
+    },
+    {
+      "canonical_id": "hip:78401",
+      "astronomy_hash_sha256": "f2a0805b71bd0897238fc0ebd2f0fa24d03e97d1832a2c709863a9495b274c23",
+      "immutable_metadata_hash_sha256": "3001ca845b3a439fd62b22731bb2325380539b81739cbc9a8f0d186066f30700",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A78401"
+    },
+    {
+      "canonical_id": "hip:82396",
+      "astronomy_hash_sha256": "177923e39d620b662fc3ddf41e89a6b0a1ebb96bbcafd92d1d191897b519b81a",
+      "immutable_metadata_hash_sha256": "5dc8f17443ad31ca64475d96aaf82fe69f9534a3d2d4ca40de99a05d20dea2f9",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A82396"
+    },
+    {
+      "canonical_id": "hip:86670",
+      "astronomy_hash_sha256": "c83a766fe029eed39bae967e95ef8a46f5137057cde32381b8dd543fd6ad7921",
+      "immutable_metadata_hash_sha256": "0d4789e7f72378534c05eb279277775d47d4816e49d1632aa25512c8fdf09886",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A86670"
+    },
+    {
+      "canonical_id": "hip:78820",
+      "astronomy_hash_sha256": "09b1f3f7bd7bb3f75b38866a1de5a9d359c305de953c9474217441060923f915",
+      "immutable_metadata_hash_sha256": "4b32227ac350808dee285a4dca6f1dafc7eb39107fa12dfcdd3a1ab5b6688020",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A78820"
+    },
+    {
+      "canonical_id": "hip:85696",
+      "astronomy_hash_sha256": "41d6444550b0e0794f84fb51538b7b836cdc2414500f415a0225c15acb493467",
+      "immutable_metadata_hash_sha256": "7af0592a309d961a8bcc54fe1152424cb2b96889a16cd20a4fd72c71ec7f87c0",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A85696"
+    },
+    {
+      "canonical_id": "hip:81266",
+      "astronomy_hash_sha256": "8a551155ea538f079dfe1be52d0d517b9aec5b702e583fec19a63d4e6f0d19fa",
+      "immutable_metadata_hash_sha256": "941642d43b7c1d063e4e1e75fea2e161528ec6f17c4ea4c4179f8e6fa6ce6feb",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A81266"
+    },
+    {
+      "canonical_id": "hip:78265",
+      "astronomy_hash_sha256": "8aa810dbd40c10add0166cdd19630bcff83e76fabef9fa58a124abb5aaf75399",
+      "immutable_metadata_hash_sha256": "ed04511ecca3a2267fba9cac330b518180492b196fefdbe3a7da29234dbcdd2e",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A78265"
+    },
+    {
+      "canonical_id": "hip:80112",
+      "astronomy_hash_sha256": "5dee177447a61ea1bc0064b3c496520c4b29e20fa4479625a3b07952cc81da2a",
+      "immutable_metadata_hash_sha256": "4d1e2ef3b75101d91003a856f4c43e8067153db2c0029ecc53b44c04469d8720",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A80112"
+    },
+    {
+      "canonical_id": "hip:87073",
+      "astronomy_hash_sha256": "9845ca021714cad51258e32e99bbd140e50a2cc2687caa5f3b4fcb1e9e396b9c",
+      "immutable_metadata_hash_sha256": "a0592f0e68dacc17110ee7eb10036313758780571628d99870a559a30ff06c91",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A87073"
+    },
+    {
+      "canonical_id": "hip:90185",
+      "astronomy_hash_sha256": "ccb6f676232a4444924c153c26d6f740f702af8c9090e3b4e7acfe550d0e91ab",
+      "immutable_metadata_hash_sha256": "2b4b11d3a887473634a34e2b03611fccde3f1ebebf517a9666897c2f0e382b89",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A90185"
+    },
+    {
+      "canonical_id": "hip:92855",
+      "astronomy_hash_sha256": "5a7184b964907a1c9fa376ffd4b3a11abcf45d132ca7f006f5a3ab01b04dc8c9",
+      "immutable_metadata_hash_sha256": "3fdf10a26501e1e1b1af1741e6aab5929e198092239fb06a334b3ddfbff305b1",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A92855"
+    },
+    {
+      "canonical_id": "hip:93506",
+      "astronomy_hash_sha256": "d3f76afdff8c9087b282dc5f3341e0ce2f78dd7bb8e4cfcf9f555787df8b82b8",
+      "immutable_metadata_hash_sha256": "f813634cdaa62bc36e89b1eeb1365153c0de65f934608f6a14d86a125557cb09",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A93506"
+    },
+    {
+      "canonical_id": "hip:89931",
+      "astronomy_hash_sha256": "ba3e294971292b11ab8d0f3a5f08914e18d085d6b041833ce9b2671cad253309",
+      "immutable_metadata_hash_sha256": "0c5f7363d2652276b2a9eb4c844c7f4e82eb2a332101a096f105f0c00a98baaf",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A89931"
+    },
+    {
+      "canonical_id": "hip:90496",
+      "astronomy_hash_sha256": "9a7e21d03bef0c32aae48019ce8b4ec787b9cee83077055aed0d2598b4e13163",
+      "immutable_metadata_hash_sha256": "6224da79f37058bba85d186c94fa9610b7b6e543ac17e290092ad4a3b20c9112",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A90496"
+    },
+    {
+      "canonical_id": "hip:94141",
+      "astronomy_hash_sha256": "a9efd6bbfae57cfaebfbf5aee3546dae2ed327b2109bf17b8bec3c0f52513e18",
+      "immutable_metadata_hash_sha256": "cb5b85b3effb2ffa1c766e1c6384a68c3a8db73b23e74f8924bdd2e277aef4cc",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A94141"
+    },
+    {
+      "canonical_id": "hip:88635",
+      "astronomy_hash_sha256": "01d6cae3d2af28adddd1215a49c5ae6e578e785a06099a4b2aee2d8102a78817",
+      "immutable_metadata_hash_sha256": "0a05f2f269a965421d4ec4792949229c1817fd72d4ab0e372ba66187df923e0b",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A88635"
+    },
+    {
+      "canonical_id": "hip:89642",
+      "astronomy_hash_sha256": "161996215793c990658573176bcf90341d7934bf80e417828401339b2f278c64",
+      "immutable_metadata_hash_sha256": "ee5cae61895453bc06a1d984a6a7e9694d570be0da2171d0f43e14d3e14cc614",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A89642"
+    },
+    {
+      "canonical_id": "hip:92041",
+      "astronomy_hash_sha256": "bb532a758600187ca9c703034fcafec5e43372aaf0c3042094aaddd8ff832594",
+      "immutable_metadata_hash_sha256": "c61690fd483d1b274fc2fe22e2f145aaeabfa8daa97017f350dfa6eccf8585bb",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A92041"
+    },
+    {
+      "canonical_id": "hip:93864",
+      "astronomy_hash_sha256": "a1819acff3afbead298574ed73aba90b64c2160f411c5204a839054780b1050f",
+      "immutable_metadata_hash_sha256": "4ad6573862d88b47f3f5e7184ccffaecd8efeb00412bd2ce8a0be9fe9c2f21e8",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A93864"
+    },
+    {
+      "canonical_id": "hip:21421",
+      "astronomy_hash_sha256": "c59ed9f1a2f0d7ba7d8b62d95d831dda450bfc73263b154ba7550d732a9c853f",
+      "immutable_metadata_hash_sha256": "a1b4ac42d213f4dd8fde9485bdb87694ec2affab0d81e46704d0a788cd97722e",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A21421"
+    },
+    {
+      "canonical_id": "hip:25428",
+      "astronomy_hash_sha256": "b6e7ce81545794404454cf4887b0262ad3ac2a8389c543cc04539a7d14e77696",
+      "immutable_metadata_hash_sha256": "ebb8cac950f9ea9e6241776081f7d3eee17e52751e1d739ea317c708bc0ec259",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A25428"
+    },
+    {
+      "canonical_id": "hip:17702",
+      "astronomy_hash_sha256": "ebb0d54430bd55becb9804b656a99fb32717a4f01db3f417718d97fa5ef07f57",
+      "immutable_metadata_hash_sha256": "244b4a09748770de4b2de47b1ed560b6af4f022bb23ee0eea7ef578c08b998cc",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A17702"
+    },
+    {
+      "canonical_id": "hip:26451",
+      "astronomy_hash_sha256": "d46d25ee5d504d58b78837e6a1cf9fdb728104c3a4ef369219254312ed573f6f",
+      "immutable_metadata_hash_sha256": "ba7510bf2b140c3aaa9ab4397ae12976aa188c2a08ee2997ea3cb383e4417740",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A26451"
+    },
+    {
+      "canonical_id": "hip:20894",
+      "astronomy_hash_sha256": "53bbebeeab59d86420e834f38e132f360e7dd3d518df721c81e9304cec63087c",
+      "immutable_metadata_hash_sha256": "cec1cddbdc573ff64d94b425acb41d8174f5313e81b82449b25b386a22d8905f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A20894"
+    },
+    {
+      "canonical_id": "hip:18724",
+      "astronomy_hash_sha256": "b28bbe3d807acb56784c63c90f590f887e564a0ede372db869126e95420d8f61",
+      "immutable_metadata_hash_sha256": "bd1a9efee60bd1911e90a78f7af509a4ae1f82b937856f58366e2f524cd4ca20",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A18724"
+    },
+    {
+      "canonical_id": "hip:20889",
+      "astronomy_hash_sha256": "2dfde3d0e29fb437b1376f8cee6753facea79e2baebe7c671463973fb2c899cb",
+      "immutable_metadata_hash_sha256": "2ce7482e276bcbb90c27d1b27204ab26eac6a02635773674e683e0833127c672",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A20889"
+    },
+    {
+      "canonical_id": "hip:15900",
+      "astronomy_hash_sha256": "0116d9ad00f3e466b83e1d902df0457a9cc70c79f2b524b359e4ba24be11a466",
+      "immutable_metadata_hash_sha256": "9c527e2698f2b7e94a3d1bbd43f8473ea20d2ffc8639fe557c4cde8d24ec93f2",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A15900"
+    },
+    {
+      "canonical_id": "hip:20205",
+      "astronomy_hash_sha256": "828c5a3ccebc98aa6dc79456cbaabae38c4849054782dc09e9ba80d7a2c825e2",
+      "immutable_metadata_hash_sha256": "ea13b4f9204a182b6c72b10d91d99bd0d19903a0dff85e1aca9f810b51af143f",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A20205"
+    },
+    {
+      "canonical_id": "hip:16083",
+      "astronomy_hash_sha256": "724292352db59501bee3eb0244978d13eca9ec5a9aa059a08a85fd71aea06f1a",
+      "immutable_metadata_hash_sha256": "1104dc8f67576b7340e31a37af426834faa140e6b532c5257203ecabe844032d",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A16083"
+    },
+    {
+      "canonical_id": "hip:62956",
+      "astronomy_hash_sha256": "60b835441e9028fba91a4e5f6214b69363696ce86346c9d55e0da4a249fdc377",
+      "immutable_metadata_hash_sha256": "fd10e116d166ced7790396feb96c369430908430557b8d852cb31622ed4f6159",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A62956"
+    },
+    {
+      "canonical_id": "hip:54061",
+      "astronomy_hash_sha256": "2c428b505c2b63b20fc04bf50392c2de14c36293fd668f1adea3899a0447f2c1",
+      "immutable_metadata_hash_sha256": "edd1826f6c2fc24dac8a93d7831ca7aa9c6f0277b2b2ea89fefcd7d070cb489c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A54061"
+    },
+    {
+      "canonical_id": "hip:67301",
+      "astronomy_hash_sha256": "53629c492ec9d63435080a509d044a1d6a584cf0f83040527eed4ab485ca9c56",
+      "immutable_metadata_hash_sha256": "11cba83f6385f2f93ee07eb877eb2b384a37344d3886e0f603dc424f99b51bd4",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A67301"
+    },
+    {
+      "canonical_id": "hip:65378",
+      "astronomy_hash_sha256": "df09601b4dbc07fc01fb3a72ea3b4bbe509f63efbb42f00464055c44763a33a8",
+      "immutable_metadata_hash_sha256": "4b7ef88c41d8b12363b8986a5f41afd423ad1163f55a1b0fc98e3e91e3fbf807",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A65378"
+    },
+    {
+      "canonical_id": "hip:53910",
+      "astronomy_hash_sha256": "e4a20bf3ea136073c368e40fd4bfc83a6a33991150e22f91ee07debd0605b256",
+      "immutable_metadata_hash_sha256": "39cd3eef0600c73bc94c33276087e3f46dbee8ece64fbd5044eb83ebb11425aa",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A53910"
+    },
+    {
+      "canonical_id": "hip:58001",
+      "astronomy_hash_sha256": "e114f222e9321ad0809ada7c7919742be493321ef07ba995144591dd46e2f73b",
+      "immutable_metadata_hash_sha256": "89558c6c3e24284d6c114fa931bcc37c263cce6000468db250a793c0a9d56c45",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A58001"
+    },
+    {
+      "canonical_id": "hip:59774",
+      "astronomy_hash_sha256": "941bd3e1860194eab38f8894870b83cc2b3338cbd4d62e77a150889da959ff7c",
+      "immutable_metadata_hash_sha256": "d76c499024b333f7b3be855c1e5d846ad4bd362ec34925876a868c0d4ad0935c",
+      "metadata_source_uri": "https://starclaimx.com/api/catalog/nft-metadata/hip%3A59774"
+    }
+  ],
+  "manifest_hash_sha256": "38213be69d351e2baba0e4a7dad6b098aa4e16af1a2891e35dd2c6fff229cf9f",
+  "manifest_hash_scope": "document_without_manifest_hash_sha256_and_manifest_hash_scope"
+}

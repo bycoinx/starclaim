@@ -1,0 +1,136 @@
+{
+  "catalog_version": "pilot-v1",
+  "source": "legacy reconciliation dry-run",
+  "writes_performed": false,
+  "redirects": {
+    "star_22b9183669": {
+      "canonical_id": "hip:26727",
+      "survivor_legacy_id": "star_5773d11b44",
+      "redirect_required": true
+    },
+    "star_256fb18df9": {
+      "canonical_id": "hip:71683",
+      "survivor_legacy_id": "star_256fb18df9",
+      "redirect_required": false
+    },
+    "star_2ad43d3b2e": {
+      "canonical_id": "hip:25930",
+      "survivor_legacy_id": "star_2ad43d3b2e",
+      "redirect_required": false
+    },
+    "star_2c480c2567": {
+      "canonical_id": "hip:26311",
+      "survivor_legacy_id": "star_2c480c2567",
+      "redirect_required": false
+    },
+    "star_5773d11b44": {
+      "canonical_id": "hip:26727",
+      "survivor_legacy_id": "star_5773d11b44",
+      "redirect_required": false
+    },
+    "star_6f627b36ac": {
+      "canonical_id": "hip:25336",
+      "survivor_legacy_id": "star_6f627b36ac",
+      "redirect_required": false
+    },
+    "star_75ef58766d": {
+      "canonical_id": "hip:49669",
+      "survivor_legacy_id": "star_75ef58766d",
+      "redirect_required": false
+    },
+    "star_76a4f46be8": {
+      "canonical_id": "hip:24436",
+      "survivor_legacy_id": "star_76a4f46be8",
+      "redirect_required": false
+    },
+    "star_777804c5b1": {
+      "canonical_id": "hip:90185",
+      "survivor_legacy_id": "star_777804c5b1",
+      "redirect_required": false
+    },
+    "star_8ef6029f14": {
+      "canonical_id": "hip:57632",
+      "survivor_legacy_id": "star_8ef6029f14",
+      "redirect_required": false
+    },
+    "star_9823039f17": {
+      "canonical_id": "hip:27989",
+      "survivor_legacy_id": "star_9823039f17",
+      "redirect_required": false
+    },
+    "star_a01c1c6f65": {
+      "canonical_id": "hip:54061",
+      "survivor_legacy_id": "star_a01c1c6f65",
+      "redirect_required": false
+    },
+    "star_b48b903442": {
+      "canonical_id": "hip:85927",
+      "survivor_legacy_id": "star_b48b903442",
+      "redirect_required": false
+    },
+    "star_b8a6c26307": {
+      "canonical_id": "hip:78401",
+      "survivor_legacy_id": "star_b8a6c26307",
+      "redirect_required": false
+    },
+    "star_b9af43941a": {
+      "canonical_id": "hip:21421",
+      "survivor_legacy_id": "star_ea5a424973",
+      "redirect_required": true
+    },
+    "star_be6c7a98fd": {
+      "canonical_id": "hip:50583",
+      "survivor_legacy_id": "star_be6c7a98fd",
+      "redirect_required": false
+    },
+    "star_cf2653791a": {
+      "canonical_id": "hip:80763",
+      "survivor_legacy_id": "star_cf2653791a",
+      "redirect_required": false
+    },
+    "star_dd4fd73719": {
+      "canonical_id": "hip:65378",
+      "survivor_legacy_id": "star_dd4fd73719",
+      "redirect_required": false
+    },
+    "star_dd99869a72": {
+      "canonical_id": "hip:24436",
+      "survivor_legacy_id": "star_76a4f46be8",
+      "redirect_required": true
+    },
+    "star_dfefacdbe0": {
+      "canonical_id": "hip:62956",
+      "survivor_legacy_id": "star_dfefacdbe0",
+      "redirect_required": false
+    },
+    "star_e0f4182eca": {
+      "canonical_id": "hip:91262",
+      "survivor_legacy_id": "star_e0f4182eca",
+      "redirect_required": false
+    },
+    "star_ea5a424973": {
+      "canonical_id": "hip:21421",
+      "survivor_legacy_id": "star_ea5a424973",
+      "redirect_required": false
+    }
+  },
+  "quarantined": {
+    "star_1dff0ed73f": {
+      "reason": "Coordinates and integrated magnitude describe M42 (Orion Nebula), not a star."
+    },
+    "star_84a5776c55": {
+      "reason": "Coordinates and integrated magnitude describe M31 (Andromeda Galaxy), not a star."
+    }
+  },
+  "unresolved_legacy_ids": [
+    "star_362df8b9b0",
+    "star_687fb2b9cc",
+    "star_6f1a0817a4",
+    "star_86f2e78866",
+    "star_a66641917c",
+    "star_b88e8dfb93",
+    "star_bd7ea11bcd",
+    "star_c5b9c152a0",
+    "star_ef8489041a"
+  ]
+}

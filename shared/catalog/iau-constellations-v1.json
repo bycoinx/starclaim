@@ -1,0 +1,447 @@
+{
+  "registry_version": "iau-constellations-v1",
+  "source": "https://www.iau.org/Iau/Science/What-we-do/The-Constellations.aspx",
+  "constellation_count": 88,
+  "constellations": [
+    {
+      "iau_code": "And",
+      "name": "Andromeda",
+      "genitive": "Andromedae"
+    },
+    {
+      "iau_code": "Ant",
+      "name": "Antlia",
+      "genitive": "Antliae"
+    },
+    {
+      "iau_code": "Aps",
+      "name": "Apus",
+      "genitive": "Apodis"
+    },
+    {
+      "iau_code": "Aql",
+      "name": "Aquila",
+      "genitive": "Aquilae"
+    },
+    {
+      "iau_code": "Aqr",
+      "name": "Aquarius",
+      "genitive": "Aquarii"
+    },
+    {
+      "iau_code": "Ara",
+      "name": "Ara",
+      "genitive": "Arae"
+    },
+    {
+      "iau_code": "Ari",
+      "name": "Aries",
+      "genitive": "Arietis"
+    },
+    {
+      "iau_code": "Aur",
+      "name": "Auriga",
+      "genitive": "Aurigae"
+    },
+    {
+      "iau_code": "Boo",
+      "name": "Boötes",
+      "genitive": "Boötis"
+    },
+    {
+      "iau_code": "CMa",
+      "name": "Canis Major",
+      "genitive": "Canis Majoris"
+    },
+    {
+      "iau_code": "CMi",
+      "name": "Canis Minor",
+      "genitive": "Canis Minoris"
+    },
+    {
+      "iau_code": "CVn",
+      "name": "Canes Venatici",
+      "genitive": "Canum Venaticorum"
+    },
+    {
+      "iau_code": "Cae",
+      "name": "Caelum",
+      "genitive": "Caeli"
+    },
+    {
+      "iau_code": "Cam",
+      "name": "Camelopardalis",
+      "genitive": "Camelopardalis"
+    },
+    {
+      "iau_code": "Cap",
+      "name": "Capricornus",
+      "genitive": "Capricorni"
+    },
+    {
+      "iau_code": "Car",
+      "name": "Carina",
+      "genitive": "Carinae"
+    },
+    {
+      "iau_code": "Cas",
+      "name": "Cassiopeia",
+      "genitive": "Cassiopeiae"
+    },
+    {
+      "iau_code": "Cen",
+      "name": "Centaurus",
+      "genitive": "Centauri"
+    },
+    {
+      "iau_code": "Cep",
+      "name": "Cepheus",
+      "genitive": "Cephei"
+    },
+    {
+      "iau_code": "Cet",
+      "name": "Cetus",
+      "genitive": "Ceti"
+    },
+    {
+      "iau_code": "Cha",
+      "name": "Chamaeleon",
+      "genitive": "Chamaeleontis"
+    },
+    {
+      "iau_code": "Cir",
+      "name": "Circinus",
+      "genitive": "Circini"
+    },
+    {
+      "iau_code": "Cnc",
+      "name": "Cancer",
+      "genitive": "Cancri"
+    },
+    {
+      "iau_code": "Col",
+      "name": "Columba",
+      "genitive": "Columbae"
+    },
+    {
+      "iau_code": "Com",
+      "name": "Coma Berenices",
+      "genitive": "Comae Berenices"
+    },
+    {
+      "iau_code": "CrA",
+      "name": "Corona Australis",
+      "genitive": "Coronae Australis"
+    },
+    {
+      "iau_code": "CrB",
+      "name": "Corona Borealis",
+      "genitive": "Coronae Borealis"
+    },
+    {
+      "iau_code": "Crt",
+      "name": "Crater",
+      "genitive": "Crateris"
+    },
+    {
+      "iau_code": "Cru",
+      "name": "Crux",
+      "genitive": "Crucis"
+    },
+    {
+      "iau_code": "Crv",
+      "name": "Corvus",
+      "genitive": "Corvi"
+    },
+    {
+      "iau_code": "Cyg",
+      "name": "Cygnus",
+      "genitive": "Cygni"
+    },
+    {
+      "iau_code": "Del",
+      "name": "Delphinus",
+      "genitive": "Delphini"
+    },
+    {
+      "iau_code": "Dor",
+      "name": "Dorado",
+      "genitive": "Doradus"
+    },
+    {
+      "iau_code": "Dra",
+      "name": "Draco",
+      "genitive": "Draconis"
+    },
+    {
+      "iau_code": "Equ",
+      "name": "Equuleus",
+      "genitive": "Equulei"
+    },
+    {
+      "iau_code": "Eri",
+      "name": "Eridanus",
+      "genitive": "Eridani"
+    },
+    {
+      "iau_code": "For",
+      "name": "Fornax",
+      "genitive": "Fornacis"
+    },
+    {
+      "iau_code": "Gem",
+      "name": "Gemini",
+      "genitive": "Geminorum"
+    },
+    {
+      "iau_code": "Gru",
+      "name": "Grus",
+      "genitive": "Gruis"
+    },
+    {
+      "iau_code": "Her",
+      "name": "Hercules",
+      "genitive": "Herculis"
+    },
+    {
+      "iau_code": "Hor",
+      "name": "Horologium",
+      "genitive": "Horologii"
+    },
+    {
+      "iau_code": "Hya",
+      "name": "Hydra",
+      "genitive": "Hydrae"
+    },
+    {
+      "iau_code": "Hyi",
+      "name": "Hydrus",
+      "genitive": "Hydri"
+    },
+    {
+      "iau_code": "Ind",
+      "name": "Indus",
+      "genitive": "Indi"
+    },
+    {
+      "iau_code": "LMi",
+      "name": "Leo Minor",
+      "genitive": "Leonis Minoris"
+    },
+    {
+      "iau_code": "Lac",
+      "name": "Lacerta",
+      "genitive": "Lacertae"
+    },
+    {
+      "iau_code": "Leo",
+      "name": "Leo",
+      "genitive": "Leonis"
+    },
+    {
+      "iau_code": "Lep",
+      "name": "Lepus",
+      "genitive": "Leporis"
+    },
+    {
+      "iau_code": "Lib",
+      "name": "Libra",
+      "genitive": "Librae"
+    },
+    {
+      "iau_code": "Lup",
+      "name": "Lupus",
+      "genitive": "Lupi"
+    },
+    {
+      "iau_code": "Lyn",
+      "name": "Lynx",
+      "genitive": "Lyncis"
+    },
+    {
+      "iau_code": "Lyr",
+      "name": "Lyra",
+      "genitive": "Lyrae"
+    },
+    {
+      "iau_code": "Men",
+      "name": "Mensa",
+      "genitive": "Mensae"
+    },
+    {
+      "iau_code": "Mic",
+      "name": "Microscopium",
+      "genitive": "Microscopii"
+    },
+    {
+      "iau_code": "Mon",
+      "name": "Monoceros",
+      "genitive": "Monocerotis"
+    },
+    {
+      "iau_code": "Mus",
+      "name": "Musca",
+      "genitive": "Muscae"
+    },
+    {
+      "iau_code": "Nor",
+      "name": "Norma",
+      "genitive": "Normae"
+    },
+    {
+      "iau_code": "Oct",
+      "name": "Octans",
+      "genitive": "Octantis"
+    },
+    {
+      "iau_code": "Oph",
+      "name": "Ophiuchus",
+      "genitive": "Ophiuchi"
+    },
+    {
+      "iau_code": "Ori",
+      "name": "Orion",
+      "genitive": "Orionis"
+    },
+    {
+      "iau_code": "Pav",
+      "name": "Pavo",
+      "genitive": "Pavonis"
+    },
+    {
+      "iau_code": "Peg",
+      "name": "Pegasus",
+      "genitive": "Pegasi"
+    },
+    {
+      "iau_code": "Per",
+      "name": "Perseus",
+      "genitive": "Persei"
+    },
+    {
+      "iau_code": "Phe",
+      "name": "Phoenix",
+      "genitive": "Phoenicis"
+    },
+    {
+      "iau_code": "Pic",
+      "name": "Pictor",
+      "genitive": "Pictoris"
+    },
+    {
+      "iau_code": "PsA",
+      "name": "Piscis Austrinus",
+      "genitive": "Piscis Austrini"
+    },
+    {
+      "iau_code": "Psc",
+      "name": "Pisces",
+      "genitive": "Piscium"
+    },
+    {
+      "iau_code": "Pup",
+      "name": "Puppis",
+      "genitive": "Puppis"
+    },
+    {
+      "iau_code": "Pyx",
+      "name": "Pyxis",
+      "genitive": "Pyxidis"
+    },
+    {
+      "iau_code": "Ret",
+      "name": "Reticulum",
+      "genitive": "Reticuli"
+    },
+    {
+      "iau_code": "Scl",
+      "name": "Sculptor",
+      "genitive": "Sculptoris"
+    },
+    {
+      "iau_code": "Sco",
+      "name": "Scorpius",
+      "genitive": "Scorpii"
+    },
+    {
+      "iau_code": "Sct",
+      "name": "Scutum",
+      "genitive": "Scuti"
+    },
+    {
+      "iau_code": "Ser",
+      "name": "Serpens",
+      "genitive": "Serpentis"
+    },
+    {
+      "iau_code": "Sex",
+      "name": "Sextans",
+      "genitive": "Sextantis"
+    },
+    {
+      "iau_code": "Sge",
+      "name": "Sagitta",
+      "genitive": "Sagittae"
+    },
+    {
+      "iau_code": "Sgr",
+      "name": "Sagittarius",
+      "genitive": "Sagittarii"
+    },
+    {
+      "iau_code": "Tau",
+      "name": "Taurus",
+      "genitive": "Tauri"
+    },
+    {
+      "iau_code": "Tel",
+      "name": "Telescopium",
+      "genitive": "Telescopii"
+    },
+    {
+      "iau_code": "TrA",
+      "name": "Triangulum Australe",
+      "genitive": "Trianguli Australis"
+    },
+    {
+      "iau_code": "Tri",
+      "name": "Triangulum",
+      "genitive": "Trianguli"
+    },
+    {
+      "iau_code": "Tuc",
+      "name": "Tucana",
+      "genitive": "Tucanae"
+    },
+    {
+      "iau_code": "UMa",
+      "name": "Ursa Major",
+      "genitive": "Ursae Majoris"
+    },
+    {
+      "iau_code": "UMi",
+      "name": "Ursa Minor",
+      "genitive": "Ursae Minoris"
+    },
+    {
+      "iau_code": "Vel",
+      "name": "Vela",
+      "genitive": "Velorum"
+    },
+    {
+      "iau_code": "Vir",
+      "name": "Virgo",
+      "genitive": "Virginis"
+    },
+    {
+      "iau_code": "Vol",
+      "name": "Volans",
+      "genitive": "Volantis"
+    },
+    {
+      "iau_code": "Vul",
+      "name": "Vulpecula",
+      "genitive": "Vulpeculae"
+    }
+  ]
+}

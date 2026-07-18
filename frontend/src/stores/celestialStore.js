@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 export const DEFAULT_CATALOG_FILTERS = Object.freeze({
   constellation: "all",
-  magnitudeMin: 0,
+  magnitudeMin: -2,
   magnitudeMax: 10,
   distanceMin: 0,
   distanceMax: 10000,

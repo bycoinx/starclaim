@@ -12,6 +12,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+from decimal import Decimal
 import time
 import os
 import uuid
@@ -39,6 +40,15 @@ try:
         VoyageCoordinate,
         LODCalculator,
     )
+    from backend.catalog_service import (
+        CatalogQuery,
+        CatalogStarNotFoundError,
+        CatalogVersionNotFoundError,
+        CuratedCatalogService,
+        LegacyRedirectNotFoundError,
+    )
+    from backend.catalog_commerce import CatalogCommercePolicy, CommerceQuery
+    from backend.catalog_nft import CatalogNftMetadataService, NftMetadataIntegrityError
 except ModuleNotFoundError:
     from star_tile_catalog import resolve_catalog_root, resolve_tile_path
     from binary_star_catalog import resolve_binary_catalog_root, resolve_binary_tile_path
@@ -49,6 +59,15 @@ except ModuleNotFoundError:
         VoyageCoordinate,
         LODCalculator,
     )
+    from catalog_service import (
+        CatalogQuery,
+        CatalogStarNotFoundError,
+        CatalogVersionNotFoundError,
+        CuratedCatalogService,
+        LegacyRedirectNotFoundError,
+    )
+    from catalog_commerce import CatalogCommercePolicy, CommerceQuery
+    from catalog_nft import CatalogNftMetadataService, NftMetadataIntegrityError
 
 try:
     from backend.seed_data import STAR_CATALOG, SAMPLE_LISTINGS, SAMPLE_ACTIVITIES
@@ -89,6 +108,34 @@ STAR_TILE_ROOT = Path(os.environ.get("STAR_TILE_ROOT", ROOT_DIR / "data" / "star
 STAR_TILE_VERSION = os.environ.get("STAR_TILE_VERSION", "hyg-v4.1-sector-v1")
 STAR_TILE_2D_ROOT = Path(os.environ.get("STAR_TILE_2D_ROOT", ROOT_DIR / "data" / "star_tiles_2d")).resolve()
 STAR_TILE_2D_VERSION = os.environ.get("STAR_TILE_2D_VERSION", "gaia-dr3-hip-2d-v1")
+CURATED_CATALOG_PATH = Path(
+    os.environ.get("CURATED_CATALOG_PATH", ROOT_DIR.parent / "shared" / "catalog" / "curated-pilot-v1.json")
+).resolve()
+CURATED_REDIRECTS_PATH = Path(
+    os.environ.get("CURATED_REDIRECTS_PATH", ROOT_DIR.parent / "shared" / "catalog" / "legacy-redirects-pilot-v1.json")
+).resolve()
+CURATED_CATALOG_PUBLICATION = os.environ.get("CURATED_CATALOG_PUBLICATION", "preview")
+curated_catalog = CuratedCatalogService(CURATED_CATALOG_PATH, CURATED_REDIRECTS_PATH)
+CURATED_COMMERCE_POLICY_PATH = Path(
+    os.environ.get("CURATED_COMMERCE_POLICY_PATH", ROOT_DIR.parent / "shared" / "catalog" / "commerce-policy-v1.json")
+).resolve()
+curated_commerce_policy = CatalogCommercePolicy(CURATED_COMMERCE_POLICY_PATH)
+CURATED_NFT_METADATA_BASE_URI = os.environ.get(
+    "CURATED_NFT_METADATA_BASE_URI", "https://starclaimx.com/api/catalog/nft-metadata"
+)
+CURATED_NFT_EXTERNAL_BASE_URI = os.environ.get(
+    "CURATED_NFT_EXTERNAL_BASE_URI", "https://starclaimx.com/stars"
+)
+CURATED_NFT_IMAGE_URI = os.environ.get(
+    "CURATED_NFT_IMAGE_URI", "https://starclaimx.com/assets/stars/fallback-preview.webp"
+)
+curated_nft_metadata = CatalogNftMetadataService(
+    curated_catalog,
+    curated_commerce_policy,
+    metadata_base_uri=CURATED_NFT_METADATA_BASE_URI,
+    external_base_uri=CURATED_NFT_EXTERNAL_BASE_URI,
+    image_uri=CURATED_NFT_IMAGE_URI,
+)
 
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
@@ -1039,6 +1086,239 @@ def _build_star_query(
     return {"$and": conditions}
 
 
+def _build_curated_catalog_query(
+    catalog_version: Optional[str] = None,
+    iau_code: Optional[str] = None,
+    bayer: Optional[str] = None,
+    asterism: Optional[str] = None,
+    magnitude_min: Optional[float] = None,
+    magnitude_max: Optional[float] = None,
+    sellable: Optional[bool] = None,
+    visible: Optional[bool] = True,
+    search: Optional[str] = None,
+    sort: str = "rank",
+) -> CatalogQuery:
+    if magnitude_min is not None and magnitude_max is not None and magnitude_min > magnitude_max:
+        raise HTTPException(status_code=422, detail="magnitude_min cannot exceed magnitude_max")
+    if sort not in {"rank", "brightest", "name", "nearest"}:
+        raise HTTPException(status_code=422, detail="Unsupported curated catalog sort")
+    return CatalogQuery(
+        catalog_version=catalog_version, iau_code=iau_code, bayer=bayer,
+        asterism=asterism, magnitude_min=magnitude_min, magnitude_max=magnitude_max,
+        sellable=sellable, visible=visible, search=search, sort=sort,
+    )
+
+
+def _require_curated_catalog_available() -> None:
+    if CURATED_CATALOG_PUBLICATION == "disabled":
+        raise HTTPException(status_code=503, detail="Curated catalog is disabled")
+
+
+def _catalog_version_error(error: CatalogVersionNotFoundError) -> HTTPException:
+    return HTTPException(status_code=404, detail=f"Catalog version not found: {error}")
+
+
+async def _filter_curated_commerce(stars: list, available: Optional[bool]) -> list:
+    if available is None:
+        return stars
+    legacy_to_canonical = {
+        legacy_id: star.canonical_id
+        for star in stars
+        for legacy_id in curated_catalog.legacy_ids_for(star.canonical_id)
+    }
+    commercial_rows = []
+    if legacy_to_canonical:
+        commercial_rows = await db.stars.find(
+            {"star_id": {"$in": list(legacy_to_canonical)}},
+            {"_id": 0, "star_id": 1, "owner_id": 1},
+        ).to_list(length=len(legacy_to_canonical))
+    return curated_catalog.filter_by_availability(stars, commercial_rows, available)
+
+
+async def _query_curated_catalog(query: CatalogQuery, available: Optional[bool]) -> list:
+    _require_curated_catalog_available()
+    try:
+        stars = curated_catalog.query(query)
+    except CatalogVersionNotFoundError as error:
+        raise _catalog_version_error(error) from error
+    return await _filter_curated_commerce(stars, available)
+
+
+@api.get("/catalog")
+async def curated_catalog_metadata():
+    metadata = curated_catalog.metadata()
+    metadata["publication_state"] = CURATED_CATALOG_PUBLICATION
+    return metadata
+
+
+def _build_curated_commerce_query(
+    rarity_band: Optional[str] = None,
+    min_price: Optional[Decimal] = None,
+    max_price: Optional[Decimal] = None,
+) -> CommerceQuery:
+    valid_rarities = set(curated_commerce_policy.price_bands)
+    if rarity_band and rarity_band not in valid_rarities:
+        raise HTTPException(status_code=422, detail=f"Unsupported rarity_band: {rarity_band}")
+    if min_price is not None and min_price < 0:
+        raise HTTPException(status_code=422, detail="min_price cannot be negative")
+    if max_price is not None and max_price < 0:
+        raise HTTPException(status_code=422, detail="max_price cannot be negative")
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(status_code=422, detail="min_price cannot exceed max_price")
+    return CommerceQuery(rarity_band=rarity_band, min_price=min_price, max_price=max_price)
+
+
+def _require_curated_commerce_versions(
+    catalog_version: Optional[str],
+    policy_version: Optional[str],
+) -> None:
+    if catalog_version and catalog_version != curated_catalog.catalog_version:
+        raise HTTPException(status_code=404, detail=f"Catalog version not found: {catalog_version}")
+    if policy_version and policy_version != curated_commerce_policy.policy_version:
+        raise HTTPException(status_code=404, detail=f"Commerce policy version not found: {policy_version}")
+
+
+@api.get("/catalog/policy")
+async def curated_commerce_policy_metadata():
+    return curated_commerce_policy.metadata()
+
+
+@api.get("/catalog/nft-manifest")
+async def curated_nft_manifest(catalog_version: Optional[str] = None):
+    _require_curated_catalog_available()
+    _require_curated_commerce_versions(catalog_version, None)
+    return curated_nft_metadata.manifest()
+
+
+@api.post("/catalog/nft-metadata/verify")
+async def verify_curated_nft_metadata(body: dict):
+    _require_curated_catalog_available()
+    try:
+        return curated_nft_metadata.verify(body)
+    except CatalogStarNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Canonical star not found: {error}") from error
+    except NftMetadataIntegrityError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@api.get("/catalog/nft-metadata/{canonical_id}")
+async def get_curated_nft_metadata(
+    canonical_id: str,
+    catalog_version: Optional[str] = None,
+    policy_version: Optional[str] = None,
+):
+    _require_curated_catalog_available()
+    _require_curated_commerce_versions(catalog_version, policy_version)
+    try:
+        star = curated_catalog.get_star(canonical_id)
+    except CatalogStarNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Canonical star not found: {error}") from error
+    return curated_nft_metadata.document(star)
+
+
+@api.get("/catalog/pricing")
+async def list_curated_pricing(
+    query: CommerceQuery = Depends(_build_curated_commerce_query),
+    catalog_version: Optional[str] = None,
+    policy_version: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    _require_curated_catalog_available()
+    _require_curated_commerce_versions(catalog_version, policy_version)
+    if limit < 1 or limit > 200 or offset < 0:
+        raise HTTPException(status_code=422, detail="limit must be 1-200 and offset must be non-negative")
+    stars = curated_catalog.query(CatalogQuery(visible=True))
+    quotes = curated_commerce_policy.query_quotes(stars, query)
+    return quotes[offset:offset + limit]
+
+
+@api.get("/catalog/pricing/count")
+async def count_curated_pricing(
+    query: CommerceQuery = Depends(_build_curated_commerce_query),
+    catalog_version: Optional[str] = None,
+    policy_version: Optional[str] = None,
+):
+    _require_curated_catalog_available()
+    _require_curated_commerce_versions(catalog_version, policy_version)
+    stars = curated_catalog.query(CatalogQuery(visible=True))
+    quotes = curated_commerce_policy.query_quotes(stars, query)
+    return {
+        "catalog_version": curated_catalog.catalog_version,
+        "policy_version": curated_commerce_policy.policy_version,
+        "count": len(quotes),
+    }
+
+
+@api.get("/catalog/pricing/{canonical_id}")
+async def get_curated_pricing(
+    canonical_id: str,
+    catalog_version: Optional[str] = None,
+    policy_version: Optional[str] = None,
+):
+    _require_curated_catalog_available()
+    _require_curated_commerce_versions(catalog_version, policy_version)
+    try:
+        star = curated_catalog.get_star(canonical_id)
+    except CatalogStarNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Canonical star not found: {error}") from error
+    return curated_commerce_policy.quote(star)
+
+
+@api.get("/catalog/constellations")
+async def curated_catalog_constellations(catalog_version: Optional[str] = None):
+    _require_curated_catalog_available()
+    try:
+        curated_catalog.query(CatalogQuery(catalog_version=catalog_version))
+    except CatalogVersionNotFoundError as error:
+        raise _catalog_version_error(error) from error
+    return curated_catalog.constellations()
+
+
+@api.get("/catalog/stars")
+async def list_curated_stars(
+    query: CatalogQuery = Depends(_build_curated_catalog_query),
+    available: Optional[bool] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    if limit < 1 or limit > 200 or offset < 0:
+        raise HTTPException(status_code=422, detail="limit must be 1-200 and offset must be non-negative")
+    stars = await _query_curated_catalog(query, available)
+    return [star.model_dump(mode="json") for star in stars[offset:offset + limit]]
+
+
+@api.get("/catalog/stars/count")
+async def count_curated_stars(
+    query: CatalogQuery = Depends(_build_curated_catalog_query),
+    available: Optional[bool] = None,
+):
+    stars = await _query_curated_catalog(query, available)
+    return {"catalog_version": curated_catalog.catalog_version, "count": len(stars)}
+
+
+@api.get("/catalog/redirects/{legacy_id}")
+async def resolve_curated_legacy_id(legacy_id: str, catalog_version: Optional[str] = None):
+    _require_curated_catalog_available()
+    try:
+        return curated_catalog.resolve_legacy(legacy_id, catalog_version)
+    except CatalogVersionNotFoundError as error:
+        raise _catalog_version_error(error) from error
+    except LegacyRedirectNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Legacy star ID not found: {error}") from error
+
+
+@api.get("/catalog/stars/{canonical_id}")
+async def get_curated_star(canonical_id: str, catalog_version: Optional[str] = None):
+    _require_curated_catalog_available()
+    try:
+        return curated_catalog.get_star(canonical_id, catalog_version).model_dump(mode="json")
+    except CatalogVersionNotFoundError as error:
+        raise _catalog_version_error(error) from error
+    except CatalogStarNotFoundError as error:
+        raise HTTPException(status_code=404, detail=f"Canonical star not found: {error}") from error
+
+
 @api.get("/stars")
 async def list_stars(
     tier: Optional[str] = None,
@@ -1650,6 +1930,20 @@ async def get_all_voyage_dsos(skip: int = 0, limit: int = 1000):
 @api.get("/stars/{star_id}")
 async def get_star(star_id: str):
     s = await db.stars.find_one({"star_id": star_id}, {"_id": 0})
+    if not s:
+        try:
+            redirect = curated_catalog.resolve_legacy(star_id)
+            survivor_id = redirect.get("survivor_legacy_id")
+            if survivor_id and survivor_id != star_id:
+                s = await db.stars.find_one({"star_id": survivor_id}, {"_id": 0})
+                if s:
+                    s["legacy_redirect"] = {
+                        "requested_star_id": star_id,
+                        "canonical_id": redirect.get("canonical_id"),
+                        "survivor_legacy_id": survivor_id,
+                    }
+        except LegacyRedirectNotFoundError:
+            pass
     if not s:
         raise HTTPException(status_code=404, detail="Star not found")
     return s

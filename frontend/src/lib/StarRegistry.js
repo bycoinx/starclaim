@@ -50,6 +50,40 @@ export class StarRegistry {
     }
   }
 
+  static async fetchCuratedStars(params = {}) {
+    const response = await api.get("/catalog/stars", { params: { limit: 200, ...params } });
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  static async fetchCuratedPricing(params = {}) {
+    const response = await api.get("/catalog/pricing", { params: { limit: 200, ...params } });
+    return Array.isArray(response.data) ? response.data : [];
+  }
+
+  static async fetchMyStars() {
+    try {
+      const response = await api.get("/stars/mine/list");
+      return Array.isArray(response.data) ? response.data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  static async fetchNftMetadataManifest(params = {}) {
+    const response = await api.get("/catalog/nft-manifest", { params });
+    return response.data;
+  }
+
+  static async fetchNftMetadata(canonicalId, params = {}) {
+    const response = await api.get(`/catalog/nft-metadata/${encodeURIComponent(canonicalId)}`, { params });
+    return response.data;
+  }
+
+  static async verifyNftMetadata(document) {
+    const response = await api.post("/catalog/nft-metadata/verify", document);
+    return response.data;
+  }
+
   /**
    * Fetches specific star detailed metadata.
    */

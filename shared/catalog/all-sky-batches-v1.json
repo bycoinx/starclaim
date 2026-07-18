@@ -1,0 +1,168 @@
+{
+  "catalog_version": "all-sky-candidate-v1",
+  "batches": [
+    {
+      "batch_id": "pilot",
+      "sequence": 0,
+      "status": "approved",
+      "constellations": [
+        "Cas",
+        "Cen",
+        "Cru",
+        "Leo",
+        "Lyr",
+        "Ori",
+        "Sco",
+        "Sgr",
+        "Tau",
+        "UMa"
+      ],
+      "star_count": 84,
+      "review_required": []
+    },
+    {
+      "batch_id": "expansion-1",
+      "sequence": 1,
+      "status": "review-required",
+      "constellations": [
+        "And",
+        "Ant",
+        "Aps",
+        "Aql",
+        "Aqr",
+        "Ara",
+        "Ari",
+        "Aur",
+        "Boo",
+        "CMa",
+        "CMi",
+        "CVn",
+        "Cae"
+      ],
+      "star_count": 108,
+      "review_required": [
+        "CVn",
+        "Cae"
+      ]
+    },
+    {
+      "batch_id": "expansion-2",
+      "sequence": 2,
+      "status": "review-required",
+      "constellations": [
+        "Cam",
+        "Cap",
+        "Car",
+        "Cep",
+        "Cet",
+        "Cha",
+        "Cir",
+        "Cnc",
+        "Col",
+        "Com",
+        "CrA",
+        "CrB",
+        "Crt"
+      ],
+      "star_count": 111,
+      "review_required": [
+        "Cam",
+        "Com"
+      ]
+    },
+    {
+      "batch_id": "expansion-3",
+      "sequence": 3,
+      "status": "ready",
+      "constellations": [
+        "Crv",
+        "Cyg",
+        "Del",
+        "Dor",
+        "Dra",
+        "Equ",
+        "Eri",
+        "For",
+        "Gem",
+        "Gru",
+        "Her",
+        "Hor",
+        "Hya"
+      ],
+      "star_count": 121,
+      "review_required": []
+    },
+    {
+      "batch_id": "expansion-4",
+      "sequence": 4,
+      "status": "review-required",
+      "constellations": [
+        "Hyi",
+        "Ind",
+        "LMi",
+        "Lac",
+        "Lep",
+        "Lib",
+        "Lup",
+        "Lyn",
+        "Men",
+        "Mic",
+        "Mon",
+        "Mus",
+        "Nor"
+      ],
+      "star_count": 93,
+      "review_required": [
+        "LMi",
+        "Lac",
+        "Lyn"
+      ]
+    },
+    {
+      "batch_id": "expansion-5",
+      "sequence": 5,
+      "status": "ready",
+      "constellations": [
+        "Oct",
+        "Oph",
+        "Pav",
+        "Peg",
+        "Per",
+        "Phe",
+        "Pic",
+        "PsA",
+        "Psc",
+        "Pup",
+        "Pyx",
+        "Ret",
+        "Scl"
+      ],
+      "star_count": 124,
+      "review_required": []
+    },
+    {
+      "batch_id": "expansion-6",
+      "sequence": 6,
+      "status": "review-required",
+      "constellations": [
+        "Sct",
+        "Ser",
+        "Sex",
+        "Sge",
+        "Tel",
+        "TrA",
+        "Tri",
+        "Tuc",
+        "UMi",
+        "Vel",
+        "Vir",
+        "Vol",
+        "Vul"
+      ],
+      "star_count": 99,
+      "review_required": [
+        "Vul"
+      ]
+    }
+  ]
+}

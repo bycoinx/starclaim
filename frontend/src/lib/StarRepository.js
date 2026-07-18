@@ -36,8 +36,102 @@ function computeListingPrice(item, index) {
 
 export class StarRepository {
   static cache = [];
+  static curatedCache = [];
   static initialized = false;
   static loadPromise = null;
+  static curatedLoadPromise = null;
+
+  static async loadCuratedPilot(forceReload = false) {
+    if (this.curatedCache.length && !forceReload) return this.curatedCache;
+    if (this.curatedLoadPromise) return this.curatedLoadPromise;
+
+    this.curatedLoadPromise = (async () => {
+      try {
+        const [catalog, pricing, commercial, ownedRows] = await Promise.all([
+          StarRegistry.fetchCuratedStars({ catalog_version: "pilot-v1", sort: "rank" }),
+          StarRegistry.fetchCuratedPricing({ catalog_version: "pilot-v1", policy_version: "commerce-pilot-v1" }),
+          StarRegistry.fetchStars({ limit: 1000, sort: "name" }),
+          StarRegistry.fetchMyStars(),
+        ]);
+        if (!catalog.length) throw new Error("Curated catalog is empty");
+        const quotes = new Map(pricing.map((quote) => [quote.canonical_id, quote]));
+        const commercialByHip = new Map();
+        const commercialByCanonical = new Map();
+        commercial.forEach((star) => {
+          if (star.hip) commercialByHip.set(String(star.hip), star);
+          if (star.canonical_id || star.canonicalId) {
+            commercialByCanonical.set(star.canonical_id || star.canonicalId, star);
+          }
+        });
+        const ownedKeys = new Set(ownedRows.flatMap((star) => [
+          star.canonical_id, star.canonicalId, star.star_id, star.starId,
+          star.hip && `hip:${star.hip}`, star.hip,
+        ].filter(Boolean).map(String)));
+        const curatedMeta = new Map();
+        const rawRows = catalog.map((star) => {
+          const hip = star.designations?.hip;
+          const commercialStar = commercialByCanonical.get(star.canonical_id) || commercialByHip.get(String(hip));
+          const quote = quotes.get(star.canonical_id);
+          const globallyClaimed = Boolean(commercialStar?.owner_id || commercialStar?.owner_name);
+          const ownedByViewer = [star.canonical_id, commercialStar?.star_id, hip && `hip:${hip}`, hip]
+            .filter(Boolean).some((key) => ownedKeys.has(String(key)));
+          const availabilityState = ownedByViewer
+            ? "owned"
+            : globallyClaimed
+              ? "claimed"
+              : commercialStar
+                ? "available"
+                : "unlisted";
+          curatedMeta.set(star.canonical_id, {
+            canonicalId: star.canonical_id,
+            iauCode: star.constellation?.iau_code,
+            bayerDesignation: star.designations?.bayer_latin,
+            asterisms: star.asterisms || [],
+            rarityBand: quote?.rarity_band || "standard",
+            rarityScore: quote?.rarity_score ?? null,
+            policyVersion: quote?.policy_version || null,
+            availabilityState,
+            claimable: availabilityState === "available",
+            isOwnedByViewer: ownedByViewer,
+            catalogVersion: star.catalog_version,
+          });
+          return {
+            ...commercialStar,
+            star_id: commercialStar?.star_id || star.canonical_id,
+            code: commercialStar?.code || star.canonical_id,
+            name: star.display_name,
+            constellation: star.constellation?.name,
+            tier: quote?.legacy_tier || "standard",
+            price: quote ? Number(quote.primary_price) : null,
+            magnitude: star.photometry?.apparent_magnitude_v,
+            distance: star.astrometry?.distance_ly,
+            distanceParsec: star.astrometry?.distance_pc,
+            spect: star.stellar?.spectral_type,
+            hip,
+            raDegrees: star.astrometry?.ra_deg,
+            decDegrees: star.astrometry?.dec_deg,
+            owner_id: commercialStar?.owner_id,
+            owner_name: commercialStar?.owner_name,
+            canonical_id: star.canonical_id,
+            curatedStar: star,
+          };
+        });
+        this.curatedCache = this.normalize(rawRows).map((star) => ({
+          ...star,
+          ...curatedMeta.get(star.raw?.canonical_id),
+        }));
+        return this.curatedCache;
+      } catch (error) {
+        console.warn("StarRepository: curated pilot unavailable; using commercial catalog fallback.", error);
+        return this.loadAll(forceReload);
+      }
+    })();
+    try {
+      return await this.curatedLoadPromise;
+    } finally {
+      this.curatedLoadPromise = null;
+    }
+  }
 
   /**
    * Loads all stars from the registry, normalizes them, and caches them in memory.
