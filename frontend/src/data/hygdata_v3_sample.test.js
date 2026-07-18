@@ -1,14 +1,14 @@
-jest.mock("../workers/hygWorkerClient", () => ({
-  parseHygCsvWithWorker: jest.fn(),
+vi.mock("../workers/hygWorkerClient", () => ({
+  parseHygCsvWithWorker: vi.fn(),
 }));
 
-const { getFallbackHygStars, loadHygStars } = require("./hygdata_v3_sample");
+import { getFallbackHygStars, loadHygStars } from "./hygdata_v3_sample";
 
 describe("HYG catalog loader", () => {
   test("returns canonical embedded stars and reports fallback status", async () => {
-    const onStatus = jest.fn();
+    const onStatus = vi.fn();
     const stars = await loadHygStars({
-      fetchImpl: jest.fn().mockRejectedValue(new Error("offline")),
+      fetchImpl: vi.fn().mockRejectedValue(new Error("offline")),
       onStatus,
     });
     expect(stars).toHaveLength(4);

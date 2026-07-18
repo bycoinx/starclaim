@@ -9,7 +9,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import ErrorBoundary from "../components/ui/ErrorBoundary";
 
 function WalletRuntime({ children }) {
-  const endpoint = process.env.REACT_APP_SOLANA_RPC || clusterApiUrl("devnet");
+  const endpoint = import.meta.env.REACT_APP_SOLANA_RPC || clusterApiUrl("devnet");
   const wallets = useMemo(() => [new PhantomWalletAdapter(), new SolflareWalletAdapter()], []);
 
   return (

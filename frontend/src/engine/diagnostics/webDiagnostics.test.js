@@ -3,7 +3,7 @@ import { DIAGNOSTIC_EVENT_TYPES, WebDiagnostics } from "./webDiagnostics";
 describe("WebDiagnostics", () => {
   test("keeps a bounded buffer and notifies subscribers", () => {
     const diagnostics = new WebDiagnostics({ capacity: 2, now: () => 100 });
-    const listener = jest.fn();
+    const listener = vi.fn();
     diagnostics.subscribe(listener);
     diagnostics.recordCatalog({ stage: "fetching", url: "https://example.test/private?q=secret" });
     diagnostics.recordCatalog({ stage: "parsing", bytes: 12 });

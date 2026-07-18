@@ -1,106 +1,152 @@
-import { Connection, PublicKey, SystemProgram } from '@solana/web3.js';
-import * as anchor from '@project-serum/anchor';
+import { Connection, PublicKey } from "@solana/web3.js";
+import { Buffer } from "buffer";
+import eventHorizonIdl from "./idl/starclaim_program.json";
 
-// Program ID (Placeholder - should match lib.rs)
-const PROGRAM_ID = new PublicKey("Star111111111111111111111111111111111111111");
+export const EVENT_HORIZON_PROGRAM_ID = eventHorizonIdl.address;
+export const TOKEN_PROGRAM_ID = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 
-/**
- * Event Horizon Solana Bridge
- * Handles interaction with the StarClaim Smart Contract
- */
-export class EventHorizonBridge {
-  constructor(wallet, connectionString = "https://api.devnet.solana.com") {
-    this.connection = new Connection(connectionString);
-    this.wallet = wallet;
-    this.provider = new anchor.AnchorProvider(this.connection, this.wallet, {
-      preflightCommitment: "processed",
-    });
-    // Note: IDL would be generated after anchor build
-    this.program = new anchor.Program(null, PROGRAM_ID, this.provider);
+const ACCOUNT_FIELDS = {
+  pioneerTokenAccount: ["pioneer_token_account", "pioneerTokenAccount"],
+  vaultTokenAccount: ["vault_token_account", "vaultTokenAccount"],
+  vaultAuthority: ["vault_authority", "vaultAuthority"],
+};
+
+export class EventHorizonUnavailableError extends Error {
+  constructor(reason) {
+    super(reason);
+    this.name = "EventHorizonUnavailableError";
+    this.code = "EVENT_HORIZON_UNAVAILABLE";
+  }
+}
+
+function firstValue(record, keys) {
+  return keys.map((key) => record?.[key]).find(Boolean);
+}
+
+function parsePublicKey(value, label) {
+  try {
+    return new PublicKey(value);
+  } catch {
+    throw new EventHorizonUnavailableError(`${label} is not a valid Solana address.`);
+  }
+}
+
+export function resolveEventHorizonConfig(env = import.meta.env) {
+  const rpcUrl = env?.REACT_APP_SOLANA_RPC;
+  const configuredProgramId = env?.REACT_APP_STARCLAIM_PROGRAM_ID;
+
+  if (!rpcUrl || !configuredProgramId) {
+    return {
+      available: false,
+      reason: "The on-chain refund service is not configured for this deployment.",
+    };
   }
 
-  /**
-   * Yıldız alımı ve rezerv kilitleme
-   * @param {string} starId 
-   * @param {number} price (in SOL)
-   * @param {boolean} hasInsurance 
-   */
-  async buyStar(starId, price, hasInsurance) {
-    const starAccount = anchor.web3.Keypair.generate();
-    const lamports = price * anchor.web3.LAMPORTS_PER_SOL;
+  if (configuredProgramId !== EVENT_HORIZON_PROGRAM_ID) {
+    return {
+      available: false,
+      reason: "The configured refund program does not match the audited StarClaim contract.",
+    };
+  }
 
-    try {
-      const tx = await this.program.methods
-        .buyStar(new anchor.BN(lamports), hasInsurance)
-        .accounts({
-          starAccount: starAccount.publicKey,
-          buyer: this.wallet.publicKey,
-          systemProgram: SystemProgram.programId,
-        })
-        .signers([starAccount])
-        .rpc();
+  try {
+    return {
+      available: true,
+      rpcUrl,
+      programId: parsePublicKey(configuredProgramId, "Program ID"),
+    };
+  } catch (error) {
+    return { available: false, reason: error.message };
+  }
+}
 
-      return { tx, starAccount: starAccount.publicKey.toString() };
-    } catch (err) {
-      console.error("Event Horizon: Buy failed", err);
-      throw err;
+export function resolveRefundAccounts(star, pioneerPublicKey) {
+  if (!star?.star_id) {
+    throw new EventHorizonUnavailableError("The asset has no StarClaim contract identifier.");
+  }
+
+  const pioneer = parsePublicKey(pioneerPublicKey, "Connected wallet");
+  const programId = new PublicKey(EVENT_HORIZON_PROGRAM_ID);
+  const explicitStarAccount = firstValue(star, ["solana_address", "solanaAddress", "star_account", "starAccount"]);
+  let starAccount;
+
+  if (explicitStarAccount) {
+    starAccount = parsePublicKey(explicitStarAccount, "Star account");
+  } else {
+    const starIdSeed = Buffer.from(String(star.star_id));
+    if (starIdSeed.length > 32) {
+      throw new EventHorizonUnavailableError("The star identifier is too long to derive its contract account.");
     }
+    [starAccount] = PublicKey.findProgramAddressSync(
+      [Buffer.from("star"), starIdSeed],
+      programId,
+    );
   }
 
-  /**
-   * Rezervi anında nakit olarak çekme (Instant Exit)
-   */
-  async instantExit(starAccountPubKey) {
-    try {
-      const tx = await this.program.methods
-        .instantExit()
-        .accounts({
-          starAccount: new PublicKey(starAccountPubKey),
-          owner: this.wallet.publicKey,
-        })
-        .rpc();
-      return tx;
-    } catch (err) {
-      console.error("Event Horizon: Instant Exit failed", err);
-      throw err;
+  const resolved = {};
+  for (const [field, aliases] of Object.entries(ACCOUNT_FIELDS)) {
+    const value = firstValue(star, aliases);
+    if (!value) {
+      throw new EventHorizonUnavailableError(`The asset is missing its ${aliases[0]} account.`);
     }
+    resolved[field] = parsePublicKey(value, aliases[0]);
   }
 
-  /**
-   * Satışı başlat (Stasis moduna al)
-   */
-  async initiateSale(starAccountPubKey) {
-    try {
-      const tx = await this.program.methods
-        .initiateSale()
-        .accounts({
-          starAccount: new PublicKey(starAccountPubKey),
-          owner: this.wallet.publicKey,
-        })
-        .rpc();
-      return tx;
-    } catch (err) {
-      console.error("Event Horizon: Sale initiation failed", err);
-      throw err;
-    }
+  const [globalState] = PublicKey.findProgramAddressSync(
+    [Buffer.from("global-state")],
+    programId,
+  );
+
+  return {
+    starAccount,
+    globalState,
+    pioneer,
+    ...resolved,
+    tokenProgram: new PublicKey(TOKEN_PROGRAM_ID),
+  };
+}
+
+export function getRefundCapability(star, pioneerPublicKey, env = import.meta.env) {
+  const config = resolveEventHorizonConfig(env);
+  if (!config.available) return config;
+
+  try {
+    return {
+      available: true,
+      config,
+      accounts: resolveRefundAccounts(star, pioneerPublicKey),
+    };
+  } catch (error) {
+    return {
+      available: false,
+      reason: error instanceof EventHorizonUnavailableError
+        ? error.message
+        : "The refund accounts could not be resolved.",
+    };
+  }
+}
+
+export async function requestStarRefund({ star, wallet, env = import.meta.env }) {
+  const adapter = wallet?.adapter || wallet;
+  if (!adapter?.publicKey || !adapter?.signTransaction || !adapter?.signAllTransactions) {
+    throw new EventHorizonUnavailableError("A transaction-capable Solana wallet is required.");
   }
 
-  /**
-   * 24 saat içinde satışı iptal et (Quantum Retrieval)
-   */
-  async cancelSale(starAccountPubKey) {
-    try {
-      const tx = await this.program.methods
-        .cancelSale()
-        .accounts({
-          starAccount: new PublicKey(starAccountPubKey),
-          owner: this.wallet.publicKey,
-        })
-        .rpc();
-      return tx;
-    } catch (err) {
-      console.error("Event Horizon: Retrieval failed", err);
-      throw err;
-    }
+  const capability = getRefundCapability(star, adapter.publicKey, env);
+  if (!capability.available) {
+    throw new EventHorizonUnavailableError(capability.reason);
   }
+
+  const { AnchorProvider, Program } = await import("@anchor-lang/core");
+  const connection = new Connection(capability.config.rpcUrl, "confirmed");
+  const provider = new AnchorProvider(connection, adapter, {
+    commitment: "confirmed",
+    preflightCommitment: "confirmed",
+  });
+  const program = new Program(eventHorizonIdl, provider);
+
+  return program.methods
+    .requestRefund()
+    .accountsStrict(capability.accounts)
+    .rpc();
 }

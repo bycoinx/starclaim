@@ -28,28 +28,35 @@ export default function Dashboard() {
   const [fetching, setFetching] = useState(true);
   const navigate = useNavigate();
 
-  const handleInstantExit = async (star) => {
+  const handleRefund = async (star) => {
     if (!publicKey) {
       toast.error(lang === "TR" ? "Lütfen önce Solana cüzdanınızı bağlayın." : "Please connect your Solana wallet first.");
       return;
     }
 
+    const { getRefundCapability, requestStarRefund } = await import("../lib/solana/event_horizon");
+    const capability = getRefundCapability(star, publicKey);
+    if (!capability.available) {
+      toast.error(
+        lang === "TR"
+          ? `Zincir üstü iade kullanılamıyor: ${capability.reason}`
+          : `On-chain refund unavailable: ${capability.reason}`,
+      );
+      return;
+    }
+
     const confirm = window.confirm(
       lang === "TR" 
-        ? "Yıldızını geri satmak istediğine emin misin? Rezervin anında cüzdanına aktarılacak." 
-        : "Are you sure you want to sell your star back? Your reserve will be returned to your wallet instantly."
+        ? "Bu yıldız için zincir üstü iade talep etmek istediğine emin misin? Sözleşmenin iade kuralları uygulanacak."
+        : "Are you sure you want to request an on-chain refund for this star? The contract refund rules will apply."
     );
     if (!confirm) return;
     
-    const loadingToast = toast.loading("Aegis: Initializing Instant Exit Transaction...");
+    const loadingToast = toast.loading("Aegis: Initializing on-chain refund...");
     
     try {
-      const { EventHorizonBridge } = await import("../lib/solana/event_horizon");
-      const bridge = new EventHorizonBridge(wallet); 
-      const starAccountPubKey = star.solana_address || star.star_id; 
-
-      const tx = await bridge.instantExit(starAccountPubKey);
-      toast.success(lang === "TR" ? "Kuantum Çıkış Başarılı! SOL cüzdanınıza aktarıldı." : "Quantum Exit Successful! SOL returned to wallet.", { id: loadingToast });
+      const tx = await requestStarRefund({ star, wallet });
+      toast.success(lang === "TR" ? "Zincir üstü iade başarılı." : "On-chain refund successful.", { id: loadingToast });
       
       await api.post("/stars/exit", { star_id: star.star_id, tx_signature: tx });
       refreshData();
@@ -337,10 +344,10 @@ export default function Dashboard() {
                       </div>
                       
                       <button 
-                        onClick={() => handleInstantExit(s)}
+                        onClick={() => handleRefund(s)}
                         className="w-full py-3 rounded-lg bg-sc-red/5 border border-sc-red/20 text-sc-red text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-sc-red/10 transition-all flex items-center justify-center gap-2 group/exit"
                       >
-                        <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" /> EVACUATE_PROTOCOL (70% REFUND)
+                        <Zap className="w-3.5 h-3.5 group-hover:animate-pulse" /> {lang === "TR" ? "ZİNCİR ÜSTÜ İADE TALEP ET" : "REQUEST ON-CHAIN REFUND"}
                       </button>
                     </div>
                   </motion.div>

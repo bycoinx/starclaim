@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const rawBackendUrl = process.env.REACT_APP_BACKEND_URL || process.env.REACT_APP_API_URL || "";
+const rawBackendUrl = import.meta.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_API_URL || "";
 
 function getBrowserHostname() {
   if (typeof window === "undefined") return "";

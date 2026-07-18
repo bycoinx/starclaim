@@ -1,0 +1,28 @@
+{
+  "address": "AiU7GFPiL63zRfv1esuWuoHfT6D7K4vJioH5Ci9xTosb",
+  "metadata": {
+    "name": "starclaim_program",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Tracked client subset for the StarClaim refund instruction"
+  },
+  "instructions": [
+    {
+      "name": "request_refund",
+      "discriminator": [155, 77, 126, 53, 47, 81, 144, 82],
+      "accounts": [
+        { "name": "star_account", "writable": true },
+        { "name": "global_state", "writable": true },
+        { "name": "pioneer", "writable": true, "signer": true },
+        { "name": "pioneer_token_account", "writable": true },
+        { "name": "vault_token_account", "writable": true },
+        { "name": "vault_authority" },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        }
+      ],
+      "args": []
+    }
+  ]
+}

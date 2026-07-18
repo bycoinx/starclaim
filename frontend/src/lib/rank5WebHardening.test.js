@@ -18,19 +18,19 @@ describe("Rank 5 web connection hardening", () => {
   });
 
   test("optional stars count endpoint failure returns null", async () => {
-    const warning = jest.spyOn(console, "warn").mockImplementation(() => {});
-    jest.resetModules();
-    jest.doMock("./api", () => ({
-      api: { get: jest.fn().mockRejectedValueOnce(new Error("404")) },
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.resetModules();
+    vi.doMock("./api", () => ({
+      api: { get: vi.fn().mockRejectedValueOnce(new Error("404")) },
     }));
-    const { StarRegistry } = require("./StarRegistry");
+    const { StarRegistry } = await import("./StarRegistry");
     await expect(StarRegistry.countStars({ limit: 10 })).resolves.toBeNull();
     expect(warning).toHaveBeenCalledWith(
       expect.stringContaining("Stars count endpoint unavailable"),
       expect.any(Error),
     );
     warning.mockRestore();
-    jest.dontMock("./api");
+    vi.doUnmock("./api");
   });
 
   test("deep link payload preserves StarTarget identity", () => {

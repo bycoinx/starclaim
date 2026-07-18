@@ -2,7 +2,7 @@ import { createSentryDiagnosticsTransport } from "./sentryDiagnosticsTransport";
 
 describe("Sentry diagnostics transport", () => {
   test("maps lifecycle events to breadcrumbs", () => {
-    const sentry = { addBreadcrumb: jest.fn() };
+    const sentry = { addBreadcrumb: vi.fn() };
     createSentryDiagnosticsTransport(sentry)({
       id: "e1", type: "lifecycle", recordedAt: 1000, rendererId: "three", state: "running",
     });
@@ -12,7 +12,7 @@ describe("Sentry diagnostics transport", () => {
   });
 
   test("maps sanitized engine errors to captured exceptions", () => {
-    const sentry = { captureException: jest.fn() };
+    const sentry = { captureException: vi.fn() };
     createSentryDiagnosticsTransport(sentry)({
       id: "e2", type: "error", recordedAt: 1000, rendererId: "three",
       error: { name: "WebGLError", message: "context lost", stage: "render" },

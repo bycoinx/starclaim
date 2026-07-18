@@ -36,7 +36,7 @@ describe("web celestial runtime", () => {
   });
 
   test("normalizes 2D and 3D telemetry into the same snapshot", () => {
-    const onTelemetry = jest.fn();
+    const onTelemetry = vi.fn();
     const runtime = new WebCelestialRuntime({
       rendererId: "galaxy",
       kind: "3d",
@@ -59,9 +59,9 @@ describe("web celestial runtime", () => {
 
   test("publishes lifecycle, sampled telemetry and errors to diagnostics", () => {
     const diagnostics = {
-      recordLifecycle: jest.fn(),
-      recordTelemetry: jest.fn(),
-      recordError: jest.fn(),
+      recordLifecycle: vi.fn(),
+      recordTelemetry: vi.fn(),
+      recordError: vi.fn(),
     };
     const runtime = new WebCelestialRuntime({
       rendererId: "galaxy",
@@ -119,7 +119,7 @@ describe("web celestial runtime", () => {
   });
 
   test("recovers an errored runtime when WebGL context is restored", () => {
-    const onRecovery = jest.fn();
+    const onRecovery = vi.fn();
     const runtime = new WebCelestialRuntime({
       rendererId: "observatory",
       kind: "3d",
@@ -139,7 +139,7 @@ describe("web celestial runtime", () => {
   test("registers multiple mounted renderer instances without id collisions", () => {
     const first = new WebCelestialRuntime({ rendererId: "background", kind: "2d" });
     const second = new WebCelestialRuntime({ rendererId: "background", kind: "2d" });
-    const registryListener = jest.fn();
+    const registryListener = vi.fn();
     const unsubscribeRegistry = subscribeWebRuntimeRegistry(registryListener, true);
     const unregisterFirst = registerWebCelestialRuntime(first);
     const unregisterSecond = registerWebCelestialRuntime(second);

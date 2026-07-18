@@ -16,7 +16,7 @@ export { buildVaultMetadataDocument, toStarNftSummary } from "./vaultMetadata";
 const STAR_NFT_NAME = /star/i;
 
 function getSolanaEndpoint() {
-  return process.env.REACT_APP_SOLANA_RPC || clusterApiUrl("mainnet-beta");
+  return import.meta.env.REACT_APP_SOLANA_RPC || clusterApiUrl("mainnet-beta");
 }
 
 function createMetadataClient(wallet) {

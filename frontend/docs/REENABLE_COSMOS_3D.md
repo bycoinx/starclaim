@@ -40,7 +40,7 @@ Detailed steps
 - Ensure `CatalogProvider` consumers do not trigger full reloads on high-frequency observer updates. Observer updates should only update local `observerCoords` unless a catalog `nearest` query is explicitly requested.
 
 4) Dev test
-- Start dev server: `cd frontend && npm start` and open `http://localhost:3000/cosmos` or the port CRACO picks.
+- Start the Vite dev server with `cd frontend && npm start` and open `http://localhost:3000/cosmos`.
 - Interact with camera and monitor network calls: nearest queries should include `viewer_ra`/`viewer_dec` only when `sort=nearest`.
 
 5) Production build

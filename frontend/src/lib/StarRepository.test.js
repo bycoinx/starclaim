@@ -8,11 +8,11 @@ describe("StarRepository pipeline", () => {
     StarRepository.loadPromise = null;
   });
 
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
 
   test("deduplicates concurrent full catalog loads", async () => {
     let resolveFetch;
-    const fetchStars = jest.spyOn(StarRegistry, "fetchStars").mockImplementation(() => (
+    const fetchStars = vi.spyOn(StarRegistry, "fetchStars").mockImplementation(() => (
       new Promise((resolve) => { resolveFetch = resolve; })
     ));
     const first = StarRepository.loadAll(true);

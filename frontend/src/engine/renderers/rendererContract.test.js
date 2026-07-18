@@ -16,7 +16,7 @@ describe("web renderer contract", () => {
     const adapter = createRendererAdapter({
       id: "test-renderer",
       kind: RENDERER_KINDS.TWO_D,
-      loadComponent: jest.fn(),
+      loadComponent: vi.fn(),
     });
     let session = adapter.initialize({ props: { density: 10 }, now: 100 });
     session = markRendererRendered(session, 110);

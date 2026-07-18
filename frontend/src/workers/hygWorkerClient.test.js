@@ -52,7 +52,7 @@ describe("HYG worker client", () => {
   });
 
   test("terminates a worker that exceeds the parse deadline", async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     let worker;
     const promise = requestHygWorkerParse("csv", {
       timeoutMs: 25,
@@ -61,9 +61,9 @@ describe("HYG worker client", () => {
         return worker;
       },
     });
-    jest.advanceTimersByTime(25);
+    vi.advanceTimersByTime(25);
     await expect(promise).rejects.toThrow("timed out after 25ms");
     expect(worker.terminated).toBe(true);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 });

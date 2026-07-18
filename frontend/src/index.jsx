@@ -15,7 +15,7 @@ Sentry.init({
   sendDefaultPii: true,
 
   // Performance monitoring — sample 20% of transactions in production
-  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.2 : 1.0,
+  tracesSampleRate: import.meta.env.PROD ? 0.2 : 1.0,
 
   // Session Replay — capture 10% of sessions, 100% on error
   replaysSessionSampleRate: 0.1,
@@ -27,7 +27,7 @@ Sentry.init({
   ],
 
   // Environment tag for filtering in Sentry dashboard
-  environment: process.env.NODE_ENV || "development",
+  environment: import.meta.env.MODE || "development",
 
   // Filter out noisy errors
   ignoreErrors: [

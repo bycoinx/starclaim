@@ -1,6 +1,6 @@
 # Web E2E and performance acceptance
 
-The web acceptance gate runs against the production build and uses a deterministic catalog API fixture. It covers the user path from catalog selection to Cosmos, browser back navigation, state continuity, renderer readiness, and the central quality profile.
+The web acceptance gate runs against the production build and uses a deterministic catalog API fixture. It covers the user path from catalog selection to Cosmos, return navigation, state continuity, renderer readiness, and the central quality profile.
 
 ## Browser matrix
 

@@ -3,8 +3,8 @@ import { bindWebGLContextLifecycle } from "./ThreeRendererTelemetry";
 describe("WebGL context lifecycle binding", () => {
   test("prevents context loss disposal and reports restoration", () => {
     const canvas = document.createElement("canvas");
-    const onLost = jest.fn();
-    const onRestored = jest.fn();
+    const onLost = vi.fn();
+    const onRestored = vi.fn();
     const unbind = bindWebGLContextLifecycle(canvas, { onLost, onRestored });
     const lostEvent = new Event("webglcontextlost", { cancelable: true });
 
