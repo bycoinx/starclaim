@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { Loader2, Star, Mail, ArrowRight } from "lucide-react";
-import StarCanvas from "../components/StarCanvas";
+import { CelestialBackground } from "../components/CelestialRenderer";
 import {
   normalizeCheckoutStatusRecord,
   savePendingOwnershipSync,
@@ -88,7 +88,7 @@ export default function PaymentSuccess() {
 
   return (
     <div className="min-h-screen bg-sc-deep relative flex items-center justify-center overflow-hidden pt-24 pb-16">
-      <StarCanvas density={200} />
+      <CelestialBackground density={200} />
       <div className="absolute inset-0 nebula-bg pointer-events-none" />
       <div className="relative max-w-xl w-full mx-6">
         {status === "checking" && (

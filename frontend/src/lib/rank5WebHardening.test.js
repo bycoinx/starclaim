@@ -18,12 +18,18 @@ describe("Rank 5 web connection hardening", () => {
   });
 
   test("optional stars count endpoint failure returns null", async () => {
+    const warning = jest.spyOn(console, "warn").mockImplementation(() => {});
     jest.resetModules();
     jest.doMock("./api", () => ({
       api: { get: jest.fn().mockRejectedValueOnce(new Error("404")) },
     }));
     const { StarRegistry } = require("./StarRegistry");
     await expect(StarRegistry.countStars({ limit: 10 })).resolves.toBeNull();
+    expect(warning).toHaveBeenCalledWith(
+      expect.stringContaining("Stars count endpoint unavailable"),
+      expect.any(Error),
+    );
+    warning.mockRestore();
     jest.dontMock("./api");
   });
 

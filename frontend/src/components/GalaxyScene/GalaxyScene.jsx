@@ -4,6 +4,9 @@ import { Html, OrbitControls } from '@react-three/drei';
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import { vector3ToRaDec } from '../../lib/astro';
+import ThreeRendererTelemetry from '../ThreeRendererTelemetry';
+import { cameraDistanceToZoom } from '../../engine/celestialCoordinates';
+import { getWebPerformanceProfile } from '../../engine/performance/webPerformancePolicy';
 
 const PLANETS = [
   { name: 'MERCURY', orbit: 18, size: 0.65, speed: 0.085, inclination: 7.0, node: 48.3, color: '#b9b3aa', tex: '/tex/mercury.jpg' },
@@ -375,7 +378,7 @@ function MobileSignal() {
   );
 }
 
-function SceneRig() {
+function SceneRig({ asteroidCount }) {
   const groupRef = useRef();
 
   useFrame(({ clock }) => {
@@ -387,7 +390,7 @@ function SceneRig() {
 
   return (
     <group ref={groupRef}>
-      <AsteroidBelt />
+      <AsteroidBelt count={asteroidCount} />
       {PLANETS.map((planet, index) => (
         <Suspense key={planet.name} fallback={null}>
           <group
@@ -407,9 +410,14 @@ function SceneRig() {
   );
 }
 
-function CameraObserver({ onObserverCoordsChange }) {
+function CameraObserver({ cameraTarget, onObserverCoordsChange, onCameraViewChange }) {
   const { camera } = useThree();
   const direction = useRef(new THREE.Vector3());
+  const target = useMemo(() => new THREE.Vector3(
+    cameraTarget?.x || 0,
+    cameraTarget?.y || 0,
+    cameraTarget?.z || 0
+  ), [cameraTarget]);
   const lastUpdate = useRef(0);
 
   useFrame((state) => {
@@ -420,29 +428,43 @@ function CameraObserver({ onObserverCoordsChange }) {
     camera.getWorldDirection(direction.current);
     const { ra, dec } = vector3ToRaDec(direction.current);
     onObserverCoordsChange?.({ ra, dec });
+    const cameraDistance = camera.position.distanceTo(target);
+    onCameraViewChange?.({
+      cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      cameraDistance,
+      zoom: cameraDistanceToZoom(cameraDistance),
+    });
   });
 
   return null;
 }
 
-export default function GalaxyScene({ onObserverCoordsChange }) {
+export default function GalaxyScene({
+  cameraTarget,
+  onObserverCoordsChange,
+  onCameraViewChange,
+  onRendererTelemetry,
+  onRendererError,
+  qualityProfile = 'high',
+}) {
+  const performanceProfile = getWebPerformanceProfile(qualityProfile);
   return (
     <div style={{ width: '100%', height: '100vh', background: '#000', position: 'relative' }}>
       <Canvas
         camera={{ position: [150, 90, 250], fov: 42, near: 0.1, far: 3000 }}
-        gl={{ antialias: true, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
-        dpr={[1, 1.25]}
+        gl={{ antialias: performanceProfile.antialias, logarithmicDepthBuffer: true, powerPreference: 'high-performance' }}
+        dpr={performanceProfile.dpr}
       >
         <color attach="background" args={['#010207']} />
         <fog attach="fog" args={['#010207', 360, 1180]} />
         <ambientLight intensity={0.22} />
 
-        <PremiumStarField />
+        <PremiumStarField count={performanceProfile.galaxyStars} />
         <Suspense fallback={null}>
           <Sun />
         </Suspense>
 
-        <SceneRig />
+        <SceneRig asteroidCount={performanceProfile.galaxyAsteroids} />
         <OrbitControls
           enablePan={false}
           enableDamping
@@ -451,14 +473,26 @@ export default function GalaxyScene({ onObserverCoordsChange }) {
           zoomSpeed={0.62}
           minDistance={74}
           maxDistance={660}
-          target={[0, 0, 0]}
+          target={cameraTarget ? [cameraTarget.x, cameraTarget.y, cameraTarget.z] : [0, 0, 0]}
           makeDefault
         />
-        {onObserverCoordsChange ? <CameraObserver onObserverCoordsChange={onObserverCoordsChange} /> : null}
-        <EffectComposer multisampling={0}>
-          <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.78} intensity={1.18} radius={0.68} />
-          <Vignette eskil={false} offset={0.18} darkness={0.72} />
-        </EffectComposer>
+        <CameraObserver
+          cameraTarget={cameraTarget}
+          onObserverCoordsChange={onObserverCoordsChange}
+          onCameraViewChange={onCameraViewChange}
+        />
+        <ThreeRendererTelemetry
+          onTelemetry={onRendererTelemetry}
+          onError={onRendererError}
+          renderedObjects={performanceProfile.galaxyStars + performanceProfile.galaxyAsteroids + PLANETS.length}
+          quality={qualityProfile}
+        />
+        {performanceProfile.postProcessing ? (
+          <EffectComposer multisampling={0}>
+            <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.78} intensity={1.18} radius={0.68} />
+            <Vignette eskil={false} offset={0.18} darkness={0.72} />
+          </EffectComposer>
+        ) : null}
       </Canvas>
     </div>
   );

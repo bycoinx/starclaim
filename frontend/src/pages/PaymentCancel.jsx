@@ -2,13 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { useT } from "../lib/i18n";
 import { XCircle } from "lucide-react";
-import StarCanvas from "../components/StarCanvas";
+import { CelestialBackground } from "../components/CelestialRenderer";
 
 export default function PaymentCancel() {
   const { lang } = useT();
   return (
     <div className="min-h-screen bg-sc-deep relative flex items-center justify-center overflow-hidden pt-24 pb-16">
-      <StarCanvas density={150} />
+      <CelestialBackground density={150} />
       <div className="absolute inset-0 nebula-bg pointer-events-none" />
       <div className="relative max-w-md mx-6 glass rounded-2xl p-10 text-center" data-testid="payment-cancel">
         <XCircle className="w-10 h-10 text-sc-text-muted mx-auto mb-5" strokeWidth={1.3} />

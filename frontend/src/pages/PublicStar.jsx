@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useT } from "../lib/i18n";
 import { Globe, ShieldCheck, Share2, Loader2, Sparkles } from "lucide-react";
-import StarCanvas from "../components/StarCanvas";
+import { CelestialBackground } from "../components/CelestialRenderer";
 import { motion } from "framer-motion";
 
 export default function PublicStar() {
@@ -62,7 +62,7 @@ export default function PublicStar() {
 
   return (
     <div className="min-h-screen bg-sc-deep pt-32 pb-24 relative overflow-hidden">
-      <StarCanvas density={400} />
+      <CelestialBackground density={400} />
       <div className="absolute inset-0 nebula-bg pointer-events-none opacity-60" />
       
       <div className="relative max-w-4xl mx-auto px-6">

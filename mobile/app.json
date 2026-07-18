@@ -42,6 +42,14 @@
         {
           "locationWhenInUsePermission": "StarCalimX, bulundugunuz yerden gorunen gercek gokyuzunu hesaplamak icin konumunuzu kullanir."
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "react-native",
+          "organization": "starclaimx"
+        }
       ]
     ]
   }

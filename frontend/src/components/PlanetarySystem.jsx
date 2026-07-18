@@ -96,18 +96,16 @@ function SaturnRings({ radius }) {
   const pointsRef = useRef();
   const particleCount = 7000;
   
-  const [positions, sizes] = useMemo(() => {
+  const positions = useMemo(() => {
     const pos = new Float32Array(particleCount * 3);
-    const s = new Float32Array(particleCount);
     for (let i = 0; i < particleCount; i++) {
       const angle = Math.random() * Math.PI * 2;
       const r = radius * 1.5 + Math.random() * radius * 1.2;
       pos[i * 3] = Math.cos(angle) * r;
       pos[i * 3 + 1] = (Math.random() - 0.5) * 0.15;
       pos[i * 3 + 2] = Math.sin(angle) * r;
-      s[i] = Math.random() * 0.06 + 0.02;
     }
-    return [pos, s];
+    return pos;
   }, [radius]);
 
   useFrame(() => {

@@ -39,6 +39,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
+    "@sentry/react": "^10.65.0",
     "@solana/codecs": "^2.3.0",
     "@solana/codecs-core": "^2.3.0",
     "@solana/codecs-data-structures": "^2.3.0",
@@ -90,12 +91,16 @@
     "uuid": "^11.0.3",
     "vaul": "^1.1.2",
     "vm-browserify": "^1.1.2",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4",
+    "zustand": "^5.0.12"
   },
   "scripts": {
     "start": "craco start",
     "build": "cross-env CI=false NODE_OPTIONS=\"--max-old-space-size=4096 --no-deprecation\" craco build",
+    "build:ci": "cross-env CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" craco build",
     "test": "craco test",
+    "test:ci": "cross-env CI=true craco test --watchAll=false --runInBand",
+    "audit:production": "npm audit --omit=dev",
     "eject": "react-scripts eject"
   },
   "overrides": {

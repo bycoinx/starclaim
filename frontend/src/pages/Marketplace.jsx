@@ -34,7 +34,7 @@ function MarketplaceCatalog() {
 
   const handleSelect = (star) => {
     if (!star?.starId) return;
-    store.setSelectedStarId(star.starId);
+    store.selectStar(star);
   };
 
   return (

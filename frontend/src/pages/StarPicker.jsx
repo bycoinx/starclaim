@@ -370,6 +370,7 @@ function CatalogPageOrchestrator() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   const selectedStar =
+    store.selectedStar ||
     store.stars.find((star) => star.starId === store.selectedStarId) ||
     store.paginatedStars[0] ||
     store.filteredStars[0] ||
@@ -377,7 +378,7 @@ function CatalogPageOrchestrator() {
 
   const handleSelect = (star) => {
     if (!star?.starId) return;
-    store.setSelectedStarId(star.starId);
+    store.selectStar(star);
   };
 
   const sidebarComponent = (

@@ -37,6 +37,7 @@ function computeListingPrice(item, index) {
 export class StarRepository {
   static cache = [];
   static initialized = false;
+  static loadPromise = null;
 
   /**
    * Loads all stars from the registry, normalizes them, and caches them in memory.
@@ -46,24 +47,32 @@ export class StarRepository {
     if (this.initialized && !forceReload) {
       return this.cache;
     }
+    if (this.loadPromise) return this.loadPromise;
 
-    try {
-      const rawStars = await StarRegistry.fetchStars({ limit: CATALOG_TARGET_SIZE, sort: "price_asc" });
-      if (rawStars && rawStars.length > 0) {
-        const mapped = rawStars.map((r) => StarAssetManager.normalizeRawStar(r));
-        this.cache = this.normalize(mapped);
-      } else {
+    this.loadPromise = (async () => {
+      try {
+        const rawStars = await StarRegistry.fetchStars({ limit: CATALOG_TARGET_SIZE, sort: "price_asc" });
+        if (rawStars && rawStars.length > 0) {
+          const mapped = rawStars.map((r) => StarAssetManager.normalizeRawStar(r));
+          this.cache = this.normalize(mapped);
+        } else {
+          const mappedFallback = FALLBACK_STARS.map((r) => StarAssetManager.normalizeRawStar(r));
+          this.cache = this.normalize(mappedFallback);
+        }
+      } catch (error) {
+        console.warn("StarRepository: registry request failed. Initializing with local fallback catalog.");
         const mappedFallback = FALLBACK_STARS.map((r) => StarAssetManager.normalizeRawStar(r));
         this.cache = this.normalize(mappedFallback);
       }
-    } catch (error) {
-      console.warn("StarRepository: registry request failed. Initializing with local fallback catalog.");
-      const mappedFallback = FALLBACK_STARS.map((r) => StarAssetManager.normalizeRawStar(r));
-      this.cache = this.normalize(mappedFallback);
-    }
+      this.initialized = true;
+      return this.cache;
+    })();
 
-    this.initialized = true;
-    return this.cache;
+    try {
+      return await this.loadPromise;
+    } finally {
+      this.loadPromise = null;
+    }
   }
 
   static async loadPage(params = {}) {
@@ -80,12 +89,18 @@ export class StarRepository {
     }
   }
 
+  static async loadAstronomyCatalog(options = {}) {
+    const { loadHygStars } = await import("../data/hygdata_v3_sample");
+    return loadHygStars(options);
+  }
+
   /**
    * Normalizes raw rows into rich domain objects using StarAssetManager rules.
    */
   static normalize(rawArray) {
     if (!Array.isArray(rawArray)) return [];
     
+    const seenIds = new Set();
     return rawArray.filter(Boolean).map((item, index) => {
       const asset = StarAssetManager.getStarAsset(item);
       const slugSource = (asset.code || asset.name || `star-${index}`).toString().toLowerCase();
@@ -105,6 +120,13 @@ export class StarRepository {
         spectralType: asset.spectralType,
         magnitude: asset.magnitude,
         distance: asset.distance,
+        coordinates: asset.coordinates,
+        frame: asset.coordinates?.frame || null,
+        epoch: asset.coordinates?.epoch || null,
+        raHours: asset.coordinates?.raHours ?? null,
+        raDegrees: asset.coordinates?.raDegrees ?? null,
+        decDegrees: asset.coordinates?.decDegrees ?? null,
+        distanceParsec: asset.coordinates?.distanceParsec ?? null,
         
         // Tier & Assets
         tier: asset.tier,
@@ -125,6 +147,11 @@ export class StarRepository {
         // Underlying raw source record (in case specialized hooks need it)
         raw: item
       };
+    }).filter((star) => {
+      const identity = String(star.starId || star.code);
+      if (seenIds.has(identity)) return false;
+      seenIds.add(identity);
+      return true;
     });
   }
 

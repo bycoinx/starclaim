@@ -13,8 +13,28 @@ import { ensureStarData } from '../src/data/starLoader';
 import { syncOwnershipSnapshot } from '../src/data/ownershipSnapshot';
 import { resolveParsedDeepLinkRoute } from '../src/platform/navigation/deepLinks';
 import { setAppLifecycleState } from '../src/engine/celestialAppLifecycle';
+import * as Sentry from '@sentry/react-native';
 
-export default function RootLayout() {
+Sentry.init({
+  dsn: 'https://ba20b5d632cbc30c9b6a084a4e10cc04@o4511729653448704.ingest.de.sentry.io/4511729666490448',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // Configure Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1,
+  integrations: [Sentry.mobileReplayIntegration(), Sentry.feedbackIntegration()],
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
+
+export default Sentry.wrap(function RootLayout() {
   const [fontsLoaded] = useFonts({ Cinzel_400Regular, Cinzel_700Bold });
   const router = useRouter();
 
@@ -102,4 +122,4 @@ export default function RootLayout() {
       </Stack>
     </SafeAreaProvider>
   );
-}
+});

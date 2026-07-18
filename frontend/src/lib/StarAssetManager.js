@@ -1,3 +1,5 @@
+import { getCanonicalStarCoordinates } from "../engine/celestialCoordinates";
+
 /**
  * StarAssetManager Facade
  * 
@@ -25,6 +27,15 @@ export class StarAssetManager {
   static normalizeRawStar(raw = {}) {
     if (!raw) return {};
 
+    const hasCoordinates = raw.ra != null || raw.raHours != null || raw.raDegrees != null;
+    const coordinates = hasCoordinates && (raw.dec != null || raw.decDegrees != null)
+      ? getCanonicalStarCoordinates({
+          ...raw,
+          distanceParsec: raw.distanceParsec ?? raw.dist,
+          distanceLy: raw.distanceLy ?? raw.distance_ly ?? raw.distance,
+        })
+      : null;
+
     return {
       star_id: raw.star_id || raw.starId || raw.id || raw.code || null,
       code: raw.code || raw.star_code || raw.code || raw.star_id || null,
@@ -38,6 +49,12 @@ export class StarAssetManager {
       magnitude: raw.magnitude !== undefined ? Number(raw.magnitude) : raw.mag !== undefined ? Number(raw.mag) : null,
       distance: raw.distance !== undefined ? Number(raw.distance) : raw.distanceLy || raw.distance_ly || null,
       distanceParsec: raw.distanceParsec !== undefined ? Number(raw.distanceParsec) : raw.distanceParsec || null,
+      coordinates,
+      frame: coordinates?.frame || null,
+      epoch: coordinates?.epoch || null,
+      raHours: coordinates?.raHours ?? null,
+      raDegrees: coordinates?.raDegrees ?? null,
+      decDegrees: coordinates?.decDegrees ?? null,
 
       claimed: raw.claimed !== undefined ? !!raw.claimed : !!(raw.owner_id || raw.owner_name || raw.ownerName),
       owner_name: raw.owner_name || raw.ownerName || raw.owner || null,
@@ -82,6 +99,7 @@ export class StarAssetManager {
       spectralType: normalized.spectralType || normalized.spect || "G",
       magnitude: normalized.magnitude !== undefined ? Number(normalized.magnitude) : 5.0,
       distance: normalized.distanceParsec ? Math.round(normalized.distanceParsec * 3.262) : (normalized.distance || 0),
+      coordinates: normalized.coordinates,
       
       // Rarity / Classification
       tier: tier,

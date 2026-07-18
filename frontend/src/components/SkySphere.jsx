@@ -9,40 +9,11 @@ import NasaLandmarks from "./NasaLandmarks";
 import StarHUD from "./StarHUD";
 import ErrorBoundary from "./ui/ErrorBoundary";
 import { NASA_LANDMARKS } from "../data/nasaLandmarks";
-import { raDecToVector3 as astroRaDecToVector3 } from "../lib/astro";
-
-// --- COORDINATE HELPERS ---
-const raDecToVector3 = (raStr, decStr, radius = 500) => {
-  // Convert "6h 45m" or similar to hours
-  const parseRA = (s) => {
-    if (typeof s === 'number') return s;
-    const parts = String(s).match(/(\d+)h?\s*(\d*)m?/);
-    if (!parts) return 0;
-    const h = parseFloat(parts[1]);
-    const m = parts[2] ? parseFloat(parts[2]) : 0;
-    return h + m/60;
-  };
-  const parseDec = (s) => {
-    if (typeof s === 'number') return s;
-    const parts = String(s).match(/([+-]?\d+)°?\s*(\d*)'?/);
-    if (!parts) return 0;
-    const d = parseFloat(parts[1]);
-    const m = parts[2] ? parseFloat(parts[2]) : 0;
-    return d + (d < 0 ? -m/60 : m/60);
-  };
-
-  const ra = parseRA(raStr);
-  const dec = parseDec(decStr);
-  
-  const phi = (90 - dec) * (Math.PI / 180);
-  const theta = (ra * 15) * (Math.PI / 180);
-  
-  return new THREE.Vector3(
-    radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.cos(phi),
-    radius * Math.sin(phi) * Math.sin(theta)
-  );
-};
+import { starToVector3 } from "../lib/astro";
+import ThreeRendererTelemetry from "./ThreeRendererTelemetry";
+import { useCelestialStore } from "../stores/celestialStore";
+import { cameraDistanceToZoom } from "../engine/celestialCoordinates";
+import { getWebPerformanceProfile } from "../engine/performance/webPerformancePolicy";
 
 // --- SHADERS ---
 const starShader = {
@@ -123,7 +94,7 @@ function RealStars({ stars = [], onSelect, onObserverUpdate }) {
     const color = new THREE.Color();
     stars.forEach((s, i) => {
       try {
-        const v = raDecToVector3(s.ra, s.dec, 480 + Math.random() * 20);
+        const v = starToVector3(s, 480 + Math.random() * 20);
         pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z;
         
         const tierColor = s.tier === 'legendary' ? '#ffd700' : s.tier === 'zodiac' ? '#a78bfa' : '#f0f9ff';
@@ -312,75 +283,25 @@ function CinematicCamera({ targetPos, viewMode, introFinished }) {
   return null;
 }
 
-// --- NEBULA SHADER ---
-const nebulaShader = {
-  vertexShader: `
-    varying vec2 vUv;
-    varying vec3 vWorldPosition;
-    void main() {
-      vUv = uv;
-      vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-      vWorldPosition = worldPosition.xyz;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  `,
-  fragmentShader: `
-    uniform float time;
-    varying vec2 vUv;
-    varying vec3 vWorldPosition;
-
-    // Simple noise for atmospheric clouds
-    float noise(vec3 p) {
-      return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-    }
-
-    void main() {
-      vec3 direction = normalize(vWorldPosition);
-      
-      // Create layered nebulosity
-      float layer1 = sin(direction.x * 2.0 + time * 0.1) * cos(direction.y * 2.0) * sin(direction.z * 2.0);
-      float layer2 = cos(direction.x * 4.0 - time * 0.05) * sin(direction.z * 4.0);
-      
-      vec3 color1 = vec3(0.02, 0.05, 0.15); // Deep space blue
-      vec3 color2 = vec3(0.05, 0.02, 0.1);  // Subtle violet
-      vec3 color3 = vec3(0.01, 0.08, 0.1);  // Teal dust
-      
-      vec3 finalColor = mix(color1, color2, layer1 * 0.5 + 0.5);
-      finalColor = mix(finalColor, color3, layer2 * 0.3 + 0.3);
-      
-      // Add a touch of "cosmic dust" glow
-      float glow = pow(max(0.0, layer1 + layer2), 3.0) * 0.02;
-      finalColor += glow;
-
-      gl_FragColor = vec4(finalColor, 1.0);
-    }
-  `
-};
-
-function NebulaBackground() {
-  const meshRef = useRef();
-  const uniforms = useMemo(() => ({
-    time: { value: 0 }
-  }), []);
+function CameraViewReporter({ targetPos, onViewChange }) {
+  const { camera } = useThree();
+  const lastUpdate = useRef(0);
 
   useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.material.uniforms.time.value = state.clock.getElapsedTime();
-    }
+    const now = state.clock.getElapsedTime();
+    if (now - lastUpdate.current < 0.8) return;
+    lastUpdate.current = now;
+    const cameraDistance = targetPos
+      ? camera.position.distanceTo(targetPos)
+      : camera.position.length();
+    onViewChange({
+      cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      cameraDistance,
+      zoom: cameraDistanceToZoom(cameraDistance),
+    });
   });
 
-  return (
-    <mesh ref={meshRef}>
-      <sphereGeometry args={[995, 64, 64]} />
-      <shaderMaterial 
-        vertexShader={nebulaShader.vertexShader}
-        fragmentShader={nebulaShader.fragmentShader}
-        uniforms={uniforms}
-        side={THREE.BackSide}
-        transparent
-      />
-    </mesh>
-  );
+  return null;
 }
 
 function LandmarkNavigator({ landmarks, activeCode, onSelect }) {
@@ -447,13 +368,33 @@ function LandmarkNavigator({ landmarks, activeCode, onSelect }) {
   );
 }
 
-export default function SkySphere({ stars, onClaim }) {
+export default function SkySphere({
+  stars,
+  onClaim,
+  onRendererTelemetry,
+  onRendererError,
+  qualityProfile = "high",
+}) {
   const { lang } = useT();
-  const [selectedStar, setSelectedStar] = useState(null);
-  const [targetPos, setTargetPos] = useState(null);
-  const [viewMode, setViewMode] = useState('observatory');
+  const performanceProfile = getWebPerformanceProfile(qualityProfile);
+  const selectedStar = useCelestialStore((state) => state.selection.star);
+  const cameraTarget = useCelestialStore((state) => state.view.cameraTarget);
+  const viewMode = useCelestialStore((state) => state.view.rendererMode);
+  const layers = useCelestialStore((state) => state.layers);
+  const selectStar = useCelestialStore((state) => state.selectStar);
+  const clearSelection = useCelestialStore((state) => state.clearSelection);
+  const setCameraTarget = useCelestialStore((state) => state.setCameraTarget);
+  const setCameraView = useCelestialStore((state) => state.setCameraView);
+  const setViewMode = useCelestialStore((state) => state.setRendererMode);
   const [introFinished, setIntroFinished] = useState(false);
   const [observerMetrics, setObserverMetrics] = useState(null);
+  const targetPos = useMemo(() => cameraTarget
+    ? new THREE.Vector3(cameraTarget.x, cameraTarget.y, cameraTarget.z)
+    : null, [cameraTarget]);
+  const renderedStars = useMemo(
+    () => (Array.isArray(stars) ? stars.slice(0, performanceProfile.observatoryStars) : []),
+    [performanceProfile.observatoryStars, stars]
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => setIntroFinished(true), 1500);
@@ -461,55 +402,80 @@ export default function SkySphere({ stars, onClaim }) {
   }, []);
 
   const handleSelect = useCallback((star) => {
-    setSelectedStar(star);
+    selectStar(star);
     const pos = star.x !== undefined
       ? new THREE.Vector3(star.x, star.y || 0, star.z || 0)
-      : astroRaDecToVector3(star.ra, star.dec, star.isLandmark ? 430 : 480);
-    setTargetPos(pos);
-  }, []);
+      : starToVector3(star, star.isLandmark ? 430 : 480);
+    setCameraTarget({ x: pos.x, y: pos.y, z: pos.z });
+  }, [selectStar, setCameraTarget]);
+
+  useEffect(() => {
+    if (!selectedStar || cameraTarget) return;
+    const pos = selectedStar.x !== undefined
+      ? new THREE.Vector3(selectedStar.x, selectedStar.y || 0, selectedStar.z || 0)
+      : starToVector3(selectedStar, selectedStar.isLandmark ? 430 : 480);
+    setCameraTarget({ x: pos.x, y: pos.y, z: pos.z });
+  }, [cameraTarget, selectedStar, setCameraTarget]);
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-black h-[700px] lg:h-[900px]">
-      <Canvas shadows gl={{ antialias: true }}>
+      <Canvas
+        shadows={performanceProfile.shadows}
+        gl={{ antialias: performanceProfile.antialias }}
+        dpr={performanceProfile.dpr}
+      >
         <PerspectiveCamera makeDefault position={[0, 0, 100]} fov={60} />
         <OrbitControls enableDamping dampingFactor={0.06} maxDistance={950} minDistance={0.1} />
         
         <Suspense fallback={null}>
           <ambientLight intensity={0.2} />
           <RealStars 
-            stars={stars} 
+            stars={layers.stars ? renderedStars : []}
             onSelect={handleSelect} 
             onObserverUpdate={setObserverMetrics}
           />
-          <NasaLandmarks onSelect={handleSelect} />
+          {layers.landmarks ? <NasaLandmarks onSelect={handleSelect} /> : null}
           
-          <Float speed={0.15} rotationIntensity={0.05}>
-            <ErrorBoundary fallback={null}>
-              <PlanetarySystem onSelect={handleSelect} viewMode={viewMode} />
-            </ErrorBoundary>
-          </Float>
+          {layers.planets ? (
+            <Float speed={0.15} rotationIntensity={0.05}>
+              <ErrorBoundary fallback={null}>
+                <PlanetarySystem onSelect={handleSelect} viewMode={viewMode} />
+              </ErrorBoundary>
+            </Float>
+          ) : null}
 
           <CinematicCamera targetPos={targetPos} viewMode={viewMode} introFinished={introFinished} />
+          <CameraViewReporter targetPos={targetPos} onViewChange={setCameraView} />
+          <ThreeRendererTelemetry
+            onTelemetry={onRendererTelemetry}
+            onError={onRendererError}
+            renderedObjects={layers.stars ? renderedStars.length : 0}
+            quality={qualityProfile}
+          />
 
-          <EffectComposer disableNormalPass>
-            <Bloom intensity={2.0} luminanceThreshold={0.2} mipmapBlur />
-          </EffectComposer>
+          {performanceProfile.postProcessing ? (
+            <EffectComposer disableNormalPass>
+              <Bloom intensity={2.0} luminanceThreshold={0.2} mipmapBlur />
+            </EffectComposer>
+          ) : null}
         </Suspense>
       </Canvas>
 
       <StarHUD 
         star={selectedStar} 
         onClaim={onClaim} 
-        onClose={() => { setSelectedStar(null); setTargetPos(null); }} 
+        onClose={() => { clearSelection(); setCameraTarget(null); }}
       />
 
       <ObserverHUD metrics={observerMetrics} />
 
-      <LandmarkNavigator
-        landmarks={NASA_LANDMARKS}
-        activeCode={selectedStar?.code}
-        onSelect={handleSelect}
-      />
+      {layers.landmarks ? (
+        <LandmarkNavigator
+          landmarks={NASA_LANDMARKS}
+          activeCode={selectedStar?.code}
+          onSelect={handleSelect}
+        />
+      ) : null}
 
       {/* VIEW CONTROLS */}
       <div className="absolute top-8 left-8 flex gap-3 pointer-events-auto">

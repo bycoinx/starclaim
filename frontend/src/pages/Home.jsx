@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Star, Scroll, Heart, Check, ShieldCheck, Database, Zap, Lock, EyeOff } from "lucide-react";
 import { useT } from "../lib/i18n";
-import StarCanvas from "../components/StarCanvas";
+import { CelestialBackground } from "../components/CelestialRenderer";
 
 const PACKAGES = [
   {
@@ -89,7 +89,7 @@ export default function Home({ onOpenClaim, stats }) {
     <div className="bg-[#03040A] relative">
       {/* GLOBAL STAR STREAM */}
       <div className="fixed inset-0 z-0 pointer-events-none opacity-45">
-        <StarCanvas density={420} />
+        <CelestialBackground density={420} />
       </div>
 
       {/* HERO - AEGIS REFINED */}
@@ -104,7 +104,7 @@ export default function Home({ onOpenClaim, stats }) {
         <div className="absolute inset-0 hero-cosmos-nebula" />
         <div className="absolute inset-0 hero-cosmos-contrast" />
         <div className="absolute inset-0 z-[2] pointer-events-none opacity-60 mix-blend-screen">
-          <StarCanvas density={260} />
+          <CelestialBackground density={260} />
         </div>
         
         {/* SUBTLE HUD OVERLAYS */}

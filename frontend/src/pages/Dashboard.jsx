@@ -7,7 +7,7 @@ import { useT } from "../lib/i18n";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Star, LogIn, Loader2, Download, Tag, ShieldCheck, Zap, Terminal as TerminalIcon, Activity, Globe } from "lucide-react";
 import { toast } from "sonner";
-import StarCanvas from "../components/StarCanvas";
+import { CelestialBackground } from "../components/CelestialRenderer";
 import {
   buildCertificateFilename,
   clearPendingOwnershipSync,
@@ -170,7 +170,7 @@ export default function Dashboard() {
   if (!user) {
     return (
       <div className="min-h-screen bg-sc-deep flex items-center justify-center pt-28 px-6 relative">
-        <StarCanvas />
+        <CelestialBackground />
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -199,7 +199,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-sc-deep pt-28 pb-24 relative dashboard-container">
-      <StarCanvas />
+      <CelestialBackground />
       
       <div className="relative max-w-7xl mx-auto px-6 md:px-10 z-10">
         <motion.div 

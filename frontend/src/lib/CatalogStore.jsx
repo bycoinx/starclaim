@@ -1,7 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { StarRepository } from "./StarRepository";
 import { StarRegistry } from "./StarRegistry";
 import { useT } from "./i18n";
+import { useCelestialStore } from "../stores/celestialStore";
+import { webDiagnostics } from "../engine/diagnostics/webDiagnostics";
 
 const CatalogContext = createContext(null);
 
@@ -9,36 +12,53 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
   const { lang } = useT();
   const isTR = lang === "TR";
 
-  // Raw states
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [stars, setStars] = useState([]);
-  
-  // Search & Filter States
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filters, setFilters] = useState({
-    constellation: "all",
-    magnitudeMin: 0.0,
-    magnitudeMax: 10.0,
-    distanceMin: 0,
-    distanceMax: 10000,
-    spectralType: "all",
-    starType: "all",
-    ownership: "all",
-    hasStories: false
-  });
-  
-  const [sortBy, setSortBy] = useState("recommended");
-  
-  // Navigation / View States
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(24);
-  const [serverTotalCount, setServerTotalCount] = useState(null);
-  const [serverConstellations, setServerConstellations] = useState([]);
-  const [selectedStarId, setSelectedStarId] = useState(null);
-  const [viewMode, setViewMode] = useState("grid");
-  const [observerCoords, setObserverCoords] = useState({ ra: 279.2347, dec: 38.7837 });
+  const store = useCelestialStore(useShallow((state) => ({
+    catalog: state.catalog,
+    view: state.view,
+    selection: state.selection,
+    favorites: state.favorites,
+    setCatalogField: state.setCatalogField,
+    setSearchQueryState: state.setSearchQuery,
+    updateFiltersState: state.updateFilters,
+    resetFiltersState: state.resetFilters,
+    setSortByState: state.setSortBy,
+    setCurrentPage: state.setCurrentPage,
+    setPageSizeState: state.setPageSize,
+    setSelectedStarId: state.setSelectedStarId,
+    selectStar: state.selectStar,
+    setCatalogViewMode: state.setCatalogViewMode,
+    updateObserverCoordsState: state.updateObserverCoords,
+    setFavorites: state.setFavorites,
+  })));
+  const {
+    loading,
+    error,
+    stars,
+    searchQuery,
+    filters,
+    sortBy,
+    currentPage,
+    pageSize,
+    serverTotalCount,
+    serverConstellations,
+  } = store.catalog;
+  const { catalogMode: viewMode, observerCoords } = store.view;
+  const { starId: selectedStarId } = store.selection;
+  const { favorites } = store;
+  const setCatalogField = store.setCatalogField;
+  const setLoading = useCallback((value) => setCatalogField("loading", value), [setCatalogField]);
+  const setError = useCallback((value) => setCatalogField("error", value), [setCatalogField]);
+  const setStars = useCallback((value) => setCatalogField("stars", value), [setCatalogField]);
+  const setServerTotalCount = useCallback(
+    (value) => setCatalogField("serverTotalCount", value),
+    [setCatalogField]
+  );
+  const setServerConstellations = useCallback(
+    (value) => setCatalogField("serverConstellations", value),
+    [setCatalogField]
+  );
   const [debouncedObserverCoords, setDebouncedObserverCoords] = useState(observerCoords);
+  const loadRequestRef = useRef(0);
   
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -47,16 +67,6 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
 
     return () => clearTimeout(timeout);
   }, [observerCoords]);
-
-  // Favorites persistence
-  const [favorites, setFavorites] = useState(() => {
-    try {
-      const saved = localStorage.getItem("starclaim_favorites");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
 
   // Persist favorites to local storage
   useEffect(() => {
@@ -146,16 +156,21 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     } catch {
       // fallback if constellation endpoint not available
     }
-  }, []);
+  }, [setServerConstellations]);
 
   const loadCatalog = useCallback(async (forceReload = false) => {
+    const requestId = ++loadRequestRef.current;
+    const isCurrentRequest = () => requestId === loadRequestRef.current;
     setLoading(true);
     setError("");
+    webDiagnostics.recordCatalog({ stage: "fetching" }, starLoader ? "custom-catalog" : "commercial-catalog");
     try {
       if (starLoader) {
         const list = await starLoader(forceReload);
+        if (!isCurrentRequest()) return;
         setStars(list);
         setServerTotalCount(null);
+        webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "custom-catalog");
       } else {
         const query = buildServerQuery(filters, sortBy, currentPage, pageSize, searchQuery);
         const pageQuery = { ...query };
@@ -172,29 +187,52 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
         delete countQuery.offset;
         delete countQuery.sort;
         const count = await StarRegistry.countStars(countQuery);
+        if (!isCurrentRequest()) return;
         if (Number.isFinite(count)) {
           const list = await StarRepository.loadPage(pageQuery);
+          if (!isCurrentRequest()) return;
           setStars(list);
           setServerTotalCount(count);
+          webDiagnostics.recordCatalog({ stage: "ready", count }, "commercial-catalog");
         } else {
           const list = await StarRepository.loadAll(true);
+          if (!isCurrentRequest()) return;
           setStars(list);
           setServerTotalCount(null);
+          webDiagnostics.recordCatalog({ stage: "ready", count: list.length }, "commercial-catalog");
         }
       }
     } catch (err) {
+      if (!isCurrentRequest()) return;
+      webDiagnostics.recordCatalog({ stage: "error", error: err }, starLoader ? "custom-catalog" : "commercial-catalog");
       setError(
         isTR 
           ? "Katalog verileri yüklenirken hata oluştu." 
           : "Failed to load catalog data from repository."
       );
     } finally {
-      setLoading(false);
+      if (isCurrentRequest()) setLoading(false);
     }
-  }, [filters, sortBy, currentPage, pageSize, searchQuery, starLoader, isTR, debouncedObserverCoords]);
+  }, [
+    filters,
+    sortBy,
+    currentPage,
+    pageSize,
+    searchQuery,
+    starLoader,
+    isTR,
+    debouncedObserverCoords,
+    setError,
+    setLoading,
+    setServerTotalCount,
+    setStars,
+  ]);
 
   useEffect(() => {
     loadCatalog();
+    return () => {
+      loadRequestRef.current += 1;
+    };
   }, [loadCatalog]);
 
   useEffect(() => {
@@ -205,44 +243,26 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
 
   // Action methods
   const toggleFavorite = useCallback((starId) => {
-    setFavorites((prev) => 
+    store.setFavorites((prev) =>
       prev.includes(starId) ? prev.filter((id) => id !== starId) : [...prev, starId]
     );
-  }, []);
+  }, [store]);
 
   const isFavorite = useCallback((starId) => {
     return favorites.includes(starId);
   }, [favorites]);
 
   const updateObserverCoords = useCallback((coords) => {
-    setObserverCoords((prev) => ({ ...prev, ...coords }));
-    setCurrentPage(1);
-  }, []);
+    store.updateObserverCoordsState(coords);
+  }, [store]);
 
   const updateFilters = useCallback((updater) => {
-    setFilters((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : { ...prev, ...updater };
-      return next;
-    });
-    setCurrentPage(1);
-  }, []);
+    store.updateFiltersState(updater);
+  }, [store]);
 
   const resetFilters = useCallback(() => {
-    setFilters({
-      constellation: "all",
-      magnitudeMin: 0.0,
-      magnitudeMax: 10.0,
-      distanceMin: 0,
-      distanceMax: 10000,
-      spectralType: "all",
-      starType: "all",
-      ownership: "all",
-      hasStories: false
-    });
-    setSearchQuery("");
-    setSortBy("recommended");
-    setCurrentPage(1);
-  }, []);
+    store.resetFiltersState();
+  }, [store]);
 
   // Memoized query selections
   const filteredStars = useMemo(() => {
@@ -399,24 +419,26 @@ export function CatalogProvider({ children, onClaim, starLoader }) {
     
     // Filter State
     searchQuery,
-    setSearchQuery: (q) => { setSearchQuery(q); setCurrentPage(1); },
+    setSearchQuery: store.setSearchQueryState,
     filters,
     updateFilters,
     resetFilters,
     sortBy,
-    setSortBy: (s) => { setSortBy(s); setCurrentPage(1); },
+    setSortBy: store.setSortByState,
     
     // View/Page States
     currentPage,
-    setCurrentPage,
+    setCurrentPage: store.setCurrentPage,
     pageSize,
-    setPageSize: (s) => { setPageSize(s); setCurrentPage(1); },
+    setPageSize: store.setPageSizeState,
     selectedStarId,
-    setSelectedStarId,
+    selectedStar: store.selection.star,
+    setSelectedStarId: store.setSelectedStarId,
+    selectStar: store.selectStar,
     viewMode,
-    setViewMode,
+    setViewMode: store.setCatalogViewMode,
     observerCoords,
-    setObserverCoords,
+    setObserverCoords: store.updateObserverCoordsState,
     updateObserverCoords,
     
     // Actions & Operations

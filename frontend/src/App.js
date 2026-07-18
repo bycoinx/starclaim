@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useEffect, useState, useCallback } from "react";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import * as Sentry from "@sentry/react";
 import "@/App.css";
 import { Toaster, toast } from "sonner";
 
@@ -14,7 +15,7 @@ import LiveNotifications from "./components/LiveNotifications";
 import CheckoutModal from "./components/CheckoutModal";
 import AegisTerminal from "./components/AegisTerminal";
 
-import StarCanvas from "./components/StarCanvas";
+import { CelestialBackground } from "./components/CelestialRenderer";
 import AegisHUD from "./components/AegisHUD/AegisHUD";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 
@@ -194,7 +195,7 @@ function AppShell() {
     <>
       {!isCosmosRoute && (
         <div className="fixed inset-0 z-0 pointer-events-none nebula-bg">
-          <StarCanvas density={500} />
+          <CelestialBackground density={500} />
         </div>
       )}
       <Navbar onOpenClaim={() => openClaim()} />
@@ -235,15 +236,31 @@ function AppShell() {
 export default function App() {
   return (
     <div className="App bg-black min-h-screen">
-      <LanguageProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
-              <AppShell />
-            </ErrorBoundary>
-          </AuthProvider>
-        </BrowserRouter>
-      </LanguageProvider>
+      <Sentry.ErrorBoundary
+        fallback={({ error }) => (
+          <div className="flex flex-col items-center justify-center h-screen bg-sc-deep text-center p-6">
+            <div className="text-sc-red font-display text-2xl mb-4">Critical System Failure</div>
+            <p className="text-sc-text-muted mb-6 max-w-md">Aegis Core Crash — this error has been automatically reported.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-gold"
+            >
+              Reload StarClaim
+            </button>
+          </div>
+        )}
+        showDialog
+      >
+        <LanguageProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <ErrorBoundary fallback={<div className="flex items-center justify-center h-screen text-sc-red font-display text-xl">Critical System Failure - Aegis Core Crash</div>}>
+                <AppShell />
+              </ErrorBoundary>
+            </AuthProvider>
+          </BrowserRouter>
+        </LanguageProvider>
+      </Sentry.ErrorBoundary>
     </div>
   );
 }

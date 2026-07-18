@@ -1,21 +1,36 @@
 import React, { useEffect, useRef } from "react";
+import { getWebPerformanceProfile } from "../engine/performance/webPerformancePolicy";
 
 /**
  * StarCanvas — animated starfield with twinkle + periodic shooting stars + mouse parallax.
  * Pure canvas, 300+ particles, requestAnimationFrame.
  */
-export default function StarCanvas({ density = 320, className = "" }) {
+export default function StarCanvas({
+  density = 320,
+  className = "",
+  qualityProfile = "high",
+  onRendererTelemetry,
+  onRendererError,
+}) {
   const canvasRef = useRef(null);
   const mouseRef = useRef({ x: 0, y: 0 });
+  const performanceProfile = getWebPerformanceProfile(qualityProfile);
+  const effectiveDensity = Math.min(density, performanceProfile.canvasStars);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      onRendererError?.(new Error("Canvas 2D context is unavailable."), "canvas-context");
+      return;
+    }
     let raf = 0;
     let stars = [];
     let shootingStars = [];
     let dust = [];
+    let telemetryStartedAt = 0;
+    let telemetryFrames = 0;
 
     // Slow camera drift for parallax effect
     const driftSpeed = 0.02; // pixels per frame (very slow)
@@ -37,7 +52,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
       canvas.style.height = clientHeight + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      stars = Array.from({ length: density }, () => ({
+      stars = Array.from({ length: effectiveDensity }, () => ({
         x: Math.random() * clientWidth,
         y: Math.random() * clientHeight,
         r: Math.random() * 1.4 + 0.2,
@@ -50,7 +65,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
       }));
 
       // Initialize dust particles for subtle cosmic dust movement
-      dust = Array.from({ length: 50 }, () => ({
+      dust = Array.from({ length: performanceProfile.canvasDust }, () => ({
         x: Math.random() * clientWidth,
         y: Math.random() * clientHeight,
         r: Math.random() * 1 + 0.2, // Very small: 0.2-1.2px
@@ -82,7 +97,9 @@ export default function StarCanvas({ density = 320, className = "" }) {
       });
     }
 
-    function draw() {
+    function draw(timestamp) {
+      if (!telemetryStartedAt) telemetryStartedAt = timestamp;
+      telemetryFrames += 1;
       // Update slow camera drift
       driftChangeTimer++;
       if (driftChangeTimer >= driftChangeInterval) {
@@ -202,6 +219,22 @@ export default function StarCanvas({ density = 320, className = "" }) {
         ctx.fill();
       }
 
+      const telemetryElapsed = timestamp - telemetryStartedAt;
+      if (onRendererTelemetry && telemetryElapsed >= 1000) {
+        const memoryMB = Number.isFinite(performance?.memory?.usedJSHeapSize)
+          ? performance.memory.usedJSHeapSize / (1024 * 1024)
+          : null;
+        onRendererTelemetry({
+          fps: telemetryFrames * 1000 / telemetryElapsed,
+          frameTimeMs: telemetryElapsed / telemetryFrames,
+          renderedObjects: stars.length + dust.length + shootingStars.length,
+          memoryMB,
+          quality: qualityProfile,
+        });
+        telemetryStartedAt = timestamp;
+        telemetryFrames = 0;
+      }
+
       raf = requestAnimationFrame(draw);
     }
 
@@ -212,7 +245,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
 
     const shootingInterval = setInterval(() => {
       if (Math.random() > 0.35) spawnShooting();
-    }, 3500);
+    }, performanceProfile.shootingIntervalMs);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -220,7 +253,7 @@ export default function StarCanvas({ density = 320, className = "" }) {
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [density]);
+  }, [effectiveDensity, onRendererError, onRendererTelemetry, performanceProfile, qualityProfile]);
 
   return (
     <canvas
