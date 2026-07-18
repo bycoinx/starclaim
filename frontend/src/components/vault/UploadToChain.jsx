@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
-import { Connection, clusterApiUrl } from '@solana/web3.js';
-import { Metaplex } from '@metaplex-foundation/js';
 import { toast } from 'sonner';
 import Confetti from 'react-confetti';
 import { 
@@ -18,7 +16,12 @@ import {
 } from 'lucide-react';
 
 import { uploadToArweave } from '../../lib/api';
-import { linkVaultToNFT } from '../../lib/solana/updateNFT';
+import {
+  buildVaultMetadataDocument,
+  fetchOffchainMetadata,
+  findStarNftsByOwner,
+  linkVaultToNFT,
+} from '../../lib/solana/updateNFT';
 
 // Simple custom hook to replace react-use
 function useWindowSize() {
@@ -65,14 +68,7 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
   const fetchUserNfts = async (ownerPublicKey) => {
     setIsLoadingNfts(true);
     try {
-      const endpoint = process.env.REACT_APP_SOLANA_RPC || clusterApiUrl('mainnet-beta');
-      const connection = new Connection(endpoint, 'confirmed');
-      const metaplex = new Metaplex(connection);
-      
-      const userNfts = await metaplex.nfts().findAllByOwner({ owner: ownerPublicKey });
-      
-      // Filter for StarClaim NFTs
-      const starNfts = userNfts.filter(n => n.name.toLowerCase().includes('star'));
+      const starNfts = await findStarNftsByOwner(ownerPublicKey);
       setNfts(starNfts);
       if (starNfts.length > 0) setSelectedNft(starNfts[0]);
     } catch (err) {
@@ -106,19 +102,38 @@ export function UploadToChain({ encryptedBlob, onSuccess }) {
       setProgress(60);
       setStatus('confirming');
 
-      // Step 3: Link to Solana NFT
+      // Step 3: Upload the updated off-chain NFT metadata document.
+      const currentMetadata = await fetchOffchainMetadata(selectedNft.metadataUri);
+      const updatedMetadata = buildVaultMetadataDocument(currentMetadata, {
+        txId: arweaveRes.txId,
+        url: arweaveRes.url,
+      });
+      const metadataBlob = new Blob([JSON.stringify(updatedMetadata)], {
+        type: 'application/json',
+      });
+      const metadataRes = await uploadToArweave(metadataBlob, {
+        kind: 'nft-metadata',
+        contentType: 'application/json',
+        mintAddress: selectedNft.mintAddress.toString(),
+        vaultTxId: arweaveRes.txId,
+      });
+      if (!metadataRes.success || !metadataRes.url) {
+        throw new Error('Updated NFT metadata upload failed');
+      }
+
+      // Step 4: Link the new metadata URI on Solana.
       setProgress(80);
       setStatus('updating');
       
       const solanaRes = await linkVaultToNFT(
         selectedNft.mintAddress.toString(), 
-        arweaveRes.txId, 
+        metadataRes.url,
         wallet.adapter // Use the wallet adapter directly
       );
 
       if (!solanaRes.success) throw new Error(solanaRes.error);
 
-      // Step 4: Success
+      // Step 5: Success
       setProgress(100);
       setStatus('success');
       setResult({

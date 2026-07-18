@@ -92,7 +92,7 @@ describe("web celestial runtime", () => {
     runtime.handleRendererEvent(rendererEvent(RENDERER_EVENTS.RENDER));
     expect(runtime.suspend("page-hidden")).toBe(true);
     expect(runtime.getSnapshot().suspensionReason).toBe("page-hidden");
-    expect(runtime.resume({ reason: "page-visible" })).toBe(true);
+    expect(runtime.resume({ reason: "page-visible", suspensionReason: "page-hidden" })).toBe(true);
     expect(runtime.degrade("low-fps", { profile: "low" })).toBe(true);
     expect(runtime.state).toBe(RUNTIME_STATES.DEGRADED);
     expect(runtime.reportError(new Error("webgl lost"), "context-lost")).toBe(true);
@@ -102,6 +102,38 @@ describe("web celestial runtime", () => {
     }));
     expect(runtime.recover({ rendererId: "background" })).toBe(true);
     expect(runtime.state).toBe(RUNTIME_STATES.INITIALIZING);
+  });
+
+  test("waits for every visibility and focus suspension reason before resuming", () => {
+    const runtime = new WebCelestialRuntime({ rendererId: "observatory", kind: "3d" });
+    runtime.handleRendererEvent(rendererEvent(RENDERER_EVENTS.INITIALIZE));
+    runtime.handleRendererEvent(rendererEvent(RENDERER_EVENTS.RENDER));
+    runtime.suspend("window-blur");
+    runtime.suspend("page-hidden");
+
+    expect(runtime.getSnapshot().suspensionReasons).toEqual(["window-blur", "page-hidden"]);
+    runtime.resume({ reason: "window-focus", suspensionReason: "window-blur" });
+    expect(runtime.state).toBe(RUNTIME_STATES.SUSPENDED);
+    runtime.resume({ reason: "page-visible", suspensionReason: "page-hidden" });
+    expect(runtime.state).toBe(RUNTIME_STATES.RUNNING);
+  });
+
+  test("recovers an errored runtime when WebGL context is restored", () => {
+    const onRecovery = jest.fn();
+    const runtime = new WebCelestialRuntime({
+      rendererId: "observatory",
+      kind: "3d",
+      callbacks: { onRecovery },
+    });
+    runtime.handleRendererEvent(rendererEvent(RENDERER_EVENTS.INITIALIZE));
+    runtime.reportError(new Error("context lost"), "webgl-context-lost");
+
+    expect(runtime.reportContextRestored({ source: "canvas" })).toBe(true);
+    expect(runtime.state).toBe(RUNTIME_STATES.INITIALIZING);
+    expect(onRecovery).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "webgl-context-restored", source: "canvas" }),
+      expect.objectContaining({ state: RUNTIME_STATES.INITIALIZING })
+    );
   });
 
   test("registers multiple mounted renderer instances without id collisions", () => {

@@ -24,10 +24,11 @@ import {
   getDeviceMaximumProfile,
   getWebDeviceCapabilities,
 } from "../engine/performance/webPerformancePolicy";
-import { celestialStore } from "../stores/celestialStore";
+import { celestialStore, useCelestialStore } from "../stores/celestialStore";
 import { webDiagnostics } from "../engine/diagnostics/webDiagnostics";
 
 const EMPTY_PROPS = Object.freeze({});
+const WEBGL_RESTORE_GRACE_MS = 2000;
 
 function RendererMountSignal({ onMounted }) {
   useEffect(() => onMounted(), [onMounted]);
@@ -91,6 +92,7 @@ function RendererInstance({
   onRendererTelemetry,
   onRendererError,
   onRendererFailure,
+  onRendererRestore,
 }) {
   const adapter = useMemo(() => getWebRendererAdapter(rendererId), [rendererId]);
   const RendererComponent = useMemo(() => lazy(adapter.loadComponent), [adapter]);
@@ -105,9 +107,11 @@ function RendererInstance({
   const telemetryHandlerRef = useRef(onRendererTelemetry);
   const errorHandlerRef = useRef(onRendererError);
   const failureHandlerRef = useRef(onRendererFailure);
+  const restoreHandlerRef = useRef(onRendererRestore);
   const sessionRef = useRef(null);
   const latestPropsRef = useRef(rendererProps);
   const previousPropsRef = useRef(rendererProps);
+  const contextRecoveryTimerRef = useRef(null);
 
   latestPropsRef.current = rendererProps;
 
@@ -117,7 +121,8 @@ function RendererInstance({
     telemetryHandlerRef.current = onRendererTelemetry;
     errorHandlerRef.current = onRendererError;
     failureHandlerRef.current = onRendererFailure;
-  }, [onRendererError, onRendererEvent, onRendererFailure, onRendererTelemetry, onRuntimeChange]);
+    restoreHandlerRef.current = onRendererRestore;
+  }, [onRendererError, onRendererEvent, onRendererFailure, onRendererRestore, onRendererTelemetry, onRuntimeChange]);
 
   useEffect(() => {
     runtime.setCallbacks({
@@ -126,6 +131,8 @@ function RendererInstance({
     });
     return runtime.subscribe((snapshot) => runtimeChangeRef.current?.(snapshot));
   }, [runtime]);
+
+  useEffect(() => () => clearTimeout(contextRecoveryTimerRef.current), []);
 
   useEffect(() => {
     const unregisterRuntime = registerWebCelestialRuntime(runtime);
@@ -156,11 +163,20 @@ function RendererInstance({
     if (typeof document === "undefined") return undefined;
     const handleVisibility = () => {
       if (document.hidden) runtime.suspend("page-hidden");
-      else runtime.resume({ reason: "page-visible" });
+      else runtime.resume({ reason: "page-visible", suspensionReason: "page-hidden" });
     };
+    const handleBlur = () => runtime.suspend("window-blur");
+    const handleFocus = () => runtime.resume({ reason: "window-focus", suspensionReason: "window-blur" });
     document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
     handleVisibility();
-    return () => document.removeEventListener("visibilitychange", handleVisibility);
+    if (typeof document.hasFocus === "function" && !document.hasFocus()) handleBlur();
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [runtime]);
 
   useEffect(() => {
@@ -186,6 +202,9 @@ function RendererInstance({
     );
     runtime.handleRendererEvent(renderEvent);
     if (typeof document !== "undefined" && document.hidden) runtime.suspend("page-hidden");
+    if (typeof document !== "undefined" && typeof document.hasFocus === "function" && !document.hasFocus()) {
+      runtime.suspend("window-blur");
+    }
     eventHandlerRef.current?.(renderEvent);
   }, [adapter, runtime]);
 
@@ -195,18 +214,30 @@ function RendererInstance({
   );
   const handleRendererError = React.useCallback(
     (error, stage) => {
-      try {
-        runtime.reportError(error, stage);
-      } finally {
+      runtime.reportError(error, stage);
+      if (stage === "webgl-context-lost") {
+        clearTimeout(contextRecoveryTimerRef.current);
+        contextRecoveryTimerRef.current = setTimeout(() => {
+          contextRecoveryTimerRef.current = null;
+          failureHandlerRef.current?.(error, stage, true);
+        }, WEBGL_RESTORE_GRACE_MS);
+      } else {
         failureHandlerRef.current?.(error, stage, true);
       }
     },
     [runtime]
   );
+  const handleRendererRestore = React.useCallback((details) => {
+    clearTimeout(contextRecoveryTimerRef.current);
+    contextRecoveryTimerRef.current = null;
+    runtime.reportContextRestored(details);
+    restoreHandlerRef.current?.(details, runtime.getSnapshot());
+  }, [runtime]);
 
   const mappedProps = adapter.mapProps(rendererProps, {
     onTelemetry: handleTelemetry,
     onError: handleRendererError,
+    onRestore: handleRendererRestore,
     runtime,
   });
 
@@ -227,9 +258,13 @@ export default function CelestialRenderer({
   onRuntimeChange,
   onRendererTelemetry,
   onRendererError,
+  onRendererRestore,
   onRecoveryChange,
   onPerformanceChange,
 }) {
+  const beginInteraction = useCelestialStore((state) => state.beginInteraction);
+  const markInteractionMoved = useCelestialStore((state) => state.markInteractionMoved);
+  const endInteraction = useCelestialStore((state) => state.endInteraction);
   const primaryAdapter = useMemo(() => getWebRendererAdapter(rendererId), [rendererId]);
   const catalogObjectCount = Array.isArray(rendererProps.stars)
     ? rendererProps.stars.length
@@ -295,6 +330,11 @@ export default function CelestialRenderer({
     setPerformanceState(createPerformanceState(maximumProfile, maximumProfile));
   }, [maximumProfile]);
 
+  const handleRestore = React.useCallback((details, runtimeSnapshot) => {
+    setRecovery((current) => resetRendererRecovery(current));
+    onRendererRestore?.(details, runtimeSnapshot);
+  }, [onRendererRestore]);
+
   const handleTelemetry = React.useCallback((telemetry, runtimeSnapshot) => {
     const enrichedTelemetry = {
       ...telemetry,
@@ -320,6 +360,13 @@ export default function CelestialRenderer({
   }
 
   return (
+    <div
+      className="contents"
+      onPointerDownCapture={(event) => beginInteraction({ pointerType: event.pointerType })}
+      onPointerMoveCapture={() => markInteractionMoved()}
+      onPointerUpCapture={() => endInteraction()}
+      onPointerCancelCapture={() => endInteraction()}
+    >
     <RendererErrorBoundary
       key={`${recovery.activeRendererId}-${recovery.revision}`}
       fallback={fallback || <RendererRecoveringSurface />}
@@ -334,8 +381,10 @@ export default function CelestialRenderer({
         onRendererTelemetry={handleTelemetry}
         onRendererError={onRendererError}
         onRendererFailure={handleFailure}
+        onRendererRestore={handleRestore}
       />
     </RendererErrorBoundary>
+    </div>
   );
 }
 

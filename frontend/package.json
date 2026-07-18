@@ -7,7 +7,10 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
-    "@metaplex-foundation/js": "^0.20.1",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/umi": "^1.5.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.5.1",
+    "@metaplex-foundation/umi-signer-wallet-adapters": "^1.5.1",
     "@project-serum/anchor": "^0.26.0",
     "@radix-ui/react-accordion": "^1.2.8",
     "@radix-ui/react-alert-dialog": "^1.1.11",
@@ -39,23 +42,16 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",
-    "@sentry/react": "^10.65.0",
-    "@solana/codecs": "^2.3.0",
-    "@solana/codecs-core": "^2.3.0",
-    "@solana/codecs-data-structures": "^2.3.0",
-    "@solana/codecs-numbers": "^2.3.0",
-    "@solana/codecs-strings": "^2.3.0",
+    "@sentry/react": "^10.66.0",
     "@solana/wallet-adapter-base": "^0.9.27",
+    "@solana/wallet-adapter-phantom": "^0.9.29",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
-    "@solana/wallet-adapter-wallets": "^0.19.38",
+    "@solana/wallet-adapter-solflare": "^0.6.33",
     "@solana/web3.js": "^1.98.4",
-    "@walletconnect/sign-client": "^2.23.9",
-    "@walletconnect/universal-provider": "^2.23.9",
-    "@web3auth/ws-embed": "^6.0.2",
     "ajv": "^8.20.0",
     "assert": "^2.1.0",
-    "axios": "^1.8.4",
+    "axios": "^1.18.1",
     "buffer": "^6.0.3",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
@@ -67,7 +63,7 @@
     "date-fns": "^3.0.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.38.0",
-    "http-proxy-middleware": "^4.1.1",
+    "http-proxy-middleware": "^4.2.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.507.0",
     "next-themes": "^0.4.6",
@@ -79,7 +75,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.2",
     "react-resizable-panels": "^3.0.1",
-    "react-router-dom": "^6.28.0",
+    "react-router-dom": "^6.30.4",
     "react-scripts": "5.0.1",
     "recharts": "^3.6.0",
     "shamirs-secret-sharing": "^2.0.1",
@@ -92,7 +88,7 @@
     "vaul": "^1.1.2",
     "vm-browserify": "^1.1.2",
     "zod": "^3.24.4",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.14"
   },
   "scripts": {
     "start": "craco start",
@@ -100,12 +96,22 @@
     "build:ci": "cross-env CI=true NODE_OPTIONS=\"--max-old-space-size=4096\" craco build",
     "test": "craco test",
     "test:ci": "cross-env CI=true craco test --watchAll=false --runInBand",
+    "test:e2e": "npm run build:ci && playwright test",
+    "test:e2e:run": "playwright test",
+    "test:e2e:install": "playwright install chromium firefox webkit",
+    "serve:e2e": "serve -s build -l 4173",
     "audit:production": "npm audit --omit=dev",
     "eject": "react-scripts eject"
   },
   "overrides": {
     "react": "$react",
-    "react-dom": "$react-dom"
+    "react-dom": "$react-dom",
+    "@ethersproject/providers": {
+      "ws": "8.21.1"
+    },
+    "bfj": {
+      "underscore": "1.13.8"
+    }
   },
   "eslintConfig": {
     "extends": [
@@ -130,6 +136,7 @@
     "@craco/craco": "^7.1.0",
     "@emergentbase/visual-edits": "https://assets.emergent.sh/npm/emergentbase-visual-edits-1.0.8.tgz",
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.61.1",
     "autoprefixer": "^10.4.20",
     "cross-env": "^10.1.0",
     "eslint": "^9.17.0",
@@ -139,6 +146,7 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "globals": "15.15.0",
     "postcss": "^8.4.49",
+    "serve": "^14.2.6",
     "tailwindcss": "^3.4.17"
   }
 }

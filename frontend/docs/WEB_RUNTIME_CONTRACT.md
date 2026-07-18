@@ -18,6 +18,15 @@ Multiple copies of the same renderer receive unique runtime instance ids. The
 global web runtime registry exposes snapshots of every mounted instance for
 future diagnostics and performance policy consumers.
 
+Visibility suspension uses independent `page-hidden` and `window-blur`
+reasons. The runtime resumes only after every active reason has cleared, so a
+focus event cannot restart a renderer while its tab is still hidden.
+
+Three.js renderers listen for `webglcontextlost` and `webglcontextrestored`.
+A lost context gets a two-second in-place restoration window. Successful
+restoration recovers the same runtime; otherwise the normal low-quality,
+safe-2D, and maintenance recovery policy continues.
+
 ## Telemetry
 
 All renderers report the same base fields:

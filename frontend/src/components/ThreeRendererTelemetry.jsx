@@ -1,9 +1,25 @@
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 
+export function bindWebGLContextLifecycle(canvas, { onLost, onRestored } = {}) {
+  if (!canvas) return () => {};
+  const handleContextLost = (event) => {
+    event.preventDefault();
+    onLost?.(event);
+  };
+  const handleContextRestored = (event) => onRestored?.(event);
+  canvas.addEventListener("webglcontextlost", handleContextLost);
+  canvas.addEventListener("webglcontextrestored", handleContextRestored);
+  return () => {
+    canvas.removeEventListener("webglcontextlost", handleContextLost);
+    canvas.removeEventListener("webglcontextrestored", handleContextRestored);
+  };
+}
+
 export default function ThreeRendererTelemetry({
   onTelemetry,
   onError,
+  onRestore,
   renderedObjects,
   quality,
   sampleIntervalMs = 1000,
@@ -14,13 +30,14 @@ export default function ThreeRendererTelemetry({
   useEffect(() => {
     const canvas = gl?.domElement;
     if (!canvas) return undefined;
-    const handleContextLost = (event) => {
-      event.preventDefault();
-      onError?.(new Error("WebGL context was lost."), "webgl-context-lost");
-    };
-    canvas.addEventListener("webglcontextlost", handleContextLost);
-    return () => canvas.removeEventListener("webglcontextlost", handleContextLost);
-  }, [gl, onError]);
+    return bindWebGLContextLifecycle(canvas, {
+      onLost: () => onError?.(new Error("WebGL context was lost."), "webgl-context-lost"),
+      onRestored: () => {
+        sampleRef.current = { startedAt: 0, frames: 0 };
+        onRestore?.({ source: "webgl-context-restored" });
+      },
+    });
+  }, [gl, onError, onRestore]);
 
   useFrame((state) => {
     if (!onTelemetry) return;

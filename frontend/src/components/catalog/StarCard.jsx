@@ -118,6 +118,17 @@ export default function StarCard({
   return (
     <div
       onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`${star.name} yildizini sec`}
+      data-testid="catalog-star-card"
+      data-star-id={star.starId}
       className="group bg-[#070b20]/40 border border-white/5 rounded-2xl p-4 flex flex-col gap-4 transition-all duration-300 hover:-translate-y-1 hover:bg-[#0a0f2b]/70 cursor-pointer relative overflow-hidden"
     >
       {/* Scanline decoration */}

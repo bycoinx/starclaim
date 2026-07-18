@@ -51,6 +51,7 @@ export class WebCelestialRuntime {
     this.state = RUNTIME_STATES.IDLE;
     this.resumeState = RUNTIME_STATES.RUNNING;
     this.suspensionReason = null;
+    this.suspensionReasons = new Set();
     this.telemetry = null;
     this.error = null;
     this.degradation = null;
@@ -128,17 +129,43 @@ export class WebCelestialRuntime {
     return true;
   }
 
+  reportContextRestored(details = {}) {
+    if (this.state === RUNTIME_STATES.DISPOSED) return false;
+    if ([RUNTIME_STATES.ERROR, RUNTIME_STATES.DEGRADED].includes(this.state)) {
+      return this.recover({ reason: "webgl-context-restored", ...details });
+    }
+    this.callbacks.onRecovery?.({ reason: "webgl-context-restored", ...details }, this.getSnapshot());
+    return true;
+  }
+
   suspend(reason = "page-hidden") {
-    if (![RUNTIME_STATES.READY, RUNTIME_STATES.RUNNING, RUNTIME_STATES.DEGRADED].includes(this.state)) return false;
+    if (this.state === RUNTIME_STATES.DISPOSED || this.state === RUNTIME_STATES.ERROR) return false;
+    this.suspensionReasons.add(reason);
+    this.suspensionReason = this.suspensionReasons.values().next().value || null;
+    if (this.state === RUNTIME_STATES.SUSPENDED) {
+      this.notify();
+      return true;
+    }
+    if (![RUNTIME_STATES.READY, RUNTIME_STATES.RUNNING, RUNTIME_STATES.DEGRADED].includes(this.state)) {
+      this.suspensionReasons.delete(reason);
+      this.suspensionReason = this.suspensionReasons.values().next().value || null;
+      return false;
+    }
     this.resumeState = this.state;
-    this.suspensionReason = reason;
     this.transition(RUNTIME_STATES.SUSPENDED);
     return true;
   }
 
   resume(details = {}) {
     if (this.state !== RUNTIME_STATES.SUSPENDED) return false;
-    this.suspensionReason = null;
+    const suspensionReason = details.suspensionReason;
+    if (suspensionReason) this.suspensionReasons.delete(suspensionReason);
+    else this.suspensionReasons.clear();
+    this.suspensionReason = this.suspensionReasons.values().next().value || null;
+    if (this.suspensionReasons.size > 0) {
+      this.notify();
+      return true;
+    }
     this.transition(this.resumeState || RUNTIME_STATES.RUNNING);
     this.callbacks.onResume?.(details, this.getSnapshot());
     return true;
@@ -146,6 +173,7 @@ export class WebCelestialRuntime {
 
   dispose() {
     if (this.state === RUNTIME_STATES.DISPOSED) return false;
+    this.suspensionReasons.clear();
     this.suspensionReason = null;
     this.transition(RUNTIME_STATES.DISPOSED);
     return true;
@@ -188,6 +216,7 @@ export class WebCelestialRuntime {
       error: this.error ? { ...this.error } : null,
       degradation: this.degradation ? { ...this.degradation } : null,
       suspensionReason: this.suspensionReason,
+      suspensionReasons: [...this.suspensionReasons],
       revision: this.revision,
     };
   }

@@ -21,6 +21,7 @@ const adapters = [
       ...props,
       onRendererTelemetry: runtime.onTelemetry,
       onRendererError: runtime.onError,
+      onRendererRestore: runtime.onRestore,
     }),
     loadComponent: () => import("../../components/StarCanvas"),
   }),
@@ -45,6 +46,7 @@ const adapters = [
         onCameraViewChange: (view) => store.setCameraView(view),
         onRendererTelemetry: runtime.onTelemetry,
         onRendererError: runtime.onError,
+        onRendererRestore: runtime.onRestore,
       };
     },
     loadComponent: () => import("../../components/GalaxyScene/GalaxyScene"),
@@ -62,6 +64,7 @@ const adapters = [
       ...props,
       onRendererTelemetry: runtime.onTelemetry,
       onRendererError: runtime.onError,
+      onRendererRestore: runtime.onRestore,
     }),
     loadComponent: () => import("../../components/SkySphere"),
   }),

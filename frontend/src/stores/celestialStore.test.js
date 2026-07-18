@@ -1,5 +1,6 @@
 import {
   DEFAULT_CELESTIAL_LAYERS,
+  DEFAULT_CELESTIAL_INTERACTION,
   celestialStore,
 } from "./celestialStore";
 
@@ -46,5 +47,30 @@ describe("central celestial store", () => {
       selection: expect.objectContaining({ starId: "vega" }),
       view: expect.objectContaining({ zoom: 4, cameraDistance: 20 }),
     }));
+  });
+
+  test("tracks transient pointer interaction independently from view state", () => {
+    const actions = celestialStore.getState();
+    actions.beginInteraction({ pointerType: "touch", recordedAt: 10 });
+    actions.markInteractionMoved(20);
+    actions.setHoveredObjectId("sirius");
+
+    expect(celestialStore.getState().interaction).toEqual(expect.objectContaining({
+      isPointerDown: true,
+      isDragging: true,
+      hoveredObjectId: "sirius",
+      activePointerType: "touch",
+      lastInputAt: 20,
+    }));
+
+    actions.endInteraction(30);
+    expect(celestialStore.getState().interaction).toEqual(expect.objectContaining({
+      isPointerDown: false,
+      isDragging: false,
+      hoveredObjectId: "sirius",
+      lastInputAt: 30,
+    }));
+    actions.resetInteraction();
+    expect(celestialStore.getState().interaction).toEqual(DEFAULT_CELESTIAL_INTERACTION);
   });
 });

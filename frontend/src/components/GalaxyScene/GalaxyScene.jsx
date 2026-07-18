@@ -445,6 +445,7 @@ export default function GalaxyScene({
   onCameraViewChange,
   onRendererTelemetry,
   onRendererError,
+  onRendererRestore,
   qualityProfile = 'high',
 }) {
   const performanceProfile = getWebPerformanceProfile(qualityProfile);
@@ -484,6 +485,7 @@ export default function GalaxyScene({
         <ThreeRendererTelemetry
           onTelemetry={onRendererTelemetry}
           onError={onRendererError}
+          onRestore={onRendererRestore}
           renderedObjects={performanceProfile.galaxyStars + performanceProfile.galaxyAsteroids + PLANETS.length}
           quality={qualityProfile}
         />

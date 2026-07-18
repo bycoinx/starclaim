@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowRight,
   Award,
@@ -58,15 +59,17 @@ function PrimaryAction({ children, icon: Icon }) {
   );
 }
 
-function SecondaryAction({ children, icon: Icon }) {
+function SecondaryAction({ children, icon: Icon, to, testId }) {
+  const Component = to ? Link : "button";
   return (
-    <button
-      type="button"
+    <Component
+      {...(to ? { to } : { type: "button" })}
+      data-testid={testId}
       className={`${HERO_ACTION_CLASS} border-sc-blue/30 bg-[#071021]/70 text-white hover:border-sc-blue/60 hover:bg-sc-blue/10`}
     >
       {Icon ? <Icon className="h-4 w-4 text-sc-blue" /> : null}
       {children}
-    </button>
+    </Component>
   );
 }
 
@@ -421,7 +424,9 @@ function CatalogPageOrchestrator() {
           onPopularSearchClick={store.setSearchQuery}
         />
         <div className="flex justify-end">
-          <SecondaryAction icon={ArrowRight}>Harita Gorunumu</SecondaryAction>
+          <SecondaryAction icon={ArrowRight} to="/cosmos" testId="open-cosmos">
+            Harita Gorunumu
+          </SecondaryAction>
         </div>
       </PageToolbar>
 

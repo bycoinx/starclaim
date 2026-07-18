@@ -75,7 +75,7 @@ const starShader = {
 
 // --- COMPONENTS ---
 
-function RealStars({ stars = [], onSelect, onObserverUpdate }) {
+function RealStars({ stars = [], onSelect, onObserverUpdate, onHover }) {
   const meshRef = useRef();
   const { camera } = useThree();
   const frustum = useMemo(() => new THREE.Frustum(), []);
@@ -165,6 +165,8 @@ function RealStars({ stars = [], onSelect, onObserverUpdate }) {
           onSelect(stars[index]);
         }
       }}
+      onPointerMove={(e) => onHover?.(stars[e.index] || null)}
+      onPointerOut={() => onHover?.(null)}
     >
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" count={stars.length} array={positions} itemSize={3} />
@@ -373,6 +375,7 @@ export default function SkySphere({
   onClaim,
   onRendererTelemetry,
   onRendererError,
+  onRendererRestore,
   qualityProfile = "high",
 }) {
   const { lang } = useT();
@@ -386,6 +389,7 @@ export default function SkySphere({
   const setCameraTarget = useCelestialStore((state) => state.setCameraTarget);
   const setCameraView = useCelestialStore((state) => state.setCameraView);
   const setViewMode = useCelestialStore((state) => state.setRendererMode);
+  const setHoveredObjectId = useCelestialStore((state) => state.setHoveredObjectId);
   const [introFinished, setIntroFinished] = useState(false);
   const [observerMetrics, setObserverMetrics] = useState(null);
   const targetPos = useMemo(() => cameraTarget
@@ -433,6 +437,7 @@ export default function SkySphere({
             stars={layers.stars ? renderedStars : []}
             onSelect={handleSelect} 
             onObserverUpdate={setObserverMetrics}
+            onHover={(star) => setHoveredObjectId(star?.starId || star?.id || star?.code || null)}
           />
           {layers.landmarks ? <NasaLandmarks onSelect={handleSelect} /> : null}
           
@@ -449,6 +454,7 @@ export default function SkySphere({
           <ThreeRendererTelemetry
             onTelemetry={onRendererTelemetry}
             onError={onRendererError}
+            onRestore={onRendererRestore}
             renderedObjects={layers.stars ? renderedStars.length : 0}
             quality={qualityProfile}
           />

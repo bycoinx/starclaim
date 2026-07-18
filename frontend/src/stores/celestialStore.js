@@ -20,6 +20,14 @@ export const DEFAULT_CELESTIAL_LAYERS = Object.freeze({
   nebula: true,
 });
 
+export const DEFAULT_CELESTIAL_INTERACTION = Object.freeze({
+  isPointerDown: false,
+  isDragging: false,
+  hoveredObjectId: null,
+  activePointerType: null,
+  lastInputAt: null,
+});
+
 function createInitialState() {
   return {
     catalog: {
@@ -47,6 +55,7 @@ function createInitialState() {
       star: null,
     },
     layers: { ...DEFAULT_CELESTIAL_LAYERS },
+    interaction: { ...DEFAULT_CELESTIAL_INTERACTION },
     favorites: readStoredFavorites(),
   };
 }
@@ -142,6 +151,36 @@ export const useCelestialStore = create((set) => ({
   toggleLayer: (layer) => set((state) => ({
     layers: { ...state.layers, [layer]: !state.layers[layer] },
   })),
+  setInteraction: (interaction) => set((state) => ({
+    interaction: { ...state.interaction, ...interaction },
+  })),
+  beginInteraction: ({ pointerType = "mouse", recordedAt = Date.now() } = {}) => set((state) => ({
+    interaction: {
+      ...state.interaction,
+      isPointerDown: true,
+      isDragging: false,
+      activePointerType: pointerType,
+      lastInputAt: recordedAt,
+    },
+  })),
+  markInteractionMoved: (recordedAt = Date.now()) => set((state) => ({
+    interaction: state.interaction.isPointerDown && !state.interaction.isDragging
+      ? { ...state.interaction, isDragging: true, lastInputAt: recordedAt }
+      : state.interaction,
+  })),
+  endInteraction: (recordedAt = Date.now()) => set((state) => ({
+    interaction: {
+      ...state.interaction,
+      isPointerDown: false,
+      isDragging: false,
+      activePointerType: null,
+      lastInputAt: recordedAt,
+    },
+  })),
+  setHoveredObjectId: (hoveredObjectId) => set((state) => ({
+    interaction: { ...state.interaction, hoveredObjectId },
+  })),
+  resetInteraction: () => set({ interaction: { ...DEFAULT_CELESTIAL_INTERACTION } }),
   setFavorites: (favorites) => set((state) => ({
     favorites: resolveValue(favorites, state.favorites),
   })),
